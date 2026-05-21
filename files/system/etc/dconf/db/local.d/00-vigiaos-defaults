@@ -1,0 +1,18 @@
+# VigiaOS system-wide defaults. Compiled into /etc/dconf/db/local by `dconf update`
+# at build time. Users can override any of these in their session.
+
+[org/gnome/desktop/interface]
+color-scheme='prefer-dark'
+accent-color='green'
+monospace-font-name='JetBrainsMono Nerd Font 11'
+
+[org/gnome/desktop/background]
+picture-uri='file:///usr/share/backgrounds/vigiaos/vigiaos-dark.svg'
+picture-uri-dark='file:///usr/share/backgrounds/vigiaos/vigiaos-dark.svg'
+picture-options='zoom'
+primary-color='#09090b'
+secondary-color='#09090b'
+
+[org/gnome/desktop/screensaver]
+picture-uri='file:///usr/share/backgrounds/vigiaos/vigiaos-dark.svg'
+primary-color='#09090b'

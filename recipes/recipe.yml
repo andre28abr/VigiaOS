@@ -21,13 +21,21 @@ modules:
   - type: dnf
     install:
       packages:
-        # Mínimo para validar o pipeline. Stack de segurança/auditoria
-        # entra em iterações seguintes para manter este primeiro build leve.
+        # Terminal/produtividade
         - micro
         - htop
         - tmux
+        # Tema VigiaOS
+        - papirus-icon-theme       # icon theme com variante dark
+        - jetbrains-mono-fonts     # monospace usado no wallpaper/terminal
+        - gnome-tweaks             # ajustes finos pelo usuário
 
-  # 3) Flatpaks pré-instalados para todos os usuários do sistema.
+  # 3) Compila os defaults dconf (dark mode, accent verde, wallpaper, fonte).
+  - type: script
+    scripts:
+      - setup-dconf.sh
+
+  # 4) Flatpaks pré-instalados para todos os usuários do sistema.
   - type: default-flatpaks
     configurations:
       - notify: true
