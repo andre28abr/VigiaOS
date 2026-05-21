@@ -18,6 +18,9 @@ modules:
 
   # 2) Pacotes RPM (atomicos, parte da base do ostree).
   - type: dnf
+    repos:
+      copr:
+        - atim/starship          # starship nao esta nos repos default Fedora
     install:
       packages:
         # Terminal/produtividade
