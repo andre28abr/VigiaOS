@@ -5,6 +5,8 @@ on:
   push:
     paths-ignore:
       - "**.md"
+      - "install.sh"      # script para usuarios — nao afeta a imagem
+      - "LICENSE"
   pull_request:
   workflow_dispatch:
 
