@@ -1,5 +1,6 @@
-/* VigiaOS — overrides para apps GTK3 legados.
- * Mesma paleta zinc + emerald do gtk-4.0/gtk.css.
+/* VigiaOS — overrides GTK3 (apps legados).
+ * Mesma paleta zinc + emerald do gtk-4.0.
+ * Local: /etc/skel/.config/gtk-3.0/gtk.css (template para novos usuarios).
  */
 
 @define-color theme_bg_color           #09090b;
