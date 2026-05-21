@@ -226,56 +226,129 @@ com base color `zinc` e accent `emerald`.
 ### Camadas (cascata)
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│ 1. Wallpaper (.svg)                                     │
-│    files/system/usr/share/backgrounds/vigiaos/          │
-│    Referenciado via dconf: picture-uri-dark             │
-├─────────────────────────────────────────────────────────┤
-│ 2. dconf defaults                                       │
-│    files/system/etc/dconf/db/local.d/00-vigiaos-defaults│
-│    Compilado por `dconf update` no build                │
-│    - color-scheme='prefer-dark'                         │
-│    - accent-color='green'                               │
-│    - monospace-font-name='JetBrains Mono 11'            │
-│    - picture-uri[-dark]='file:///...'                   │
-├─────────────────────────────────────────────────────────┤
-│ 3. libadwaita overrides (apps GNOME nativos)            │
-│    files/system/etc/xdg/gtk-4.0/gtk.css                 │
-│    @define-color de window_bg_color, accent_color, ...  │
-│    Lido por GTK4 via $XDG_CONFIG_DIRS                   │
-├─────────────────────────────────────────────────────────┤
-│ 4. GTK3 fallback (apps legados)                         │
-│    files/system/etc/xdg/gtk-3.0/gtk.css                 │
-│    @define-color de theme_bg_color, theme_fg_color, ... │
-└─────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│ 1. Wallpaper (.svg)                                              │
+│    files/system/usr/share/backgrounds/vigiaos/vigiaos-dark.svg   │
+│    Referenciado pelo dconf via picture-uri[-dark]                │
+├──────────────────────────────────────────────────────────────────┤
+│ 2. dconf defaults (sistema)                                      │
+│    files/system/etc/dconf/db/local.d/00-vigiaos-defaults         │
+│    Compilado por setup-dconf.sh durante o build                  │
+│    - color-scheme='prefer-dark'                                  │
+│    - accent-color='green'                                        │
+│    - icon-theme='Papirus-Dark'                                   │
+│    - monospace-font-name='JetBrainsMono Nerd Font 11'            │
+│    - picture-uri[-dark]='file:///.../vigiaos-dark.svg'           │
+├──────────────────────────────────────────────────────────────────┤
+│ 3. libadwaita overrides via /etc/skel + sync                     │
+│    files/system/etc/skel/.config/gtk-4.0/gtk.css                 │
+│    files/system/etc/skel/.config/gtk-3.0/gtk.css                 │
+│    Sincronizado para ~/.config/gtk-{3,4}.0/ por:                 │
+│      /usr/libexec/vigiaos-sync-user-config                       │
+│    Disparado por: /etc/profile.d/vigiaos-init.sh (no login)      │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+### ⚠️ Sobre o gtk.css: por que `/etc/skel/` e não `/etc/xdg/`
+
+Tentativa anterior colocava o gtk.css em `/etc/xdg/gtk-4.0/gtk.css` confiando
+no `$XDG_CONFIG_DIRS`. **GTK4/libadwaita não lê esse caminho** — só lê:
+- Tema ativo em `/usr/share/themes/<nome>/gtk-4.0/gtk.css`
+- CSS pessoal em `~/.config/gtk-4.0/gtk.css`
+
+Como `/usr/share/themes/` exige um tema completo (não só overrides), e
+libadwaita ignora a maioria dos temas custom, a única forma confiável de
+aplicar `@define-color` em todos os apps é via `~/.config/gtk-4.0/gtk.css`.
+
+**Solução**: ship em `/etc/skel/.config/gtk-{3,4}.0/gtk.css` (auto-aplica
+para usuários novos via `useradd`) e um script de sync para os já existentes:
+
+```bash
+/usr/libexec/vigiaos-sync-user-config
+# Cria symlinks em ~/.config/gtk-{3,4}.0/gtk.css apontando para /etc/skel/...
+# Idempotente. Acionado automaticamente no primeiro login shell via
+# /etc/profile.d/vigiaos-init.sh.
 ```
 
 ### Apps cobertos
 
-- ✅ **Cobertos** (apps GNOME nativos / libadwaita): Nautilus, Settings, Console,
-  Calendar, Files, Calculator, Software, Text Editor, About, Login Manager
-- ⚠️ **Parcial** (apps GTK3): cobertos pelos overrides GTK3 mas com diferenças
-  visuais sutis (libadwaita tem mais tokens que GTK3 não tem)
-- ❌ **NÃO cobertos** (Flatpaks): sandboxed, não veem `/etc/xdg/`. Workarounds:
-  - `flatpak override --user --filesystem=xdg-config/gtk-4.0:ro <app>` (por app)
-  - Ou copiar para `~/.config/gtk-4.0/gtk.css` (afeta todos Flatpaks do usuário)
+- ✅ **Apps GNOME nativos / libadwaita**: Nautilus, Settings, Console,
+  Calendar, Calculator, Software, Text Editor, About, etc.
+- ⚠️ **GTK3 legados**: cobertos por `gtk-3.0/gtk.css` mas com diferenças sutis.
+- ❌ **Flatpaks**: sandboxed, **não veem** `~/.config/gtk-4.0/`. Para libertar:
+  ```bash
+  flatpak override --user --filesystem=xdg-config/gtk-4.0:ro <app-id>
+  ```
+  Ou de uma vez para todos os Flatpaks do user:
+  ```bash
+  flatpak override --user --filesystem=xdg-config/gtk-4.0:ro
+  ```
 
-### Como mudar uma cor
+### Como mudar uma cor do tema
 
-1. Edite `files/system/etc/xdg/gtk-4.0/gtk.css` (e/ou `gtk-3.0/gtk.css`)
-2. Commit + push
-3. CI builda nova imagem
-4. Usuário roda `rpm-ostree upgrade && systemctl reboot`
+1. Edite `files/system/etc/skel/.config/gtk-4.0/gtk.css` (e `gtk-3.0/gtk.css`)
+2. Commit + push → CI builda nova imagem
+3. Na VM: `rpm-ostree upgrade && systemctl reboot`
+4. O symlink `~/.config/gtk-4.0/gtk.css → /etc/skel/...` é estável, então
+   reload do app (ou logout/login) já pega a mudança nova
 
 ### Gotchas conhecidos
 
-- **dconf defaults só pegam em chaves nunca tocadas pelo usuário.** Se o user
-  já mexeu manualmente, o valor pessoal sobrescreve. Para forçar:
-  `dconf reset /org/gnome/desktop/interface/color-scheme`
+- **dconf defaults só pegam em chaves nunca tocadas pelo usuário.** Se já
+  mexeu manualmente, o valor pessoal sobrescreve. Para forçar reset:
+  ```bash
+  dconf reset /org/gnome/desktop/interface/color-scheme
+  ```
 - **libadwaita não suporta temas GTK custom completos.** Só `@define-color` e
   algumas regras CSS limitadas. Não tente reescrever Adwaita do zero.
-- **Mudanças em `.svg` de wallpaper podem precisar de cache flush** se o
-  arquivo tem o mesmo nome. Usar versionamento no nome se quiser garantir.
+- **Cache de cosign/skopeo no GHCR pode confundir.** Após push, espera o build
+  terminar (`gh run watch`) antes de `rpm-ostree upgrade` na VM.
+
+---
+
+## 5b. Terminal customizado (Nerd Font + Starship + zsh)
+
+VigiaOS empacota um setup de terminal "Powerline-style" similar ao Kali:
+fontes com glyphs (git branch, ícones de OS, separadores), prompt rico e
+shell zsh com syntax highlighting e autosuggestions.
+
+### Componentes
+
+| Peça | Origem | Path |
+|---|---|---|
+| **JetBrainsMono Nerd Font** | Download direto do release no build | `/usr/share/fonts/nerd-fonts-jetbrains-mono/` |
+| **Starship** | RPM Fedora | `/usr/bin/starship` |
+| **Config do Starship** | Versionada no repo | `/etc/starship.toml` |
+| **zsh + plugins** | RPM Fedora (`zsh`, `zsh-autosuggestions`, `zsh-syntax-highlighting`) | `/usr/bin/zsh` |
+| **.zshrc default** | Template em `/etc/skel/` | `~/.zshrc` (auto p/ novos users) |
+| **Starship em bash** | profile.d hook | `/etc/profile.d/vigiaos-starship.sh` |
+
+### Por que download direto de Nerd Fonts em vez de COPR?
+
+A COPR `che/nerd-fonts` existe mas a cobertura aarch64 é incerta. O script
+`files/scripts/install-nerd-fonts.sh` baixa o `.tar.xz` direto do release
+oficial em `github.com/ryanoasis/nerd-fonts`, mais simples e confiável.
+
+### Mudar default shell para zsh (usuário existente)
+
+Usuários criados ANTES do recipe incluir zsh não ganham zsh automático.
+Para mudar:
+```bash
+chsh -s /usr/bin/zsh
+# logout/login para aplicar
+```
+
+Novos usuários criados via `useradd` ganham zsh se `/etc/default/useradd`
+estiver setado (não setamos por padrão — ainda é debate se queremos).
+
+### Customizar o prompt
+
+`/etc/starship.toml` é versionado no repo (em `files/system/etc/starship.toml`).
+Para customizar pessoalmente sem mexer no sistema, copie para `~/.config/`:
+```bash
+cp /etc/starship.toml ~/.config/starship.toml
+# Starship dá prioridade ao do usuário
+```
 
 ---
 
@@ -443,6 +516,26 @@ dconf reset -f /org/gnome/desktop/background/
 - Script `install.sh` adicionado para one-liner `curl | bash`
 - `DEVELOPMENT.md` criado (este arquivo)
 
+### 2026-05-21 — Theme fix + terminal Powerline (iteração 2)
+- **Bug crítico do tema corrigido**: `gtk.css` estava em `/etc/xdg/gtk-4.0/`
+  mas GTK4/libadwaita **não lê** `$XDG_CONFIG_DIRS` — só lê `~/.config/gtk-4.0/`
+  e themes em `/usr/share/themes/`. Solução: arquivos movidos para
+  `/etc/skel/.config/gtk-{3,4}.0/` + script `/usr/libexec/vigiaos-sync-user-config`
+  cria symlinks em `~/.config/` automaticamente no primeiro login (via hook
+  em `/etc/profile.d/vigiaos-init.sh`).
+- **JetBrainsMono Nerd Font** baixada direto do release oficial via
+  `files/scripts/install-nerd-fonts.sh` (instalada em `/usr/share/fonts/`).
+- **Starship** adicionado como prompt; config em `/etc/starship.toml` com
+  paleta SentinelBR (emerald accent), Powerline-style com Nerd Font glyphs,
+  detecção de git/python/node/rust/go/docker.
+- **zsh** + `zsh-syntax-highlighting` + `zsh-autosuggestions` adicionados;
+  `.zshrc` default em `/etc/skel/` inicializa starship, aliases comuns,
+  histórico compartilhado, completion case-insensitive.
+- **Bash fallback** via `/etc/profile.d/vigiaos-starship.sh` (init starship
+  em bash interativo se o user ainda não migrou para zsh).
+- **Papirus-Dark** setado como `icon-theme` no dconf default.
+- **Monospace font** atualizado para `JetBrainsMono Nerd Font 11` no dconf.
+
 ---
 
 ## 9. Roadmap
@@ -558,16 +651,34 @@ gsettings set org.gnome.desktop.interface monospace-font-name 'JetBrains Mono 11
 ```
 
 ### Tema GTK não aparece em apps Flatpak
-**Causa**: Flatpak sandbox não vê `/etc/xdg/`.
-**Fix opcional**: copiar para `~/.config/gtk-4.0/gtk.css`:
+**Causa**: Flatpak sandbox não vê `~/.config/` do host por padrão.
+**Fix global** (afeta todos os Flatpaks do user):
 ```bash
-mkdir -p ~/.config/gtk-4.0
-cp /etc/xdg/gtk-4.0/gtk.css ~/.config/gtk-4.0/gtk.css
+flatpak override --user --filesystem=xdg-config/gtk-4.0:ro
+flatpak override --user --filesystem=xdg-config/gtk-3.0:ro
 ```
-Ou expor sob demanda por app:
+**Fix por app** (mais conservador):
 ```bash
 flatpak override --user --filesystem=xdg-config/gtk-4.0:ro <app-id>
 ```
+
+### Tema GTK não aparece nem em apps nativos após rebase
+**Causa provável**: o symlink `~/.config/gtk-4.0/gtk.css` não foi criado.
+**Diagnóstico**:
+```bash
+ls -la ~/.config/gtk-4.0/gtk.css        # deve ser symlink para /etc/skel/...
+```
+**Fix manual** (também roda automaticamente no próximo login shell):
+```bash
+/usr/libexec/vigiaos-sync-user-config
+# Logout/login para libadwaita recarregar
+```
+
+### Letter-spacing estranho no terminal (resolvido em 2026-05-21)
+**Histórico**: monospace-font-name apontava para `JetBrainsMono Nerd Font`
+mas o pacote `jetbrains-mono-fonts` instalava só `JetBrains Mono` (sem
+glyphs Nerd). Agora a Nerd Font está instalada via
+`files/scripts/install-nerd-fonts.sh` e o nome bate.
 
 ### Cores do tema parecem não terem aplicado em alguns apps após rebase
 **Causa**: GNOME Shell ou apps já abertos têm CSS em cache.

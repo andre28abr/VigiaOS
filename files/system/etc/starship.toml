@@ -1,0 +1,112 @@
+# VigiaOS — Starship prompt config
+# Paleta SentinelBR (Tailwind zinc + emerald) + Powerline-style com Nerd Font.
+# Requer fonte com glyphs Nerd (instalada via files/scripts/install-nerd-fonts.sh).
+
+add_newline = true
+command_timeout = 1000
+
+format = """
+$username\
+$hostname\
+$directory\
+$git_branch\
+$git_status\
+$cmd_duration\
+$status\
+$line_break\
+$character"""
+
+[character]
+success_symbol = "[❯](bold #34d399)"
+error_symbol   = "[❯](bold #f87171)"
+vimcmd_symbol  = "[❮](bold #fbbf24)"
+
+[username]
+show_always = true
+style_user  = "fg:#fafafa"
+style_root  = "fg:#f87171 bold"
+format      = "[$user]($style)"
+
+[hostname]
+ssh_only = false
+style    = "fg:#71717a"
+format   = "[@$hostname]($style) "
+
+[directory]
+style                = "fg:#34d399 bold"
+truncation_length    = 4
+truncate_to_repo     = false
+truncation_symbol    = "…/"
+format               = "[ $path ]($style)"
+read_only            = " 󰌾"
+read_only_style      = "fg:#fbbf24"
+
+[directory.substitutions]
+"Documents"  = "󰈙"
+"Downloads"  = ""
+"Music"      = ""
+"Pictures"   = ""
+"Dev"        = ""
+"Platform"   = ""
+
+[git_branch]
+symbol = " "
+style  = "fg:#fbbf24"
+format = "[$symbol$branch]($style) "
+
+[git_status]
+style              = "fg:#fbbf24"
+format             = "([$all_status$ahead_behind]($style)) "
+conflicted         = "="
+ahead              = "⇡${count}"
+behind             = "⇣${count}"
+diverged           = "⇕⇡${ahead_count}⇣${behind_count}"
+up_to_date         = ""
+untracked          = "?${count}"
+stashed            = "*"
+modified           = "!${count}"
+staged             = "+${count}"
+renamed            = "»${count}"
+deleted            = "✘${count}"
+
+[cmd_duration]
+min_time          = 2000
+style             = "fg:#71717a"
+format            = "[ $duration]($style)"
+show_milliseconds = false
+
+[status]
+disabled  = false
+symbol    = "✘ "
+format    = "[$symbol$common_meaning$signal_name$maybe_int]($style)"
+style     = "fg:#f87171 bold"
+recognize_signal_code = true
+signal_symbol  = "⚡"
+
+[time]
+disabled = true
+
+[python]
+symbol = " "
+style  = "fg:#34d399"
+format = "[$symbol$pyenv_prefix($version )(\\($virtualenv\\) )]($style)"
+
+[nodejs]
+symbol = " "
+style  = "fg:#34d399"
+format = "[$symbol($version )]($style)"
+
+[rust]
+symbol = " "
+style  = "fg:#fbbf24"
+format = "[$symbol($version )]($style)"
+
+[golang]
+symbol = " "
+style  = "fg:#34d399"
+format = "[$symbol($version )]($style)"
+
+[docker_context]
+symbol = " "
+style  = "fg:#34d399"
+format = "[$symbol$context]($style) "

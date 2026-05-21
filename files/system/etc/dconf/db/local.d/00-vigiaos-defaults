@@ -4,7 +4,8 @@
 [org/gnome/desktop/interface]
 color-scheme='prefer-dark'
 accent-color='green'
-monospace-font-name='JetBrains Mono 11'
+monospace-font-name='JetBrainsMono Nerd Font 11'
+icon-theme='Papirus-Dark'
 
 [org/gnome/desktop/background]
 picture-uri='file:///usr/share/backgrounds/vigiaos/vigiaos-dark.svg'
