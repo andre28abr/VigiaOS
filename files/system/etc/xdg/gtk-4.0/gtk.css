@@ -1,0 +1,86 @@
+/* VigiaOS — overrides de cores libadwaita.
+ * Paleta portada do SentinelBR (Tailwind zinc + emerald).
+ * Afeta Nautilus, Settings, Console, Calendar e todos os apps GNOME nativos.
+ *
+ * Como funciona: libadwaita expõe "named colors" que seus widgets consomem.
+ * Sobrescrever via @define-color cascateia para todos os apps libadwaita,
+ * sem precisar de tema GTK custom (que libadwaita desencoraja).
+ *
+ * Tokens documentados em:
+ * https://gnome.pages.gitlab.gnome.org/libadwaita/doc/main/named-colors.html
+ */
+
+/* ===== Acentos semânticos ===== */
+@define-color accent_color             #34d399;  /* emerald-400 */
+@define-color accent_bg_color          #10b981;  /* emerald-500 */
+@define-color accent_fg_color          #052e16;  /* green-950 (contraste sobre accent_bg) */
+
+@define-color success_color            #34d399;
+@define-color success_bg_color         #10b981;
+@define-color success_fg_color         #052e16;
+
+@define-color warning_color            #fbbf24;  /* amber-400 */
+@define-color warning_bg_color         #f59e0b;
+@define-color warning_fg_color         #422006;
+
+@define-color error_color              #f87171;  /* red-400 */
+@define-color error_bg_color           #dc2626;
+@define-color error_fg_color           #450a0a;
+
+@define-color destructive_color        #f87171;
+@define-color destructive_bg_color     #dc2626;
+@define-color destructive_fg_color     #450a0a;
+
+/* ===== Janela principal (conteúdo dos apps) ===== */
+@define-color window_bg_color          #09090b;  /* zinc-950 */
+@define-color window_fg_color          #fafafa;  /* zinc-50 */
+
+/* ===== Views (listas, text views, ListBox em Settings, file list do Nautilus) ===== */
+@define-color view_bg_color            #0a0a0c;  /* leve diferenciação do window */
+@define-color view_fg_color            #fafafa;
+
+/* ===== Headerbar (titlebar dos apps) ===== */
+@define-color headerbar_bg_color       #09090b;
+@define-color headerbar_fg_color       #fafafa;
+@define-color headerbar_border_color   #27272a;  /* zinc-800 */
+@define-color headerbar_backdrop_color #050507;  /* mais escuro quando sem foco */
+@define-color headerbar_shade_color    rgba(0, 0, 0, 0.36);
+
+/* ===== Sidebar (painel lateral em Nautilus, Settings, etc.) ===== */
+@define-color sidebar_bg_color         #050507;  /* mais profundo que window */
+@define-color sidebar_fg_color         #d4d4d8;  /* zinc-300 */
+@define-color sidebar_backdrop_color   #050507;
+@define-color sidebar_shade_color      rgba(0, 0, 0, 0.36);
+@define-color sidebar_border_color     #18181b;  /* zinc-900 */
+
+@define-color secondary_sidebar_bg_color       #09090b;
+@define-color secondary_sidebar_fg_color       #d4d4d8;
+@define-color secondary_sidebar_backdrop_color #050507;
+@define-color secondary_sidebar_shade_color    rgba(0, 0, 0, 0.36);
+@define-color secondary_sidebar_border_color   #18181b;
+
+/* ===== Cards (cartões em Settings, About, etc.) ===== */
+@define-color card_bg_color            #18181b;  /* zinc-900 */
+@define-color card_fg_color            #fafafa;
+@define-color card_shade_color         rgba(0, 0, 0, 0.36);
+
+/* ===== Dialogs (janelas modais) ===== */
+@define-color dialog_bg_color          #18181b;
+@define-color dialog_fg_color          #fafafa;
+
+/* ===== Popovers (menus dropdown, context menus) ===== */
+@define-color popover_bg_color         #18181b;
+@define-color popover_fg_color         #fafafa;
+@define-color popover_shade_color      rgba(0, 0, 0, 0.36);
+
+/* ===== Thumbnails (preview de arquivos no Nautilus) ===== */
+@define-color thumbnail_bg_color       #18181b;
+@define-color thumbnail_fg_color       #fafafa;
+
+/* ===== Sombras gerais ===== */
+@define-color shade_color              rgba(0, 0, 0, 0.36);
+@define-color scrollbar_outline_color  rgba(255, 255, 255, 0.06);
+
+/* ===== OSD (overlays como volume, brightness, screenshot) ===== */
+@define-color osd_bg_color             #18181b;
+@define-color osd_fg_color             #fafafa;
