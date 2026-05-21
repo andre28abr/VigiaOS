@@ -9,16 +9,26 @@ Fedora Atomic customizada para uso pessoal — foco em **segurança**, **LGPD**,
 
 Em desenvolvimento inicial. O recipe atual instala apenas pacotes mínimos (`micro`, `htop`, `tmux`) e o Flatpak Flatseal para validar o pipeline. Stack de segurança/auditoria e tema entram em iterações seguintes.
 
-## Instalação (rebase a partir de Fedora Silverblue aarch64 limpo)
+## Instalação
 
-Em uma instalação Silverblue aarch64 já existente, rebaseie para a imagem do VigiaOS:
+Em uma instalação **Fedora Silverblue aarch64 limpa** (instale em VM/hardware
+via [getfedora.org](https://fedoraproject.org/atomic-desktops/silverblue/)),
+rode o instalador one-liner:
 
+```bash
+curl -fsSL https://raw.githubusercontent.com/andre28abr/VigiaOS/main/install.sh | bash
+```
+
+O script valida o ambiente, rebasa para `ghcr.io/andre28abr/vigiaos:latest` e
+pede para reiniciar. Atualizações futuras são automáticas via `rpm-ostree upgrade`.
+
+**Alternativa manual:**
 ```bash
 rpm-ostree rebase ostree-unverified-registry:ghcr.io/andre28abr/vigiaos:latest
 systemctl reboot
 ```
 
-A partir daí, atualizações são automáticas via `rpm-ostree upgrade`.
+> Para detalhes de arquitetura, build, tema e operações, ver [DEVELOPMENT.md](DEVELOPMENT.md).
 
 ## Estrutura do repositório
 
