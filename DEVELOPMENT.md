@@ -195,6 +195,31 @@ algum, edita o script local ou usa `rpm-ostree uninstall` depois.
 
 > Ordem cronológica. Adicionar entrada a cada milestone.
 
+### 2026-05-22 — Activity Log v0.8 (empacotamento RPM via COPR)
+- Spec file `packaging/vigia-activity-log.spec` para build via COPR
+- `packaging/README.md` com instrucoes:
+  * Para usuario final: como adicionar COPR repo + `rpm-ostree install`
+  * Para mantenedor: setup do projeto COPR, bump de versao, submit
+- `packaging/Makefile` com targets para build local (`make srpm`, `make rpm`)
+- LICENSE copiada para `tools/activity-log/LICENSE` (para o RPM)
+- Source0 do spec aponta para tarball gerado pelo tag GitHub:
+  `https://github.com/andre28abr/VigiaOS/archive/v<version>.tar.gz`
+- Cargo.toml continua em 0.7.0 (binario nao mudou — so adicionamos
+  arquivos de packaging). Proximo release sera 0.7.0-1 via COPR.
+
+Pasos para o autor publicar oficialmente (proximas acoes manuais):
+1. `git tag v0.7.0 && git push origin v0.7.0` (cria tarball no GitHub)
+2. Criar conta em copr.fedorainfracloud.org com user `andre28abr`
+3. Seguir `packaging/README.md` para configurar o projeto COPR e
+   habilitar webhook de SCM para rebuild automatico em push
+
+Apos isso, usuarios poderao instalar via:
+```bash
+sudo curl -L -o /etc/yum.repos.d/_copr_andre28abr-vigia.repo \
+    https://copr.fedorainfracloud.org/coprs/andre28abr/vigia/repo/fedora-44/...
+rpm-ostree install vigia-activity-log
+```
+
 ### 2026-05-22 — Activity Log v0.7 (live tail mode)
 - Novo modulo live.rs:
   - struct LiveSources com paths opcionais por source e last_seen_ts por source
