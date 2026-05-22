@@ -6,28 +6,43 @@
 
 ## Estado
 
-🟢 **v0.2** — 10 toggles user-scope agrupados em 6 categorias.
+🟢 **v0.3** — 13 toggles em 8 categorias (10 user-scope + 3 system-scope via pkexec).
 
-| Toggle | Categoria | Mecanismo |
-|---|---|---|
-| Serviços de localização | Localização | dconf `org.gnome.system.location enabled` |
-| Bloquear relatórios técnicos | Telemetria | dconf `report-technical-problems` (invertido) |
-| Não lembrar arquivos recentes | Histórico | dconf `remember-recent-files` (invertido) |
-| Não lembrar uso de aplicativos | Histórico | dconf `remember-app-usage` (invertido) |
-| Esconder identidade | Histórico | dconf `hide-identity` |
-| Bloquear tela automaticamente | Lock Screen | dconf `screensaver lock-enabled` |
-| Esconder prévia notif. lock | Lock Screen | dconf `notifications show-in-lock-screen` (invertido) |
-| Esvaziar lixeira automaticamente | Limpeza Automática | dconf `remove-old-trash-files` |
-| Limpar temp files automaticamente | Limpeza Automática | dconf `remove-old-temp-files` |
-| Bluetooth | Dispositivos | `bluetoothctl power on/off` |
+| Toggle | Categoria | Mecanismo | Escopo |
+|---|---|---|---|
+| Serviços de localização | Localização | dconf | user |
+| Bloquear relatórios técnicos | Telemetria | dconf (invertido) | user |
+| Não lembrar arquivos recentes | Histórico | dconf (invertido) | user |
+| Não lembrar uso de aplicativos | Histórico | dconf (invertido) | user |
+| Esconder identidade | Histórico | dconf | user |
+| Bloquear tela automaticamente | Lock Screen | dconf | user |
+| Esconder prévia notif. lock | Lock Screen | dconf (invertido) | user |
+| Esvaziar lixeira automaticamente | Limpeza Automática | dconf | user |
+| Limpar temp files automaticamente | Limpeza Automática | dconf | user |
+| **Firewall (firewalld)** | **Rede** | `pkexec systemctl enable/disable --now` | **system** |
+| **Servidor SSH (sshd)** | **Rede** | `pkexec systemctl enable/disable --now` | **system** |
+| **Serviço Tor** | **Anonimização** | `pkexec systemctl enable/disable --now` | **system** |
+| Bluetooth | Dispositivos | `bluetoothctl power on/off` | user |
 
-### Helper `dconf_toggle()`
+### Helpers em `base.py`
 
-A maioria dos toggles é mapeamento direto para uma chave dconf booleana. O
-helper `base.dconf_toggle()` cuida da boilerplate de `get/set/available`,
-incluindo `invert=True` quando a semântica privacidade-vs-dconf é oposta.
+- `dconf_toggle()` — mapeia para chave dconf booleana. ~6 linhas por toggle.
+- `systemd_unit_toggle()` — read via `systemctl is-active`, write via
+  `pkexec systemctl enable/disable --now`. polkit dialog do GNOME pede
+  senha admin no momento do toggle.
 
-Resultado: cada toggle dconf vira ~6 linhas de código (vs ~20 sem helper).
+### Toggles system-scope (v0.3): comportamento
+
+Quando você flipa um toggle de **Rede** ou **Anonimização**:
+1. Diálogo polkit do GNOME abre pedindo senha admin
+2. Se autenticar: `systemctl enable/disable --now <unit>` roda como root
+3. Estado refletido: unit start/stop + enable/disable (persiste no boot)
+4. Se cancelar: switch volta ao estado anterior, dialog de erro mostra mensagem
+
+**Limitações v0.3**:
+- Cada operação pede senha (polkit default não tem cache via pkexec direto)
+- v0.4 vai mover para D-Bus service + polkit policy com `auth_admin_keep` (cache ~5min)
+- DNS over TLS toggle fica para v0.4 (mais complexo, precisa editar arquivo de config + restart resolved)
 
 ## Setup na VM (Silverblue)
 
