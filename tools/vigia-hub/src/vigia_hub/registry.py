@@ -83,4 +83,14 @@ TOOLS: list[ToolEntry] = [
         needs_terminal=False,
         available_fn=lambda: shutil.which("vigia-selinux") is not None,
     ),
+    ToolEntry(
+        id="firewall-gui",
+        name="Firewall Manager",
+        description="Gerenciador GTK4 para firewalld: zonas, services e portas. "
+        "Substitui o firewall-config antigo.",
+        icon_path=_TOOLS_DIR / "firewall-gui" / "data" / "br.com.vigia.FirewallGui.svg",
+        exec_cmd=["vigia-firewall"],
+        needs_terminal=False,
+        available_fn=lambda: shutil.which("vigia-firewall") is not None,
+    ),
 ]

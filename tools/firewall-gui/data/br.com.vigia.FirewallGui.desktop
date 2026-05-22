@@ -1,0 +1,15 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Vigia Firewall Manager
+Name[pt_BR]=Vigia - Gerenciador de Firewall
+GenericName=Firewall Configuration
+GenericName[pt_BR]=Configuracao de Firewall
+Comment=Modern GTK4 manager for firewalld zones, services and ports
+Comment[pt_BR]=Gerenciador GTK4 do firewalld (zonas, services, portas)
+Icon=br.com.vigia.FirewallGui
+Exec=vigia-firewall
+Terminal=false
+Categories=Settings;System;Security;Network;
+Keywords=firewall;firewalld;security;vigia;zone;port;
+StartupNotify=true
