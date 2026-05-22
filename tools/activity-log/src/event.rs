@@ -81,32 +81,51 @@ impl Event {
 
 fn audit_severity(e: &AuditEvent) -> Severity {
     match e.primary_type() {
-        "AVC" => {
-            // permissive=0 = bloqueio real (suspeito). =1 = so log (interessante).
-            match e.field("permissive") {
-                Some("0") => Severity::Suspicious,
-                _ => Severity::Interesting,
-            }
-        }
-        "USER_AUTH" => match e.field("res") {
-            Some("success") => Severity::Routine,
-            _ => Severity::Suspicious,
+        // SELinux / anomalias
+        "AVC" => match e.field("permissive") {
+            Some("0") => Severity::Suspicious,
+            _ => Severity::Interesting,
         },
-        "USER_LOGIN" => match e.field("res") {
-            Some("success") => Severity::Routine,
+        "USER_SELINUX_ERR" => Severity::Suspicious,
+        "ANOM_PROMISCUOUS" => Severity::Suspicious,
+        "ANOM_ABEND" => Severity::Interesting,
+
+        // Autenticacao / sessao — sucesso eh rotineiro, falha eh suspeito
+        "USER_AUTH" | "USER_LOGIN" | "LOGIN" => match e.field("res") {
+            Some("success") | Some("1") => Severity::Routine,
             _ => Severity::Suspicious,
         },
         "USER_ACCT" => match e.field("res") {
             Some("success") => Severity::Routine,
             _ => Severity::Interesting,
         },
-        "ANOM_PROMISCUOUS" => Severity::Suspicious,
-        "ANOM_ABEND" => Severity::Interesting,
+        // sudo / execucao de comando como root — Interesting mesmo no sucesso
+        "USER_CMD" => match e.field("res") {
+            Some("success") => Severity::Interesting,
+            _ => Severity::Suspicious,
+        },
+        "USER_START" | "USER_END" | "USER_TTY" | "USER_ROLE_CHANGE" => Severity::Routine,
+
+        // Credenciais (PAM): success eh rotineiro
+        "CRED_ACQ" | "CRED_DISP" | "CRED_REFR" => match e.field("res") {
+            Some("success") => Severity::Routine,
+            _ => Severity::Interesting,
+        },
+
+        // Servicos systemd
+        "SERVICE_START" | "SERVICE_STOP" => match e.field("res") {
+            Some("failed") => Severity::Interesting,
+            _ => Severity::Routine,
+        },
+
+        // Kernel
+        "BPF" => Severity::Routine,
         "SYSCALL" => match e.field("success") {
             Some("yes") => Severity::Routine,
             Some(_) => Severity::Interesting,
             None => Severity::Routine,
         },
+
         _ => Severity::Routine,
     }
 }
