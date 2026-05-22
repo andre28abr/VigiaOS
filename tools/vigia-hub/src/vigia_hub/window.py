@@ -82,8 +82,12 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         row.set_title(tool.name)
         row.set_subtitle(tool.description)
 
-        # Icon
-        icon = Gtk.Image.new_from_icon_name(tool.icon)
+        # Icon — carrega direto do arquivo SVG (caminho absoluto no repo).
+        # Evita dependencia do icon cache do sistema.
+        if tool.icon_path.is_file():
+            icon = Gtk.Image.new_from_file(str(tool.icon_path))
+        else:
+            icon = Gtk.Image.new_from_icon_name("application-x-executable-symbolic")
         icon.set_pixel_size(48)
         row.add_prefix(icon)
 
