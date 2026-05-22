@@ -93,4 +93,14 @@ TOOLS: list[ToolEntry] = [
         needs_terminal=False,
         available_fn=lambda: shutil.which("vigia-firewall") is not None,
     ),
+    ToolEntry(
+        id="netmon-gui",
+        name="Network Monitor",
+        description="Visualizador em tempo real de conexoes TCP/UDP. Lista quem "
+        "esta falando com quem, com auto-refresh e filtros.",
+        icon_path=_TOOLS_DIR / "netmon-gui" / "data" / "br.com.vigia.NetMon.svg",
+        exec_cmd=["vigia-netmon"],
+        needs_terminal=False,
+        available_fn=lambda: shutil.which("vigia-netmon") is not None,
+    ),
 ]
