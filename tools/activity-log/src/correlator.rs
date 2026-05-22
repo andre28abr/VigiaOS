@@ -21,18 +21,9 @@ use std::collections::HashMap;
 use chrono::{DateTime, Duration, Utc};
 use serde::Serialize;
 
-use crate::event::Event;
+use crate::event::{Event, Severity};
 use crate::fail2ban::Action as F2bAction;
 use crate::journal::{JournalEntry, Priority};
-
-#[derive(Debug, Clone, Copy, Serialize, PartialEq, Eq)]
-#[serde(rename_all = "lowercase")]
-#[allow(dead_code)] // Routine reservado para uso futuro (classificador v0.6)
-pub enum Severity {
-    Routine,
-    Interesting,
-    Suspicious,
-}
 
 #[derive(Debug, Clone, Serialize)]
 pub struct Correlation {

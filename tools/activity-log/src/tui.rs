@@ -38,8 +38,8 @@ use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Borders, List, ListItem, ListState, Paragraph, Wrap};
 use ratatui::Terminal;
 
-use crate::correlator::{Correlation, Severity};
-use crate::event::Event;
+use crate::correlator::Correlation;
+use crate::event::{Event, Severity};
 use crate::narrator::narrate;
 
 // Paleta VigiaOS (Tailwind zinc + emerald)
@@ -93,6 +93,8 @@ struct App {
     mode: Mode,
     filter: Option<String>,
     search: String,
+    /// Filtro de severidade minima. None = mostra todos.
+    min_severity: Option<Severity>,
     /// Mostra painel de correlations se houver alguma.
     show_correlations: bool,
 }
@@ -113,6 +115,7 @@ impl App {
             mode: Mode::Normal,
             filter: None,
             search: String::new(),
+            min_severity: None,
         }
     }
 
@@ -125,6 +128,11 @@ impl App {
             .filter(|(_, ev)| {
                 if let Some(t) = &self.filter {
                     if &ev.primary_type() != t {
+                        return false;
+                    }
+                }
+                if let Some(min) = self.min_severity {
+                    if ev.severity() < min {
                         return false;
                     }
                 }
@@ -168,6 +176,18 @@ impl App {
     fn clear_filters(&mut self) {
         self.filter = None;
         self.search.clear();
+        self.min_severity = None;
+        self.recompute_visible();
+    }
+
+    /// Cicla: None -> Interesting (interessante+suspeito) -> Suspicious -> None.
+    fn cycle_severity(&mut self) {
+        self.min_severity = match self.min_severity {
+            None => Some(Severity::Interesting),
+            Some(Severity::Interesting) => Some(Severity::Suspicious),
+            Some(Severity::Suspicious) => None,
+            Some(Severity::Routine) => Some(Severity::Interesting), // nunca chega aqui pelo ciclo, mas seguro
+        };
         self.recompute_visible();
     }
 
@@ -226,6 +246,7 @@ fn main_loop(terminal: &mut Terminal<Backend>, mut app: App) -> Result<()> {
                     KeyCode::Char('f') => app.cycle_filter(),
                     KeyCode::Char('/') => app.mode = Mode::Searching,
                     KeyCode::Char('c') => app.show_correlations = !app.show_correlations,
+                    KeyCode::Char('s') => app.cycle_severity(),
                     KeyCode::Down | KeyCode::Char('j') => app.move_selection(1),
                     KeyCode::Up | KeyCode::Char('k') => app.move_selection(-1),
                     KeyCode::PageDown => app.move_selection(10),
@@ -341,12 +362,17 @@ fn draw(f: &mut ratatui::Frame, app: &mut App) {
         })
         .collect();
 
-    let list_title = match (&app.filter, app.search.is_empty()) {
-        (None, true) => " eventos ".to_string(),
-        (Some(t), true) => format!(" eventos · filter={} ", t),
-        (None, false) => format!(" eventos · search=\"{}\" ", app.search),
-        (Some(t), false) => format!(" eventos · filter={} search=\"{}\" ", t, app.search),
-    };
+    let mut title_parts: Vec<String> = vec!["eventos".into()];
+    if let Some(t) = &app.filter {
+        title_parts.push(format!("filter={t}"));
+    }
+    if !app.search.is_empty() {
+        title_parts.push(format!("search=\"{}\"", app.search));
+    }
+    if let Some(s) = app.min_severity {
+        title_parts.push(format!("min-sev={}", s.as_str()));
+    }
+    let list_title = format!(" {} ", title_parts.join(" · "));
 
     let list = List::new(items)
         .block(
@@ -392,11 +418,13 @@ fn draw(f: &mut ratatui::Frame, app: &mut App) {
             Span::styled(" ↑↓jk ", Style::default().fg(COLOR_ACCENT)),
             Span::styled("nav  ", Style::default().fg(COLOR_DIM)),
             Span::styled("f ", Style::default().fg(COLOR_ACCENT)),
-            Span::styled("filter  ", Style::default().fg(COLOR_DIM)),
+            Span::styled("type  ", Style::default().fg(COLOR_DIM)),
+            Span::styled("s ", Style::default().fg(COLOR_ACCENT)),
+            Span::styled("sev  ", Style::default().fg(COLOR_DIM)),
             Span::styled("/ ", Style::default().fg(COLOR_ACCENT)),
             Span::styled("search  ", Style::default().fg(COLOR_DIM)),
             Span::styled("c ", Style::default().fg(COLOR_ACCENT)),
-            Span::styled("toggle correlations  ", Style::default().fg(COLOR_DIM)),
+            Span::styled("corr  ", Style::default().fg(COLOR_DIM)),
             Span::styled("Esc ", Style::default().fg(COLOR_ACCENT)),
             Span::styled("clear  ", Style::default().fg(COLOR_DIM)),
             Span::styled("q ", Style::default().fg(COLOR_ACCENT)),
@@ -439,8 +467,16 @@ fn render_event_row<'a>(e: &'a Event, search: &str) -> ListItem<'a> {
         other => other,
     };
 
+    let (sev_glyph, sev_color) = match e.severity() {
+        Severity::Suspicious => ("●", COLOR_ERROR),
+        Severity::Interesting => ("●", COLOR_WARN),
+        Severity::Routine => ("·", COLOR_DIM),
+    };
+
     let mut spans = vec![
         Span::styled(ts, Style::default().fg(COLOR_DIM)),
+        Span::raw(" "),
+        Span::styled(sev_glyph, Style::default().fg(sev_color)),
         Span::raw(" "),
         Span::styled(source_tag, Style::default().fg(COLOR_FG_DIM)),
         Span::raw(" "),

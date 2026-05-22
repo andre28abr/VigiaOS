@@ -195,6 +195,42 @@ algum, edita o script local ou usa `rpm-ostree uninstall` depois.
 
 > Ordem cronológica. Adicionar entrada a cada milestone.
 
+### 2026-05-22 — Activity Log v0.6 (classificador per-evento)
+- Severity movida de correlator.rs para event.rs (compartilhada entre
+  eventos individuais e correlations). Derives: PartialOrd + Ord para
+  permitir comparacoes (Suspicious > Interesting > Routine).
+- Novo metodo `Event::severity()` que dispatcheia para audit/journal/fail2ban.
+- Regras (em event.rs):
+  - **audit AVC**: permissive=0 -> Suspicious, =1 -> Interesting
+  - **audit USER_AUTH/USER_LOGIN**: success -> Routine, else -> Suspicious
+  - **audit ANOM_PROMISCUOUS** -> Suspicious; **ANOM_ABEND** -> Interesting
+  - **audit SYSCALL**: success=yes -> Routine, else -> Interesting
+  - **journal**: EMERG/ALERT/CRIT -> Suspicious; ERR/WARNING -> Interesting;
+    NOTICE/INFO/DEBUG -> Routine
+  - **fail2ban**: Ban -> Suspicious; Found -> Interesting; resto -> Routine
+- TUI:
+  - Cada linha ganha badge visual ● (vermelho/ambar/dim conforme severity)
+    posicionado entre timestamp e source tag
+  - Novo atalho `s` cycle min-severity: None -> Interesting -> Suspicious -> None
+  - Title da lista mostra `min-sev=...` quando ativo
+  - Hint do status bar atualizada
+- CLI:
+  - Novo flag `--min-severity routine|interesting|suspicious` para filtrar via
+    linha de comando antes de aplicar --limit
+- 6 novos testes em event.rs: ordering, AVC denied/permissive, USER_AUTH
+  success/failure, SYSCALL success.
+- Total: 27 tests passando.
+
+Demo do ganho de sinal/ruido no fixture (audit + journal + fail2ban):
+  --min-severity                 -> 18 eventos
+  --min-severity interesting     -> 11 eventos (remove sudo OK, SSH publickey
+                                                 OK, time change, syscall ok, etc.)
+  --min-severity suspicious      ->  4 eventos (so SELinux block, Bans, OOM)
+
+Em audit.log real do Silverblue, onde SYSCALL domina, a reducao deve
+ser ~98%, transformando milhares de linhas em punhado de eventos
+realmente importantes.
+
 ### 2026-05-22 — Activity Log v0.5 (correlator cross-source)
 - Novo modulo `correlator.rs`:
   - struct `Correlation` { kind, timestamp, end, severity, summary, contributing }
