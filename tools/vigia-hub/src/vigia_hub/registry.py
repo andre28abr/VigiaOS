@@ -73,4 +73,14 @@ TOOLS: list[ToolEntry] = [
         needs_terminal=False,
         available_fn=lambda: shutil.which("vigia-privacy") is not None,
     ),
+    ToolEntry(
+        id="selinux-gui",
+        name="SELinux Manager",
+        description="Gerenciador GTK4 para SELinux: muda modo "
+        "(Enforcing/Permissive) e gerencia booleans com search.",
+        icon_path=_TOOLS_DIR / "selinux-gui" / "data" / "br.com.vigia.SelinuxGui.svg",
+        exec_cmd=["vigia-selinux"],
+        needs_terminal=False,
+        available_fn=lambda: shutil.which("vigia-selinux") is not None,
+    ),
 ]

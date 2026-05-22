@@ -1,0 +1,15 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Vigia SELinux Manager
+Name[pt_BR]=Vigia - Gerenciador SELinux
+GenericName=SELinux Management Tool
+GenericName[pt_BR]=Ferramenta de Gerenciamento SELinux
+Comment=Modern GTK4 manager for SELinux mode and booleans
+Comment[pt_BR]=Gerenciador GTK4 moderno para modo e booleans do SELinux
+Icon=br.com.vigia.SelinuxGui
+Exec=vigia-selinux
+Terminal=false
+Categories=Settings;System;Security;
+Keywords=selinux;security;vigia;policy;booleans;
+StartupNotify=true

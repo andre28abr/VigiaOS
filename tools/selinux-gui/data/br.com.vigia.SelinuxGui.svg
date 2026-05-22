@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#18181b"/>
+      <stop offset="100%" stop-color="#09090b"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="45%" r="40%">
+      <stop offset="0%" stop-color="#34d399" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#34d399" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="256" height="256" rx="48" fill="url(#bg)"/>
+  <rect width="256" height="256" rx="48" fill="url(#glow)"/>
+
+  <!-- Shield outline (motivo SELinux: shield) -->
+  <g transform="translate(128 132)">
+    <!-- Shield body -->
+    <path d="M 0 -70
+             L -60 -50
+             L -60 10
+             Q -60 50, 0 75
+             Q 60 50, 60 10
+             L 60 -50
+             Z"
+          fill="#0a0a0c" stroke="#34d399" stroke-width="5" stroke-linejoin="round"/>
+
+    <!-- Letras SE em emerald -->
+    <text y="10" text-anchor="middle"
+          font-family="JetBrains Mono, ui-monospace, monospace"
+          font-weight="900" font-size="44" letter-spacing="2"
+          fill="#34d399">SE</text>
+  </g>
+
+  <!-- Wordmark -->
+  <g transform="translate(128 230)" text-anchor="middle"
+     font-family="JetBrains Mono, ui-monospace, monospace"
+     font-weight="700" font-size="16" letter-spacing="6"
+     fill="#fafafa" opacity="0.9">
+    <text>VIGIA<tspan fill="#34d399">·</tspan>SELINUX</text>
+  </g>
+</svg>
