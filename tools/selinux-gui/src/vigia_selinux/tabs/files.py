@@ -10,15 +10,18 @@ gi.require_version("Adw", "1")
 from gi.repository import Adw, Gtk  # noqa: E402
 
 from .. import backend
-from ._helpers import show_error
+from ._helpers import make_clamp, show_error
 
 
 class FilesTab(Gtk.Box):
     def __init__(self) -> None:
-        super().__init__(
+        super().__init__(orientation=Gtk.Orientation.VERTICAL)
+
+        inner = Gtk.Box(
             orientation=Gtk.Orientation.VERTICAL, spacing=12,
             margin_top=12, margin_bottom=12, margin_start=12, margin_end=12,
         )
+        self.append(make_clamp(inner))
 
         # Cabecalho explicativo
         intro = Adw.PreferencesGroup()
@@ -28,7 +31,7 @@ class FilesTab(Gtk.Box):
             "as labels podem ficar erradas e o app que usa esses arquivos falha. "
             "Esta ferramenta restaura as labels conforme as regras de file context."
         )
-        self.append(intro)
+        inner.append(intro)
 
         # Input + botoes
         form_group = Adw.PreferencesGroup()
@@ -51,7 +54,7 @@ class FilesTab(Gtk.Box):
         self._verbose_row.set_active(True)
         form_group.add(self._verbose_row)
 
-        self.append(form_group)
+        inner.append(form_group)
 
         # Botoes
         btn_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
@@ -60,7 +63,7 @@ class FilesTab(Gtk.Box):
         self._restore_btn.add_css_class("suggested-action")
         self._restore_btn.connect("clicked", lambda _b: self._do_restore())
         btn_box.append(self._restore_btn)
-        self.append(btn_box)
+        inner.append(btn_box)
 
         # Output area
         out_group = Adw.PreferencesGroup()
@@ -80,7 +83,7 @@ class FilesTab(Gtk.Box):
         out_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         out_box.append(out_scroll)
         out_group.add(out_box)
-        self.append(out_group)
+        inner.append(out_group)
 
     def _do_restore(self) -> None:
         path = self._path_row.get_text().strip()

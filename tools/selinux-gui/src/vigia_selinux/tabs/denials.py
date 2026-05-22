@@ -10,7 +10,7 @@ gi.require_version("Adw", "1")
 from gi.repository import Adw, Gtk  # noqa: E402
 
 from .. import backend
-from ._helpers import show_error
+from ._helpers import make_clamp, show_error
 
 
 # Mapeamento label -> argumento do ausearch
@@ -24,10 +24,13 @@ SINCE_OPTIONS = [
 
 class DenialsTab(Gtk.Box):
     def __init__(self) -> None:
-        super().__init__(
+        super().__init__(orientation=Gtk.Orientation.VERTICAL)
+
+        inner = Gtk.Box(
             orientation=Gtk.Orientation.VERTICAL, spacing=8,
             margin_top=12, margin_bottom=12, margin_start=12, margin_end=12,
         )
+        self.append(make_clamp(inner))
 
         # Barra superior: combo de periodo + botao carregar
         toolbar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
@@ -53,7 +56,7 @@ class DenialsTab(Gtk.Box):
         )
         info.set_valign(Gtk.Align.CENTER)
         toolbar.append(info)
-        self.append(toolbar)
+        inner.append(toolbar)
 
         # Lista de denials
         scrolled = Gtk.ScrolledWindow()
@@ -62,7 +65,7 @@ class DenialsTab(Gtk.Box):
         self._list.set_selection_mode(Gtk.SelectionMode.NONE)
         self._list.add_css_class("boxed-list")
         scrolled.set_child(self._list)
-        self.append(scrolled)
+        inner.append(scrolled)
 
         # Status (vazio inicialmente — usuario precisa clicar)
         self._render_empty("Clique 'Carregar denials' para buscar bloqueios recentes.")

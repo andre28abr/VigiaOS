@@ -10,14 +10,18 @@ gi.require_version("Adw", "1")
 from gi.repository import Adw, Gtk  # noqa: E402
 
 from .. import backend
+from ._helpers import make_clamp
 
 
 class NetworkTab(Gtk.Box):
     def __init__(self) -> None:
-        super().__init__(
+        super().__init__(orientation=Gtk.Orientation.VERTICAL)
+
+        inner = Gtk.Box(
             orientation=Gtk.Orientation.VERTICAL, spacing=8,
             margin_top=12, margin_bottom=12, margin_start=12, margin_end=12,
         )
+        self.append(make_clamp(inner))
 
         intro = Gtk.Label()
         intro.set_markup(
@@ -27,13 +31,13 @@ class NetworkTab(Gtk.Box):
         )
         intro.set_wrap(True)
         intro.set_xalign(0)
-        self.append(intro)
+        inner.append(intro)
 
         # Search
         self._search = Gtk.SearchEntry()
         self._search.set_placeholder_text("Filtrar por contexto ou porta (ex: http, 80, ssh)")
         self._search.connect("search-changed", lambda _e: self._list.invalidate_filter())
-        self.append(self._search)
+        inner.append(self._search)
 
         # Lista
         scrolled = Gtk.ScrolledWindow()
@@ -43,13 +47,13 @@ class NetworkTab(Gtk.Box):
         self._list.add_css_class("boxed-list")
         self._list.set_filter_func(self._filter)
         scrolled.set_child(self._list)
-        self.append(scrolled)
+        inner.append(scrolled)
 
         # Refresh button
         btn = Gtk.Button(label="Recarregar")
         btn.set_halign(Gtk.Align.END)
         btn.connect("clicked", lambda _b: self._refresh())
-        self.append(btn)
+        inner.append(btn)
 
         self._row_search_text: dict[Adw.ActionRow, str] = {}
         self._refresh()
