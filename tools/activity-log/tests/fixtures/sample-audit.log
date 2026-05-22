@@ -1,0 +1,7 @@
+type=SYSCALL msg=audit(1748000000.123:1001): arch=c00000b7 syscall=257 success=yes exit=3 a0=ffffff9c a1=7f8c0000 a2=80000 a3=0 items=1 ppid=1 pid=4567 auid=1000 uid=1000 gid=1000 euid=1000 suid=1000 fsuid=1000 egid=1000 sgid=1000 fsgid=1000 tty=pts0 ses=1 comm="cat" exe="/usr/bin/cat" subj=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 key=(null)
+type=PATH msg=audit(1748000000.123:1001): item=0 name="/etc/passwd" inode=131073 dev=fd:00 mode=0100644 ouid=0 ogid=0 rdev=00:00 obj=system_u:object_r:passwd_file_t:s0 nametype=NORMAL
+type=PROCTITLE msg=audit(1748000000.123:1001): proctitle="cat /etc/passwd"
+type=USER_AUTH msg=audit(1748000005.000:1002): pid=1234 uid=0 auid=1000 ses=1 subj=system_u:system_r:sudo_t:s0 msg='op=PAM:authentication grantors=pam_unix acct="andre" exe="/usr/bin/sudo" hostname=fedora addr=? terminal=/dev/pts/0 res=success'
+type=AVC msg=audit(1748000010.500:1003): avc:  denied  { write } for  pid=2345 comm="httpd" name="uploads" dev="dm-0" ino=999 scontext=system_u:system_r:httpd_t:s0 tcontext=unconfined_u:object_r:default_t:s0 tclass=dir permissive=0
+type=USER_LOGIN msg=audit(1748000020.000:1004): pid=3456 uid=0 auid=1000 ses=2 subj=system_u:system_r:login_t:s0 msg='op=login acct="andre" exe="/usr/sbin/sshd" hostname=192.0.2.42 addr=192.0.2.42 terminal=ssh res=success'
+type=ANOM_ABEND msg=audit(1748000030.000:1005): auid=1000 uid=1000 gid=1000 ses=1 subj=unconfined_u:unconfined_r:unconfined_t:s0 pid=7890 comm="firefox" exe="/usr/bin/firefox" sig=11

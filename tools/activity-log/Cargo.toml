@@ -1,0 +1,30 @@
+[package]
+name        = "vigia-activity-log"
+version     = "0.1.0"
+edition     = "2021"
+description = "Parseador de logs do Linux com narrativa human-readable"
+license     = "Apache-2.0"
+repository  = "https://github.com/andre28abr/VigiaOS"
+authors     = ["André Augusto Azarias de Souza"]
+rust-version = "1.75"
+
+[[bin]]
+name = "vigia-log"
+path = "src/main.rs"
+
+[dependencies]
+anyhow      = "1"
+chrono      = { version = "0.4", default-features = false, features = ["clock", "serde"] }
+clap        = { version = "4", features = ["derive"] }
+crossterm   = "0.28"
+ratatui     = "0.29"
+serde       = { version = "1", features = ["derive"] }
+serde_json  = "1"
+
+[dev-dependencies]
+pretty_assertions = "1"
+
+[profile.release]
+lto       = "thin"
+codegen-units = 1
+strip     = true
