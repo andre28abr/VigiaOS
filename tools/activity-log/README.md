@@ -51,18 +51,36 @@ vigia-log --limit 50
 
 ## Atalhos da TUI
 
+**Modo normal:**
+
 | Tecla | Ação |
 |---|---|
 | `↑` / `k` | Sobe um evento |
 | `↓` / `j` | Desce um evento |
 | `PageUp` / `PageDown` | Pula 10 |
 | `Home` / `End` | Primeiro / último |
-| `q` / `Esc` | Sai |
+| `f` | Cycle filter por tipo (AVC → USER_AUTH → ... → None) |
+| `/` | Entra em modo de busca |
+| `Esc` | Limpa filtros e busca |
+| `q` | Sai |
+
+**Modo busca (após `/`):**
+
+| Tecla | Ação |
+|---|---|
+| (caracteres) | Adiciona à query — filtra a lista em tempo real |
+| `Backspace` | Apaga último caractere |
+| `↑↓` | Navega a lista filtrada |
+| `Enter` | Confirma busca (volta ao modo normal, mantém filtro) |
+| `Esc` | Cancela (limpa busca) |
+
+A query de busca é case-insensitive e aplica em cima da narrativa completa
+(timestamp + tipo + texto). Matches são destacados em verde esmeralda na lista.
 
 ## Roadmap
 
-- v0.1 (atual): parser + narrator + TUI básico para audit.log
-- v0.2: filtros (por tipo, por usuário, por processo); search em-tela
+- ✅ v0.1: parser + narrator + TUI básico para audit.log
+- ✅ v0.2: filtros (por tipo, cycle com `f`); search incremental (`/`); highlight de matches
 - v0.3: adicionar source `journald` (systemd journal)
 - v0.4: adicionar source `fail2ban`
 - v0.5: correlator (junta eventos relacionados em "narrativas")
