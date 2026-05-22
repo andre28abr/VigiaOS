@@ -23,7 +23,8 @@ do sistema-base sem complicação.
 | **[Vigia Hub](tools/vigia-hub/)** | 🟡 v0.1 MVP | Launcher mestre da suite — 1 ícone no GNOME que lista e abre todas as ferramentas. Python + GTK4. |
 | **[Vigia Activity Log](tools/activity-log/)** | 🟢 v0.7 funcional | Parser de audit + journald + fail2ban com narrativa human-readable, correlations cross-source, classificador de severidade, live tail mode |
 | **[Vigia Privacy Controls](tools/privacy-controls/)** | 🟢 v0.3 funcional | App GTK4 com 13 toggles (10 user-scope dconf + 3 system-scope via pkexec: firewall, SSH, Tor). Python + PyGObject + libadwaita. |
-| **[Vigia SELinux GUI](tools/selinux-gui/)** | 🟡 v0.1 MVP | Substituto moderno do system-config-selinux: status + toggle Enforcing/Permissive + lista pesquisável de booleans. Python + GTK4. |
+| **[Vigia SELinux GUI](tools/selinux-gui/)** | 🟢 v0.2 funcional | 6 tabs: Status (com persistent mode), Booleans (pt-BR), Denials+audit2allow, Files+restorecon, Network ports, Processes |
+| **[Vigia Firewall GUI](tools/firewall-gui/)** | 🟡 v0.1 MVP | Gerenciador GTK4 de firewalld: status, zona padrão, edição de services/ports por zona. |
 | Vigia Control Center | ⚪ Futuro | App GTK4 central — tabs de ferramentas, privacidade, SELinux, logs |
 | SELinux GUI moderno | ⚪ Futuro | Substituto de `system-config-selinux` em GTK4 |
 | Tema VigiaOS (opcional) | ⚪ Futuro | Script aplicador do tema zinc + emerald (do app SentinelBR) |
