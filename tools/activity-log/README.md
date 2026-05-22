@@ -1,67 +1,94 @@
 # Vigia Activity Log
 
-> Parseador de logs do sistema com narrativa human-readable.
+> Parseador de logs do Linux com narrativa human-readable.
 > Converte ruído de `auditd` / `journald` / `fail2ban` em frases que
 > dizem **o que aconteceu**, **quem fez**, **quando** e **por quê é notável**.
 
 ## Estado
 
-🔴 **Não implementado** — apenas design.
+🟢 **MVP em Rust + Ratatui**, primeira fonte: `audit.log`.
 
-## Problema
+- Parser de linhas (`type=X msg=audit(epoch:id): k=v ...`)
+- Agrupamento de records por audit_id em "eventos"
+- Narrator em português para os tipos mais comuns (AVC, USER_AUTH, USER_LOGIN, USER_ACCT, ANOM_*, SYSCALL)
+- TUI navegável com paleta VigiaOS (zinc + emerald)
+- Modos de saída: TUI (default), texto, JSON
 
-Logs do Linux são detalhados mas extremamente verbosos. `journalctl` e
-`audit.log` são otimizados para máquina, não para humano. Quando você quer
-saber "**houve algo suspeito hoje?**", precisa garimpar manualmente entre
-milhares de entradas irrelevantes.
+## Build
 
-## Solução proposta
+Precisa de Rust ≥ 1.75 (instalado via `bootstrap.sh` do VigiaOS):
 
-Um CLI (e depois TUI/GUI) que:
-
-1. Lê fontes de log conhecidas (audit, journal, fail2ban, firewalld, tcpdump)
-2. Filtra eventos rotineiros / de baixo interesse
-3. Correlaciona eventos relacionados (ex: SSH falha → fail2ban ban → conexão recusada)
-4. Reescreve em **linguagem natural** com contexto:
-   - "Às 14:23, fail2ban baniu 192.0.2.1 após 5 tentativas falhas de SSH em 2 minutos"
-   - "Às 15:07, SELinux bloqueou processo `httpd` de escrever em `/var/www/uploads/`. Política em uso: targeted. Domínio: `httpd_t`. Provável ação legítima — verificar contexto da pasta."
-   - "Às 16:30, processo `firefox` (PID 4521) abriu conexões para 142.250.x.x (Google) e 152.199.x.x (Akamai/Adobe). Padrão normal de navegação."
-
-## Decisões pendentes
-
-- **Linguagem**: Python (rápido para prototipar, fácil para parser e GUI) ou Rust (perf, system service)
-- **Form factor v1**: CLI puro (`vigia-log`), TUI estilo `btop`, ou GTK4 GUI direto?
-- **Fontes de log v1**: começar com audit + fail2ban (mais ricos em "ações") ou journald (mais amplo)?
-- **Cobertura temporal**: últimas 24h por default? Configurável?
-
-## Arquitetura (rascunho)
-
-```
-vigia-activity-log/
-├── pyproject.toml          # (se Python)
-├── src/vigia_activity_log/
-│   ├── __init__.py
-│   ├── cli.py              # entrypoint
-│   ├── sources/            # adapters de cada fonte de log
-│   │   ├── auditd.py
-│   │   ├── journald.py
-│   │   ├── fail2ban.py
-│   │   └── firewalld.py
-│   ├── correlator.py       # liga eventos relacionados
-│   ├── classifier.py       # rotineiro / interessante / suspeito
-│   ├── narrator.py         # gera o texto human-readable
-│   └── ui/
-│       ├── cli.py          # output texto/tabela
-│       └── tui.py          # opcional, com textual ou urwid
-├── tests/
-│   └── fixtures/           # samples de logs reais (anonimizados)
-└── README.md
+```bash
+cd tools/activity-log
+cargo build --release
+# binário em: target/release/vigia-log
 ```
 
-## Próximos passos
+Para instalar globalmente após build:
+```bash
+sudo install -m 0755 target/release/vigia-log /usr/local/bin/vigia-log
+```
 
-1. Decidir linguagem e form factor v1 (ver acima)
-2. Coletar amostras reais de logs do Silverblue do autor (com PII removido)
-3. Definir taxonomia de eventos (categorias + níveis de interesse)
-4. MVP: parser de **um único source** (audit ou fail2ban) → output texto
-5. Iterar para adicionar mais sources e melhorar correlação
+## Uso
+
+```bash
+# TUI interativa (default; precisa sudo pois audit.log é restrito)
+sudo vigia-log
+
+# Modo texto narrativo (CLI pipe-friendly)
+sudo vigia-log -o text
+
+# JSON estruturado (uma linha por evento) — bom para grep/jq
+sudo vigia-log -o json | jq .
+
+# De um arquivo específico ou stdin
+vigia-log --path tests/fixtures/sample-audit.log
+journalctl -u auditd -o cat | vigia-log --path -
+
+# Últimos 50 eventos só
+vigia-log --limit 50
+```
+
+## Atalhos da TUI
+
+| Tecla | Ação |
+|---|---|
+| `↑` / `k` | Sobe um evento |
+| `↓` / `j` | Desce um evento |
+| `PageUp` / `PageDown` | Pula 10 |
+| `Home` / `End` | Primeiro / último |
+| `q` / `Esc` | Sai |
+
+## Roadmap
+
+- v0.1 (atual): parser + narrator + TUI básico para audit.log
+- v0.2: filtros (por tipo, por usuário, por processo); search em-tela
+- v0.3: adicionar source `journald` (systemd journal)
+- v0.4: adicionar source `fail2ban`
+- v0.5: correlator (junta eventos relacionados em "narrativas")
+- v0.6: classificador (rotineiro / interessante / suspeito) + cores
+
+## Testes
+
+```bash
+cargo test
+```
+
+Fixtures em `tests/fixtures/sample-audit.log` cobrem os tipos mais comuns.
+
+## Arquitetura
+
+```
+src/
+├── main.rs       # CLI entrypoint (clap)
+├── audit.rs      # parser de linhas + agrupamento
+├── narrator.rs   # event → frase em português
+└── tui.rs        # interface Ratatui
+```
+
+### Decisões
+
+- **Parser hand-rolled** em vez de nom/regex: formato é simples e estável, dependência a menos.
+- **Sem async**: arquivo é lido inteiro; tail/follow vai depois (turn ainda não decidido entre `notify` crate ou polling).
+- **Cores hard-coded** em `tui.rs` no padrão VigiaOS. Vai virar config quando outras ferramentas aparecerem.
+- **`field()` retorna o primeiro match em qualquer record do evento**: simplifica narrator, mas pode mascarar conflitos (improvável na prática).
