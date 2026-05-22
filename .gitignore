@@ -24,3 +24,6 @@ build/
 
 # Sessao Claude
 .claude/
+
+# Packaging local builds (gerados pelo Makefile)
+packaging/rpmbuild/
