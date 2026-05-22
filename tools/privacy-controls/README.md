@@ -16,23 +16,31 @@
 
 ## Setup na VM (Silverblue)
 
+PyGObject e libadwaita ja vem com GNOME no Silverblue. Se faltar:
 ```bash
-# PyGObject e libadwaita ja vem com GNOME no Silverblue, mas garantir:
 sudo rpm-ostree install python3-gobject libadwaita
 systemctl reboot
-
-# Depois do reboot
-cd ~/dev/VigiaOS/tools/privacy-controls
-python -m vigia_privacy
 ```
 
-Ou via pip install local (sem rpm-ostree para dependencias Python puras):
+### Opcao A — rodar direto sem instalar (mais rapido para testar)
+
+O pacote esta em `src/` (layout "src" do Python), entao precisa setar `PYTHONPATH`:
+
+```bash
+cd ~/dev/VigiaOS/tools/privacy-controls
+PYTHONPATH=src python -m vigia_privacy
+```
+
+### Opcao B — instalar editable (recomendado para uso continuo)
 
 ```bash
 cd ~/dev/VigiaOS/tools/privacy-controls
 pip install --user -e .
-vigia-privacy
+vigia-privacy           # script criado pelo entry point
 ```
+
+Modo editable: mudancas em src/ refletem na proxima execucao sem precisar
+reinstalar. Para desinstalar: `pip uninstall vigia-privacy-controls`.
 
 ## Arquitetura
 
