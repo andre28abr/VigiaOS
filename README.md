@@ -1,52 +1,50 @@
-# VigiaOS &nbsp; [![bluebuild](https://github.com/andre28abr/VigiaOS/actions/workflows/build.yml/badge.svg)](https://github.com/andre28abr/VigiaOS/actions/workflows/build.yml)
+# VigiaOS &nbsp; — Suite de segurança para Fedora Silverblue
 
-Fedora Atomic customizada para uso pessoal — foco em **segurança**, **LGPD**, **auditoria**, e ferramentas para escritório de advocacia. Construída sobre Fedora Silverblue com tema escuro.
+> **VigiaOS não é uma distro Linux.** É uma coleção de ferramentas, scripts e
+> aplicativos gráficos que transformam uma instalação **vanilla** de Fedora
+> Silverblue em uma estação de trabalho voltada para segurança, privacidade,
+> auditoria e conformidade com LGPD.
 
-> [!IMPORTANT]
-> aarch64 (ARM 64-bit) apenas. Pensada para rodar em Apple Silicon via UTM/Parallels e, futuramente, hardware ARM nativo.
+## Por que não uma distro?
 
-## Status
+Manter uma distro custom é caro (segurança, updates, testes contra upstream).
+Manter ferramentas é leve. Red Hat já constrói um ótimo OS atômico —
+deixamos eles fazerem isso e construímos por cima.
 
-Em desenvolvimento inicial. O recipe atual instala apenas pacotes mínimos (`micro`, `htop`, `tmux`) e o Flatpak Flatseal para validar o pipeline. Stack de segurança/auditoria e tema entram em iterações seguintes.
+Resultado: as ferramentas funcionam em qualquer Fedora Atomic (Silverblue,
+Kinoite, Bluefin, Bazzite, Aurora), aproveitando atualizações automáticas
+do sistema-base sem complicação.
 
-## Instalação
+## O que está incluído (v2 em desenvolvimento)
 
-Em uma instalação **Fedora Silverblue aarch64 limpa** (instale em VM/hardware
-via [getfedora.org](https://fedoraproject.org/atomic-desktops/silverblue/)),
-rode o instalador one-liner:
+| Componente | Status | Função |
+|---|---|---|
+| `bootstrap.sh` | 🟡 Em desenvolvimento | Script one-liner que instala ferramentas essenciais de segurança/privacidade/dev em Silverblue vanilla |
+| **Vigia Activity Log** | 🔴 Planejado | Parseador inteligente de auditd/journald/fail2ban com narrativa human-readable |
+| Vigia Control Center | ⚪ Futuro | App GTK4 central — tabs de ferramentas, privacidade, SELinux, logs |
+| SELinux GUI moderno | ⚪ Futuro | Substituto de `system-config-selinux` em GTK4 |
+| Tema VigiaOS (opcional) | ⚪ Futuro | Script aplicador do tema zinc + emerald (do app SentinelBR) |
+
+## Instalação rápida (quando bootstrap.sh estiver pronto)
+
+Em qualquer Fedora Silverblue (ou Kinoite/Bluefin/etc.) já instalado:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/andre28abr/VigiaOS/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/andre28abr/VigiaOS/main/bootstrap.sh | bash
 ```
 
-O script valida o ambiente, rebasa para `ghcr.io/andre28abr/vigiaos:latest` e
-pede para reiniciar. Atualizações futuras são automáticas via `rpm-ostree upgrade`.
+## Histórico
 
-**Alternativa manual:**
-```bash
-rpm-ostree rebase ostree-unverified-registry:ghcr.io/andre28abr/vigiaos:latest
-systemctl reboot
-```
+A v1 do projeto era uma distro Linux completa baseada em Fedora Silverblue
+buildada via BlueBuild. Foi pivotada em 2026-05-22 para suíte de ferramentas
+após avaliarmos que o trabalho de manter um image build sobrepunha pouco
+valor ao que Red Hat já entrega. A v1 está preservada em
+[`legacy/v1-distro`](https://github.com/andre28abr/VigiaOS/tree/legacy/v1-distro).
 
-> Para detalhes de arquitetura, build, tema e operações, ver [DEVELOPMENT.md](DEVELOPMENT.md).
+## Documentação
 
-## Estrutura do repositório
+- [DEVELOPMENT.md](DEVELOPMENT.md) — arquitetura, decisões, roadmap
 
-```
-recipes/recipe.yml          # definição da imagem (pacotes, flatpaks, base)
-files/system/               # arquivos copiados para / na imagem
-  ├── etc/                  # configs do sistema
-  └── usr/                  # binários, temas, ícones, dados compartilhados
-files/scripts/              # scripts executados durante o build
-modules/                    # módulos BlueBuild custom
-.github/workflows/build.yml # CI: builda no GitHub Actions ARM runner
-```
+## Licença
 
-## Build
-
-O build roda automaticamente via GitHub Actions:
-- A cada push em `main`
-- Diariamente às 06:00 UTC
-- Manualmente via *Actions → bluebuild → Run workflow*
-
-A imagem é publicada em `ghcr.io/andre28abr/vigiaos:latest`.
+Apache 2.0 — ver [LICENSE](LICENSE).

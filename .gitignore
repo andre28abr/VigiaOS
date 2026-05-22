@@ -1,5 +1,26 @@
+# Cosign (chaves locais; publica via secret, nunca commit)
 cosign.key
 cosign.private
-/Containerfile
-.claude/
+
+# macOS
 .DS_Store
+
+# Editores
+.vscode/
+.idea/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+dist/
+build/
+
+# Sessao Claude
+.claude/
