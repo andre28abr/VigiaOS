@@ -1,14 +1,15 @@
 """Janela principal do Vigia Hub.
 
-Layout: lista de ferramentas registradas em registry.TOOLS, cada uma com
-icone, nome, descricao e botao 'Abrir'. Click no botao spawna a ferramenta
-via subprocess (com terminal/sudo wrappers conforme necessario).
+Layout: grid responsivo de cards (FlowBox), 1-3 colunas conforme largura.
+Cada card mostra icone grande, nome, descricao, status (instalado/nao),
+botao Abrir. Search bar no topo filtra cards.
 """
 
 from __future__ import annotations
 
 import shutil
 import subprocess
+from typing import Callable
 
 import gi
 
@@ -19,14 +20,11 @@ from gi.repository import Adw, Gtk  # noqa: E402
 
 from .registry import TOOLS, ToolEntry
 
-# Lista de terminais conhecidos em ordem de preferencia. Cada entry e' uma
-# tupla (binary_name, args_para_passar_comando_apos).
-#
-# kgx / gnome-console e ptyxis sao os defaults modernos do GNOME.
-# Convencao do "--" para separar args do terminal vs comando: a maioria suporta.
+
+# Lista de emuladores de terminal em ordem de preferencia + args de comando.
 TERMINAL_CANDIDATES = [
-    ("kgx", ["--"]),               # GNOME Console
-    ("ptyxis", ["--"]),            # Prompt/Ptyxis
+    ("kgx", ["--"]),
+    ("ptyxis", ["--"]),
     ("gnome-terminal", ["--"]),
     ("konsole", ["-e"]),
     ("xterm", ["-e"]),
@@ -35,81 +33,167 @@ TERMINAL_CANDIDATES = [
 
 
 def find_terminal() -> tuple[str, list[str]] | None:
-    """Retorna o primeiro terminal disponivel + args para passar comando."""
     for binary, args in TERMINAL_CANDIDATES:
         if shutil.which(binary):
             return binary, args
     return None
 
 
+class ToolCard(Gtk.Box):
+    """Card visual de uma ferramenta. Subclass de Gtk.Box."""
+
+    def __init__(
+        self,
+        tool: ToolEntry,
+        on_launch: Callable[[ToolEntry], None],
+    ) -> None:
+        super().__init__(orientation=Gtk.Orientation.VERTICAL, spacing=12)
+        self.add_css_class("card")
+        self.set_size_request(260, -1)
+        self.set_margin_top(8)
+        self.set_margin_bottom(8)
+        self.set_margin_start(8)
+        self.set_margin_end(8)
+
+        # Pad interno do card
+        pad = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        pad.set_margin_top(20)
+        pad.set_margin_bottom(20)
+        pad.set_margin_start(20)
+        pad.set_margin_end(20)
+        self.append(pad)
+
+        # Icon
+        if tool.icon_path.is_file():
+            icon = Gtk.Image.new_from_file(str(tool.icon_path))
+        else:
+            icon = Gtk.Image.new_from_icon_name("application-x-executable-symbolic")
+        icon.set_pixel_size(96)
+        icon.set_halign(Gtk.Align.CENTER)
+        pad.append(icon)
+
+        # Nome
+        name = Gtk.Label(label=tool.name)
+        name.add_css_class("title-3")
+        name.set_halign(Gtk.Align.CENTER)
+        pad.append(name)
+
+        # Descricao (texto justificado, limitado a 40 chars de largura)
+        desc = Gtk.Label(label=tool.description)
+        desc.add_css_class("dim-label")
+        desc.add_css_class("caption")
+        desc.set_wrap(True)
+        desc.set_justify(Gtk.Justification.CENTER)
+        desc.set_xalign(0.5)
+        desc.set_max_width_chars(36)
+        desc.set_vexpand(True)
+        pad.append(desc)
+
+        # Status indicator
+        status_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        status_box.set_halign(Gtk.Align.CENTER)
+        available = tool.is_available()
+        dot = Gtk.Label(label="●")
+        dot.add_css_class("success" if available else "error")
+        status_box.append(dot)
+        status_lbl = Gtk.Label(label="Disponivel" if available else "Nao instalada")
+        status_lbl.add_css_class("dim-label")
+        status_lbl.add_css_class("caption")
+        status_box.append(status_lbl)
+        pad.append(status_box)
+
+        # Botao Abrir
+        btn = Gtk.Button(label="Abrir")
+        btn.add_css_class("suggested-action" if available else "flat")
+        btn.add_css_class("pill")
+        btn.set_halign(Gtk.Align.CENTER)
+        btn.set_sensitive(available)
+        if not available:
+            btn.set_label("Nao instalada")
+        btn.connect("clicked", lambda _b, t=tool: on_launch(t))
+        pad.append(btn)
+
+        # Texto para busca (nome + descricao em lowercase)
+        self.search_text = (tool.name + " " + tool.description).lower()
+
+
 class VigiaHubWindow(Adw.ApplicationWindow):
     def __init__(self, app: Adw.Application):
         super().__init__(application=app)
         self.set_title("Vigia Suite")
-        self.set_default_size(720, 560)
+        self.set_default_size(960, 720)
 
-        toolbar = Adw.ToolbarView()
-        toolbar.add_top_bar(self._build_header())
-        toolbar.set_content(self._build_content())
-        self.set_content(toolbar)
-
-    def _build_header(self) -> Adw.HeaderBar:
+        # ============= Header ============= #
         header = Adw.HeaderBar()
         title = Adw.WindowTitle(
             title="Vigia Suite",
             subtitle="Toolkit de seguranca para Fedora Atomic",
         )
         header.set_title_widget(title)
-        return header
 
-    def _build_content(self) -> Gtk.Widget:
-        page = Adw.PreferencesPage()
-        group = Adw.PreferencesGroup()
-        group.set_title("Ferramentas instaladas")
-        group.set_description(
-            f"{sum(1 for t in TOOLS if t.is_available())}/{len(TOOLS)} disponiveis"
+        # ============= Conteudo ============= #
+        content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        content.set_margin_top(16)
+        content.set_margin_bottom(16)
+        content.set_margin_start(16)
+        content.set_margin_end(16)
+
+        # Search bar
+        self._search = Gtk.SearchEntry()
+        self._search.set_placeholder_text(
+            "Filtrar ferramentas (ex: log, firewall, selinux, network)"
         )
+        self._search.connect("search-changed", lambda _e: self._flowbox.invalidate_filter())
+        content.append(self._search)
+
+        # Stats label
+        n_avail = sum(1 for t in TOOLS if t.is_available())
+        stats = Gtk.Label()
+        stats.set_xalign(0)
+        stats.add_css_class("dim-label")
+        stats.set_text(
+            f"{n_avail} de {len(TOOLS)} ferramentas disponiveis. "
+            "Clique em 'Abrir' para lancar."
+        )
+        content.append(stats)
+
+        # FlowBox de cards
+        self._flowbox = Gtk.FlowBox()
+        self._flowbox.set_selection_mode(Gtk.SelectionMode.NONE)
+        self._flowbox.set_max_children_per_line(3)
+        self._flowbox.set_min_children_per_line(1)
+        self._flowbox.set_homogeneous(True)
+        self._flowbox.set_row_spacing(8)
+        self._flowbox.set_column_spacing(8)
+        self._flowbox.set_filter_func(self._filter_card)
 
         for tool in TOOLS:
-            row = self._build_tool_row(tool)
-            group.add(row)
+            card = ToolCard(tool, self._on_launch)
+            self._flowbox.insert(card, -1)
 
-        page.add(group)
-        return page
+        scrolled = Gtk.ScrolledWindow()
+        scrolled.set_vexpand(True)
+        scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        scrolled.set_child(self._flowbox)
+        content.append(scrolled)
 
-    def _build_tool_row(self, tool: ToolEntry) -> Adw.ActionRow:
-        row = Adw.ActionRow()
-        row.set_title(tool.name)
-        row.set_subtitle(tool.description)
+        # Toolbar root
+        toolbar = Adw.ToolbarView()
+        toolbar.add_top_bar(header)
+        toolbar.set_content(content)
+        self.set_content(toolbar)
 
-        # Icon — carrega direto do arquivo SVG (caminho absoluto no repo).
-        # Evita dependencia do icon cache do sistema.
-        if tool.icon_path.is_file():
-            icon = Gtk.Image.new_from_file(str(tool.icon_path))
-        else:
-            icon = Gtk.Image.new_from_icon_name("application-x-executable-symbolic")
-        icon.set_pixel_size(48)
-        row.add_prefix(icon)
+    # ========================================================================
+    # Filter & launch
+    # ========================================================================
 
-        # Botao "Abrir"
-        btn = Gtk.Button(label="Abrir")
-        btn.add_css_class("suggested-action")
-        btn.add_css_class("pill")
-        btn.set_valign(Gtk.Align.CENTER)
-
-        if not tool.is_available():
-            btn.set_sensitive(False)
-            btn.set_label("Nao instalado")
-            row.set_subtitle(
-                f"{tool.description}\n\n"
-                f"[Binario nao encontrado no PATH. Veja README do {tool.id}.]"
-            )
-        else:
-            btn.connect("clicked", lambda _b, t=tool: self._on_launch(t))
-
-        row.add_suffix(btn)
-        row.set_activatable_widget(btn)
-        return row
+    def _filter_card(self, child: Gtk.FlowBoxChild) -> bool:
+        query = self._search.get_text().lower().strip()
+        if not query:
+            return True
+        card = child.get_child()
+        text = getattr(card, "search_text", "")
+        return query in text
 
     def _on_launch(self, tool: ToolEntry) -> None:
         try:
@@ -119,22 +203,18 @@ class VigiaHubWindow(Adw.ApplicationWindow):
 
     def _launch_tool(self, tool: ToolEntry) -> None:
         cmd = list(tool.exec_cmd)
-
         if tool.needs_root:
             cmd = ["sudo"] + cmd
-
         if tool.needs_terminal:
             found = find_terminal()
             if found is None:
                 raise RuntimeError(
-                    "Nenhum emulador de terminal encontrado (procurei: "
+                    "Nenhum terminal encontrado (procurei: "
                     + ", ".join(b for b, _ in TERMINAL_CANDIDATES)
                     + "). Instale 'gnome-console' ou similar."
                 )
             term_binary, term_args = found
             cmd = [term_binary] + term_args + cmd
-
-        # Spawn nao-bloqueante (Popen sem .wait). Hub fica responsivo.
         subprocess.Popen(cmd)
 
     def _show_error(self, tool: ToolEntry, message: str) -> None:
