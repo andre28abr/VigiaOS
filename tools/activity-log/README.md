@@ -6,13 +6,18 @@
 
 ## Estado
 
-🟢 **MVP em Rust + Ratatui**, primeira fonte: `audit.log`.
+🟢 **v0.3** — multi-source (audit + journald) mergeado cronologicamente.
 
-- Parser de linhas (`type=X msg=audit(epoch:id): k=v ...`)
-- Agrupamento de records por audit_id em "eventos"
-- Narrator em português para os tipos mais comuns (AVC, USER_AUTH, USER_LOGIN, USER_ACCT, ANOM_*, SYSCALL)
-- TUI navegável com paleta VigiaOS (zinc + emerald)
-- Modos de saída: TUI (default), texto, JSON
+- Sources: `audit` (/var/log/audit/audit.log) e `journald` (via `journalctl -o json`)
+- Eventos interleavados por timestamp, navegáveis na mesma lista
+- Parser de audit: handles double/single-quoted nested fields, `{ action }` dos AVC
+- Parser de journal: JSON-lines do journalctl, prioridades syslog, unit/comm/pid/uid/hostname
+- Narrator em português:
+  - Audit: AVC, USER_AUTH, USER_LOGIN, USER_ACCT, ANOM_*, SYSCALL
+  - Journal: priority tag ([ERR], [WARN], [CRIT], etc.) + source label (unit ou comm)
+- TUI com cores semânticas (priority syslog mapeado para vermelho/âmbar/branco/dim)
+- Filtros: cycle por tipo (`f`), search incremental (`/`)
+- Modos de saída: TUI (default), texto, JSON discriminado por source
 
 ## Build
 
@@ -32,21 +37,43 @@ sudo install -m 0755 target/release/vigia-log /usr/local/bin/vigia-log
 ## Uso
 
 ```bash
-# TUI interativa (default; precisa sudo pois audit.log é restrito)
+# Default: só audit.log
 sudo vigia-log
 
-# Modo texto narrativo (CLI pipe-friendly)
-sudo vigia-log -o text
+# Multi-source — audit + journal mergeados cronologicamente
+sudo vigia-log --sources audit journald
 
-# JSON estruturado (uma linha por evento) — bom para grep/jq
-sudo vigia-log -o json | jq .
+# Só journal
+sudo vigia-log --sources journald
 
-# De um arquivo específico ou stdin
-vigia-log --path tests/fixtures/sample-audit.log
-journalctl -u auditd -o cat | vigia-log --path -
+# Modos de saída
+sudo vigia-log -o text                # CLI pipe-friendly
+sudo vigia-log -o json | jq .         # JSON discriminado por source
+
+# Override paths (útil para fixtures e dev)
+vigia-log --sources audit journald \
+  --audit-path tests/fixtures/sample-audit.log \
+  --journal-path tests/fixtures/sample-journal.json
+
+# Stdin via '-'
+journalctl -o json --no-pager | vigia-log --sources journald --journal-path -
 
 # Últimos 50 eventos só
 vigia-log --limit 50
+```
+
+### Capturar snapshot do journal para testar no Mac
+
+Para iterar a TUI no Mac sem `journalctl` disponível, gere um snapshot na VM
+e leve para o Mac:
+
+```bash
+# Na VM Silverblue:
+sudo journalctl -o json --no-pager -n 500 > /tmp/journal-snap.json
+scp /tmp/journal-snap.json mac:~/
+
+# No Mac:
+vigia-log --sources journald --journal-path ~/journal-snap.json
 ```
 
 ## Atalhos da TUI
@@ -81,10 +108,11 @@ A query de busca é case-insensitive e aplica em cima da narrativa completa
 
 - ✅ v0.1: parser + narrator + TUI básico para audit.log
 - ✅ v0.2: filtros (por tipo, cycle com `f`); search incremental (`/`); highlight de matches
-- v0.3: adicionar source `journald` (systemd journal)
-- v0.4: adicionar source `fail2ban`
-- v0.5: correlator (junta eventos relacionados em "narrativas")
-- v0.6: classificador (rotineiro / interessante / suspeito) + cores
+- ✅ v0.3: source `journald` (via `journalctl -o json`), Event abstraction, merge cronológico, cores por priority syslog
+- v0.4: adicionar source `fail2ban` + firewalld
+- v0.5: correlator (junta eventos relacionados de fontes diferentes em "narrativas" únicas)
+- v0.6: classificador automático (rotineiro / interessante / suspeito) + filtro `s` para "só suspeito"
+- v0.7: live mode (`-f` tail) — atualiza TUI em tempo real conforme audit/journal crescem
 
 ## Testes
 
@@ -98,15 +126,18 @@ Fixtures em `tests/fixtures/sample-audit.log` cobrem os tipos mais comuns.
 
 ```
 src/
-├── main.rs       # CLI entrypoint (clap)
-├── audit.rs      # parser de linhas + agrupamento
-├── narrator.rs   # event → frase em português
-└── tui.rs        # interface Ratatui
+├── main.rs       # CLI (clap) — orquestra sources, output, limit
+├── event.rs      # enum Event { Audit, Journal } — abstração unificada
+├── audit.rs      # parser + agrupamento de audit.log
+├── journal.rs    # parser de journalctl -o json + Priority syslog
+├── narrator.rs   # Event → frase em português (dispatch por variant)
+└── tui.rs        # interface Ratatui (App struct, filtros, search)
 ```
 
 ### Decisões
 
-- **Parser hand-rolled** em vez de nom/regex: formato é simples e estável, dependência a menos.
-- **Sem async**: arquivo é lido inteiro; tail/follow vai depois (turn ainda não decidido entre `notify` crate ou polling).
-- **Cores hard-coded** em `tui.rs` no padrão VigiaOS. Vai virar config quando outras ferramentas aparecerem.
-- **`field()` retorna o primeiro match em qualquer record do evento**: simplifica narrator, mas pode mascarar conflitos (improvável na prática).
+- **Parser hand-rolled** para audit em vez de nom/regex: formato é simples e estável, dependência a menos.
+- **journalctl pipe** em vez de libsystemd: sem FFI, portável, fácil de testar com snapshot.
+- **Event enum interna** preserva a riqueza de cada source (AuditEvent não vira `HashMap<String, String>`). Narrator dispatcheia.
+- **Sem async**: arquivos são lidos inteiros. Tail/follow vai vir em v0.7 com `notify` crate ou polling.
+- **Cores hard-coded** em `tui.rs` no padrão VigiaOS. Config quando outras ferramentas aparecerem.

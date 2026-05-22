@@ -1,0 +1,6 @@
+{"__REALTIME_TIMESTAMP":"1748000003000000","PRIORITY":"6","MESSAGE":"Started User Manager for UID 1000.","_SYSTEMD_UNIT":"user@1000.service","_COMM":"systemd","_PID":"1","_UID":"0","_HOSTNAME":"fedora","SYSLOG_IDENTIFIER":"systemd"}
+{"__REALTIME_TIMESTAMP":"1748000007500000","PRIORITY":"5","MESSAGE":"Accepted publickey for andre from 192.0.2.42 port 51234 ssh2: RSA SHA256:abc","_SYSTEMD_UNIT":"sshd.service","_COMM":"sshd","_PID":"3100","_UID":"0","_HOSTNAME":"fedora","SYSLOG_IDENTIFIER":"sshd"}
+{"__REALTIME_TIMESTAMP":"1748000012000000","PRIORITY":"4","MESSAGE":"Possible MITM attack: SSL certificate verification failed for api.example.com","_COMM":"curl","_PID":"4521","_UID":"1000","_HOSTNAME":"fedora"}
+{"__REALTIME_TIMESTAMP":"1748000020500000","PRIORITY":"3","MESSAGE":"usb 1-2: device descriptor read/64, error -110","_COMM":"kernel","_HOSTNAME":"fedora","SYSLOG_FACILITY":"0"}
+{"__REALTIME_TIMESTAMP":"1748000035000000","PRIORITY":"6","MESSAGE":"Time has been changed from 2026-05-22 14:00:01 UTC to 2026-05-22 14:00:34 UTC.","_SYSTEMD_UNIT":"systemd-timesyncd.service","_COMM":"systemd-timesyn","_PID":"872","_UID":"0","_HOSTNAME":"fedora"}
+{"__REALTIME_TIMESTAMP":"1748000045000000","PRIORITY":"2","MESSAGE":"kernel: Out of memory: Killed process 9876 (chromium)","_COMM":"kernel","_HOSTNAME":"fedora"}

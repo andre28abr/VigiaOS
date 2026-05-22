@@ -1,11 +1,23 @@
-//! Converte `AuditEvent`s em frases human-readable em portugues.
+//! Converte `Event`s em frases human-readable em portugues.
 //!
-//! Mapeamento simples para os tipos mais comuns. Casos nao mapeados
-//! caem no fallback generico.
+//! Dispatch entre audit e journal; cada tipo tem seu proprio templater.
 
 use crate::audit::AuditEvent;
+use crate::event::Event;
+use crate::journal::{JournalEntry, Priority};
 
-pub fn narrate(event: &AuditEvent) -> String {
+pub fn narrate(event: &Event) -> String {
+    match event {
+        Event::Audit(e) => narrate_audit(e),
+        Event::Journal(j) => narrate_journal(j),
+    }
+}
+
+// ============================================================================
+// audit
+// ============================================================================
+
+fn narrate_audit(event: &AuditEvent) -> String {
     let ts = event.timestamp.format("%H:%M:%S").to_string();
     let primary = event.primary_type();
 
@@ -17,9 +29,7 @@ pub fn narrate(event: &AuditEvent) -> String {
         "ANOM_PROMISCUOUS" => format!(
             "{ts} — interface entrou em modo promiscuo (anomalia de captura)"
         ),
-        "ANOM_ABEND" => format!(
-            "{ts} — processo terminou anormalmente (crash)"
-        ),
+        "ANOM_ABEND" => format!("{ts} — processo terminou anormalmente (crash)"),
         "SYSCALL" => narrate_syscall(event, &ts),
         other => format!("{ts} — evento {} (id {})", other, event.audit_id),
     }
@@ -43,7 +53,6 @@ fn narrate_avc(event: &AuditEvent, ts: &str) -> String {
     )
 }
 
-/// Extrai a acao do AVC (campo virtual `avc_op` setado pelo parser).
 fn extract_avc_action(event: &AuditEvent) -> Option<String> {
     event.field("avc_op").map(|op| format!("`{}`", op))
 }
@@ -79,18 +88,104 @@ fn narrate_syscall(event: &AuditEvent, ts: &str) -> String {
     )
 }
 
+// ============================================================================
+// journal
+// ============================================================================
+
+fn narrate_journal(e: &JournalEntry) -> String {
+    let ts = e.timestamp.format("%H:%M:%S").to_string();
+    let source = journal_source_label(e);
+    let priority_tag = priority_tag(e.priority);
+    if priority_tag.is_empty() {
+        format!("{ts} — {source}: {}", trim_message(&e.message))
+    } else {
+        format!("{ts} — {priority_tag} {source}: {}", trim_message(&e.message))
+    }
+}
+
+/// Label compacto do que gerou o log: unit (sem sufixo .service) > comm > "system".
+fn journal_source_label(e: &JournalEntry) -> String {
+    if let Some(unit) = &e.unit {
+        return strip_unit_suffix(unit);
+    }
+    if let Some(comm) = &e.comm {
+        return comm.clone();
+    }
+    "system".to_string()
+}
+
+fn strip_unit_suffix(s: &str) -> String {
+    for suf in [".service", ".socket", ".target", ".timer", ".mount", ".scope"] {
+        if let Some(stripped) = s.strip_suffix(suf) {
+            return stripped.to_string();
+        }
+    }
+    s.to_string()
+}
+
+fn priority_tag(p: Priority) -> &'static str {
+    match p {
+        Priority::Emerg => "[EMERG]",
+        Priority::Alert => "[ALERT]",
+        Priority::Crit => "[CRIT]",
+        Priority::Err => "[ERR]",
+        Priority::Warning => "[WARN]",
+        Priority::Notice => "[NOTICE]",
+        Priority::Info | Priority::Debug => "",
+    }
+}
+
+/// Trunca mensagens muito longas para nao quebrar layout da TUI.
+fn trim_message(msg: &str) -> String {
+    const MAX: usize = 240;
+    if msg.len() > MAX {
+        let mut s = msg.chars().take(MAX).collect::<String>();
+        s.push_str(" …");
+        s
+    } else {
+        msg.to_string()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::audit::{parse_line, group_into_events};
+    use crate::audit::{group_into_events, parse_line};
 
     #[test]
     fn narrates_user_auth_success() {
         let line = r#"type=USER_AUTH msg=audit(1748000000.0:1): pid=1 uid=0 acct="andre" exe="/usr/bin/sudo" res=success"#;
         let r = parse_line(line).unwrap();
         let ev = group_into_events(vec![r]).remove(0);
-        let s = narrate(&ev);
+        let s = narrate(&Event::Audit(ev));
         assert!(s.contains("usuario `andre`"));
         assert!(s.contains("OK"));
+    }
+
+    #[test]
+    fn narrates_journal_error() {
+        use chrono::TimeZone;
+        let entry = JournalEntry {
+            timestamp: chrono::Utc.timestamp_opt(1748000000, 0).unwrap(),
+            priority: Priority::Err,
+            message: "device descriptor read/64, error -110".into(),
+            unit: None,
+            comm: Some("kernel".into()),
+            pid: None,
+            uid: None,
+            hostname: None,
+            extra: Default::default(),
+        };
+        let s = narrate(&Event::Journal(entry));
+        assert!(s.contains("[ERR]"));
+        assert!(s.contains("kernel"));
+        assert!(s.contains("device descriptor"));
+    }
+
+    #[test]
+    fn strips_service_suffix() {
+        assert_eq!(strip_unit_suffix("sshd.service"), "sshd");
+        assert_eq!(strip_unit_suffix("network.target"), "network");
+        assert_eq!(strip_unit_suffix("foo.bar"), "foo.bar");
     }
 }
