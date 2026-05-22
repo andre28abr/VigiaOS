@@ -1,0 +1,15 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Vigia Privacy Controls
+Name[pt_BR]=Vigia - Controles de Privacidade
+GenericName=Privacy Settings
+GenericName[pt_BR]=Configuracoes de Privacidade
+Comment=Painel central de toggles de privacidade (location, telemetry, bluetooth, etc.)
+Comment[pt_BR]=Painel central de controles de privacidade (localizacao, telemetria, bluetooth, etc.)
+Icon=br.com.vigia.PrivacyControls
+Exec=vigia-privacy
+Terminal=false
+Categories=Settings;DesktopSettings;System;Security;
+Keywords=privacy;security;vigia;location;telemetry;bluetooth;
+StartupNotify=true

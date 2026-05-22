@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vigia-privacy-controls"
+version = "0.1.0"
+description = "Painel central de controles de privacidade para Fedora Silverblue (Vigia Suite)"
+license = { text = "Apache-2.0" }
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [
+    { name = "André Augusto Azarias de Souza" },
+]
+keywords = ["privacy", "security", "vigia", "gnome", "gtk4", "libadwaita"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: X11 Applications :: GTK",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Security",
+]
+# PyGObject vem do sistema (python3-gobject RPM); nao listamos como pip dep
+# para evitar conflito.
+dependencies = []
+
+[project.scripts]
+vigia-privacy = "vigia_privacy.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
