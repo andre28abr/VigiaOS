@@ -55,7 +55,10 @@ struct Cli {
     #[arg(short, long, value_enum, default_value_t = Output::Tui)]
     output: Output,
 
-    /// Numero maximo de eventos mais recentes. 0 = todos.
+    /// Numero maximo de eventos mais recentes POR SOURCE. 0 = todos.
+    /// Com 3 sources e --limit 500, voce vai ter ate 1500 eventos no total.
+    /// Limite por-source evita que um source ruidoso (ex: journal) esconda
+    /// os mais raros (ex: audit, fail2ban).
     #[arg(short, long, default_value_t = 500)]
     limit: usize,
 
@@ -121,17 +124,10 @@ fn main() -> Result<()> {
     // Ordena cronologicamente para mostrar audit + journal interleavados.
     events.sort_by_key(Event::timestamp);
 
-    // Filtro de severidade minima (aplicado ANTES do limit para nao perder
-    // eventos importantes para amostragem por janela).
+    // Filtro de severidade minima (limite ja foi aplicado por-source em load_events).
     if let Some(sev) = cli.min_severity {
         let min: event::Severity = sev.into();
         events.retain(|e| e.severity() >= min);
-    }
-
-    // Limita aos N mais recentes
-    if cli.limit > 0 && events.len() > cli.limit {
-        let skip = events.len() - cli.limit;
-        events = events.into_iter().skip(skip).collect();
     }
 
     let correlations = correlator::correlate(&events);
@@ -159,11 +155,12 @@ fn main() -> Result<()> {
 }
 
 fn load_events(cli: &Cli) -> Result<Vec<Event>> {
+    let per_source_limit = if cli.limit == 0 { usize::MAX } else { cli.limit };
     let mut all: Vec<Event> = Vec::new();
 
     if cli.sources.contains(&Source::Audit) {
         if file_exists_or_stdin(&cli.audit_path) {
-            let audit_events = load_audit(&cli.audit_path)?;
+            let audit_events = trim_last_n(load_audit(&cli.audit_path)?, per_source_limit);
             all.extend(audit_events.into_iter().map(Event::Audit));
         } else {
             eprintln!(
@@ -178,13 +175,13 @@ fn load_events(cli: &Cli) -> Result<Vec<Event>> {
         let journal_entries = match &cli.journal_path {
             Some(path) => {
                 if file_exists_or_stdin(path) {
-                    load_journal_file(path)?
+                    trim_last_n(load_journal_file(path)?, per_source_limit)
                 } else {
                     eprintln!("warn: source 'journald' arquivo {} nao existe — pulando", path);
                     Vec::new()
                 }
             }
-            None => journal::fetch_via_journalctl(cli.limit.max(500))
+            None => journal::fetch_via_journalctl(per_source_limit)
                 .unwrap_or_else(|e| {
                     eprintln!("warn: source 'journald' falhou ({e}) — pulando");
                     Vec::new()
@@ -195,7 +192,7 @@ fn load_events(cli: &Cli) -> Result<Vec<Event>> {
 
     if cli.sources.contains(&Source::Fail2ban) {
         if file_exists_or_stdin(&cli.fail2ban_path) {
-            let f2b = load_fail2ban(&cli.fail2ban_path)?;
+            let f2b = trim_last_n(load_fail2ban(&cli.fail2ban_path)?, per_source_limit);
             all.extend(f2b.into_iter().map(Event::Fail2ban));
         } else {
             eprintln!(
@@ -207,6 +204,15 @@ fn load_events(cli: &Cli) -> Result<Vec<Event>> {
     }
 
     Ok(all)
+}
+
+/// Mantem so os ultimos N elementos (vec original e' assumido sorted asc por timestamp).
+fn trim_last_n<T>(mut v: Vec<T>, n: usize) -> Vec<T> {
+    if v.len() > n {
+        let skip = v.len() - n;
+        v.drain(..skip);
+    }
+    v
 }
 
 fn file_exists_or_stdin(path: &str) -> bool {
