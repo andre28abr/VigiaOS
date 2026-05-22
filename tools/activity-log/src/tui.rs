@@ -23,7 +23,7 @@
 //!   q               sair
 
 use std::io::{self, Stdout};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use anyhow::Result;
 use crossterm::event::{self, Event as CtEvent, KeyCode, KeyEventKind, KeyModifiers};
@@ -38,8 +38,9 @@ use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Borders, List, ListItem, ListState, Paragraph, Wrap};
 use ratatui::Terminal;
 
-use crate::correlator::Correlation;
+use crate::correlator::{self, Correlation};
 use crate::event::{Event, Severity};
+use crate::live::LiveSources;
 use crate::narrator::narrate;
 
 // Paleta VigiaOS (Tailwind zinc + emerald)
@@ -97,14 +98,29 @@ struct App {
     min_severity: Option<Severity>,
     /// Mostra painel de correlations se houver alguma.
     show_correlations: bool,
+    /// Live tail state: (sources, interval). Se None, modo estatico.
+    live: Option<(LiveSources, Duration)>,
+    last_refresh: Instant,
+    /// Animacao do indicador LIVE (alterna a cada refresh).
+    live_blink: bool,
 }
 
 impl App {
-    fn new(events: Vec<Event>, correlations: Vec<Correlation>) -> Self {
+    fn new(
+        events: Vec<Event>,
+        correlations: Vec<Correlation>,
+        live: Option<(LiveSources, Duration)>,
+    ) -> Self {
         let visible: Vec<usize> = (0..events.len()).collect();
         let mut list_state = ListState::default();
         if !visible.is_empty() {
-            list_state.select(Some(0));
+            // Em live mode, comecar no final (eventos mais recentes)
+            let initial = if live.is_some() && !visible.is_empty() {
+                visible.len() - 1
+            } else {
+                0
+            };
+            list_state.select(Some(initial));
         }
         Self {
             show_correlations: !correlations.is_empty(),
@@ -116,7 +132,65 @@ impl App {
             filter: None,
             search: String::new(),
             min_severity: None,
+            live,
+            last_refresh: Instant::now(),
+            live_blink: false,
         }
+    }
+
+    fn is_at_bottom(&self) -> bool {
+        match self.list_state.selected() {
+            Some(i) => i + 1 >= self.visible.len(),
+            None => true,
+        }
+    }
+
+    /// Refresh em live mode: puxa eventos novos, re-sorta, re-correlaciona,
+    /// recomputa visible. Se cursor estava no fim, mantem no fim (auto-scroll);
+    /// se estava no meio, preserva o evento que estava selecionado.
+    fn refresh_live(&mut self) {
+        if self.live.is_none() {
+            return;
+        }
+        // Coleta o estado ANTES do mutable borrow do `live`
+        let auto_scroll = self.is_at_bottom();
+        let selected_ts = self
+            .list_state
+            .selected()
+            .and_then(|i| self.visible.get(i))
+            .and_then(|&idx| self.events.get(idx))
+            .map(Event::timestamp);
+
+        let refresh_result = self.live.as_mut().unwrap().0.refresh();
+        match refresh_result {
+            Ok(new) if !new.is_empty() => {
+                self.events.extend(new);
+                self.events.sort_by_key(Event::timestamp);
+                self.correlations = correlator::correlate(&self.events);
+                if self.show_correlations || self.correlations.is_empty() {
+                    // mantem show=true ou abre se acabou de surgir primeira correlation
+                } else if !self.correlations.is_empty() {
+                    self.show_correlations = true;
+                }
+                self.recompute_visible();
+
+                if auto_scroll && !self.visible.is_empty() {
+                    self.list_state.select(Some(self.visible.len() - 1));
+                } else if let Some(ts) = selected_ts {
+                    // tenta achar o mesmo evento (mesmo timestamp) na nova lista
+                    if let Some(pos) = self.visible.iter().position(|&i| {
+                        self.events[i].timestamp() == ts
+                    }) {
+                        self.list_state.select(Some(pos));
+                    }
+                }
+            }
+            Ok(_) => {}
+            Err(e) => {
+                eprintln!("live refresh error: {e}");
+            }
+        }
+        self.live_blink = !self.live_blink;
     }
 
     fn recompute_visible(&mut self) {
@@ -209,13 +283,17 @@ impl App {
     }
 }
 
-pub fn run(events: Vec<Event>, correlations: Vec<Correlation>) -> Result<()> {
+pub fn run(
+    events: Vec<Event>,
+    correlations: Vec<Correlation>,
+    live: Option<(LiveSources, Duration)>,
+) -> Result<()> {
     enable_raw_mode()?;
     let mut stdout = io::stdout();
     execute!(stdout, EnterAlternateScreen)?;
     let mut terminal = Terminal::new(CrosstermBackend::new(stdout))?;
 
-    let app = App::new(events, correlations);
+    let app = App::new(events, correlations, live);
     let res = main_loop(&mut terminal, app);
 
     disable_raw_mode()?;
@@ -228,6 +306,15 @@ fn main_loop(terminal: &mut Terminal<Backend>, mut app: App) -> Result<()> {
     loop {
         terminal.draw(|f| draw(f, &mut app))?;
 
+        // Live refresh — checa intervalo a cada tick (independente de input)
+        if let Some((_, interval)) = &app.live {
+            if app.last_refresh.elapsed() >= *interval {
+                app.refresh_live();
+                app.last_refresh = Instant::now();
+            }
+        }
+
+        // Poll com timeout de 200ms para nao bloquear o live refresh
         if !event::poll(Duration::from_millis(200))? {
             continue;
         }
@@ -317,10 +404,19 @@ fn draw(f: &mut ratatui::Frame, app: &mut App) {
 
     // ===== Header =====
     let counts = count_by_source(&app.events);
-    let header = Paragraph::new(Line::from(vec![
+    let mut header_spans = vec![
         Span::styled("VIGIA", Style::default().fg(COLOR_ACCENT).add_modifier(Modifier::BOLD)),
         Span::styled("·OS", Style::default().fg(COLOR_FG).add_modifier(Modifier::BOLD)),
         Span::styled(" Activity Log  ", Style::default().fg(COLOR_FG)),
+    ];
+    if app.live.is_some() {
+        let dot = if app.live_blink { "●" } else { "○" };
+        header_spans.push(Span::styled(
+            format!("{} LIVE  ", dot),
+            Style::default().fg(COLOR_ERROR).add_modifier(Modifier::BOLD),
+        ));
+    }
+    header_spans.extend([
         Span::styled(
             format!("· {}/{} eventos  ", app.visible.len(), app.events.len()),
             Style::default().fg(COLOR_DIM),
@@ -332,8 +428,9 @@ fn draw(f: &mut ratatui::Frame, app: &mut App) {
             format!("· {} correlations", app.correlations.len()),
             Style::default().fg(COLOR_ACCENT),
         ),
-    ]))
-    .block(Block::default().borders(Borders::BOTTOM));
+    ]);
+    let header = Paragraph::new(Line::from(header_spans))
+        .block(Block::default().borders(Borders::BOTTOM));
     f.render_widget(header, header_chunk);
 
     // ===== Correlations panel =====
