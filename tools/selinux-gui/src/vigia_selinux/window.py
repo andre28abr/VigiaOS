@@ -163,10 +163,10 @@ class VigiaSelinuxWindow(Adw.ApplicationWindow):
         box.set_margin_start(12)
         box.set_margin_end(12)
 
-        # Search bar
+        # Search bar — busca em nome E descricao
         self._search_entry = Gtk.SearchEntry()
         self._search_entry.set_placeholder_text(
-            "Filtrar booleans (ex: ssh, httpd, samba, ...)"
+            "Filtrar por nome ou descricao (ex: ssh, write, network, anonimo, ...)"
         )
         self._search_entry.connect("search-changed", self._on_search_changed)
         box.append(self._search_entry)
@@ -198,29 +198,39 @@ class VigiaSelinuxWindow(Adw.ApplicationWindow):
         while child := self._booleans_list.get_first_child():
             self._booleans_list.remove(child)
 
+        # Reset cache de descricoes para o filtro
+        self._row_search_text: dict[Adw.ActionRow, str] = {}
+
         booleans = backend.list_booleans()
         if not booleans:
             empty = Adw.ActionRow()
             empty.set_title("Nenhum boolean encontrado")
-            empty.set_subtitle("SELinux pode nao estar instalado ou nao ha policy carregada.")
+            empty.set_subtitle(
+                "SELinux pode nao estar instalado ou nao ha policy carregada."
+            )
             self._booleans_list.append(empty)
             return
 
         for b in sorted(booleans, key=lambda x: x.name):
             row = Adw.ActionRow()
             row.set_title(b.name)
-            row.set_subtitle("")
+            row.set_subtitle(b.display_description)
 
             switch = Gtk.Switch()
             switch.set_valign(Gtk.Align.CENTER)
             switch.set_active(b.value)
-            # Captura o nome via closure no connect
             switch.connect(
                 "state-set",
                 lambda sw, val, name=b.name: self._on_boolean_toggle(sw, val, name),
             )
             row.add_suffix(switch)
             row.set_activatable_widget(switch)
+
+            # Cache texto de busca (nome + descricao em lowercase)
+            # para o filter func — evita lookup repetido a cada keystroke
+            self._row_search_text[row] = (
+                b.name.lower() + " " + b.display_description.lower()
+            )
 
             self._booleans_list.append(row)
 
@@ -230,7 +240,11 @@ class VigiaSelinuxWindow(Adw.ApplicationWindow):
             return True
         if not isinstance(row, Adw.ActionRow):
             return True
-        return query in row.get_title().lower()
+        haystack = self._row_search_text.get(row)
+        if haystack is None:
+            # Fallback (e.g. row 'empty')
+            return query in row.get_title().lower()
+        return query in haystack
 
     def _on_search_changed(self, _entry: Gtk.SearchEntry) -> None:
         self._booleans_list.invalidate_filter()
