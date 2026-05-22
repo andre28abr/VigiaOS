@@ -52,7 +52,7 @@ const COLOR_HIGHLIGHT_BG: Color = Color::Rgb(0x18, 0x18, 0x1b);
 
 type Backend = CrosstermBackend<Stdout>;
 
-/// Filtros cycleaveis com `f`. Cobre tipos comuns de audit + priorities journal.
+/// Filtros cycleaveis com `f`. Cobre tipos comuns de audit + priorities journal + acoes fail2ban.
 const FILTER_CYCLE: &[&str] = &[
     // Audit
     "AVC",
@@ -70,6 +70,12 @@ const FILTER_CYCLE: &[&str] = &[
     "NOTICE",
     "INFO",
     "DEBUG",
+    // Fail2ban
+    "BAN",
+    "UNBAN",
+    "FOUND",
+    "JAIL_START",
+    "JAIL_STOP",
 ];
 
 #[derive(Debug, PartialEq)]
@@ -265,7 +271,7 @@ fn draw(f: &mut ratatui::Frame, app: &mut App) {
         .split(f.area());
 
     // ===== Header =====
-    let (audit_count, journal_count) = count_by_source(&app.events);
+    let counts = count_by_source(&app.events);
     let header = Paragraph::new(Line::from(vec![
         Span::styled("VIGIA", Style::default().fg(COLOR_ACCENT).add_modifier(Modifier::BOLD)),
         Span::styled("·OS", Style::default().fg(COLOR_FG).add_modifier(Modifier::BOLD)),
@@ -274,8 +280,9 @@ fn draw(f: &mut ratatui::Frame, app: &mut App) {
             format!("· {}/{} eventos  ", app.visible.len(), app.events.len()),
             Style::default().fg(COLOR_DIM),
         ),
-        Span::styled(format!("audit:{audit_count} "), Style::default().fg(COLOR_DIM)),
-        Span::styled(format!("journal:{journal_count}"), Style::default().fg(COLOR_DIM)),
+        Span::styled(format!("audit:{} ", counts.audit), Style::default().fg(COLOR_DIM)),
+        Span::styled(format!("journal:{} ", counts.journal), Style::default().fg(COLOR_DIM)),
+        Span::styled(format!("fail2ban:{}", counts.fail2ban), Style::default().fg(COLOR_DIM)),
     ]))
     .block(Block::default().borders(Borders::BOTTOM));
     f.render_widget(header, chunks[0]);
@@ -360,6 +367,7 @@ fn render_event_row<'a>(e: &'a Event, search: &str) -> ListItem<'a> {
     let source_tag = match e.source() {
         "audit" => "[A]",
         "journal" => "[J]",
+        "fail2ban" => "[F]",
         other => other,
     };
 
@@ -428,6 +436,11 @@ fn color_for_type(t: &str) -> Color {
         "NOTICE" => COLOR_FG,
         "INFO" => COLOR_FG_DIM,
         "DEBUG" => COLOR_DIM,
+        // Fail2ban
+        "BAN" => COLOR_ERROR,
+        "UNBAN" => COLOR_ACCENT,
+        "FOUND" => COLOR_WARN,
+        "JAIL_START" | "JAIL_STOP" => COLOR_FG_DIM,
         _ => COLOR_FG,
     }
 }
@@ -440,16 +453,22 @@ fn truncate(s: &str, n: usize) -> String {
     }
 }
 
-fn count_by_source(events: &[Event]) -> (usize, usize) {
-    let mut audit = 0;
-    let mut journal = 0;
+struct SourceCounts {
+    audit: usize,
+    journal: usize,
+    fail2ban: usize,
+}
+
+fn count_by_source(events: &[Event]) -> SourceCounts {
+    let mut c = SourceCounts { audit: 0, journal: 0, fail2ban: 0 };
     for e in events {
         match e {
-            Event::Audit(_) => audit += 1,
-            Event::Journal(_) => journal += 1,
+            Event::Audit(_) => c.audit += 1,
+            Event::Journal(_) => c.journal += 1,
+            Event::Fail2ban(_) => c.fail2ban += 1,
         }
     }
-    (audit, journal)
+    c
 }
 
 fn format_event_detail(ev: &Event) -> String {
@@ -501,6 +520,26 @@ fn format_event_detail(ev: &Event) -> String {
                     s.push_str(&format!("  {} = {}\n", k, j.extra[k]));
                 }
             }
+            s
+        }
+        Event::Fail2ban(f) => {
+            let mut s = format!(
+                "[fail2ban] timestamp: {}    level: {:?}\n",
+                f.timestamp.format("%Y-%m-%d %H:%M:%S UTC"),
+                f.level
+            );
+            s.push_str(&format!("logger: {}\n", f.logger));
+            if let Some(p) = f.pid {
+                s.push_str(&format!("pid:    {p}\n"));
+            }
+            if let Some(j) = &f.jail {
+                s.push_str(&format!("jail:   {j}\n"));
+            }
+            s.push_str(&format!("action: {:?}\n", f.action));
+            if let Some(ip) = &f.ip {
+                s.push_str(&format!("ip:     {ip}\n"));
+            }
+            s.push_str(&format!("\nraw message:\n  {}\n", f.raw_message));
             s
         }
     }

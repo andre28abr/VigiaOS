@@ -4,12 +4,14 @@
 
 use crate::audit::AuditEvent;
 use crate::event::Event;
+use crate::fail2ban::{Action, Fail2banEntry};
 use crate::journal::{JournalEntry, Priority};
 
 pub fn narrate(event: &Event) -> String {
     match event {
         Event::Audit(e) => narrate_audit(e),
         Event::Journal(j) => narrate_journal(j),
+        Event::Fail2ban(f) => narrate_fail2ban(f),
     }
 }
 
@@ -147,6 +149,29 @@ fn trim_message(msg: &str) -> String {
     }
 }
 
+// ============================================================================
+// fail2ban
+// ============================================================================
+
+fn narrate_fail2ban(e: &Fail2banEntry) -> String {
+    let ts = e.timestamp.format("%H:%M:%S").to_string();
+    let jail_str = e
+        .jail
+        .as_deref()
+        .map(|j| format!(" (jail `{j}`)"))
+        .unwrap_or_default();
+    let ip_str = e.ip.as_deref().unwrap_or("?");
+
+    match &e.action {
+        Action::Ban => format!("{ts} — fail2ban BANIU IP `{ip_str}`{jail_str}"),
+        Action::Unban => format!("{ts} — fail2ban liberou IP `{ip_str}`{jail_str}"),
+        Action::Found => format!("{ts} — fail2ban detectou tentativa de `{ip_str}`{jail_str}"),
+        Action::JailStarted => format!("{ts} — fail2ban iniciou{jail_str}"),
+        Action::JailStopped => format!("{ts} — fail2ban encerrou{jail_str}"),
+        Action::Other { raw } => format!("{ts} — fail2ban: {raw}{jail_str}"),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -180,6 +205,25 @@ mod tests {
         assert!(s.contains("[ERR]"));
         assert!(s.contains("kernel"));
         assert!(s.contains("device descriptor"));
+    }
+
+    #[test]
+    fn narrates_fail2ban_ban() {
+        use chrono::TimeZone;
+        let entry = Fail2banEntry {
+            timestamp: chrono::Utc.timestamp_opt(1748000000, 0).unwrap(),
+            level: crate::fail2ban::Level::Notice,
+            logger: "fail2ban.actions".into(),
+            pid: Some(12345),
+            jail: Some("sshd".into()),
+            action: Action::Ban,
+            ip: Some("192.0.2.42".into()),
+            raw_message: "[sshd] Ban 192.0.2.42".into(),
+        };
+        let s = narrate(&Event::Fail2ban(entry));
+        assert!(s.contains("BANIU"));
+        assert!(s.contains("192.0.2.42"));
+        assert!(s.contains("sshd"));
     }
 
     #[test]

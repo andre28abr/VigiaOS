@@ -1,0 +1,7 @@
+2025-05-23 11:33:35,100 fail2ban.filter         [12345]: INFO    [sshd] Found 192.0.2.42
+2025-05-23 11:33:38,200 fail2ban.filter         [12345]: INFO    [sshd] Found 192.0.2.42
+2025-05-23 11:33:42,300 fail2ban.filter         [12345]: INFO    [sshd] Found 192.0.2.42
+2025-05-23 11:33:45,400 fail2ban.actions        [12345]: NOTICE  [sshd] Ban 192.0.2.42
+2025-05-23 11:34:00,500 fail2ban.filter         [12345]: INFO    [sshd] Found 198.51.100.7
+2025-05-23 11:34:30,600 fail2ban.actions        [12345]: NOTICE  [sshd] Ban 198.51.100.7
+2025-05-23 11:43:45,700 fail2ban.actions        [12345]: NOTICE  [sshd] Unban 192.0.2.42

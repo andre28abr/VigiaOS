@@ -195,6 +195,33 @@ algum, edita o script local ou usa `rpm-ostree uninstall` depois.
 
 > Ordem cronológica. Adicionar entrada a cada milestone.
 
+### 2026-05-22 — Activity Log v0.4 (fail2ban + tres fontes mergeadas)
+- Novo modulo `fail2ban.rs`:
+  - Parser de `/var/log/fail2ban.log` linhas formato:
+    `YYYY-MM-DD HH:MM:SS,mmm logger [pid]: LEVEL [jail] Action IP`
+  - struct `Fail2banEntry` com timestamp, level, logger, pid, jail, action, ip, raw
+  - enum `Action`: Ban, Unban, Found, JailStarted, JailStopped, Other{raw}
+  - enum `Level`: Debug, Info, Notice, Warning, Error, Critical
+  - Detecta IPv4 e IPv6 (heuristica: tem '.' ou ':' + digito)
+- `Event` enum extendida: `Event::Fail2ban(Fail2banEntry)`.
+- Narrator nova: "fail2ban BANIU IP `X` (jail `Y`)", "liberou", "detectou tentativa", etc.
+- TUI extendida:
+  - Tag `[F]` na lista para distinguir fail2ban de [A]udit e [J]ournal
+  - Cores: BAN vermelho (critico), FOUND ambar (warning), UNBAN emerald (positivo)
+  - Header com contagem das 3 fontes (audit/journal/fail2ban)
+  - Detail panel com formato proprio (logger, jail, action, ip, raw_message)
+  - Filter cycle expandido: BAN, UNBAN, FOUND, JAIL_START, JAIL_STOP
+- CLI: novo `--fail2ban-path` (default `/var/log/fail2ban.log`).
+  Multi-source funciona: `--sources audit journald fail2ban` mergeia tudo.
+- 5 novos unit tests para fail2ban (ban, unban, found, jail-started, ipv6).
+- Total: 16 tests passando.
+- Fixture: `tests/fixtures/sample-fail2ban.log` com 7 entries cobrindo
+  Found (tres tentativas), Ban, Found IP novo, Ban IP novo, Unban.
+- **Firewalld nao foi adicionado como source separada** — ele nao tem
+  log proprio em arquivo, escreve direto via systemd journal. Usuario
+  acessa eventos firewalld com `--sources journald` + busca por
+  "firewalld" na TUI.
+
 ### 2026-05-22 — Activity Log v0.3 (journald + multi-source)
 - Novo modulo `event.rs` com enum `Event { Audit(AuditEvent), Journal(JournalEntry) }`
   como abstracao unificada. Narrator, TUI e filtros agora operam em `Event`.
