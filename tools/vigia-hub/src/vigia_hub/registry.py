@@ -54,21 +54,22 @@ TOOLS: list[ToolEntry] = [
         name="Activity Log",
         description="Visualizador de logs do sistema com narrativa human-readable.",
         long_description=(
-            "Parser inteligente de logs do Linux: audit.log, systemd journal e "
-            "fail2ban.log sao consolidados numa unica linha do tempo, traduzidos "
-            "do formato cru para frases em portugues que dizem o que aconteceu, "
-            "quem fez, quando e por que e' notavel.\n\n"
-            "Alem de visualizar, detecta correlations entre fontes: 'fail2ban "
-            "baniu 192.0.2.42 apos 3 tentativas SSH em 10s', 'Sistema OOM killed "
-            "chromium', 'SELinux bloqueou httpd_t multiplas vezes em 60s'. "
-            "Severity classifier reduz ruido em 98% num audit.log tipico."
+            "Parser **inteligente** de logs do Linux: `audit.log`, `systemd journal` "
+            "e `fail2ban.log` sao consolidados numa **unica linha do tempo**, "
+            "traduzidos do formato cru para frases em portugues que dizem *o que "
+            "aconteceu*, *quem fez*, *quando* e *por que e' notavel*.\n\n"
+            "Alem de visualizar, detecta **correlations** entre fontes — por "
+            "exemplo: *fail2ban baniu 192.0.2.42 apos 3 tentativas SSH em 10s*, "
+            "*Sistema OOM killed chromium*, *SELinux bloqueou httpd multiplas "
+            "vezes em 60s*. O **severity classifier** reduz ruido em ate 98% "
+            "num `audit.log` tipico."
         ),
         features=[
-            "Multi-source: audit + journald + fail2ban interleavados por timestamp",
-            "4 patterns de correlation cross-source (fail2ban_burst, oom_kill, selinux_burst, ssh_suspeito)",
-            "Classificador automatico: routine / interesting / suspicious",
-            "Live tail mode (-f) com refresh 2s",
-            "TUI Ratatui com paleta zinc + emerald, filtros, search incremental",
+            "Multi-source: `audit` + `journald` + `fail2ban` interleavados por timestamp",
+            "4 patterns de correlation cross-source (`fail2ban_burst`, `oom_kill`, `selinux_burst`, `ssh_suspeito`)",
+            "Classificador automatico: **routine** / **interesting** / **suspicious**",
+            "Live tail mode (`-f`) com refresh 2s",
+            "TUI Ratatui com paleta *zinc + emerald*, filtros, search incremental",
         ],
         icon_path=_REPO_ROOT / "packaging" / "vigia-log.svg",
         exec_cmd=["vigia-log", "--sources", "audit", "journald", "fail2ban"],
@@ -81,22 +82,22 @@ TOOLS: list[ToolEntry] = [
         name="Privacy Controls",
         description="Painel central de toggles de privacidade.",
         long_description=(
-            "Centraliza 13 configuracoes de privacidade do GNOME e do sistema "
-            "que normalmente exigem editar dconf, /etc/selinux/config, systemctl "
-            "ou firewall-cmd separadamente. Cada toggle muda o estado real do "
-            "sistema na hora.\n\n"
-            "User-scope (sem senha): localizacao, telemetria GNOME, historico "
+            "Centraliza **13 configuracoes de privacidade** do GNOME e do sistema "
+            "que normalmente exigem editar `dconf`, `/etc/selinux/config`, "
+            "`systemctl` ou `firewall-cmd` separadamente. Cada toggle muda o "
+            "estado **real** do sistema na hora.\n\n"
+            "**User-scope** (sem senha): localizacao, telemetria GNOME, historico "
             "de arquivos recentes, uso de apps, identidade em arquivos, "
             "lock screen automatico, previa de notificacoes na lock, limpeza "
             "automatica de lixeira/temp, Bluetooth.\n\n"
-            "System-scope (pede senha admin via polkit): firewall (on/off), "
+            "**System-scope** (pede senha admin via polkit): firewall on/off, "
             "servidor SSH, servico Tor."
         ),
         features=[
-            "10 toggles user-scope via dconf (sem senha)",
-            "3 toggles system-scope via pkexec (firewall, SSH, Tor)",
-            "Toggle indisponivel detectado e exibido dimmed (ex: bluetooth sem adapter)",
-            "Mudancas sincronizadas com GNOME Settings em tempo real",
+            "**10 toggles user-scope** via `dconf` (sem senha)",
+            "**3 toggles system-scope** via `pkexec` (firewall, SSH, Tor)",
+            "Toggle indisponivel detectado e exibido *dimmed* (ex: bluetooth sem adapter)",
+            "Mudancas sincronizadas com **GNOME Settings** em tempo real",
         ],
         icon_path=_TOOLS_DIR
         / "privacy-controls"
@@ -111,23 +112,25 @@ TOOLS: list[ToolEntry] = [
         name="SELinux Manager",
         description="Gerenciador GTK4 moderno para SELinux.",
         long_description=(
-            "Substituto visual do system-config-selinux antigo (GTK2). "
-            "6 tabs cobrindo as operacoes essenciais:\n\n"
-            "• Status: modo runtime + modo persistente (edita /etc/selinux/config), "
-            "policy carregada, versao\n"
-            "• Booleans: ~300 booleans com descricoes em portugues, search por "
-            "nome ou descricao\n"
-            "• Denials: AVC blocks recentes via ausearch + botao 'Gerar' audit2allow\n"
-            "• Files: restorecon por path (resolve 'movi arquivo e parou de funcionar')\n"
-            "• Network: port mappings (qual contexto possui qual porta)\n"
-            "• Processes: contexto SELinux de processos rodando"
+            "Substituto visual do `system-config-selinux` antigo (GTK2). "
+            "**6 tabs** cobrindo as operacoes essenciais:\n\n"
+            "**Status**: modo *runtime* + modo *persistente* (edita "
+            "`/etc/selinux/config`), policy carregada, versao.\n\n"
+            "**Booleans**: ~300 booleans com descricoes em portugues; search "
+            "por nome **OU** descricao.\n\n"
+            "**Denials**: AVC blocks recentes via `ausearch` + botao *Gerar* "
+            "que roda `audit2allow` e sugere o policy module.\n\n"
+            "**Files**: `restorecon` por path — resolve 90% dos 'movi arquivo "
+            "e parou de funcionar'.\n\n"
+            "**Network** e **Processes**: read-only, mostram port mappings "
+            "(`semanage port -l`) e contextos de processos rodando (`ps -eZ`)."
         ),
         features=[
-            "60+ descricoes pt-BR escritas para os booleans mais comuns",
-            "audit2allow integrado: clique 'Gerar' apos selecionar um denial",
-            "Persistent mode toggle (edita /etc/selinux/config via pkexec)",
+            "**60+ descricoes pt-BR** escritas para os booleans mais comuns",
+            "`audit2allow` integrado: clique *Gerar* apos selecionar um denial",
+            "Persistent mode toggle (edita `/etc/selinux/config` via `pkexec`)",
             "Disabled warning visivel quando SELinux desligado",
-            "Cores semanticas: Enforcing verde, Permissive ambar, Disabled vermelho",
+            "Cores semanticas: *Enforcing* verde, *Permissive* ambar, *Disabled* vermelho",
         ],
         icon_path=_TOOLS_DIR / "selinux-gui" / "data" / "br.com.vigia.SelinuxGui.svg",
         exec_cmd=["vigia-selinux"],
@@ -139,19 +142,20 @@ TOOLS: list[ToolEntry] = [
         name="Firewall Manager",
         description="Gerenciador GTK4 para firewalld (zonas, services, portas).",
         long_description=(
-            "Wrapper grafico de firewall-cmd que substitui o firewall-config "
-            "antigo. Pensado para o dia-a-dia: ligar/desligar daemon, mudar "
+            "Wrapper grafico de `firewall-cmd` que substitui o `firewall-config` "
+            "antigo. Pensado para o **dia-a-dia**: ligar/desligar daemon, mudar "
             "zona padrao, e gerenciar quais services e portas estao abertos "
             "em cada zona.\n\n"
-            "Mudancas escrevem --permanent + --reload (persistem no boot E "
-            "aplicam imediatamente). Sem necessidade de lembrar dos comandos."
+            "Mudancas escrevem `--permanent` + `--reload` (persistem no boot "
+            "**E** aplicam imediatamente). Sem necessidade de lembrar dos "
+            "comandos cheios de flags."
         ),
         features=[
-            "Status: daemon active/inactive com botao Start/Stop",
-            "Zona padrao: combo dropdown para mudar via --set-default-zone",
-            "Zonas ativas: lista zona -> interfaces/sources",
-            "CRUD de services por zona (combo com os pre-definidos disponiveis)",
-            "CRUD de portas customizadas (TCP/UDP, single ou range)",
+            "**Status**: daemon active/inactive com botao *Start/Stop*",
+            "**Zona padrao**: combo dropdown via `--set-default-zone`",
+            "**Zonas ativas**: lista zona → interfaces/sources",
+            "**CRUD de services** por zona (combo com os pre-definidos disponiveis)",
+            "**CRUD de portas** customizadas (TCP/UDP, single ou range)",
         ],
         icon_path=_TOOLS_DIR / "firewall-gui" / "data" / "br.com.vigia.FirewallGui.svg",
         exec_cmd=["vigia-firewall"],
@@ -163,21 +167,22 @@ TOOLS: list[ToolEntry] = [
         name="Network Monitor",
         description="Conexoes TCP/UDP em tempo real (quem fala com quem).",
         long_description=(
-            "Visualizador grafico de 'ss -tunap' com auto-refresh. Lista TODAS "
-            "as conexoes ativas (TCP + UDP, qualquer estado), com nome do "
-            "processo e PID. Tab Listening separada mostra apenas servidores "
-            "ativos no host (LISTEN ou UDP UNCONN com wildcard) — critico para "
-            "saber 'o que esta exposto'.\n\n"
-            "Modo admin opt-in via pkexec revela nomes de processos do sistema "
-            "(systemd-resolve, NetworkManager, cupsd, etc.) que normalmente "
-            "ficariam como '(processo restrito)' quando rodando como user."
+            "Visualizador grafico de `ss -tunap` com **auto-refresh**. Lista "
+            "TODAS as conexoes ativas (TCP + UDP, qualquer estado), com nome "
+            "do processo e PID. Tab **Listening** separada mostra apenas "
+            "servidores ativos no host — critico para saber *o que esta "
+            "exposto*.\n\n"
+            "**Modo admin** opt-in via `pkexec` revela nomes de processos do "
+            "sistema (`systemd-resolve`, `NetworkManager`, `cupsd`, etc.) que "
+            "normalmente ficariam como *(processo restrito)* quando rodando "
+            "como user."
         ),
         features=[
-            "Auto-refresh a cada 3s (toggleavel)",
-            "Search filtra por processo, IP, porta",
-            "State badge colorido (ESTAB verde, LISTEN accent, WAIT ambar)",
-            "Tab Listening: so servidores ativos no host",
-            "Modo admin via pkexec: nomes de processos do sistema",
+            "**Auto-refresh** a cada 3s (toggleavel)",
+            "Search filtra por *processo*, *IP* ou *porta*",
+            "State badge colorido (*ESTAB* verde, *LISTEN* accent, *WAIT* ambar)",
+            "Tab **Listening**: so servidores ativos no host",
+            "**Modo admin** via `pkexec`: nomes de processos do sistema",
         ],
         icon_path=_TOOLS_DIR / "netmon-gui" / "data" / "br.com.vigia.NetMon.svg",
         exec_cmd=["vigia-netmon"],
