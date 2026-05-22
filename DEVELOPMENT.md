@@ -195,6 +195,40 @@ algum, edita o script local ou usa `rpm-ostree uninstall` depois.
 
 > Ordem cronológica. Adicionar entrada a cada milestone.
 
+### 2026-05-22 — Activity Log v0.5 (correlator cross-source)
+- Novo modulo `correlator.rs`:
+  - struct `Correlation` { kind, timestamp, end, severity, summary, contributing }
+  - enum `Severity` { Routine, Interesting, Suspicious }
+  - funcao publica `correlate(events: &[Event]) -> Vec<Correlation>`
+  - 4 detectores cross-source implementados:
+    1. `fail2ban_burst`: N x Found mesmo IP -> Ban em ate 2min, N>=2
+    2. `oom_kill`: journal CRIT OOM, opcionalmente confirmado por audit ANOM_ABEND
+    3. `selinux_burst`: 3+ AVC denials mesmo `comm` em janela de 60s (sliding window)
+    4. `suspicious_ssh_login`: journal Accepted publickey + Found anterior em fail2ban
+       para mesmo IP dentro de 10min
+- Helpers `parse_oom_process()` e `parse_ssh_accept()` extraem dados dos messages.
+- 5 novos unit tests (1 por detector + 2 parsers).
+- Total agora: 21 tests passando.
+
+TUI:
+- Painel novo entre header e event list, mostra Correlations com severity tag,
+  summary, duracao em segundos. Borda em accent (emerald) — distinto do resto.
+- Layout dinamico: painel so aparece se ha correlations e `show_correlations==true`.
+- Atalho novo `c` toggle visibilidade do painel.
+- Header agora mostra contagem de correlations (em accent).
+
+CLI/Output:
+- Novo `--output correlations` para mostrar SO as correlations
+- `--output text` agora prepende correlations antes da lista de eventos
+- Cores: SUSP vermelho, INFO ambar, Routine dim
+
+Demo do smoke test (audit + journal + fail2ban combinados):
+  [SUSP] 11:33:35 fail2ban baniu 192.0.2.42 apos 3 tentativas em 10s (4 eventos)
+  [INFO] 11:34:05 Sistema sem memoria matou processo `chromium` (kernel OOM)
+
+18 eventos brutos sintetizados em 2 narrativas. Esse e o pulo qualitativo
+que torna a ferramenta um "insight" e nao apenas um log viewer.
+
 ### 2026-05-22 — Activity Log v0.4 (fail2ban + tres fontes mergeadas)
 - Novo modulo `fail2ban.rs`:
   - Parser de `/var/log/fail2ban.log` linhas formato:

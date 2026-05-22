@@ -38,6 +38,7 @@ use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Borders, List, ListItem, ListState, Paragraph, Wrap};
 use ratatui::Terminal;
 
+use crate::correlator::{Correlation, Severity};
 use crate::event::Event;
 use crate::narrator::narrate;
 
@@ -86,22 +87,27 @@ enum Mode {
 
 struct App {
     events: Vec<Event>,
+    correlations: Vec<Correlation>,
     visible: Vec<usize>,
     list_state: ListState,
     mode: Mode,
     filter: Option<String>,
     search: String,
+    /// Mostra painel de correlations se houver alguma.
+    show_correlations: bool,
 }
 
 impl App {
-    fn new(events: Vec<Event>) -> Self {
+    fn new(events: Vec<Event>, correlations: Vec<Correlation>) -> Self {
         let visible: Vec<usize> = (0..events.len()).collect();
         let mut list_state = ListState::default();
         if !visible.is_empty() {
             list_state.select(Some(0));
         }
         Self {
+            show_correlations: !correlations.is_empty(),
             events,
+            correlations,
             visible,
             list_state,
             mode: Mode::Normal,
@@ -183,13 +189,13 @@ impl App {
     }
 }
 
-pub fn run(events: Vec<Event>) -> Result<()> {
+pub fn run(events: Vec<Event>, correlations: Vec<Correlation>) -> Result<()> {
     enable_raw_mode()?;
     let mut stdout = io::stdout();
     execute!(stdout, EnterAlternateScreen)?;
     let mut terminal = Terminal::new(CrosstermBackend::new(stdout))?;
 
-    let app = App::new(events);
+    let app = App::new(events, correlations);
     let res = main_loop(&mut terminal, app);
 
     disable_raw_mode()?;
@@ -219,6 +225,7 @@ fn main_loop(terminal: &mut Terminal<Backend>, mut app: App) -> Result<()> {
                     KeyCode::Esc => app.clear_filters(),
                     KeyCode::Char('f') => app.cycle_filter(),
                     KeyCode::Char('/') => app.mode = Mode::Searching,
+                    KeyCode::Char('c') => app.show_correlations = !app.show_correlations,
                     KeyCode::Down | KeyCode::Char('j') => app.move_selection(1),
                     KeyCode::Up | KeyCode::Char('k') => app.move_selection(-1),
                     KeyCode::PageDown => app.move_selection(10),
@@ -260,15 +267,32 @@ fn main_loop(terminal: &mut Terminal<Backend>, mut app: App) -> Result<()> {
 }
 
 fn draw(f: &mut ratatui::Frame, app: &mut App) {
+    // Layout dinamico: correlations panel so aparece se ha correlations e show=true.
+    let corr_visible = app.show_correlations && !app.correlations.is_empty();
+    let corr_h: u16 = if corr_visible {
+        // 2 linhas de border + uma linha por correlation, capped em 6
+        (app.correlations.len() as u16 + 2).min(8)
+    } else {
+        0
+    };
+    let mut constraints: Vec<Constraint> = vec![Constraint::Length(3)]; // header
+    if corr_h > 0 {
+        constraints.push(Constraint::Length(corr_h));
+    }
+    constraints.push(Constraint::Min(8));      // event list
+    constraints.push(Constraint::Length(16));  // detail panel
+    constraints.push(Constraint::Length(1));   // status bar
+
     let chunks = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([
-            Constraint::Length(3),  // header
-            Constraint::Min(8),     // event list
-            Constraint::Length(16), // detail panel
-            Constraint::Length(1),  // status bar
-        ])
+        .constraints(constraints)
         .split(f.area());
+
+    let header_chunk = chunks[0];
+    let corr_chunk = if corr_h > 0 { Some(chunks[1]) } else { None };
+    let list_chunk = chunks[if corr_h > 0 { 2 } else { 1 }];
+    let detail_chunk = chunks[if corr_h > 0 { 3 } else { 2 }];
+    let status_chunk = chunks[if corr_h > 0 { 4 } else { 3 }];
 
     // ===== Header =====
     let counts = count_by_source(&app.events);
@@ -282,10 +306,30 @@ fn draw(f: &mut ratatui::Frame, app: &mut App) {
         ),
         Span::styled(format!("audit:{} ", counts.audit), Style::default().fg(COLOR_DIM)),
         Span::styled(format!("journal:{} ", counts.journal), Style::default().fg(COLOR_DIM)),
-        Span::styled(format!("fail2ban:{}", counts.fail2ban), Style::default().fg(COLOR_DIM)),
+        Span::styled(format!("fail2ban:{}  ", counts.fail2ban), Style::default().fg(COLOR_DIM)),
+        Span::styled(
+            format!("· {} correlations", app.correlations.len()),
+            Style::default().fg(COLOR_ACCENT),
+        ),
     ]))
     .block(Block::default().borders(Borders::BOTTOM));
-    f.render_widget(header, chunks[0]);
+    f.render_widget(header, header_chunk);
+
+    // ===== Correlations panel =====
+    if let Some(chunk) = corr_chunk {
+        let items: Vec<ListItem> = app
+            .correlations
+            .iter()
+            .map(|c| render_correlation_row(c))
+            .collect();
+        let panel = List::new(items).block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title(format!(" correlations · {} ", app.correlations.len()))
+                .border_style(Style::default().fg(COLOR_ACCENT)),
+        );
+        f.render_widget(panel, chunk);
+    }
 
     // ===== Event list =====
     let items: Vec<ListItem> = app
@@ -317,7 +361,7 @@ fn draw(f: &mut ratatui::Frame, app: &mut App) {
                 .add_modifier(Modifier::BOLD),
         )
         .highlight_symbol("> ");
-    f.render_stateful_widget(list, chunks[1], &mut app.list_state);
+    f.render_stateful_widget(list, list_chunk, &mut app.list_state);
 
     // ===== Detail panel =====
     let detail_text = app
@@ -334,7 +378,7 @@ fn draw(f: &mut ratatui::Frame, app: &mut App) {
         )
         .style(Style::default().fg(COLOR_FG))
         .wrap(Wrap { trim: false });
-    f.render_widget(detail, chunks[2]);
+    f.render_widget(detail, detail_chunk);
 
     // ===== Status bar =====
     let status_line = match app.mode {
@@ -351,13 +395,37 @@ fn draw(f: &mut ratatui::Frame, app: &mut App) {
             Span::styled("filter  ", Style::default().fg(COLOR_DIM)),
             Span::styled("/ ", Style::default().fg(COLOR_ACCENT)),
             Span::styled("search  ", Style::default().fg(COLOR_DIM)),
+            Span::styled("c ", Style::default().fg(COLOR_ACCENT)),
+            Span::styled("toggle correlations  ", Style::default().fg(COLOR_DIM)),
             Span::styled("Esc ", Style::default().fg(COLOR_ACCENT)),
             Span::styled("clear  ", Style::default().fg(COLOR_DIM)),
             Span::styled("q ", Style::default().fg(COLOR_ACCENT)),
             Span::styled("sai", Style::default().fg(COLOR_DIM)),
         ]),
     };
-    f.render_widget(Paragraph::new(status_line), chunks[3]);
+    f.render_widget(Paragraph::new(status_line), status_chunk);
+}
+
+fn render_correlation_row(c: &Correlation) -> ListItem<'_> {
+    let (sev_tag, sev_color) = match c.severity {
+        Severity::Suspicious => ("SUSP    ", COLOR_ERROR),
+        Severity::Interesting => ("INFO    ", COLOR_WARN),
+        Severity::Routine => ("--      ", COLOR_DIM),
+    };
+    let ts = c.timestamp.format("%H:%M:%S").to_string();
+    let span = (c.end - c.timestamp).num_seconds();
+    let span_str = if span > 0 {
+        format!(" ({}s)", span)
+    } else {
+        String::new()
+    };
+    ListItem::new(Line::from(vec![
+        Span::styled(ts, Style::default().fg(COLOR_DIM)),
+        Span::raw(" "),
+        Span::styled(sev_tag, Style::default().fg(sev_color).add_modifier(Modifier::BOLD)),
+        Span::styled(&c.summary, Style::default().fg(COLOR_FG)),
+        Span::styled(span_str, Style::default().fg(COLOR_DIM)),
+    ]))
 }
 
 fn render_event_row<'a>(e: &'a Event, search: &str) -> ListItem<'a> {

@@ -1,6 +1,7 @@
 //! vigia-log — CLI/TUI para `vigia-activity-log`.
 
 mod audit;
+mod correlator;
 mod event;
 mod fail2ban;
 mod journal;
@@ -76,6 +77,8 @@ enum Output {
     Text,
     /// JSON estruturado (uma linha por evento)
     Json,
+    /// Apenas correlations (narrativas sintetizadas)
+    Correlations,
 }
 
 fn main() -> Result<()> {
@@ -92,10 +95,13 @@ fn main() -> Result<()> {
         events = events.into_iter().skip(skip).collect();
     }
 
+    let correlations = correlator::correlate(&events);
+
     match cli.output {
-        Output::Tui => tui::run(events)?,
-        Output::Text => print_text(&events),
+        Output::Tui => tui::run(events, correlations)?,
+        Output::Text => print_text(&events, &correlations),
         Output::Json => print_json(&events)?,
+        Output::Correlations => print_correlations(&correlations),
     }
     Ok(())
 }
@@ -166,9 +172,51 @@ fn load_journal_file(path: &str) -> Result<Vec<journal::JournalEntry>> {
     journal::parse_log(reader)
 }
 
-fn print_text(events: &[Event]) {
+fn print_text(events: &[Event], correlations: &[correlator::Correlation]) {
+    if !correlations.is_empty() {
+        println!("=== Correlations ({}) ===", correlations.len());
+        for (n, c) in correlations.iter().enumerate() {
+            let sev_tag = match c.severity {
+                correlator::Severity::Suspicious => "[SUSP]",
+                correlator::Severity::Interesting => "[INFO]",
+                correlator::Severity::Routine => "[----]",
+            };
+            println!(
+                "{} {} {} ({} eventos)",
+                sev_tag,
+                c.timestamp.format("%H:%M:%S"),
+                c.summary,
+                c.contributing.len()
+            );
+            let _ = n;
+        }
+        println!("\n=== Events ({}) ===", events.len());
+    }
     for ev in events {
         println!("[{}] {}", ev.source(), narrate(ev));
+    }
+}
+
+fn print_correlations(correlations: &[correlator::Correlation]) {
+    if correlations.is_empty() {
+        println!("(nenhuma correlation detectada)");
+        return;
+    }
+    for c in correlations {
+        let sev_tag = match c.severity {
+            correlator::Severity::Suspicious => "[SUSP]",
+            correlator::Severity::Interesting => "[INFO]",
+            correlator::Severity::Routine => "[----]",
+        };
+        println!(
+            "{} {} - {} - {} (kind={}, eventos={})",
+            sev_tag,
+            c.timestamp.format("%Y-%m-%d %H:%M:%S"),
+            c.summary,
+            (c.end - c.timestamp).num_seconds(),
+            c.kind,
+            c.contributing.len()
+        );
     }
 }
 
