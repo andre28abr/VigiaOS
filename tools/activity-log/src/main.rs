@@ -1,36 +1,63 @@
 //! vigia-log — CLI/TUI para `vigia-activity-log`.
 
 mod audit;
+mod event;
+mod journal;
 mod narrator;
 mod tui;
 
 use std::fs::File;
-use std::io::{self, BufReader};
+use std::io::{self, BufRead, BufReader};
 
 use anyhow::{Context, Result};
 use clap::{Parser, ValueEnum};
 
-use crate::audit::{parse_log, AuditEvent};
+use crate::event::Event;
 use crate::narrator::narrate;
 
 #[derive(Parser, Debug)]
 #[command(
     name = "vigia-log",
-    about = "Parseia audit.log com narrativa human-readable. Parte da Vigia Suite.",
+    about = "Parseia audit.log e journald com narrativa human-readable. Parte da Vigia Suite.",
     version
 )]
 struct Cli {
-    /// Caminho do audit.log. Use '-' para ler de stdin. Default: /var/log/audit/audit.log
-    #[arg(short, long, default_value = "/var/log/audit/audit.log")]
-    path: String,
+    /// Fontes de log a carregar. Pode passar multiplas.
+    /// Default: apenas audit.
+    #[arg(
+        short, long,
+        value_enum,
+        num_args = 1..,
+        default_value = "audit"
+    )]
+    sources: Vec<Source>,
+
+    /// Path do audit.log. Use '-' para stdin. Default: /var/log/audit/audit.log.
+    /// Ignorado se 'audit' nao estiver em --sources.
+    #[arg(long, default_value = "/var/log/audit/audit.log")]
+    audit_path: String,
+
+    /// Path para um snapshot JSON do journal (gerado com
+    /// `journalctl -o json --no-pager > arquivo`). Se omitido, usa
+    /// `journalctl` vivo. Ignorado se 'journald' nao estiver em --sources.
+    #[arg(long)]
+    journal_path: Option<String>,
 
     /// Formato de saida.
     #[arg(short, long, value_enum, default_value_t = Output::Tui)]
     output: Output,
 
-    /// Numero maximo de eventos a mostrar (mais recentes). 0 = todos.
+    /// Numero maximo de eventos mais recentes. 0 = todos.
     #[arg(short, long, default_value_t = 500)]
     limit: usize,
+}
+
+#[derive(Copy, Clone, Debug, ValueEnum, PartialEq, Eq)]
+enum Source {
+    /// /var/log/audit/audit.log (Linux Audit)
+    Audit,
+    /// systemd journal (via journalctl ou arquivo)
+    Journald,
 }
 
 #[derive(Copy, Clone, Debug, ValueEnum)]
@@ -46,13 +73,16 @@ enum Output {
 fn main() -> Result<()> {
     let cli = Cli::parse();
 
-    let events = load_events(&cli.path)?;
-    let events = if cli.limit > 0 && events.len() > cli.limit {
+    let mut events = load_events(&cli)?;
+
+    // Ordena cronologicamente para mostrar audit + journal interleavados.
+    events.sort_by_key(Event::timestamp);
+
+    // Limita aos N mais recentes
+    if cli.limit > 0 && events.len() > cli.limit {
         let skip = events.len() - cli.limit;
-        events.into_iter().skip(skip).collect()
-    } else {
-        events
-    };
+        events = events.into_iter().skip(skip).collect();
+    }
 
     match cli.output {
         Output::Tui => tui::run(events)?,
@@ -62,35 +92,63 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn load_events(path: &str) -> Result<Vec<AuditEvent>> {
+fn load_events(cli: &Cli) -> Result<Vec<Event>> {
+    let mut all: Vec<Event> = Vec::new();
+
+    if cli.sources.contains(&Source::Audit) {
+        let audit_events = load_audit(&cli.audit_path)?;
+        all.extend(audit_events.into_iter().map(Event::Audit));
+    }
+
+    if cli.sources.contains(&Source::Journald) {
+        let journal_entries = match &cli.journal_path {
+            Some(path) => load_journal_file(path)?,
+            None => journal::fetch_via_journalctl(cli.limit.max(500))?,
+        };
+        all.extend(journal_entries.into_iter().map(Event::Journal));
+    }
+
+    Ok(all)
+}
+
+fn load_audit(path: &str) -> Result<Vec<audit::AuditEvent>> {
     if path == "-" {
         let stdin = io::stdin();
         let reader = BufReader::new(stdin.lock());
-        parse_log(reader)
+        audit::parse_log(reader)
     } else {
         let f = File::open(path).with_context(|| {
             format!(
-                "abrir {} (lembre que /var/log/audit/audit.log geralmente \
-                 exige sudo para leitura)",
+                "abrir {} (lembre que /var/log/audit/audit.log geralmente exige sudo)",
                 path
             )
         })?;
-        parse_log(BufReader::new(f))
+        audit::parse_log(BufReader::new(f))
     }
 }
 
-fn print_text(events: &[AuditEvent]) {
+fn load_journal_file(path: &str) -> Result<Vec<journal::JournalEntry>> {
+    let reader: Box<dyn BufRead> = if path == "-" {
+        Box::new(BufReader::new(io::stdin()))
+    } else {
+        let f = File::open(path).with_context(|| format!("abrir {}", path))?;
+        Box::new(BufReader::new(f))
+    };
+    journal::parse_log(reader)
+}
+
+fn print_text(events: &[Event]) {
     for ev in events {
-        println!("{}", narrate(ev));
+        println!("[{}] {}", ev.source(), narrate(ev));
     }
 }
 
-fn print_json(events: &[AuditEvent]) -> Result<()> {
+fn print_json(events: &[Event]) -> Result<()> {
+    use std::io::Write;
     let stdout = io::stdout();
     let mut out = stdout.lock();
     for ev in events {
         serde_json::to_writer(&mut out, ev)?;
-        use std::io::Write;
         out.write_all(b"\n")?;
     }
     Ok(())

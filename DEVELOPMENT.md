@@ -195,6 +195,34 @@ algum, edita o script local ou usa `rpm-ostree uninstall` depois.
 
 > Ordem cronológica. Adicionar entrada a cada milestone.
 
+### 2026-05-22 — Activity Log v0.3 (journald + multi-source)
+- Novo modulo `event.rs` com enum `Event { Audit(AuditEvent), Journal(JournalEntry) }`
+  como abstracao unificada. Narrator, TUI e filtros agora operam em `Event`.
+- Novo modulo `journal.rs` com:
+  - struct `JournalEntry` (timestamp, priority, message, unit, comm, pid, uid, hostname, extra)
+  - enum `Priority` (Emerg..Debug) mapeada do PRIORITY syslog do journal
+  - `parse_json_line()` para parsear o output JSON-lines do journalctl
+  - `parse_log()` para BufRead (arquivo ou stdin)
+  - `fetch_via_journalctl()` que spawneia `journalctl -o json --no-pager -n LIMIT`
+    e parseia stdout. Falha com mensagem clara se journalctl nao existe.
+- CLI atualizada: novo flag `--sources` (multi-valor, default `audit`) +
+  `--audit-path` e `--journal-path` separados. Eventos de multiplas fontes
+  sao mergeados e ordenados por timestamp.
+- Narrator extendido para journal: priority tag + source label trimado
+  (unit sem `.service`/`.target`/etc, fallback para comm).
+- TUI extendida:
+  - Header mostra contagem por source (`audit:N journal:M`)
+  - Cada linha tem tag `[A]` ou `[J]` antes do tipo
+  - Cores semanticas adicionadas para journal priorities: ERR/CRIT/ALERT/EMERG
+    em vermelho, WARNING em ambar, NOTICE em branco, INFO em zinc-300, DEBUG em zinc-500.
+  - Detail panel com formato distinto para audit (records[]) vs journal (campos + message)
+- JSON output discrimina source com chave `"source"` no top-level (via serde tag interno).
+- Filter cycle expandido para incluir niveis syslog (ERR, WARNING, NOTICE, INFO, DEBUG)
+  alem dos tipos de audit.
+- 10 unit tests passando (5 audit + 3 journal + 2 narrator).
+- Fixture `tests/fixtures/sample-journal.json` com 6 entries cobrindo
+  Info, Notice, Warning, Err, Crit.
+
 ### 2026-05-22 — Activity Log v0.2 (filtros + search)
 - Refator do TUI: estado encapsulado em `App` struct (events, visible
   indices, list_state, mode, filter, search).

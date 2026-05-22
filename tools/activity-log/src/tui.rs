@@ -4,13 +4,13 @@
 //!   ┌─────────────────────────────────────────────────────────┐
 //!   │ VIGIA·OS Activity Log · {n}/{total} eventos             │
 //!   ├─────────────────────────────────────────────────────────┤
-//!   │ > 14:23:12  AVC          SELinux bloqueou httpd...      │
-//!   │   14:23:15  USER_AUTH    autenticacao via sudo: OK      │
+//!   │ > 14:23:12 [A] AVC        SELinux bloqueou httpd...     │
+//!   │   14:23:15 [J] ERR        kernel: usb 1-2: error -110   │
 //!   │   ...                                                    │
 //!   ├─────────────────────────────────────────────────────────┤
-//!   │ Detalhes do evento selecionado (records raw)            │
+//!   │ Detalhes do evento selecionado (records/fields raw)     │
 //!   ├─────────────────────────────────────────────────────────┤
-//!   │ [filter: AVC] [search: "denied"]    ↑↓ jk  / f  q       │
+//!   │ [filter: AVC] [search: "denied"]   ↑↓ jk  / f  q        │
 //!   └─────────────────────────────────────────────────────────┘
 //!
 //! Atalhos (modo normal):
@@ -21,18 +21,12 @@
 //!   /               entrar em modo de busca
 //!   Esc             limpar filtros e busca
 //!   q               sair
-//!
-//! Atalhos (modo busca):
-//!   chars           digitar query (filtra em tempo real)
-//!   Backspace       apagar
-//!   Enter           confirmar (volta ao modo normal mantendo busca)
-//!   Esc             cancelar (limpa busca, volta ao modo normal)
 
 use std::io::{self, Stdout};
 use std::time::Duration;
 
 use anyhow::Result;
-use crossterm::event::{self, Event, KeyCode, KeyEventKind, KeyModifiers};
+use crossterm::event::{self, Event as CtEvent, KeyCode, KeyEventKind, KeyModifiers};
 use crossterm::execute;
 use crossterm::terminal::{
     disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
@@ -44,27 +38,38 @@ use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Borders, List, ListItem, ListState, Paragraph, Wrap};
 use ratatui::Terminal;
 
-use crate::audit::AuditEvent;
+use crate::event::Event;
 use crate::narrator::narrate;
 
 // Paleta VigiaOS (Tailwind zinc + emerald)
 const COLOR_ACCENT: Color = Color::Rgb(0x34, 0xd3, 0x99);
 const COLOR_DIM: Color = Color::Rgb(0x71, 0x71, 0x7a);
 const COLOR_FG: Color = Color::Rgb(0xfa, 0xfa, 0xfa);
+const COLOR_FG_DIM: Color = Color::Rgb(0xa1, 0xa1, 0xaa);
 const COLOR_WARN: Color = Color::Rgb(0xfb, 0xbf, 0x24);
 const COLOR_ERROR: Color = Color::Rgb(0xf8, 0x71, 0x71);
 const COLOR_HIGHLIGHT_BG: Color = Color::Rgb(0x18, 0x18, 0x1b);
 
 type Backend = CrosstermBackend<Stdout>;
 
-/// Filtros cycleaveis com `f`. None = sem filtro.
+/// Filtros cycleaveis com `f`. Cobre tipos comuns de audit + priorities journal.
 const FILTER_CYCLE: &[&str] = &[
+    // Audit
     "AVC",
     "USER_AUTH",
     "USER_LOGIN",
     "ANOM_ABEND",
     "ANOM_PROMISCUOUS",
     "SYSCALL",
+    // Journal priorities
+    "EMERG",
+    "ALERT",
+    "CRIT",
+    "ERR",
+    "WARNING",
+    "NOTICE",
+    "INFO",
+    "DEBUG",
 ];
 
 #[derive(Debug, PartialEq)]
@@ -74,19 +79,16 @@ enum Mode {
 }
 
 struct App {
-    events: Vec<AuditEvent>,
-    /// Indices em `events` que passam pelos filtros atuais.
+    events: Vec<Event>,
     visible: Vec<usize>,
     list_state: ListState,
     mode: Mode,
-    /// Filtro por record_type primario. None = mostrar todos.
     filter: Option<String>,
-    /// Query de busca substring (case-insensitive). Vazio = sem busca.
     search: String,
 }
 
 impl App {
-    fn new(events: Vec<AuditEvent>) -> Self {
+    fn new(events: Vec<Event>) -> Self {
         let visible: Vec<usize> = (0..events.len()).collect();
         let mut list_state = ListState::default();
         if !visible.is_empty() {
@@ -110,7 +112,7 @@ impl App {
             .enumerate()
             .filter(|(_, ev)| {
                 if let Some(t) = &self.filter {
-                    if ev.primary_type() != t {
+                    if &ev.primary_type() != t {
                         return false;
                     }
                 }
@@ -125,7 +127,6 @@ impl App {
             .map(|(i, _)| i)
             .collect();
 
-        // Ajusta seleção para nao apontar pra fora.
         match self.list_state.selected() {
             None if !self.visible.is_empty() => self.list_state.select(Some(0)),
             Some(_) if self.visible.is_empty() => self.list_state.select(None),
@@ -168,7 +169,7 @@ impl App {
         self.list_state.select(Some(new as usize));
     }
 
-    fn selected_event(&self) -> Option<&AuditEvent> {
+    fn selected_event(&self) -> Option<&Event> {
         self.list_state
             .selected()
             .and_then(|i| self.visible.get(i))
@@ -176,7 +177,7 @@ impl App {
     }
 }
 
-pub fn run(events: Vec<AuditEvent>) -> Result<()> {
+pub fn run(events: Vec<Event>) -> Result<()> {
     enable_raw_mode()?;
     let mut stdout = io::stdout();
     execute!(stdout, EnterAlternateScreen)?;
@@ -198,11 +199,10 @@ fn main_loop(terminal: &mut Terminal<Backend>, mut app: App) -> Result<()> {
         if !event::poll(Duration::from_millis(200))? {
             continue;
         }
-        if let Event::Key(key) = event::read()? {
+        if let CtEvent::Key(key) = event::read()? {
             if key.kind != KeyEventKind::Press {
                 continue;
             }
-            // ctrl+c sempre sai
             if key.modifiers.contains(KeyModifiers::CONTROL) && key.code == KeyCode::Char('c') {
                 return Ok(());
             }
@@ -235,9 +235,7 @@ fn main_loop(terminal: &mut Terminal<Backend>, mut app: App) -> Result<()> {
                         app.mode = Mode::Normal;
                         app.recompute_visible();
                     }
-                    KeyCode::Enter => {
-                        app.mode = Mode::Normal;
-                    }
+                    KeyCode::Enter => app.mode = Mode::Normal,
                     KeyCode::Backspace => {
                         app.search.pop();
                         app.recompute_visible();
@@ -260,24 +258,24 @@ fn draw(f: &mut ratatui::Frame, app: &mut App) {
         .direction(Direction::Vertical)
         .constraints([
             Constraint::Length(3),  // header
-            Constraint::Min(8),     // event list (expande)
+            Constraint::Min(8),     // event list
             Constraint::Length(16), // detail panel
             Constraint::Length(1),  // status bar
         ])
         .split(f.area());
 
     // ===== Header =====
+    let (audit_count, journal_count) = count_by_source(&app.events);
     let header = Paragraph::new(Line::from(vec![
-        Span::styled(
-            "VIGIA",
-            Style::default().fg(COLOR_ACCENT).add_modifier(Modifier::BOLD),
-        ),
+        Span::styled("VIGIA", Style::default().fg(COLOR_ACCENT).add_modifier(Modifier::BOLD)),
         Span::styled("·OS", Style::default().fg(COLOR_FG).add_modifier(Modifier::BOLD)),
         Span::styled(" Activity Log  ", Style::default().fg(COLOR_FG)),
         Span::styled(
-            format!("· {}/{} eventos", app.visible.len(), app.events.len()),
+            format!("· {}/{} eventos  ", app.visible.len(), app.events.len()),
             Style::default().fg(COLOR_DIM),
         ),
+        Span::styled(format!("audit:{audit_count} "), Style::default().fg(COLOR_DIM)),
+        Span::styled(format!("journal:{journal_count}"), Style::default().fg(COLOR_DIM)),
     ]))
     .block(Block::default().borders(Borders::BOTTOM));
     f.render_widget(header, chunks[0]);
@@ -288,28 +286,7 @@ fn draw(f: &mut ratatui::Frame, app: &mut App) {
         .iter()
         .map(|&idx| {
             let e = &app.events[idx];
-            let ts = e.timestamp.format("%H:%M:%S").to_string();
-            let type_color = color_for_type(e.primary_type());
-            let mut line_spans = vec![
-                Span::styled(ts, Style::default().fg(COLOR_DIM)),
-                Span::raw("  "),
-                Span::styled(
-                    format!("{:14}", e.primary_type()),
-                    Style::default()
-                        .fg(type_color)
-                        .add_modifier(Modifier::BOLD),
-                ),
-                Span::raw(" "),
-            ];
-
-            // Destacar matches da busca dentro da narrativa
-            let narration = narrate(e);
-            if app.search.is_empty() {
-                line_spans.push(Span::styled(narration, Style::default().fg(COLOR_FG)));
-            } else {
-                push_highlighted(&mut line_spans, &narration, &app.search);
-            }
-            ListItem::new(Line::from(line_spans))
+            render_event_row(e, &app.search)
         })
         .collect();
 
@@ -358,10 +335,7 @@ fn draw(f: &mut ratatui::Frame, app: &mut App) {
             Span::styled("/", Style::default().fg(COLOR_ACCENT).add_modifier(Modifier::BOLD)),
             Span::styled(&app.search, Style::default().fg(COLOR_FG)),
             Span::styled("_", Style::default().fg(COLOR_ACCENT)),
-            Span::styled(
-                "   Enter=confirma  Esc=cancela",
-                Style::default().fg(COLOR_DIM),
-            ),
+            Span::styled("   Enter=confirma  Esc=cancela", Style::default().fg(COLOR_DIM)),
         ]),
         Mode::Normal => Line::from(vec![
             Span::styled(" ↑↓jk ", Style::default().fg(COLOR_ACCENT)),
@@ -379,7 +353,38 @@ fn draw(f: &mut ratatui::Frame, app: &mut App) {
     f.render_widget(Paragraph::new(status_line), chunks[3]);
 }
 
-/// Adiciona spans com destaque do `needle` em `haystack` (case-insensitive).
+fn render_event_row<'a>(e: &'a Event, search: &str) -> ListItem<'a> {
+    let ts = e.timestamp().format("%H:%M:%S").to_string();
+    let primary = e.primary_type();
+    let type_color = color_for_type(&primary);
+    let source_tag = match e.source() {
+        "audit" => "[A]",
+        "journal" => "[J]",
+        other => other,
+    };
+
+    let mut spans = vec![
+        Span::styled(ts, Style::default().fg(COLOR_DIM)),
+        Span::raw(" "),
+        Span::styled(source_tag, Style::default().fg(COLOR_FG_DIM)),
+        Span::raw(" "),
+        Span::styled(
+            format!("{:14}", truncate(&primary, 14)),
+            Style::default().fg(type_color).add_modifier(Modifier::BOLD),
+        ),
+        Span::raw(" "),
+    ];
+
+    let narration = narrate(e);
+    if search.is_empty() {
+        spans.push(Span::styled(narration, Style::default().fg(COLOR_FG)));
+    } else {
+        push_highlighted(&mut spans, &narration, search);
+    }
+    ListItem::new(Line::from(spans))
+}
+
+/// Adiciona spans destacando substring `needle` em `haystack`.
 fn push_highlighted(out: &mut Vec<Span<'static>>, haystack: &str, needle: &str) {
     let lower = haystack.to_lowercase();
     let needle_lower = needle.to_lowercase();
@@ -412,27 +417,91 @@ fn push_highlighted(out: &mut Vec<Span<'static>>, haystack: &str, needle: &str) 
 
 fn color_for_type(t: &str) -> Color {
     match t {
+        // Audit: criticidade alta
         "AVC" => COLOR_ERROR,
-        "USER_AUTH" | "USER_LOGIN" | "USER_ACCT" => COLOR_ACCENT,
         "ANOM_PROMISCUOUS" | "ANOM_ABEND" => COLOR_WARN,
+        // Audit: autenticacao (accent)
+        "USER_AUTH" | "USER_LOGIN" | "USER_ACCT" => COLOR_ACCENT,
+        // Journal: priorities syslog
+        "EMERG" | "ALERT" | "CRIT" | "ERR" => COLOR_ERROR,
+        "WARNING" => COLOR_WARN,
+        "NOTICE" => COLOR_FG,
+        "INFO" => COLOR_FG_DIM,
+        "DEBUG" => COLOR_DIM,
         _ => COLOR_FG,
     }
 }
 
-fn format_event_detail(ev: &AuditEvent) -> String {
-    let mut s = format!(
-        "audit_id: {}    timestamp: {}    records: {}\n",
-        ev.audit_id,
-        ev.timestamp.format("%Y-%m-%d %H:%M:%S UTC"),
-        ev.records.len()
-    );
-    for r in &ev.records {
-        s.push_str(&format!("\n[{}]\n", r.record_type));
-        let mut keys: Vec<&String> = r.fields.keys().collect();
-        keys.sort();
-        for k in keys {
-            s.push_str(&format!("  {} = {}\n", k, r.fields[k]));
+fn truncate(s: &str, n: usize) -> String {
+    if s.len() <= n {
+        s.to_string()
+    } else {
+        s.chars().take(n).collect()
+    }
+}
+
+fn count_by_source(events: &[Event]) -> (usize, usize) {
+    let mut audit = 0;
+    let mut journal = 0;
+    for e in events {
+        match e {
+            Event::Audit(_) => audit += 1,
+            Event::Journal(_) => journal += 1,
         }
     }
-    s
+    (audit, journal)
+}
+
+fn format_event_detail(ev: &Event) -> String {
+    match ev {
+        Event::Audit(a) => {
+            let mut s = format!(
+                "[audit] audit_id: {}    timestamp: {}    records: {}\n",
+                a.audit_id,
+                a.timestamp.format("%Y-%m-%d %H:%M:%S UTC"),
+                a.records.len()
+            );
+            for r in &a.records {
+                s.push_str(&format!("\n[{}]\n", r.record_type));
+                let mut keys: Vec<&String> = r.fields.keys().collect();
+                keys.sort();
+                for k in keys {
+                    s.push_str(&format!("  {} = {}\n", k, r.fields[k]));
+                }
+            }
+            s
+        }
+        Event::Journal(j) => {
+            let mut s = format!(
+                "[journal] timestamp: {}    priority: {}\n",
+                j.timestamp.format("%Y-%m-%d %H:%M:%S UTC"),
+                j.priority.as_str()
+            );
+            if let Some(u) = &j.unit {
+                s.push_str(&format!("unit: {u}\n"));
+            }
+            if let Some(c) = &j.comm {
+                s.push_str(&format!("comm: {c}\n"));
+            }
+            if let Some(p) = j.pid {
+                s.push_str(&format!("pid:  {p}\n"));
+            }
+            if let Some(u) = j.uid {
+                s.push_str(&format!("uid:  {u}\n"));
+            }
+            if let Some(h) = &j.hostname {
+                s.push_str(&format!("host: {h}\n"));
+            }
+            s.push_str(&format!("\nmessage:\n  {}\n", j.message));
+            if !j.extra.is_empty() {
+                s.push_str("\nextras:\n");
+                let mut keys: Vec<&String> = j.extra.keys().collect();
+                keys.sort();
+                for k in keys {
+                    s.push_str(&format!("  {} = {}\n", k, j.extra[k]));
+                }
+            }
+            s
+        }
+    }
 }
