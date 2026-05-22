@@ -195,6 +195,32 @@ algum, edita o script local ou usa `rpm-ostree uninstall` depois.
 
 > Ordem cronológica. Adicionar entrada a cada milestone.
 
+### 2026-05-22 — Activity Log v0.2 (filtros + search)
+- Refator do TUI: estado encapsulado em `App` struct (events, visible
+  indices, list_state, mode, filter, search).
+- Modo `Mode::Searching` ativado com `/`. Acceita chars, Backspace,
+  Enter (confirma), Esc (cancela e limpa). Lista filtrada em tempo real.
+- Filtro por tipo com `f` cycle: None → AVC → USER_AUTH → USER_LOGIN
+  → ANOM_ABEND → ANOM_PROMISCUOUS → SYSCALL → None.
+- Esc no modo normal limpa filtro e busca.
+- Title da lista mostra estado: `eventos · filter=AVC search="denied"`.
+- Status bar com hints contextuais (normal vs searching).
+- Match da busca destacado com fundo emerald + bold na lista.
+- Detail panel cresceu de 10 para 16 linhas (Length(16)).
+- Confirmado por screenshot do autor: paleta e layout funcionais.
+
+### 2026-05-22 — Activity Log v0.1 (Rust + Ratatui + audit.log)
+- Primeira ferramenta da Vigia Suite criada como projeto Cargo
+  em `tools/activity-log/`.
+- Parser hand-rolled de `audit.log`: handles double-quoted,
+  single-quoted com expansão recursiva de nested key=value
+  (USER_* pattern), e extração do `{ action }` dos AVC para
+  field virtual `avc_op`.
+- Narrator em PT-BR para AVC, USER_AUTH/LOGIN/ACCT, ANOM_*, SYSCALL.
+- TUI Ratatui com paleta VigiaOS (zinc-950 bg, emerald accent).
+- 3 modos de saída: TUI default, text (CLI pipe), json.
+- 5 unit tests, fixture em `tests/fixtures/sample-audit.log`.
+
 ### 2026-05-22 — Pivot: distro → toolkit
 - Decisão tomada: parar de manter custom image, focar em ferramentas
 - Branch `legacy/v1-distro` criada preservando estado completo da v1
