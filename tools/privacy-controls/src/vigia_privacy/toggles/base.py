@@ -15,6 +15,8 @@ direto para uma chave dconf — a grande maioria dos casos.
 
 from __future__ import annotations
 
+import shutil
+import subprocess
 from dataclasses import dataclass
 from typing import Callable
 
@@ -81,6 +83,81 @@ def dconf_toggle(
         # Verifica tambem que a key existe no schema (algumas chaves foram
         # removidas em versoes mais novas do GNOME)
         return schema_obj.has_key(key)
+
+    return Toggle(
+        name=name,
+        description=description,
+        category=category,
+        get_fn=_get,
+        set_fn=_set,
+        available_fn=_available,
+    )
+
+
+def systemd_unit_toggle(
+    *,
+    unit: str,
+    name: str,
+    description: str,
+    category: str,
+    extra_available_check: Callable[[], bool] | None = None,
+) -> Toggle:
+    """Toggle controlando active/inactive + enabled/disabled de uma unit systemd.
+
+    - Read state: chama 'systemctl is-active <unit>' (sem privilegio)
+    - Write state: chama 'pkexec systemctl enable/disable --now <unit>'
+      (--now = enable+start ou disable+stop em uma chamada).
+      pkexec abre o dialogo grafico do polkit pedindo senha admin.
+
+    `extra_available_check` permite condicoes adicionais (ex: 'tor' so' aparece
+    se o binario tor estiver instalado, alem da unit existir).
+    """
+
+    def _get() -> bool:
+        result = subprocess.run(
+            ["systemctl", "is-active", unit],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        return result.stdout.strip() == "active"
+
+    def _set(value: bool) -> None:
+        if shutil.which("pkexec") is None:
+            raise RuntimeError(
+                "pkexec nao encontrado. Instale 'polkit' via rpm-ostree."
+            )
+        action = "enable" if value else "disable"
+        result = subprocess.run(
+            ["pkexec", "systemctl", action, "--now", f"{unit}.service"],
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+        if result.returncode != 0:
+            # Distingue cancelamento (usuario nao deu senha) de outro erro
+            stderr = result.stderr.strip() or result.stdout.strip()
+            if "Request dismissed" in stderr or result.returncode == 126:
+                raise RuntimeError("Autenticacao cancelada pelo usuario.")
+            raise RuntimeError(f"systemctl {action} --now {unit} falhou: {stderr}")
+
+    def _available() -> bool:
+        # Unit existe no sistema?
+        check = subprocess.run(
+            ["systemctl", "list-unit-files", f"{unit}.service", "--no-legend"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        if check.returncode != 0 or not check.stdout.strip():
+            return False
+        # Filtro adicional opcional
+        if extra_available_check is not None:
+            try:
+                return extra_available_check()
+            except Exception:
+                return False
+        return True
 
     return Toggle(
         name=name,
