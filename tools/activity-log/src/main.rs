@@ -2,6 +2,7 @@
 
 mod audit;
 mod event;
+mod fail2ban;
 mod journal;
 mod narrator;
 mod tui;
@@ -43,6 +44,11 @@ struct Cli {
     #[arg(long)]
     journal_path: Option<String>,
 
+    /// Path do log do fail2ban. Default: /var/log/fail2ban.log.
+    /// Ignorado se 'fail2ban' nao estiver em --sources.
+    #[arg(long, default_value = "/var/log/fail2ban.log")]
+    fail2ban_path: String,
+
     /// Formato de saida.
     #[arg(short, long, value_enum, default_value_t = Output::Tui)]
     output: Output,
@@ -58,6 +64,8 @@ enum Source {
     Audit,
     /// systemd journal (via journalctl ou arquivo)
     Journald,
+    /// /var/log/fail2ban.log
+    Fail2ban,
 }
 
 #[derive(Copy, Clone, Debug, ValueEnum)]
@@ -108,7 +116,28 @@ fn load_events(cli: &Cli) -> Result<Vec<Event>> {
         all.extend(journal_entries.into_iter().map(Event::Journal));
     }
 
+    if cli.sources.contains(&Source::Fail2ban) {
+        let f2b = load_fail2ban(&cli.fail2ban_path)?;
+        all.extend(f2b.into_iter().map(Event::Fail2ban));
+    }
+
     Ok(all)
+}
+
+fn load_fail2ban(path: &str) -> Result<Vec<fail2ban::Fail2banEntry>> {
+    let reader: Box<dyn BufRead> = if path == "-" {
+        Box::new(BufReader::new(io::stdin()))
+    } else {
+        let f = File::open(path).with_context(|| {
+            format!(
+                "abrir {} (alguns sistemas escrevem fail2ban so no journal — \
+                 nesse caso use --sources journald e busque \"fail2ban\")",
+                path
+            )
+        })?;
+        Box::new(BufReader::new(f))
+    };
+    fail2ban::parse_log(reader)
 }
 
 fn load_audit(path: &str) -> Result<Vec<audit::AuditEvent>> {

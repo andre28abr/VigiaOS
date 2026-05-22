@@ -6,18 +6,27 @@
 
 ## Estado
 
-🟢 **v0.3** — multi-source (audit + journald) mergeado cronologicamente.
+🟢 **v0.4** — três fontes mergeadas cronologicamente: audit + journald + fail2ban.
 
-- Sources: `audit` (/var/log/audit/audit.log) e `journald` (via `journalctl -o json`)
+- Sources:
+  - `audit` (/var/log/audit/audit.log)
+  - `journald` (via `journalctl -o json` ou snapshot JSON)
+  - `fail2ban` (/var/log/fail2ban.log)
 - Eventos interleavados por timestamp, navegáveis na mesma lista
-- Parser de audit: handles double/single-quoted nested fields, `{ action }` dos AVC
-- Parser de journal: JSON-lines do journalctl, prioridades syslog, unit/comm/pid/uid/hostname
+- Tags `[A]` / `[J]` / `[F]` na TUI distinguem origem
 - Narrator em português:
   - Audit: AVC, USER_AUTH, USER_LOGIN, USER_ACCT, ANOM_*, SYSCALL
-  - Journal: priority tag ([ERR], [WARN], [CRIT], etc.) + source label (unit ou comm)
-- TUI com cores semânticas (priority syslog mapeado para vermelho/âmbar/branco/dim)
+  - Journal: priority tag ([ERR], [WARN], [CRIT], etc.) + unit/comm
+  - Fail2ban: BANIU / liberou / detectou tentativa + IP + jail
+- Cores semânticas por severidade (vermelho crítico, âmbar warning, etc.)
 - Filtros: cycle por tipo (`f`), search incremental (`/`)
 - Modos de saída: TUI (default), texto, JSON discriminado por source
+
+### Sobre firewalld
+
+O `firewalld` **não tem log próprio em arquivo**; ele loga via systemd journal.
+Então use `--sources journald` e busque por "firewalld" (com `/`). Drops de
+kernel iptables/nftables também caem no journal com `_TRANSPORT=kernel`.
 
 ## Build
 
@@ -40,8 +49,8 @@ sudo install -m 0755 target/release/vigia-log /usr/local/bin/vigia-log
 # Default: só audit.log
 sudo vigia-log
 
-# Multi-source — audit + journal mergeados cronologicamente
-sudo vigia-log --sources audit journald
+# Multi-source — todas as fontes mergeadas cronologicamente
+sudo vigia-log --sources audit journald fail2ban
 
 # Só journal
 sudo vigia-log --sources journald
@@ -109,7 +118,7 @@ A query de busca é case-insensitive e aplica em cima da narrativa completa
 - ✅ v0.1: parser + narrator + TUI básico para audit.log
 - ✅ v0.2: filtros (por tipo, cycle com `f`); search incremental (`/`); highlight de matches
 - ✅ v0.3: source `journald` (via `journalctl -o json`), Event abstraction, merge cronológico, cores por priority syslog
-- v0.4: adicionar source `fail2ban` + firewalld
+- ✅ v0.4: source `fail2ban` (Ban/Unban/Found + IP + jail). Firewalld coberto via journald.
 - v0.5: correlator (junta eventos relacionados de fontes diferentes em "narrativas" únicas)
 - v0.6: classificador automático (rotineiro / interessante / suspeito) + filtro `s` para "só suspeito"
 - v0.7: live mode (`-f` tail) — atualiza TUI em tempo real conforme audit/journal crescem
@@ -130,6 +139,7 @@ src/
 ├── event.rs      # enum Event { Audit, Journal } — abstração unificada
 ├── audit.rs      # parser + agrupamento de audit.log
 ├── journal.rs    # parser de journalctl -o json + Priority syslog
+├── fail2ban.rs   # parser de /var/log/fail2ban.log + Action enum (Ban/Unban/Found)
 ├── narrator.rs   # Event → frase em português (dispatch por variant)
 └── tui.rs        # interface Ratatui (App struct, filtros, search)
 ```
