@@ -162,24 +162,55 @@ fn load_events(cli: &Cli) -> Result<Vec<Event>> {
     let mut all: Vec<Event> = Vec::new();
 
     if cli.sources.contains(&Source::Audit) {
-        let audit_events = load_audit(&cli.audit_path)?;
-        all.extend(audit_events.into_iter().map(Event::Audit));
+        if file_exists_or_stdin(&cli.audit_path) {
+            let audit_events = load_audit(&cli.audit_path)?;
+            all.extend(audit_events.into_iter().map(Event::Audit));
+        } else {
+            eprintln!(
+                "warn: source 'audit' habilitado mas {} nao existe — pulando \
+                 (instale auditd ou use --audit-path para outro arquivo)",
+                cli.audit_path
+            );
+        }
     }
 
     if cli.sources.contains(&Source::Journald) {
         let journal_entries = match &cli.journal_path {
-            Some(path) => load_journal_file(path)?,
-            None => journal::fetch_via_journalctl(cli.limit.max(500))?,
+            Some(path) => {
+                if file_exists_or_stdin(path) {
+                    load_journal_file(path)?
+                } else {
+                    eprintln!("warn: source 'journald' arquivo {} nao existe — pulando", path);
+                    Vec::new()
+                }
+            }
+            None => journal::fetch_via_journalctl(cli.limit.max(500))
+                .unwrap_or_else(|e| {
+                    eprintln!("warn: source 'journald' falhou ({e}) — pulando");
+                    Vec::new()
+                }),
         };
         all.extend(journal_entries.into_iter().map(Event::Journal));
     }
 
     if cli.sources.contains(&Source::Fail2ban) {
-        let f2b = load_fail2ban(&cli.fail2ban_path)?;
-        all.extend(f2b.into_iter().map(Event::Fail2ban));
+        if file_exists_or_stdin(&cli.fail2ban_path) {
+            let f2b = load_fail2ban(&cli.fail2ban_path)?;
+            all.extend(f2b.into_iter().map(Event::Fail2ban));
+        } else {
+            eprintln!(
+                "warn: source 'fail2ban' habilitado mas {} nao existe — pulando \
+                 (instale fail2ban via rpm-ostree ou remova fail2ban de --sources)",
+                cli.fail2ban_path
+            );
+        }
     }
 
     Ok(all)
+}
+
+fn file_exists_or_stdin(path: &str) -> bool {
+    path == "-" || std::path::Path::new(path).exists()
 }
 
 fn load_fail2ban(path: &str) -> Result<Vec<fail2ban::Fail2banEntry>> {
