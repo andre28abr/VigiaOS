@@ -6,7 +6,22 @@
 
 ## Estado
 
-🟢 **v0.4** — três fontes mergeadas cronologicamente: audit + journald + fail2ban.
+🟢 **v0.5** — correlator: detecta padrões cross-source e sintetiza em narrativas únicas.
+
+Salto qualitativo: a ferramenta deixa de ser "lista de eventos" e vira "insight sobre
+o que aconteceu". Padrões detectados:
+
+| Pattern | Severidade | O que detecta |
+|---|---|---|
+| `fail2ban_burst` | SUSP | N×Found mesmo IP → Ban em até 2min (N≥2) |
+| `oom_kill` | INFO | journal CRIT OOM, opcionalmente confirmado por audit ANOM_ABEND |
+| `selinux_burst` | INFO | 3+ AVC denials mesmo `comm` em até 60s |
+| `suspicious_ssh_login` | SUSP | Accepted publickey + ≥1 Found anterior do mesmo IP em 10min |
+
+Painel de correlations aparece automaticamente na TUI quando há detecções
+(toggle com `c`).
+
+### v0.4 — três fontes mergeadas cronologicamente: audit + journald + fail2ban.
 
 - Sources:
   - `audit` (/var/log/audit/audit.log)
@@ -56,8 +71,9 @@ sudo vigia-log --sources audit journald fail2ban
 sudo vigia-log --sources journald
 
 # Modos de saída
-sudo vigia-log -o text                # CLI pipe-friendly
+sudo vigia-log -o text                # CLI pipe-friendly (correlations + events)
 sudo vigia-log -o json | jq .         # JSON discriminado por source
+sudo vigia-log -o correlations        # só as narrativas sintetizadas
 
 # Override paths (útil para fixtures e dev)
 vigia-log --sources audit journald \
@@ -97,6 +113,7 @@ vigia-log --sources journald --journal-path ~/journal-snap.json
 | `Home` / `End` | Primeiro / último |
 | `f` | Cycle filter por tipo (AVC → USER_AUTH → ... → None) |
 | `/` | Entra em modo de busca |
+| `c` | Toggle visibilidade do painel de correlations |
 | `Esc` | Limpa filtros e busca |
 | `q` | Sai |
 
@@ -119,8 +136,8 @@ A query de busca é case-insensitive e aplica em cima da narrativa completa
 - ✅ v0.2: filtros (por tipo, cycle com `f`); search incremental (`/`); highlight de matches
 - ✅ v0.3: source `journald` (via `journalctl -o json`), Event abstraction, merge cronológico, cores por priority syslog
 - ✅ v0.4: source `fail2ban` (Ban/Unban/Found + IP + jail). Firewalld coberto via journald.
-- v0.5: correlator (junta eventos relacionados de fontes diferentes em "narrativas" únicas)
-- v0.6: classificador automático (rotineiro / interessante / suspeito) + filtro `s` para "só suspeito"
+- ✅ v0.5: correlator com 4 padrões (fail2ban_burst, oom_kill, selinux_burst, suspicious_ssh_login). Painel toggleavel na TUI. Modo `-o correlations`.
+- v0.6: classificador automático em cima de eventos individuais (rotineiro / interessante / suspeito) + filtro `s` para "só suspeito"
 - v0.7: live mode (`-f` tail) — atualiza TUI em tempo real conforme audit/journal crescem
 
 ## Testes
@@ -140,6 +157,7 @@ src/
 ├── audit.rs      # parser + agrupamento de audit.log
 ├── journal.rs    # parser de journalctl -o json + Priority syslog
 ├── fail2ban.rs   # parser de /var/log/fail2ban.log + Action enum (Ban/Unban/Found)
+├── correlator.rs # detecta padrões cross-source e gera Correlation com summary + severity
 ├── narrator.rs   # Event → frase em português (dispatch por variant)
 └── tui.rs        # interface Ratatui (App struct, filtros, search)
 ```
