@@ -32,14 +32,26 @@ class NetConnection:
         return self.state == "ESTAB"
 
 
-def list_connections() -> list[NetConnection]:
-    """Roda `ss -tunap` e devolve lista de conexoes."""
+def list_connections(elevated: bool = False) -> list[NetConnection]:
+    """Roda `ss -tunap` e devolve lista de conexoes.
+
+    elevated=True roda via pkexec (mostra process info de TODOS os sockets,
+    incluindo system services). Dispara dialogo polkit pedindo senha admin
+    a cada chamada — chame com parsimonia.
+    """
     if shutil.which("ss") is None:
         return []
+    if elevated:
+        if shutil.which("pkexec") is None:
+            return []
+        cmd = ["pkexec", "ss", "-tunap"]
+        timeout = 60  # mais espaco para o dialogo polkit
+    else:
+        cmd = ["ss", "-tunap"]
+        timeout = 10
     try:
         result = subprocess.run(
-            ["ss", "-tunap"],
-            capture_output=True, text=True, timeout=10,
+            cmd, capture_output=True, text=True, timeout=timeout,
         )
     except (subprocess.SubprocessError, FileNotFoundError):
         return []
@@ -93,14 +105,14 @@ def _parse_ss_output(output: str) -> list[NetConnection]:
 # Convenience filters
 # ============================================================================
 
-def list_listening() -> list[NetConnection]:
+def list_listening(elevated: bool = False) -> list[NetConnection]:
     """So sockets em LISTEN ou UNCONN com peer wildcard (servidores ativos)."""
-    return [c for c in list_connections() if c.is_listening]
+    return [c for c in list_connections(elevated=elevated) if c.is_listening]
 
 
-def list_established() -> list[NetConnection]:
+def list_established(elevated: bool = False) -> list[NetConnection]:
     """So conexoes ESTAB (TCP estabelecidas)."""
-    return [c for c in list_connections() if c.is_established]
+    return [c for c in list_connections(elevated=elevated) if c.is_established]
 
 
 def is_ss_available() -> bool:

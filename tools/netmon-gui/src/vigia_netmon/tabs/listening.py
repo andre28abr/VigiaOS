@@ -13,4 +13,4 @@ class ListeningTab(ConnectionsTab):
     """Mostra apenas servidores ativos no host (LISTEN ou UDP UNCONN)."""
 
     def _fetch(self) -> list[backend.NetConnection]:
-        return backend.list_listening()
+        return backend.list_listening(elevated=self._elevated_mode)

@@ -69,6 +69,41 @@ class ConnectionsTab(Gtk.Box):
 
         inner.append(toolbar)
 
+        # ============= Modo admin (card explicativo) ============= #
+        elevated_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
+        elevated_box.add_css_class("card")
+        elevated_box.set_margin_top(4)
+        elevated_box.set_margin_bottom(4)
+        # Padding interno
+        elevated_box.set_margin_start(0)
+        elevated_box.set_margin_end(0)
+
+        info_lbl = Gtk.Label()
+        info_lbl.set_markup(
+            "<b>Modo admin</b> — exibe nome de processos do sistema (root, "
+            "systemd-resolve, etc.). Pede senha admin a cada Atualizar. "
+            "Auto-refresh fica desabilitado neste modo."
+        )
+        info_lbl.set_wrap(True)
+        info_lbl.set_xalign(0)
+        info_lbl.set_hexpand(True)
+        info_lbl.set_margin_start(12)
+        info_lbl.set_margin_top(12)
+        info_lbl.set_margin_bottom(12)
+        elevated_box.append(info_lbl)
+
+        self._elevated_switch = Gtk.Switch()
+        self._elevated_switch.set_valign(Gtk.Align.CENTER)
+        self._elevated_switch.set_margin_end(12)
+        self._elevated_switch.set_active(False)
+        self._elevated_switch.connect("state-set", self._on_elevated_toggle)
+        elevated_box.append(self._elevated_switch)
+
+        inner.append(elevated_box)
+
+        # Estado inicial do modo
+        self._elevated_mode = False
+
         # Count label
         self._count_label = Gtk.Label()
         self._count_label.set_xalign(0)
@@ -98,7 +133,7 @@ class ConnectionsTab(Gtk.Box):
     # ========================================================================
 
     def _fetch(self) -> list[backend.NetConnection]:
-        return backend.list_connections()
+        return backend.list_connections(elevated=self._elevated_mode)
 
     # ========================================================================
     # Refresh logic
@@ -197,3 +232,18 @@ class ConnectionsTab(Gtk.Box):
     def _on_auto_tick(self) -> bool:
         self._refresh()
         return True  # GLib.SOURCE_CONTINUE
+
+    def _on_elevated_toggle(self, switch: Gtk.Switch, value: bool) -> bool:
+        """Toggle modo admin (pkexec)."""
+        self._elevated_mode = value
+        if value:
+            # Desliga auto-refresh para nao spammar polkit
+            if self._auto_switch.get_active():
+                self._auto_switch.set_active(False)
+            self._auto_switch.set_sensitive(False)
+        else:
+            self._auto_switch.set_sensitive(True)
+        # Forca refresh imediato (vai disparar polkit se elevated=True)
+        self._refresh()
+        switch.set_state(value)
+        return True
