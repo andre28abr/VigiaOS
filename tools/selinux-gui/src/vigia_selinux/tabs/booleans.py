@@ -10,22 +10,26 @@ gi.require_version("Adw", "1")
 from gi.repository import Adw, Gtk  # noqa: E402
 
 from .. import backend
-from ._helpers import show_error
+from ._helpers import make_clamp, show_error
 
 
 class BooleansTab(Gtk.Box):
     def __init__(self) -> None:
-        super().__init__(
+        super().__init__(orientation=Gtk.Orientation.VERTICAL)
+
+        # Conteudo interno (sera wrappado em Adw.Clamp para limitar largura)
+        inner = Gtk.Box(
             orientation=Gtk.Orientation.VERTICAL, spacing=8,
             margin_top=12, margin_bottom=12, margin_start=12, margin_end=12,
         )
+        self.append(make_clamp(inner))
 
         self._search_entry = Gtk.SearchEntry()
         self._search_entry.set_placeholder_text(
             "Filtrar por nome ou descricao (ex: apache, write, anonimo, ssh)"
         )
         self._search_entry.connect("search-changed", self._on_search_changed)
-        self.append(self._search_entry)
+        inner.append(self._search_entry)
 
         scrolled = Gtk.ScrolledWindow()
         scrolled.set_vexpand(True)
@@ -35,12 +39,12 @@ class BooleansTab(Gtk.Box):
         self._list.add_css_class("boxed-list")
         self._list.set_filter_func(self._filter)
         scrolled.set_child(self._list)
-        self.append(scrolled)
+        inner.append(scrolled)
 
         btn = Gtk.Button(label="Recarregar lista")
         btn.set_halign(Gtk.Align.END)
         btn.connect("clicked", lambda _b: self._refresh())
-        self.append(btn)
+        inner.append(btn)
 
         self._row_search_text: dict[Adw.ActionRow, str] = {}
         self._refresh()
