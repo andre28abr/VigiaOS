@@ -9,9 +9,9 @@ Comment=Parser de audit, journald e fail2ban com narrativa human-readable
 Comment[pt_BR]=Parseia audit, journald e fail2ban com narrativa human-readable
 Comment[en]=Parses Linux audit, journald and fail2ban logs into human-readable narratives
 Icon=vigia-log
-# bash wrapper pausa no final pra usuario ver erros se houver
-# (sem isso, terminal fecha imediatamente quando vigia-log sai)
-Exec=bash -c "sudo vigia-log --sources audit journald fail2ban; STATUS=$?; echo; echo \"vigia-log exited with status $STATUS\"; echo \"Press Enter to close...\"; read"
+# Roda com sudo (necessario para ler /var/log/audit/audit.log).
+# Multi-source default = audit + journal + fail2ban (fail2ban skip silencioso se nao instalado).
+Exec=sudo vigia-log --sources audit journald fail2ban
 Terminal=true
 Categories=System;Security;Monitor;
 Keywords=audit;security;log;monitor;selinux;fail2ban;journald;vigia;

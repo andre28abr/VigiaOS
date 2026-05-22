@@ -24,15 +24,44 @@ fn narrate_audit(event: &AuditEvent) -> String {
     let primary = event.primary_type();
 
     match primary {
+        // SELinux / anomalias
         "AVC" => narrate_avc(event, &ts),
-        "USER_AUTH" => narrate_user_auth(event, &ts),
-        "USER_LOGIN" => narrate_user_login(event, &ts),
-        "USER_ACCT" => narrate_user_acct(event, &ts),
+        "USER_SELINUX_ERR" => format!(
+            "{ts} — SELinux erro em operacao de `{}`",
+            event.field("acct").unwrap_or("?")
+        ),
         "ANOM_PROMISCUOUS" => format!(
             "{ts} — interface entrou em modo promiscuo (anomalia de captura)"
         ),
         "ANOM_ABEND" => format!("{ts} — processo terminou anormalmente (crash)"),
+
+        // Autenticacao / sessao
+        "USER_AUTH" => narrate_user_auth(event, &ts),
+        "USER_LOGIN" => narrate_user_login(event, &ts),
+        "USER_ACCT" => narrate_user_acct(event, &ts),
+        "USER_CMD" => narrate_user_cmd(event, &ts),
+        "USER_START" => narrate_user_session(event, &ts, "iniciada"),
+        "USER_END" => narrate_user_session(event, &ts, "encerrada"),
+        "USER_TTY" => format!(
+            "{ts} — entrada de TTY registrada para `{}`",
+            event.field("acct").unwrap_or("?")
+        ),
+        "USER_ROLE_CHANGE" => narrate_role_change(event, &ts),
+        "LOGIN" => narrate_login(event, &ts),
+
+        // Credenciais (PAM)
+        "CRED_ACQ" => narrate_cred(event, &ts, "adquirida"),
+        "CRED_DISP" => narrate_cred(event, &ts, "liberada"),
+        "CRED_REFR" => narrate_cred(event, &ts, "renovada"),
+
+        // Servicos systemd
+        "SERVICE_START" => narrate_service(event, &ts, "iniciado"),
+        "SERVICE_STOP" => narrate_service(event, &ts, "parado"),
+
+        // Kernel
+        "BPF" => narrate_bpf(event, &ts),
         "SYSCALL" => narrate_syscall(event, &ts),
+
         other => format!("{ts} — evento {} (id {})", other, event.audit_id),
     }
 }
@@ -88,6 +117,74 @@ fn narrate_syscall(event: &AuditEvent, ts: &str) -> String {
     format!(
         "{ts} — syscall {syscall} por `{comm}` ({exe}) — sucesso={success}"
     )
+}
+
+fn narrate_user_cmd(event: &AuditEvent, ts: &str) -> String {
+    let acct = event.field("acct").unwrap_or("?");
+    let cmd = event.field("cmd").unwrap_or("?");
+    let res = event.field("res").unwrap_or("?");
+    let outcome = if res == "success" {
+        "executou"
+    } else {
+        "tentou executar (falha)"
+    };
+    format!("{ts} — `{acct}` {outcome} comando: {cmd}")
+}
+
+fn narrate_user_session(event: &AuditEvent, ts: &str, what: &str) -> String {
+    let acct = event.field("acct").unwrap_or("?");
+    let ses = event.field("ses").unwrap_or("?");
+    format!("{ts} — sessao de `{acct}` {what} (ses={ses})")
+}
+
+fn narrate_cred(event: &AuditEvent, ts: &str, what: &str) -> String {
+    let acct = event.field("acct").unwrap_or("?");
+    let exe = event.field("exe").unwrap_or("?");
+    format!("{ts} — credencial {what} para `{acct}` via {exe}")
+}
+
+fn narrate_login(event: &AuditEvent, ts: &str) -> String {
+    // LOGIN nao tem 'acct' diretamente; em enriched format vem ID="root" ou similar.
+    let id = event
+        .field("ID")
+        .or_else(|| event.field("acct"))
+        .or_else(|| event.field("UID"))
+        .unwrap_or("?");
+    let tty = event.field("terminal").unwrap_or("?");
+    let res = event.field("res").unwrap_or("?");
+    let outcome = if res == "1" || res == "success" {
+        "logou"
+    } else {
+        "tentou logar (falha)"
+    };
+    format!("{ts} — sessao login: `{id}` {outcome} em {tty}")
+}
+
+fn narrate_role_change(event: &AuditEvent, ts: &str) -> String {
+    let acct = event.field("acct").unwrap_or("?");
+    let new_role = event
+        .field("new-role")
+        .or_else(|| event.field("new_role"))
+        .unwrap_or("?");
+    format!("{ts} — mudanca de role SELinux para `{acct}` -> {new_role}")
+}
+
+fn narrate_service(event: &AuditEvent, ts: &str, what: &str) -> String {
+    // Tenta unit primeiro, fallback para comm
+    let comm = event.field("comm").unwrap_or("?");
+    let unit = event.field("unit").unwrap_or(comm);
+    let res = event.field("res").unwrap_or("");
+    let outcome = if res == "failed" { " (falhou)" } else { "" };
+    format!("{ts} — servico `{unit}` {what}{outcome}")
+}
+
+fn narrate_bpf(event: &AuditEvent, ts: &str) -> String {
+    let op = event.field("op").unwrap_or("?");
+    let prog_id = event
+        .field("prog-id")
+        .or_else(|| event.field("prog_id"))
+        .unwrap_or("?");
+    format!("{ts} — eBPF: {op} (prog-id={prog_id})")
 }
 
 // ============================================================================

@@ -56,12 +56,29 @@ type Backend = CrosstermBackend<Stdout>;
 
 /// Filtros cycleaveis com `f`. Cobre tipos comuns de audit + priorities journal + acoes fail2ban.
 const FILTER_CYCLE: &[&str] = &[
-    // Audit
+    // Audit: criticos
     "AVC",
-    "USER_AUTH",
-    "USER_LOGIN",
+    "USER_SELINUX_ERR",
     "ANOM_ABEND",
     "ANOM_PROMISCUOUS",
+    // Audit: autenticacao / sessao
+    "USER_AUTH",
+    "USER_LOGIN",
+    "USER_ACCT",
+    "USER_CMD",
+    "USER_START",
+    "USER_END",
+    "USER_TTY",
+    "USER_ROLE_CHANGE",
+    "LOGIN",
+    // Audit: credenciais
+    "CRED_ACQ",
+    "CRED_DISP",
+    "CRED_REFR",
+    // Audit: outros
+    "SERVICE_START",
+    "SERVICE_STOP",
+    "BPF",
     "SYSCALL",
     // Journal priorities
     "EMERG",
@@ -578,7 +595,7 @@ fn render_event_row<'a>(e: &'a Event, search: &str) -> ListItem<'a> {
         Span::styled(source_tag, Style::default().fg(COLOR_FG_DIM)),
         Span::raw(" "),
         Span::styled(
-            format!("{:14}", truncate(&primary, 14)),
+            format!("{:18}", truncate(&primary, 18)),
             Style::default().fg(type_color).add_modifier(Modifier::BOLD),
         ),
         Span::raw(" "),
@@ -626,11 +643,18 @@ fn push_highlighted(out: &mut Vec<Span<'static>>, haystack: &str, needle: &str) 
 
 fn color_for_type(t: &str) -> Color {
     match t {
-        // Audit: criticidade alta
-        "AVC" => COLOR_ERROR,
+        // Audit: criticos (vermelho)
+        "AVC" | "USER_SELINUX_ERR" => COLOR_ERROR,
+        // Audit: anomalias (amber)
         "ANOM_PROMISCUOUS" | "ANOM_ABEND" => COLOR_WARN,
-        // Audit: autenticacao (accent)
-        "USER_AUTH" | "USER_LOGIN" | "USER_ACCT" => COLOR_ACCENT,
+        // Audit: sudo / privilege escalation (amber — destaca atividade administrativa)
+        "USER_CMD" => COLOR_WARN,
+        // Audit: autenticacao / sessao / credenciais (emerald — positivo, accent)
+        "USER_AUTH" | "USER_LOGIN" | "USER_ACCT" | "LOGIN"
+        | "USER_START" | "USER_END" | "USER_TTY" | "USER_ROLE_CHANGE"
+        | "CRED_ACQ" | "CRED_DISP" | "CRED_REFR" => COLOR_ACCENT,
+        // Audit: servicos / kernel (default)
+        "SERVICE_START" | "SERVICE_STOP" | "BPF" => COLOR_FG_DIM,
         // Journal: priorities syslog
         "EMERG" | "ALERT" | "CRIT" | "ERR" => COLOR_ERROR,
         "WARNING" => COLOR_WARN,
