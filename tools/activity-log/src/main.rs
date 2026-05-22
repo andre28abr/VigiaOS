@@ -57,6 +57,28 @@ struct Cli {
     /// Numero maximo de eventos mais recentes. 0 = todos.
     #[arg(short, long, default_value_t = 500)]
     limit: usize,
+
+    /// Filtra por severidade minima. Default: mostra todos.
+    /// Valores: routine, interesting, suspicious.
+    #[arg(long)]
+    min_severity: Option<SevArg>,
+}
+
+#[derive(Copy, Clone, Debug, ValueEnum)]
+enum SevArg {
+    Routine,
+    Interesting,
+    Suspicious,
+}
+
+impl From<SevArg> for crate::event::Severity {
+    fn from(s: SevArg) -> Self {
+        match s {
+            SevArg::Routine => crate::event::Severity::Routine,
+            SevArg::Interesting => crate::event::Severity::Interesting,
+            SevArg::Suspicious => crate::event::Severity::Suspicious,
+        }
+    }
 }
 
 #[derive(Copy, Clone, Debug, ValueEnum, PartialEq, Eq)]
@@ -88,6 +110,13 @@ fn main() -> Result<()> {
 
     // Ordena cronologicamente para mostrar audit + journal interleavados.
     events.sort_by_key(Event::timestamp);
+
+    // Filtro de severidade minima (aplicado ANTES do limit para nao perder
+    // eventos importantes para amostragem por janela).
+    if let Some(sev) = cli.min_severity {
+        let min: event::Severity = sev.into();
+        events.retain(|e| e.severity() >= min);
+    }
 
     // Limita aos N mais recentes
     if cli.limit > 0 && events.len() > cli.limit {
@@ -177,9 +206,9 @@ fn print_text(events: &[Event], correlations: &[correlator::Correlation]) {
         println!("=== Correlations ({}) ===", correlations.len());
         for (n, c) in correlations.iter().enumerate() {
             let sev_tag = match c.severity {
-                correlator::Severity::Suspicious => "[SUSP]",
-                correlator::Severity::Interesting => "[INFO]",
-                correlator::Severity::Routine => "[----]",
+                event::Severity::Suspicious => "[SUSP]",
+                event::Severity::Interesting => "[INFO]",
+                event::Severity::Routine => "[----]",
             };
             println!(
                 "{} {} {} ({} eventos)",
@@ -204,9 +233,9 @@ fn print_correlations(correlations: &[correlator::Correlation]) {
     }
     for c in correlations {
         let sev_tag = match c.severity {
-            correlator::Severity::Suspicious => "[SUSP]",
-            correlator::Severity::Interesting => "[INFO]",
-            correlator::Severity::Routine => "[----]",
+            event::Severity::Suspicious => "[SUSP]",
+            event::Severity::Interesting => "[INFO]",
+            event::Severity::Routine => "[----]",
         };
         println!(
             "{} {} - {} - {} (kind={}, eventos={})",

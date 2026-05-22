@@ -6,7 +6,23 @@
 
 ## Estado
 
-🟢 **v0.5** — correlator: detecta padrões cross-source e sintetiza em narrativas únicas.
+🟢 **v0.6** — classificador per-evento (`Routine` / `Interesting` / `Suspicious`)
+com filtro `s` na TUI e `--min-severity` na CLI. Cada linha ganha indicador
+visual ● (vermelho = suspeito, âmbar = interessante, · cinza = rotineiro).
+
+Regras de classificação (resumo):
+
+| Source | Suspicious | Interesting | Routine |
+|---|---|---|---|
+| audit AVC | permissive=0 | permissive=1 | — |
+| audit USER_AUTH | res!=success | — | res=success |
+| audit USER_LOGIN | res!=success | — | res=success |
+| audit ANOM_* | PROMISCUOUS | ABEND | — |
+| audit SYSCALL | — | success!=yes | success=yes |
+| journal | EMERG/ALERT/CRIT | ERR/WARNING | NOTICE/INFO/DEBUG |
+| fail2ban | Ban | Found | Unban / JailStart / JailStop |
+
+### v0.5 — correlator: detecta padrões cross-source e sintetiza em narrativas únicas.
 
 Salto qualitativo: a ferramenta deixa de ser "lista de eventos" e vira "insight sobre
 o que aconteceu". Padrões detectados:
@@ -75,6 +91,10 @@ sudo vigia-log -o text                # CLI pipe-friendly (correlations + events
 sudo vigia-log -o json | jq .         # JSON discriminado por source
 sudo vigia-log -o correlations        # só as narrativas sintetizadas
 
+# Filtro de severidade (reduz ruído drasticamente)
+sudo vigia-log --min-severity interesting   # esconde rotineiros (SYSCALL ok, login ok, INFO, ...)
+sudo vigia-log --min-severity suspicious    # só o que merece atenção (AVC denial, Ban, CRIT, ...)
+
 # Override paths (útil para fixtures e dev)
 vigia-log --sources audit journald \
   --audit-path tests/fixtures/sample-audit.log \
@@ -112,9 +132,10 @@ vigia-log --sources journald --journal-path ~/journal-snap.json
 | `PageUp` / `PageDown` | Pula 10 |
 | `Home` / `End` | Primeiro / último |
 | `f` | Cycle filter por tipo (AVC → USER_AUTH → ... → None) |
+| `s` | Cycle min-severity (All → Interesting+ → Suspicious → All) |
 | `/` | Entra em modo de busca |
 | `c` | Toggle visibilidade do painel de correlations |
-| `Esc` | Limpa filtros e busca |
+| `Esc` | Limpa todos os filtros e busca |
 | `q` | Sai |
 
 **Modo busca (após `/`):**
@@ -137,8 +158,9 @@ A query de busca é case-insensitive e aplica em cima da narrativa completa
 - ✅ v0.3: source `journald` (via `journalctl -o json`), Event abstraction, merge cronológico, cores por priority syslog
 - ✅ v0.4: source `fail2ban` (Ban/Unban/Found + IP + jail). Firewalld coberto via journald.
 - ✅ v0.5: correlator com 4 padrões (fail2ban_burst, oom_kill, selinux_burst, suspicious_ssh_login). Painel toggleavel na TUI. Modo `-o correlations`.
-- v0.6: classificador automático em cima de eventos individuais (rotineiro / interessante / suspeito) + filtro `s` para "só suspeito"
+- ✅ v0.6: classificador per-evento (Routine/Interesting/Suspicious). Filtro `s` na TUI + `--min-severity` na CLI. Badge ● visual.
 - v0.7: live mode (`-f` tail) — atualiza TUI em tempo real conforme audit/journal crescem
+- v0.8: empacotamento — Cargo.io publish + COPR rpm
 
 ## Testes
 
