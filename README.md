@@ -20,8 +20,9 @@ do sistema-base sem complicação.
 | Componente | Status | Função |
 |---|---|---|
 | `bootstrap.sh` | 🟡 Em desenvolvimento | Script one-liner que instala ferramentas essenciais de segurança/privacidade/dev em Silverblue vanilla |
+| **[Vigia Hub](tools/vigia-hub/)** | 🟡 v0.1 MVP | Launcher mestre da suite — 1 ícone no GNOME que lista e abre todas as ferramentas. Python + GTK4. |
 | **[Vigia Activity Log](tools/activity-log/)** | 🟢 v0.7 funcional | Parser de audit + journald + fail2ban com narrativa human-readable, correlations cross-source, classificador de severidade, live tail mode |
-| **[Vigia Privacy Controls](tools/privacy-controls/)** | 🟡 v0.1 MVP | App GTK4 com toggles centrais (location, telemetry, bluetooth). Python + PyGObject + libadwaita. Extensível via base abstrata. |
+| **[Vigia Privacy Controls](tools/privacy-controls/)** | 🟢 v0.3 funcional | App GTK4 com 13 toggles (10 user-scope dconf + 3 system-scope via pkexec: firewall, SSH, Tor). Python + PyGObject + libadwaita. |
 | Vigia Control Center | ⚪ Futuro | App GTK4 central — tabs de ferramentas, privacidade, SELinux, logs |
 | SELinux GUI moderno | ⚪ Futuro | Substituto de `system-config-selinux` em GTK4 |
 | Tema VigiaOS (opcional) | ⚪ Futuro | Script aplicador do tema zinc + emerald (do app SentinelBR) |

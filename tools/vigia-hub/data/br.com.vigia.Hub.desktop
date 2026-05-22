@@ -1,0 +1,15 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Vigia Suite
+Name[pt_BR]=Vigia Suite
+GenericName=Security Toolkit Launcher
+GenericName[pt_BR]=Launcher de Ferramentas de Seguranca
+Comment=Launcher central para todas as ferramentas da Vigia Suite
+Comment[pt_BR]=Launcher central para todas as ferramentas da Vigia Suite
+Icon=br.com.vigia.Hub
+Exec=vigia-hub
+Terminal=false
+Categories=Settings;System;Security;
+Keywords=vigia;security;privacy;audit;launcher;hub;suite;
+StartupNotify=true
