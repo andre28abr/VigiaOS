@@ -15,6 +15,9 @@ Source0:        %{url}/archive/v%{version}.tar.gz#/VigiaOS-%{version}.tar.gz
 
 BuildRequires:  rust >= 1.75
 BuildRequires:  cargo
+BuildRequires:  desktop-file-utils
+
+Requires:       hicolor-icon-theme
 
 # Roda em qualquer arch que tenha Rust stable (aarch64 e x86_64 cobertos).
 ExclusiveArch:  %{rust_arches}
@@ -39,13 +42,38 @@ Comando: vigia-log
 cargo build --release --locked
 
 %install
+# binario
 install -Dpm 0755 target/release/%{bin_name} %{buildroot}%{_bindir}/%{bin_name}
+# docs
 install -Dpm 0644 README.md %{buildroot}%{_docdir}/%{name}/README.md
+# GNOME entry + icone (vem de ../../packaging no source tree)
+install -Dpm 0644 ../../packaging/%{bin_name}.desktop \
+    %{buildroot}%{_datadir}/applications/%{bin_name}.desktop
+install -Dpm 0644 ../../packaging/%{bin_name}.svg \
+    %{buildroot}%{_datadir}/icons/hicolor/scalable/apps/%{bin_name}.svg
+
+# Validacao do .desktop
+desktop-file-validate %{buildroot}%{_datadir}/applications/%{bin_name}.desktop
 
 %files
 %license LICENSE
 %doc README.md
 %{_bindir}/%{bin_name}
+%{_datadir}/applications/%{bin_name}.desktop
+%{_datadir}/icons/hicolor/scalable/apps/%{bin_name}.svg
+
+%post
+# Atualiza cache de icones e desktop database apos install
+touch --no-create %{_datadir}/icons/hicolor &>/dev/null || :
+
+%postun
+if [ $1 -eq 0 ]; then
+    touch --no-create %{_datadir}/icons/hicolor &>/dev/null || :
+    gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
+fi
+
+%posttrans
+gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 
 %changelog
 * Thu May 22 2026 Andre Augusto Azarias de Souza <andre@example.com> - 0.7.0-1

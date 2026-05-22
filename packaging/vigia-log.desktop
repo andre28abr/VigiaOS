@@ -1,0 +1,16 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Vigia Activity Log
+Name[pt_BR]=Vigia - Log de Atividade
+GenericName=System Log Analyzer
+GenericName[pt_BR]=Analisador de Log do Sistema
+Comment=Parser de audit, journald e fail2ban com narrativa human-readable
+Comment[pt_BR]=Parseia audit, journald e fail2ban com narrativa human-readable
+Comment[en]=Parses Linux audit, journald and fail2ban logs into human-readable narratives
+Icon=vigia-log
+Exec=vigia-log
+Terminal=true
+Categories=System;Security;Monitor;
+Keywords=audit;security;log;monitor;selinux;fail2ban;journald;vigia;
+StartupNotify=false
