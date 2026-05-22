@@ -6,13 +6,28 @@
 
 ## Estado
 
-🟡 **v0.1** — MVP funcional com 3 toggles em user-scope.
+🟢 **v0.2** — 10 toggles user-scope agrupados em 6 categorias.
 
 | Toggle | Categoria | Mecanismo |
 |---|---|---|
 | Serviços de localização | Localização | dconf `org.gnome.system.location enabled` |
-| Bloquear relatórios técnicos | Telemetria | dconf `org.gnome.desktop.privacy report-technical-problems` (invertido) |
+| Bloquear relatórios técnicos | Telemetria | dconf `report-technical-problems` (invertido) |
+| Não lembrar arquivos recentes | Histórico | dconf `remember-recent-files` (invertido) |
+| Não lembrar uso de aplicativos | Histórico | dconf `remember-app-usage` (invertido) |
+| Esconder identidade | Histórico | dconf `hide-identity` |
+| Bloquear tela automaticamente | Lock Screen | dconf `screensaver lock-enabled` |
+| Esconder prévia notif. lock | Lock Screen | dconf `notifications show-in-lock-screen` (invertido) |
+| Esvaziar lixeira automaticamente | Limpeza Automática | dconf `remove-old-trash-files` |
+| Limpar temp files automaticamente | Limpeza Automática | dconf `remove-old-temp-files` |
 | Bluetooth | Dispositivos | `bluetoothctl power on/off` |
+
+### Helper `dconf_toggle()`
+
+A maioria dos toggles é mapeamento direto para uma chave dconf booleana. O
+helper `base.dconf_toggle()` cuida da boilerplate de `get/set/available`,
+incluindo `invert=True` quando a semântica privacidade-vs-dconf é oposta.
+
+Resultado: cada toggle dconf vira ~6 linhas de código (vs ~20 sem helper).
 
 ## Setup na VM (Silverblue)
 
