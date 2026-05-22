@@ -1,0 +1,15 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Vigia Network Monitor
+Name[pt_BR]=Vigia - Monitor de Rede
+GenericName=Network Connection Monitor
+GenericName[pt_BR]=Monitor de Conexoes de Rede
+Comment=Real-time TCP/UDP connections and listening sockets viewer
+Comment[pt_BR]=Visualizador de conexoes TCP/UDP em tempo real
+Icon=br.com.vigia.NetMon
+Exec=vigia-netmon
+Terminal=false
+Categories=Settings;System;Security;Network;Monitor;
+Keywords=network;monitor;tcp;udp;ss;connections;vigia;
+StartupNotify=true

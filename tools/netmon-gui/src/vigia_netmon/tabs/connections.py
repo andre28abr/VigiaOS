@@ -1,0 +1,199 @@
+"""Tab Connections: lista TCP/UDP ativas com auto-refresh."""
+
+from __future__ import annotations
+
+from typing import Callable
+
+import gi
+
+gi.require_version("Gtk", "4.0")
+gi.require_version("Adw", "1")
+
+from gi.repository import Adw, GLib, Gtk  # noqa: E402
+
+from .. import backend
+from ._helpers import make_clamp
+
+
+# Cores para estados (paleta zinc + emerald + amber)
+STATE_COLORS_CSS = {
+    "ESTAB": "success",      # verde — conexao ativa
+    "LISTEN": "accent",      # accent — servidor escutando
+    "TIME-WAIT": "dim-label",
+    "CLOSE-WAIT": "warning",
+    "UNCONN": "dim-label",   # UDP "conexao" basica
+    "SYN-SENT": "warning",
+    "SYN-RECV": "warning",
+}
+
+
+class ConnectionsTab(Gtk.Box):
+    """Lista todas as conexoes (TCP+UDP, qualquer estado)."""
+
+    def __init__(self) -> None:
+        super().__init__(orientation=Gtk.Orientation.VERTICAL)
+
+        inner = Gtk.Box(
+            orientation=Gtk.Orientation.VERTICAL, spacing=8,
+            margin_top=12, margin_bottom=12, margin_start=12, margin_end=12,
+        )
+        self.append(make_clamp(inner))
+
+        # ============= Toolbar ============= #
+        toolbar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+
+        # Search
+        self._search = Gtk.SearchEntry()
+        self._search.set_placeholder_text(
+            "Filtrar por processo, IP, porta (ex: firefox, 443, 192.168)"
+        )
+        self._search.set_hexpand(True)
+        self._search.connect("search-changed", lambda _e: self._list.invalidate_filter())
+        toolbar.append(self._search)
+
+        # Auto-refresh toggle
+        auto_lbl = Gtk.Label(label="Auto:")
+        auto_lbl.set_valign(Gtk.Align.CENTER)
+        toolbar.append(auto_lbl)
+        self._auto_switch = Gtk.Switch()
+        self._auto_switch.set_valign(Gtk.Align.CENTER)
+        self._auto_switch.set_active(True)
+        self._auto_switch.connect("state-set", self._on_auto_toggle)
+        toolbar.append(self._auto_switch)
+
+        # Refresh now button
+        self._refresh_btn = Gtk.Button(label="Atualizar")
+        self._refresh_btn.add_css_class("pill")
+        self._refresh_btn.connect("clicked", lambda _b: self._refresh())
+        toolbar.append(self._refresh_btn)
+
+        inner.append(toolbar)
+
+        # Count label
+        self._count_label = Gtk.Label()
+        self._count_label.set_xalign(0)
+        self._count_label.add_css_class("dim-label")
+        inner.append(self._count_label)
+
+        # Lista
+        scrolled = Gtk.ScrolledWindow()
+        scrolled.set_vexpand(True)
+        self._list = Gtk.ListBox()
+        self._list.set_selection_mode(Gtk.SelectionMode.NONE)
+        self._list.add_css_class("boxed-list")
+        self._list.set_filter_func(self._filter)
+        scrolled.set_child(self._list)
+        inner.append(scrolled)
+
+        self._row_search_text: dict[Adw.ActionRow, str] = {}
+        self._refresh_source_id: int | None = None
+        self._refresh_interval_s = 3
+
+        # Estado inicial: refresh + start auto
+        self._refresh()
+        self._start_auto_refresh()
+
+    # ========================================================================
+    # Subclass hook — Listening tab override para usar backend.list_listening()
+    # ========================================================================
+
+    def _fetch(self) -> list[backend.NetConnection]:
+        return backend.list_connections()
+
+    # ========================================================================
+    # Refresh logic
+    # ========================================================================
+
+    def _refresh(self) -> None:
+        # Salva contexto: query atual + scroll position
+        query = self._search.get_text()
+
+        # Limpa lista
+        while child := self._list.get_first_child():
+            self._list.remove(child)
+        self._row_search_text.clear()
+
+        conns = self._fetch()
+        # Ordena: ESTABLISHED primeiro, depois LISTEN, depois resto
+        order_key: Callable[[backend.NetConnection], tuple] = lambda c: (
+            0 if c.state == "ESTAB" else (1 if c.state == "LISTEN" else 2),
+            c.process,
+            c.local_addr,
+        )
+        conns = sorted(conns, key=order_key)
+
+        if not conns:
+            empty = Adw.ActionRow()
+            empty.set_title("Sem conexoes")
+            empty.set_subtitle("`ss -tunap` nao retornou nada (raro) ou nao esta disponivel.")
+            self._list.append(empty)
+            self._count_label.set_text("0 conexoes")
+            return
+
+        for c in conns:
+            row = self._build_row(c)
+            self._list.append(row)
+            self._row_search_text[row] = (
+                f"{c.process} {c.pid} {c.local_addr} {c.peer_addr} "
+                f"{c.proto} {c.state}"
+            ).lower()
+
+        self._count_label.set_text(f"{len(conns)} conexoes")
+        # Re-aplica filtro com query atual
+        if query:
+            self._list.invalidate_filter()
+
+    def _build_row(self, c: backend.NetConnection) -> Adw.ActionRow:
+        row = Adw.ActionRow()
+        process_label = f"{c.process}" if c.process != "?" else "(processo restrito)"
+        if c.pid != "?":
+            process_label += f" [{c.pid}]"
+        title = f"{c.proto.upper()} {c.local_addr} → {c.peer_addr}"
+        row.set_title(title)
+        row.set_subtitle(process_label)
+
+        # State badge (suffix)
+        state_label = Gtk.Label(label=c.state)
+        state_label.set_valign(Gtk.Align.CENTER)
+        css = STATE_COLORS_CSS.get(c.state, "dim-label")
+        state_label.add_css_class(css)
+        state_label.add_css_class("caption")
+        row.add_suffix(state_label)
+
+        return row
+
+    def _filter(self, row: Gtk.ListBoxRow) -> bool:
+        query = self._search.get_text().lower().strip()
+        if not query:
+            return True
+        haystack = self._row_search_text.get(row)
+        if haystack is None:
+            return True
+        return query in haystack
+
+    # ========================================================================
+    # Auto-refresh control
+    # ========================================================================
+
+    def _on_auto_toggle(self, switch: Gtk.Switch, value: bool) -> bool:
+        if value:
+            self._start_auto_refresh()
+        else:
+            self._stop_auto_refresh()
+        switch.set_state(value)
+        return True
+
+    def _start_auto_refresh(self) -> None:
+        if self._refresh_source_id is None:
+            self._refresh_source_id = GLib.timeout_add_seconds(
+                self._refresh_interval_s, self._on_auto_tick
+            )
+
+    def _stop_auto_refresh(self) -> None:
+        if self._refresh_source_id is not None:
+            GLib.source_remove(self._refresh_source_id)
+            self._refresh_source_id = None
+
+    def _on_auto_tick(self) -> bool:
+        self._refresh()
+        return True  # GLib.SOURCE_CONTINUE

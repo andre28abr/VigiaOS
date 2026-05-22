@@ -25,6 +25,7 @@ do sistema-base sem complicação.
 | **[Vigia Privacy Controls](tools/privacy-controls/)** | 🟢 v0.3 funcional | App GTK4 com 13 toggles (10 user-scope dconf + 3 system-scope via pkexec: firewall, SSH, Tor). Python + PyGObject + libadwaita. |
 | **[Vigia SELinux GUI](tools/selinux-gui/)** | 🟢 v0.2 funcional | 6 tabs: Status (com persistent mode), Booleans (pt-BR), Denials+audit2allow, Files+restorecon, Network ports, Processes |
 | **[Vigia Firewall GUI](tools/firewall-gui/)** | 🟡 v0.1 MVP | Gerenciador GTK4 de firewalld: status, zona padrão, edição de services/ports por zona. |
+| **[Vigia Network Monitor](tools/netmon-gui/)** | 🟡 v0.1 MVP | Conexões TCP/UDP em tempo real (`ss` wrapper) com auto-refresh, filtros, tab Listening separada. |
 | Vigia Control Center | ⚪ Futuro | App GTK4 central — tabs de ferramentas, privacidade, SELinux, logs |
 | SELinux GUI moderno | ⚪ Futuro | Substituto de `system-config-selinux` em GTK4 |
 | Tema VigiaOS (opcional) | ⚪ Futuro | Script aplicador do tema zinc + emerald (do app SentinelBR) |

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#18181b"/>
+      <stop offset="100%" stop-color="#09090b"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="40%">
+      <stop offset="0%" stop-color="#34d399" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#34d399" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="256" height="256" rx="48" fill="url(#bg)"/>
+  <rect width="256" height="256" rx="48" fill="url(#glow)"/>
+
+  <!-- Network graph: central node + outer nodes + connecting lines -->
+  <g transform="translate(128 128)">
+    <!-- Linhas pulsantes (subtis) -->
+    <g stroke="#34d399" stroke-width="2" opacity="0.5" stroke-linecap="round">
+      <line x1="0" y1="0" x2="-60" y2="-50"/>
+      <line x1="0" y1="0" x2="60"  y2="-50"/>
+      <line x1="0" y1="0" x2="-70" y2="20"/>
+      <line x1="0" y1="0" x2="70"  y2="20"/>
+      <line x1="0" y1="0" x2="0"   y2="65"/>
+    </g>
+
+    <!-- Outer nodes (emerald) -->
+    <g fill="#34d399">
+      <circle cx="-60" cy="-50" r="10"/>
+      <circle cx="60"  cy="-50" r="10"/>
+      <circle cx="-70" cy="20"  r="10"/>
+      <circle cx="70"  cy="20"  r="10"/>
+      <circle cx="0"   cy="65"  r="10"/>
+    </g>
+
+    <!-- Central node (branco com aro emerald) -->
+    <circle r="20" fill="#fafafa" stroke="#34d399" stroke-width="4"/>
+    <circle r="6"  fill="#34d399"/>
+  </g>
+
+  <!-- Wordmark -->
+  <g transform="translate(128 230)" text-anchor="middle"
+     font-family="JetBrains Mono, ui-monospace, monospace"
+     font-weight="700" font-size="16" letter-spacing="6"
+     fill="#fafafa" opacity="0.9">
+    <text>VIGIA<tspan fill="#34d399">·</tspan>NETMON</text>
+  </g>
+</svg>
