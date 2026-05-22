@@ -20,7 +20,7 @@ do sistema-base sem complicação.
 | Componente | Status | Função |
 |---|---|---|
 | `bootstrap.sh` | 🟡 Em desenvolvimento | Script one-liner que instala ferramentas essenciais de segurança/privacidade/dev em Silverblue vanilla |
-| **Vigia Activity Log** | 🔴 Planejado | Parseador inteligente de auditd/journald/fail2ban com narrativa human-readable |
+| **[Vigia Activity Log](tools/activity-log/)** | 🟢 v0.7 funcional | Parser de audit + journald + fail2ban com narrativa human-readable, correlations cross-source, classificador de severidade, live tail mode |
 | Vigia Control Center | ⚪ Futuro | App GTK4 central — tabs de ferramentas, privacidade, SELinux, logs |
 | SELinux GUI moderno | ⚪ Futuro | Substituto de `system-config-selinux` em GTK4 |
 | Tema VigiaOS (opcional) | ⚪ Futuro | Script aplicador do tema zinc + emerald (do app SentinelBR) |
