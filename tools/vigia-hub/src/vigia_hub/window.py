@@ -18,6 +18,7 @@ gi.require_version("Adw", "1")
 
 from gi.repository import Adw, Gtk  # noqa: E402
 
+from .markdown import md_to_pango
 from .registry import TOOLS, ToolEntry
 
 
@@ -234,32 +235,34 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         btn.connect("clicked", lambda _b, t=tool: self._on_launch(t))
         box.append(btn)
 
-        # === Long description === #
+        # === Long description (com markdown -> pango) === #
         if tool.long_description:
             desc_group = Adw.PreferencesGroup()
             desc_group.set_title("Sobre")
-            desc_row = Gtk.Label(label=tool.long_description)
-            desc_row.set_wrap(True)
-            desc_row.set_xalign(0)
-            desc_row.set_margin_start(4)
-            desc_row.set_margin_end(4)
-            desc_row.set_margin_top(4)
-            desc_row.set_margin_bottom(4)
-            # Wrappa em uma row sem switch
+            desc_label = Gtk.Label()
+            desc_label.set_markup(md_to_pango(tool.long_description))
+            desc_label.set_wrap(True)
+            desc_label.set_xalign(0)
+            desc_label.set_selectable(True)
+            desc_label.set_margin_start(12)
+            desc_label.set_margin_end(12)
+            desc_label.set_margin_top(12)
+            desc_label.set_margin_bottom(12)
             container_row = Adw.PreferencesRow()
-            container_row.set_child(desc_row)
+            container_row.set_child(desc_label)
             container_row.set_activatable(False)
             desc_group.add(container_row)
             box.append(desc_group)
 
-        # === Features === #
+        # === Features (cada feature renderizada com markdown -> pango) === #
         if tool.features:
             feat_group = Adw.PreferencesGroup()
             feat_group.set_title("Principais features")
             for feature in tool.features:
                 row = Adw.ActionRow()
-                row.set_title(feature)
-                # Bullet symbolic icon
+                # Adw.ActionRow renders title como Pango markup
+                row.set_title(md_to_pango(feature))
+                row.set_use_markup(True)
                 bullet = Gtk.Label(label="•")
                 bullet.add_css_class("accent")
                 row.add_prefix(bullet)
