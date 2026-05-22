@@ -5,16 +5,18 @@ VERSION  := $(shell grep '^version' ../tools/activity-log/Cargo.toml | head -1 |
 ARCH     := $(shell uname -m)
 TOPDIR   := $(CURDIR)/rpmbuild
 
-.PHONY: help srpm rpm clean tarball test-deps
+.PHONY: help srpm rpm clean tarball test-deps install-desktop uninstall-desktop
 
 help:
 	@echo "Vigia Suite packaging (version: $(VERSION), arch: $(ARCH))"
 	@echo ""
 	@echo "Targets:"
-	@echo "  make tarball   - cria source tarball local (substitui o do GitHub release)"
-	@echo "  make srpm      - build SRPM (a partir do tarball local)"
-	@echo "  make rpm       - build RPM completo (precisa de rpmbuild + rust)"
-	@echo "  make clean     - limpa rpmbuild/"
+	@echo "  make tarball            - cria source tarball local (substitui o do GitHub release)"
+	@echo "  make srpm               - build SRPM (a partir do tarball local)"
+	@echo "  make rpm                - build RPM completo (precisa de rpmbuild + rust)"
+	@echo "  make install-desktop    - instala .desktop e icon NO HOME do user (sem rebuild)"
+	@echo "  make uninstall-desktop  - remove .desktop e icon do HOME"
+	@echo "  make clean              - limpa rpmbuild/"
 	@echo ""
 
 tarball:
@@ -41,6 +43,19 @@ rpm: tarball
 	rpmbuild -bb $(TOPDIR)/SPECS/vigia-activity-log.spec \
 	    --define "_topdir $(TOPDIR)"
 	@find $(TOPDIR)/RPMS -name '*.rpm' -exec ls -lh {} \;
+
+install-desktop:
+	@echo "==> Instalando entry GNOME no HOME do user (sem rebuild do binario)"
+	install -Dm 0644 vigia-log.desktop $(HOME)/.local/share/applications/vigia-log.desktop
+	install -Dm 0644 vigia-log.svg     $(HOME)/.local/share/icons/hicolor/scalable/apps/vigia-log.svg
+	-update-desktop-database $(HOME)/.local/share/applications 2>/dev/null
+	-gtk-update-icon-cache $(HOME)/.local/share/icons/hicolor 2>/dev/null
+	@echo "OK. Procure por 'Vigia' no GNOME apps (pode levar ~10s para indexar)."
+
+uninstall-desktop:
+	rm -f $(HOME)/.local/share/applications/vigia-log.desktop
+	rm -f $(HOME)/.local/share/icons/hicolor/scalable/apps/vigia-log.svg
+	@echo "Removido."
 
 clean:
 	rm -rf $(TOPDIR)

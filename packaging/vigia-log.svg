@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <!-- background: rounded square zinc-900 com leve gradient para profundidade -->
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#18181b"/>
+      <stop offset="100%" stop-color="#09090b"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="40%">
+      <stop offset="0%" stop-color="#34d399" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#34d399" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="256" height="256" rx="48" fill="url(#bg)"/>
+  <rect width="256" height="256" rx="48" fill="url(#glow)"/>
+
+  <!-- watcher eye (motivo Vigia) -->
+  <g transform="translate(128 128)">
+    <!-- eye outline -->
+    <ellipse rx="86" ry="50" fill="none" stroke="#fafafa" stroke-width="6"/>
+    <!-- iris -->
+    <circle r="30" fill="#fafafa"/>
+    <!-- emerald pupil -->
+    <circle r="12" fill="#34d399"/>
+    <!-- highlight reflex -->
+    <circle cx="-4" cy="-4" r="3" fill="#ffffff" opacity="0.85"/>
+  </g>
+
+  <!-- wordmark "VIGIA" base -->
+  <text x="128" y="220"
+        text-anchor="middle"
+        font-family="JetBrains Mono, ui-monospace, monospace"
+        font-weight="700"
+        font-size="22"
+        letter-spacing="6"
+        fill="#fafafa"
+        opacity="0.85">VIGIA<tspan fill="#34d399">·</tspan>OS</text>
+</svg>

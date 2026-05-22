@@ -19,6 +19,24 @@ systemctl reboot
 
 Em Fedora normal (nao-atomic) basta `sudo dnf install vigia-activity-log`.
 
+## Para quem fez build local (sem COPR ainda)
+
+Apos `cargo build --release && sudo install ... /usr/local/bin/`, voce
+pode adicionar a entry "Vigia Activity Log" no menu do GNOME (no seu user)
+sem precisar de COPR ou root:
+
+```bash
+cd ~/dev/VigiaOS/packaging
+make install-desktop
+```
+
+Isso copia o `.desktop` e o icone SVG para `~/.local/share/`. Procure por
+"Vigia" no GNOME Activities (Super tecla). Para remover:
+
+```bash
+make uninstall-desktop
+```
+
 ## Para o mantenedor (build local e submit ao COPR)
 
 ### Pre-requisitos
