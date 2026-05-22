@@ -9,7 +9,9 @@ Comment=Parser de audit, journald e fail2ban com narrativa human-readable
 Comment[pt_BR]=Parseia audit, journald e fail2ban com narrativa human-readable
 Comment[en]=Parses Linux audit, journald and fail2ban logs into human-readable narratives
 Icon=vigia-log
-Exec=vigia-log
+# Roda com sudo porque /var/log/audit/audit.log eh restrito a root.
+# sudo prompt aparece no proprio terminal aberto pelo GNOME.
+Exec=sudo vigia-log --sources audit journald fail2ban
 Terminal=true
 Categories=System;Security;Monitor;
 Keywords=audit;security;log;monitor;selinux;fail2ban;journald;vigia;
