@@ -6,7 +6,16 @@
 
 ## Estado
 
-🟢 **v0.6** — classificador per-evento (`Routine` / `Interesting` / `Suspicious`)
+🟢 **v0.7** — live tail mode (`-f` / `--follow`). TUI atualiza em tempo real
+conforme audit/journal/fail2ban crescem. Polling-based (default 2s), com auto-scroll
+inteligente e indicador `● LIVE` piscante no header.
+
+```bash
+sudo vigia-log --sources audit journald fail2ban --follow
+sudo vigia-log -f --refresh-interval 5     # intervalo customizado
+```
+
+### v0.6 — classificador per-evento (`Routine` / `Interesting` / `Suspicious`)
 com filtro `s` na TUI e `--min-severity` na CLI. Cada linha ganha indicador
 visual ● (vermelho = suspeito, âmbar = interessante, · cinza = rotineiro).
 
@@ -95,6 +104,11 @@ sudo vigia-log -o correlations        # só as narrativas sintetizadas
 sudo vigia-log --min-severity interesting   # esconde rotineiros (SYSCALL ok, login ok, INFO, ...)
 sudo vigia-log --min-severity suspicious    # só o que merece atenção (AVC denial, Ban, CRIT, ...)
 
+# Live tail (atualiza TUI conforme logs crescem)
+sudo vigia-log -f                                       # default refresh 2s
+sudo vigia-log -f --sources audit journald fail2ban     # multi-source live
+sudo vigia-log -f --refresh-interval 5                  # custom interval
+
 # Override paths (útil para fixtures e dev)
 vigia-log --sources audit journald \
   --audit-path tests/fixtures/sample-audit.log \
@@ -138,6 +152,10 @@ vigia-log --sources journald --journal-path ~/journal-snap.json
 | `Esc` | Limpa todos os filtros e busca |
 | `q` | Sai |
 
+Em **live mode** (`-f`): header mostra `● LIVE` piscante. Eventos novos
+aparecem automaticamente. Se cursor está no fim da lista, auto-scrolla;
+se está navegando no meio, preserva posição.
+
 **Modo busca (após `/`):**
 
 | Tecla | Ação |
@@ -159,7 +177,7 @@ A query de busca é case-insensitive e aplica em cima da narrativa completa
 - ✅ v0.4: source `fail2ban` (Ban/Unban/Found + IP + jail). Firewalld coberto via journald.
 - ✅ v0.5: correlator com 4 padrões (fail2ban_burst, oom_kill, selinux_burst, suspicious_ssh_login). Painel toggleavel na TUI. Modo `-o correlations`.
 - ✅ v0.6: classificador per-evento (Routine/Interesting/Suspicious). Filtro `s` na TUI + `--min-severity` na CLI. Badge ● visual.
-- v0.7: live mode (`-f` tail) — atualiza TUI em tempo real conforme audit/journal crescem
+- ✅ v0.7: live tail mode (`-f`/`--follow`). Polling-based, indicador `● LIVE`, auto-scroll inteligente.
 - v0.8: empacotamento — Cargo.io publish + COPR rpm
 
 ## Testes
@@ -180,6 +198,7 @@ src/
 ├── journal.rs    # parser de journalctl -o json + Priority syslog
 ├── fail2ban.rs   # parser de /var/log/fail2ban.log + Action enum (Ban/Unban/Found)
 ├── correlator.rs # detecta padrões cross-source e gera Correlation com summary + severity
+├── live.rs       # LiveSources com refresh() para live tail mode (polling-based)
 ├── narrator.rs   # Event → frase em português (dispatch por variant)
 └── tui.rs        # interface Ratatui (App struct, filtros, search)
 ```
@@ -188,6 +207,7 @@ src/
 
 - **Parser hand-rolled** para audit em vez de nom/regex: formato é simples e estável, dependência a menos.
 - **journalctl pipe** em vez de libsystemd: sem FFI, portável, fácil de testar com snapshot.
+- **Live mode polling** em vez de inotify/notify: simples, tolerante a rotation e atomic writes. Custo: re-parse ~50ms em arquivo de <10MB a cada refresh.
 - **Event enum interna** preserva a riqueza de cada source (AuditEvent não vira `HashMap<String, String>`). Narrator dispatcheia.
 - **Sem async**: arquivos são lidos inteiros. Tail/follow vai vir em v0.7 com `notify` crate ou polling.
 - **Cores hard-coded** em `tui.rs` no padrão VigiaOS. Config quando outras ferramentas aparecerem.

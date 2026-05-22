@@ -5,6 +5,7 @@ mod correlator;
 mod event;
 mod fail2ban;
 mod journal;
+mod live;
 mod narrator;
 mod tui;
 
@@ -62,6 +63,15 @@ struct Cli {
     /// Valores: routine, interesting, suspicious.
     #[arg(long)]
     min_severity: Option<SevArg>,
+
+    /// Live tail: re-le as fontes periodicamente e adiciona eventos novos.
+    /// So funciona com output=tui. Default: false.
+    #[arg(short = 'f', long)]
+    follow: bool,
+
+    /// Intervalo de refresh em live mode, em segundos.
+    #[arg(long, default_value_t = 2)]
+    refresh_interval: u64,
 }
 
 #[derive(Copy, Clone, Debug, ValueEnum)]
@@ -126,8 +136,21 @@ fn main() -> Result<()> {
 
     let correlations = correlator::correlate(&events);
 
+    // Live mode so faz sentido em TUI
+    let live = if cli.follow && matches!(cli.output, Output::Tui) {
+        let mut ls = live::LiveSources::new(
+            cli.sources.contains(&Source::Audit).then(|| cli.audit_path.clone()),
+            cli.sources.contains(&Source::Journald).then(|| cli.journal_path.clone()),
+            cli.sources.contains(&Source::Fail2ban).then(|| cli.fail2ban_path.clone()),
+        );
+        ls.init_with_seen(&events);
+        Some((ls, std::time::Duration::from_secs(cli.refresh_interval.max(1))))
+    } else {
+        None
+    };
+
     match cli.output {
-        Output::Tui => tui::run(events, correlations)?,
+        Output::Tui => tui::run(events, correlations, live)?,
         Output::Text => print_text(&events, &correlations),
         Output::Json => print_json(&events)?,
         Output::Correlations => print_correlations(&correlations),

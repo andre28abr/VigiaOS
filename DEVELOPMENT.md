@@ -195,6 +195,40 @@ algum, edita o script local ou usa `rpm-ostree uninstall` depois.
 
 > Ordem cronológica. Adicionar entrada a cada milestone.
 
+### 2026-05-22 — Activity Log v0.7 (live tail mode)
+- Novo modulo live.rs:
+  - struct LiveSources com paths opcionais por source e last_seen_ts por source
+  - LiveSources::refresh() re-le arquivos (audit, fail2ban) e re-spawna
+    journalctl com --since=@<last_ts>, devolve so eventos com ts > ultimo visto
+  - init_with_seen() inicializa last_seen com os eventos carregados pre-live
+  - 1 unit test que escreve em arquivo tmp e verifica que refresh devolve
+    apenas eventos novos (idempotente: refresh sem mudanca devolve [])
+
+CLI:
+- Novo flag -f / --follow (so opera com output=tui)
+- Novo flag --refresh-interval em segundos (default 2)
+
+TUI:
+- App agora carrega Option<(LiveSources, Duration)>
+- Em main_loop, antes do event::poll, checa se last_refresh.elapsed() >= interval
+  e chama app.refresh_live() se sim
+- refresh_live() preserva cursor inteligente:
+  * Se cursor estava no fim (is_at_bottom), auto-scrolla para novo fim
+  * Se estava no meio, tenta manter no MESMO evento (busca por timestamp)
+- Indicador "● LIVE" piscante no header (alterna entre ● e ○ a cada refresh)
+- Re-correlaciona apos cada refresh; abre painel de correlations
+  automaticamente se primeira correlation surge
+
+Estrategia polling vs inotify:
+- Escolhi polling para simplicidade. Inotify exigiria notify crate, async,
+  tratamento de log rotation, atomic writes. Polling re-le arquivos inteiros
+  (custo aceitavel para <10MB ~ 50ms) e tolera rotation naturalmente.
+- Para arquivos enormes (audit.log de servidor de prod), v0.8 pode adicionar
+  rastreamento de offset.
+
+Tests: 28 passando (1 novo de live).
+Versao bumpada para 0.7.0.
+
 ### 2026-05-22 — Activity Log v0.6 (classificador per-evento)
 - Severity movida de correlator.rs para event.rs (compartilhada entre
   eventos individuais e correlations). Derives: PartialOrd + Ord para
