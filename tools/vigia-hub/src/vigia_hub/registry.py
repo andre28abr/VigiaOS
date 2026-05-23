@@ -189,4 +189,35 @@ TOOLS: list[ToolEntry] = [
         needs_terminal=False,
         available_fn=lambda: shutil.which("vigia-netmon") is not None,
     ),
+    ToolEntry(
+        id="hardening-checks",
+        name="Hardening Checks",
+        description="Auditoria de hardening do sistema (wrapper Lynis).",
+        long_description=(
+            "Roda o **Lynis** (~250 controles de seguranca) e mostra o resultado "
+            "numa interface escaneavel em vez do wall-of-text padrao do terminal. "
+            "O **Hardening Index** (0–100) e' a metrica principal — quanto maior, "
+            "melhor a postura geral.\n\n"
+            "Os achados sao divididos em duas categorias:\n\n"
+            "- **Warnings** — problemas que merecem atencao imediata (ex: "
+            "*senha de root nao configurada para single user mode*).\n"
+            "- **Suggestions** — melhorias incrementais (ex: *habilitar AIDE "
+            "para integridade de arquivos*).\n\n"
+            "Cada finding tem um `test-id` (ex: `KRNL-5820`) que pode ser "
+            "googled para entender o contexto e ver a remediation oficial do "
+            "Lynis. Util para **demonstrar postura LGPD** num escritorio de "
+            "advocacia."
+        ),
+        features=[
+            "**Hardening Index** colorido (verde / ambar / vermelho)",
+            "Botao *Executar* dispara `lynis audit system` via `pkexec`",
+            "Warnings e suggestions com **busca + filtro por categoria**",
+            "Visao agregada por categoria (`AUTH`, `BOOT`, `KRNL`, `MACF`, etc.) com labels pt-BR",
+            "Parser de `/var/log/lynis-report.dat` (carrega audit anterior automaticamente)",
+        ],
+        icon_path=_TOOLS_DIR / "hardening-checks" / "data" / "br.com.vigia.HardeningChecks.svg",
+        exec_cmd=["vigia-hardening"],
+        needs_terminal=False,
+        available_fn=lambda: shutil.which("vigia-hardening") is not None,
+    ),
 ]

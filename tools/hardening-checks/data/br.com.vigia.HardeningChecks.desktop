@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Vigia Hardening Checks
+GenericName=Auditoria de Hardening
+Comment=Roda Lynis e mostra Hardening Index, warnings e suggestions
+Exec=vigia-hardening
+Icon=br.com.vigia.HardeningChecks
+Categories=System;Security;Settings;
+Keywords=lynis;hardening;audit;security;seguranca;vigia;
+StartupNotify=true
+Terminal=false
