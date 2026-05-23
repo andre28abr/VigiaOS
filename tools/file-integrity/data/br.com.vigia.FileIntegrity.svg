@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#18181b"/>
+      <stop offset="100%" stop-color="#09090b"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="42%" r="40%">
+      <stop offset="0%" stop-color="#34d399" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#34d399" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="256" height="256" rx="48" fill="url(#bg)"/>
+  <rect width="256" height="256" rx="48" fill="url(#glow)"/>
+
+  <!-- Documento + hash -->
+  <g transform="translate(128 122)">
+    <!-- Folha -->
+    <path d="M -42 -62
+             L 30 -62
+             L 50 -42
+             L 50 62
+             L -42 62 Z"
+          fill="#fafafa" fill-opacity="0.06"
+          stroke="#fafafa" stroke-width="2.5"
+          stroke-opacity="0.85"
+          stroke-linejoin="round"/>
+    <!-- Dobra do canto -->
+    <path d="M 30 -62 L 30 -42 L 50 -42"
+          fill="none"
+          stroke="#fafafa" stroke-width="2.5"
+          stroke-opacity="0.6"
+          stroke-linejoin="round"/>
+
+    <!-- Hash gigante centrado -->
+    <g stroke="#34d399" stroke-width="6" stroke-linecap="round" fill="none">
+      <!-- Verticais -->
+      <line x1="-12" y1="-26" x2="-16" y2="26"/>
+      <line x1="14" y1="-26" x2="10" y2="26"/>
+      <!-- Horizontais -->
+      <line x1="-26" y1="-8" x2="22" y2="-12"/>
+      <line x1="-22" y1="12" x2="26" y2="8"/>
+    </g>
+  </g>
+
+  <!-- Wordmark -->
+  <g transform="translate(128 230)" text-anchor="middle"
+     font-family="JetBrains Mono, ui-monospace, monospace"
+     font-weight="700" font-size="13" letter-spacing="3"
+     fill="#fafafa" opacity="0.9">
+    <text>VIGIA<tspan fill="#34d399">·</tspan>INTEGRITY</text>
+  </g>
+</svg>
