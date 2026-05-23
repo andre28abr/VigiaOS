@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Vigia Tool Installer
+GenericName=Catalogo de Security Tools
+Comment=Instala ferramentas de seguranca curadas via rpm-ostree
+Exec=vigia-installer
+Icon=br.com.vigia.ToolInstaller
+Categories=System;Settings;Security;
+Keywords=install;instalar;rpm-ostree;security;tools;ferramentas;vigia;
+StartupNotify=true
+Terminal=false

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#18181b"/>
+      <stop offset="100%" stop-color="#09090b"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="42%" r="40%">
+      <stop offset="0%" stop-color="#34d399" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#34d399" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="256" height="256" rx="48" fill="url(#bg)"/>
+  <rect width="256" height="256" rx="48" fill="url(#glow)"/>
+
+  <!-- Box (caixa de pacote) com 'tampa' e seta de download -->
+  <g transform="translate(128 122)">
+    <!-- Base do box -->
+    <path d="M -54 -8
+             L 54 -8
+             L 54 56
+             L -54 56 Z"
+          fill="#fafafa" fill-opacity="0.05"
+          stroke="#fafafa" stroke-width="2.5"
+          stroke-opacity="0.85"
+          stroke-linejoin="round"/>
+    <!-- Linha do meio (faixa horizontal do box) -->
+    <line x1="-54" y1="14" x2="54" y2="14"
+          stroke="#fafafa" stroke-width="2"
+          stroke-opacity="0.4"/>
+
+    <!-- Tampa -->
+    <path d="M -54 -8
+             L -54 -22
+             L 54 -22
+             L 54 -8 Z"
+          fill="#fafafa" fill-opacity="0.08"
+          stroke="#fafafa" stroke-width="2.5"
+          stroke-opacity="0.85"
+          stroke-linejoin="round"/>
+
+    <!-- Seta verde grande apontando pra baixo, indicando 'download/install' -->
+    <g fill="#34d399">
+      <path d="M -16 -68
+               L 16 -68
+               L 16 -38
+               L 26 -38
+               L 0 -10
+               L -26 -38
+               L -16 -38 Z"
+            stroke="#34d399"
+            stroke-width="2"
+            stroke-linejoin="round"/>
+    </g>
+  </g>
+
+  <!-- Wordmark -->
+  <g transform="translate(128 230)" text-anchor="middle"
+     font-family="JetBrains Mono, ui-monospace, monospace"
+     font-weight="700" font-size="13" letter-spacing="3"
+     fill="#fafafa" opacity="0.9">
+    <text>VIGIA<tspan fill="#34d399">·</tspan>INSTALLER</text>
+  </g>
+</svg>
