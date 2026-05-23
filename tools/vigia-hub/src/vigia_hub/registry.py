@@ -249,4 +249,36 @@ TOOLS: list[ToolEntry] = [
         needs_terminal=False,
         available_fn=lambda: shutil.which("vigia-reports") is not None,
     ),
+    ToolEntry(
+        id="file-integrity",
+        name="File Integrity",
+        description="Monitor de integridade de arquivos (wrapper AIDE).",
+        long_description=(
+            "Wrapper grafico do **AIDE** (Advanced Intrusion Detection "
+            "Environment). Cria um *snapshot* dos arquivos do sistema "
+            "(`hash SHA256`, permissoes, mtime, size, owner) e compara o "
+            "estado atual com esse **baseline** sempre que voce roda "
+            "*Verificar*.\n\n"
+            "Mostra resultado de forma escaneavel: **Integro** (verde) "
+            "quando nada mudou, **Mudancas detectadas** (ambar) quando ha "
+            "diferenca. A aba *Mudancas* lista cada arquivo com badge "
+            "colorido (*adicionado* / *removido* / *modificado*) e as "
+            "propriedades alteradas (mtime, hash, permissoes, etc.).\n\n"
+            "**Re-baseline** explicito apos updates legitimos do sistema "
+            "(`rpm-ostree upgrade`), com dialog de confirmacao para evitar "
+            "aceitar mudancas suspeitas por engano. Cada operacao usa "
+            "**1 dialog `pkexec`** — sem repetir senha."
+        ),
+        features=[
+            "**Hero card** com estado atual: integro / mudancas detectadas / sem baseline",
+            "Lista filtravel de mudancas com badges (*adicionado*, *removido*, *modificado*)",
+            "Cada mudanca mostra **propriedades alteradas** (mtime, hash, perms, etc.)",
+            "Dialog de confirmacao explicito antes de re-baseline (evita aceitar mudancas suspeitas)",
+            "Cache local em `~/.config/vigia/file-integrity.json` (mostra ultimo check apos restart)",
+        ],
+        icon_path=_TOOLS_DIR / "file-integrity" / "data" / "br.com.vigia.FileIntegrity.svg",
+        exec_cmd=["vigia-integrity"],
+        needs_terminal=False,
+        available_fn=lambda: shutil.which("vigia-integrity") is not None,
+    ),
 ]

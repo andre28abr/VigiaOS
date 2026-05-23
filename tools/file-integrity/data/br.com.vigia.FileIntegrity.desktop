@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Vigia File Integrity
+GenericName=Monitor de Integridade
+Comment=Monitora integridade de arquivos via AIDE (baseline + check + diff)
+Exec=vigia-integrity
+Icon=br.com.vigia.FileIntegrity
+Categories=System;Security;Settings;
+Keywords=aide;integrity;integridade;arquivos;hash;tripwire;vigia;
+StartupNotify=true
+Terminal=false
