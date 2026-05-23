@@ -19,6 +19,7 @@ class FindingsListTab(Adw.Bin):
     SEVERITY_CSS = "error"  # subclasse override
     EMPTY_TITLE = "Sem findings"
     EMPTY_DESC = ""
+    EMPTY_ICON = "dialog-information-symbolic"
 
     def __init__(self) -> None:
         super().__init__()
@@ -61,7 +62,7 @@ class FindingsListTab(Adw.Bin):
         self._empty_state = Adw.StatusPage(
             title=self.EMPTY_TITLE,
             description=self.EMPTY_DESC,
-            icon_name="emblem-default-symbolic",
+            icon_name=self.EMPTY_ICON,
         )
         self._empty_state.set_vexpand(True)
 
