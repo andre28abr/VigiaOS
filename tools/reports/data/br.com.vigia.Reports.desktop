@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Vigia Reports
+GenericName=Gerador de Relatorios
+Comment=Gera relatorios HTML/PDF de atividade e autenticacao
+Exec=vigia-reports
+Icon=br.com.vigia.Reports
+Categories=Office;System;Security;
+Keywords=reports;relatorios;lgpd;audit;auditoria;vigia;
+StartupNotify=true
+Terminal=false
