@@ -281,4 +281,35 @@ TOOLS: list[ToolEntry] = [
         needs_terminal=False,
         available_fn=lambda: shutil.which("vigia-integrity") is not None,
     ),
+    ToolEntry(
+        id="tool-installer",
+        name="Tool Installer",
+        description="Catalogo curado de security tools via rpm-ostree.",
+        long_description=(
+            "Catalogo de **~22 ferramentas de seguranca** selecionadas para "
+            "Fedora Silverblue. Cada item tem descricao em pt-BR e um *por que "
+            "voce quer isso* que da contexto pratico. **One-click install** "
+            "via `pkexec rpm-ostree install` — sem precisar abrir terminal nem "
+            "lembrar nomes de pacote.\n\n"
+            "Status visual por item: *Disponivel* (cinza), *Instalado* "
+            "(verde), *Pendente* (amber, esperando reboot). Categorias: "
+            "**Auditoria** (lynis, aide, chkrootkit), **Rede** (nmap, "
+            "tcpdump, mtr), **Monitoramento** (htop, lsof, strace, "
+            "fail2ban), **Privacidade** (tor, wireguard, dnscrypt-proxy), "
+            "**Forense** (clamav, binwalk, hashdeep).\n\n"
+            "A aba **Pendentes** mostra mudancas staged pelo `rpm-ostree` "
+            "e oferece botao **Reiniciar agora** para aplicar."
+        ),
+        features=[
+            "**22 ferramentas curadas** com descricao + 'por que voce quer isso'",
+            "Status visual: *disponivel* / *instalado* / *pendente*",
+            "**1 dialog pkexec** por operacao via `rpm-ostree install --idempotent`",
+            "Search filtra por nome, pacote, descricao",
+            "Aba **Pendentes** lista staged changes + botao **Reiniciar agora**",
+        ],
+        icon_path=_TOOLS_DIR / "tool-installer" / "data" / "br.com.vigia.ToolInstaller.svg",
+        exec_cmd=["vigia-installer"],
+        needs_terminal=False,
+        available_fn=lambda: shutil.which("vigia-installer") is not None,
+    ),
 ]
