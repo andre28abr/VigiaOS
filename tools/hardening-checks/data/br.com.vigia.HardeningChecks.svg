@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#18181b"/>
+      <stop offset="100%" stop-color="#09090b"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="40%" r="40%">
+      <stop offset="0%" stop-color="#34d399" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#34d399" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="256" height="256" rx="48" fill="url(#bg)"/>
+  <rect width="256" height="256" rx="48" fill="url(#glow)"/>
+
+  <!-- Escudo (shield) com checklist -->
+  <g transform="translate(128 122)">
+    <!-- Shield outline -->
+    <path d="M -56 -60
+             L 56 -60
+             L 56 10
+             Q 56 60 0 78
+             Q -56 60 -56 10 Z"
+          fill="#34d399" fill-opacity="0.08"
+          stroke="#34d399" stroke-width="3"
+          stroke-linejoin="round"/>
+
+    <!-- Checklist dentro do escudo (3 linhas) -->
+    <g stroke="#34d399" stroke-width="3" stroke-linecap="round" fill="none">
+      <!-- Linha 1: check + barra -->
+      <path d="M -32 -28 L -24 -20 L -12 -34"/>
+      <line x1="-2" y1="-28" x2="32" y2="-28" stroke-opacity="0.75"/>
+
+      <!-- Linha 2: check + barra -->
+      <path d="M -32 -2 L -24 6 L -12 -8"/>
+      <line x1="-2" y1="-2" x2="32" y2="-2" stroke-opacity="0.75"/>
+
+      <!-- Linha 3: check + barra -->
+      <path d="M -32 24 L -24 32 L -12 18"/>
+      <line x1="-2" y1="24" x2="32" y2="24" stroke-opacity="0.75"/>
+    </g>
+  </g>
+
+  <!-- Wordmark -->
+  <g transform="translate(128 230)" text-anchor="middle"
+     font-family="JetBrains Mono, ui-monospace, monospace"
+     font-weight="700" font-size="14" letter-spacing="4"
+     fill="#fafafa" opacity="0.9">
+    <text>VIGIA<tspan fill="#34d399">·</tspan>HARDENING</text>
+  </g>
+</svg>
