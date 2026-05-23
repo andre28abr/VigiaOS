@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vigia-reports"
+version = "0.1.0"
+description = "Gerador de relatorios HTML (preparados pra PDF via browser) — parte da Vigia Suite"
+license = { text = "Apache-2.0" }
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{ name = "André Augusto Azarias de Souza" }]
+keywords = ["reports", "lgpd", "audit", "vigia", "gnome", "gtk4"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: X11 Applications :: GTK",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Security",
+]
+dependencies = [
+    "jinja2>=3.0",
+]
+
+[project.scripts]
+vigia-reports = "vigia_reports.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+vigia_reports = ["templates/*.html"]

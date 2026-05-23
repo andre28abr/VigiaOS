@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>Resumo</h2>
+
+<div class="kpi-grid">
+  <div class="kpi accent">
+    <div class="kpi-value">{{ kpis.ssh_success }}</div>
+    <div class="kpi-label">SSH aceitos</div>
+  </div>
+  <div class="kpi {% if kpis.ssh_failed > 10 %}danger{% else %}warn{% endif %}">
+    <div class="kpi-value">{{ kpis.ssh_failed }}</div>
+    <div class="kpi-label">SSH falhados</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-value">{{ kpis.sudo_invocations }}</div>
+    <div class="kpi-label">Invocacoes sudo</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-value">{{ kpis.pkexec_invocations }}</div>
+    <div class="kpi-label">Invocacoes pkexec</div>
+  </div>
+  <div class="kpi {% if kpis.bans > 0 %}danger{% endif %}">
+    <div class="kpi-value">{{ kpis.bans }}</div>
+    <div class="kpi-label">Bans (fail2ban)</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-value">{{ kpis.logins }}</div>
+    <div class="kpi-label">Logins historicos</div>
+  </div>
+</div>
+
+{% if top_banned_ips %}
+<h2>IPs mais banidos</h2>
+<table>
+  <thead><tr><th>IP</th><th class="num">Bans</th></tr></thead>
+  <tbody>
+    {% for ip, count in top_banned_ips %}
+    <tr>
+      <td class="mono">{{ ip }}</td>
+      <td class="num">{{ count }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+{% if top_sudo_users %}
+<h2>Top usuarios de sudo</h2>
+<table>
+  <thead><tr><th>Usuario</th><th class="num">Invocacoes</th></tr></thead>
+  <tbody>
+    {% for user, count in top_sudo_users %}
+    <tr>
+      <td class="mono">{{ user }}</td>
+      <td class="num">{{ count }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+<h2>SSH — logins aceitos</h2>
+{% if ssh_success %}
+<table>
+  <thead><tr><th>Quando</th><th>Usuario</th><th>De</th></tr></thead>
+  <tbody>
+    {% for e in ssh_success %}
+    <tr>
+      <td class="mono">{{ e.timestamp }}</td>
+      <td>{{ e.user }} <span class="tag ok">aceito</span></td>
+      <td class="mono">{{ e.ip }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty">Nenhum login SSH aceito no periodo.</div>
+{% endif %}
+
+<h2>SSH — logins falhados</h2>
+{% if ssh_failed %}
+<table>
+  <thead><tr><th>Quando</th><th>Usuario</th><th>De</th></tr></thead>
+  <tbody>
+    {% for e in ssh_failed %}
+    <tr>
+      <td class="mono">{{ e.timestamp }}</td>
+      <td>{{ e.user }} <span class="tag danger">falha</span></td>
+      <td class="mono">{{ e.ip }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty">Nenhuma tentativa SSH falhada no periodo.</div>
+{% endif %}
+
+<h2>Sudo — comandos executados</h2>
+{% if sudo %}
+<table>
+  <thead><tr><th>Quando</th><th>Usuario</th><th>Comando</th></tr></thead>
+  <tbody>
+    {% for s in sudo %}
+    <tr>
+      <td class="mono">{{ s.timestamp }}</td>
+      <td>{{ s.user }} <span class="tag">→ {{ s.target_user }}</span></td>
+      <td class="mono">{{ s.command }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty">Nenhuma invocacao sudo no periodo.</div>
+{% endif %}
+
+{% if pkexec %}
+<h2>pkexec — privilege escalation grafica</h2>
+<table>
+  <thead><tr><th>Quando</th><th>Usuario</th><th>Comando</th></tr></thead>
+  <tbody>
+    {% for p in pkexec %}
+    <tr>
+      <td class="mono">{{ p.timestamp }}</td>
+      <td>{{ p.user }}</td>
+      <td class="mono">{{ p.command }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+{% if bans %}
+<h2>fail2ban — bans aplicados</h2>
+<table>
+  <thead><tr><th>Quando</th><th>Jail</th><th>IP banido</th></tr></thead>
+  <tbody>
+    {% for b in bans %}
+    <tr>
+      <td class="mono">{{ b.timestamp }}</td>
+      <td>{{ b.jail }}</td>
+      <td class="mono">{{ b.ip }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+{% endblock %}

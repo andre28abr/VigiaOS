@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>Visao geral</h2>
+
+<div class="kpi-grid">
+  <div class="kpi accent">
+    <div class="kpi-value">{{ ssh_success|length }}</div>
+    <div class="kpi-label">SSH aceitos</div>
+  </div>
+  <div class="kpi {% if ssh_failed|length > 10 %}danger{% else %}warn{% endif %}">
+    <div class="kpi-value">{{ ssh_failed|length }}</div>
+    <div class="kpi-label">SSH falhados</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-value">{{ sudo|length }}</div>
+    <div class="kpi-label">Sudo</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-value">{{ pkexec|length }}</div>
+    <div class="kpi-label">pkexec</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-value">{{ logins|length }}</div>
+    <div class="kpi-label">Logins (last)</div>
+  </div>
+  <div class="kpi {% if failed_logins|length > 0 %}danger{% endif %}">
+    <div class="kpi-value">{{ failed_logins|length }}</div>
+    <div class="kpi-label">Logins falhados (lastb)</div>
+  </div>
+</div>
+
+<h2>SSH — aceitos</h2>
+{% if ssh_success %}
+<table>
+  <thead><tr><th>Quando</th><th>Usuario</th><th>De</th></tr></thead>
+  <tbody>
+    {% for e in ssh_success %}
+    <tr>
+      <td class="mono">{{ e.timestamp }}</td>
+      <td>{{ e.user }} <span class="tag ok">aceito</span></td>
+      <td class="mono">{{ e.ip }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty">Nenhum login SSH aceito no periodo.</div>
+{% endif %}
+
+<h2>SSH — falhados</h2>
+{% if ssh_failed %}
+<table>
+  <thead><tr><th>Quando</th><th>Usuario</th><th>De</th></tr></thead>
+  <tbody>
+    {% for e in ssh_failed %}
+    <tr>
+      <td class="mono">{{ e.timestamp }}</td>
+      <td>{{ e.user }} <span class="tag danger">falha</span></td>
+      <td class="mono">{{ e.ip }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty">Nenhuma tentativa SSH falhada no periodo.</div>
+{% endif %}
+
+<h2>Sudo</h2>
+{% if sudo %}
+<table>
+  <thead><tr><th>Quando</th><th>Usuario</th><th>TTY</th><th>Como</th><th>Comando</th></tr></thead>
+  <tbody>
+    {% for s in sudo %}
+    <tr>
+      <td class="mono">{{ s.timestamp }}</td>
+      <td>{{ s.user }}</td>
+      <td class="mono">{{ s.tty }}</td>
+      <td><span class="tag">{{ s.target_user }}</span></td>
+      <td class="mono">{{ s.command }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty">Nenhuma invocacao sudo no periodo.</div>
+{% endif %}
+
+<h2>pkexec</h2>
+{% if pkexec %}
+<table>
+  <thead><tr><th>Quando</th><th>Usuario</th><th>Comando</th></tr></thead>
+  <tbody>
+    {% for p in pkexec %}
+    <tr>
+      <td class="mono">{{ p.timestamp }}</td>
+      <td>{{ p.user }}</td>
+      <td class="mono">{{ p.command }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty">Nenhuma invocacao pkexec no periodo.</div>
+{% endif %}
+
+<h2>Logins recentes (last)</h2>
+{% if logins %}
+<table>
+  <thead><tr><th>Usuario</th><th>TTY</th><th>De</th><th>Quando</th></tr></thead>
+  <tbody>
+    {% for l in logins %}
+    <tr>
+      <td>{{ l.user }}</td>
+      <td class="mono">{{ l.tty }}</td>
+      <td class="mono">{{ l['from'] }}</td>
+      <td class="mono">{{ l.when }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty">Sem historico de logins disponivel.</div>
+{% endif %}
+
+{% if failed_logins %}
+<h2>Tentativas de login falhadas (lastb)</h2>
+<table>
+  <thead><tr><th>Usuario</th><th>TTY</th><th>De</th><th>Quando</th></tr></thead>
+  <tbody>
+    {% for l in failed_logins %}
+    <tr>
+      <td>{{ l.user }} <span class="tag danger">falha</span></td>
+      <td class="mono">{{ l.tty }}</td>
+      <td class="mono">{{ l['from'] }}</td>
+      <td class="mono">{{ l.when }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+{% endblock %}

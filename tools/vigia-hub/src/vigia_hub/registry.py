@@ -220,4 +220,33 @@ TOOLS: list[ToolEntry] = [
         needs_terminal=False,
         available_fn=lambda: shutil.which("vigia-hardening") is not None,
     ),
+    ToolEntry(
+        id="reports",
+        name="Reports",
+        description="Gera relatorios HTML/PDF a partir de logs do sistema.",
+        long_description=(
+            "Consolida eventos do `journalctl` (**SSH**, **sudo**, **pkexec**, "
+            "**fail2ban**) e do `last`/`lastb` em **relatorios HTML** prontos "
+            "para impressao em PDF via Firefox/Chromium. Templates pre-definidos "
+            "com **paleta zinc + emerald** e layout pensado para auditoria.\n\n"
+            "Cada relatorio inclui KPIs no topo (cards com numero grande) seguido "
+            "de tabelas detalhadas. Util para *reviews mensais*, *compliance "
+            "LGPD* e *resposta a incidentes*.\n\n"
+            "Os HTMLs sao salvos em `~/Documents/VigiaReports/` e listados na aba "
+            "**Biblioteca** com botoes *Abrir* e *Excluir*. **Modo admin** "
+            "opt-in via `pkexec` revela dados do journal do sistema e historico "
+            "de logins falhados (`lastb` precisa de root)."
+        ),
+        features=[
+            "**2 templates** v0.1: *atividade geral* + *eventos de autenticacao*",
+            "KPI cards + tabelas detalhadas com tags coloridas (*aceito*, *falha*)",
+            "Paleta visual identica ao restante da suite (zinc + emerald)",
+            "Auto-abre no navegador apos gerar — `Ctrl+P` para PDF",
+            "Biblioteca lista relatorios salvos com **Abrir** / **Excluir**",
+        ],
+        icon_path=_TOOLS_DIR / "reports" / "data" / "br.com.vigia.Reports.svg",
+        exec_cmd=["vigia-reports"],
+        needs_terminal=False,
+        available_fn=lambda: shutil.which("vigia-reports") is not None,
+    ),
 ]
