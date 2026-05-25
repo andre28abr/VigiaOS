@@ -513,26 +513,21 @@ SILVERBLUE_AIDE_CONF_TEMPLATE = """# /etc/aide-vigia.conf — perfil otimizado p
 # cobertos pelo OSTree do Silverblue (verificacao criptografica do
 # commit no boot) — duplicar aqui geraria ruido massivo.
 
+# ============================================================
 # Locais dos bancos
-database=file:/var/lib/aide/aide.db.vigia.gz
+# ============================================================
+# AIDE >=0.16 exige 'database_in' (NAO 'database') quando se usa o
+# prefixo 'file:'. 'database_out' e' onde aide --init grava.
+database_in=file:/var/lib/aide/aide.db.vigia.gz
 database_out=file:/var/lib/aide/aide.db.vigia.new.gz
 gzip_dbout=yes
-
-# Verbosity moderada
-verbose=5
-
-# Output report
-report_url=stdout
 
 # ============================================================
 # Grupos de checks (definicoes)
 # ============================================================
-# R = permissoes, owner, group, size, mtime, ctime, links, sha256
-# CONTENT = R + checksums
+# R = grupo default do AIDE (perms+inode+links+user+group+size+mtime+ctime+hashes)
 NORMAL = R+sha256
 DIR = p+u+g+acl+xattrs
-LOGS = p+u+g+n+S
-DATAONLY = p+n+u+g+s+acl+selinux+xattrs+sha256
 
 # ============================================================
 # Paths monitorados
