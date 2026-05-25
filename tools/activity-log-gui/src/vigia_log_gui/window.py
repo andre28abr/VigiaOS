@@ -4,6 +4,8 @@ Header tem:
 - Switch 'Modo admin' (pkexec)
 - Botao 'Atualizar' (dispara nova coleta)
 - ViewSwitcher das 3 tabs
+
+Suporta modo standalone (VigiaLogGuiWindow) e embedded (build_content()).
 """
 
 from __future__ import annotations
@@ -23,37 +25,38 @@ from .tabs import CorrelationsTab, StatusTab, TimelineTab
 from .tabs._helpers import show_error
 
 
-class VigiaLogGuiWindow(Adw.ApplicationWindow):
-    def __init__(self, app: Adw.Application):
-        super().__init__(application=app)
-        self.set_title("Activity Log")
-        self.set_default_size(1100, 760)
+class _LogGuiContent:
+    """Controller: state (bundle, running flag) + tabs + header com Admin/Atualizar."""
 
+    def __init__(self) -> None:
         self._bundle = ActivityBundle()
         self._running = False
         self._pulse_id: int | None = None
 
-        self._status = StatusTab()
-        self._timeline = TimelineTab()
-        self._correlations = CorrelationsTab()
+        self.status = StatusTab()
+        self.timeline = TimelineTab()
+        self.correlations = CorrelationsTab()
 
-        self._stack = Adw.ViewStack()
-        self._stack.add_titled_with_icon(self._status, "status", "Status", "dialog-information-symbolic")
-        self._stack.add_titled_with_icon(self._timeline, "timeline", "Timeline", "view-list-symbolic")
-        self._stack.add_titled_with_icon(self._correlations, "correlations", "Correlations", "emblem-shared-symbolic")
+        # ViewStack
+        stack = Adw.ViewStack()
+        stack.add_titled_with_icon(self.status, "status", "Status", "dialog-information-symbolic")
+        stack.add_titled_with_icon(self.timeline, "timeline", "Timeline", "view-list-symbolic")
+        stack.add_titled_with_icon(self.correlations, "correlations", "Correlations", "emblem-shared-symbolic")
 
         switcher = Adw.ViewSwitcher()
-        switcher.set_stack(self._stack)
+        switcher.set_stack(stack)
         switcher.set_policy(Adw.ViewSwitcherPolicy.WIDE)
 
-        # Header buttons
+        # Header
         header = Adw.HeaderBar()
         header.set_title_widget(switcher)
 
-        # Admin switch (left of refresh button)
+        # Admin switch (left)
         self._admin_switch = Gtk.Switch()
         self._admin_switch.set_valign(Gtk.Align.CENTER)
-        self._admin_switch.set_tooltip_text("Modo admin (pkexec) — acessa audit.log e journal do sistema")
+        self._admin_switch.set_tooltip_text(
+            "Modo admin (pkexec) — acessa audit.log e journal do sistema"
+        )
         admin_lbl = Gtk.Label(label="Admin")
         admin_lbl.add_css_class("caption-heading")
         admin_lbl.set_valign(Gtk.Align.CENTER)
@@ -69,17 +72,17 @@ class VigiaLogGuiWindow(Adw.ApplicationWindow):
         self._refresh_btn.connect("clicked", self._on_refresh_clicked)
         header.pack_end(self._refresh_btn)
 
-        # Progress bar abaixo do header
+        # ProgressBar (osd, escondida)
         self._progress_bar = Gtk.ProgressBar()
         self._progress_bar.set_pulse_step(0.1)
         self._progress_bar.set_visible(False)
         self._progress_bar.add_css_class("osd")
 
-        toolbar = Adw.ToolbarView()
-        toolbar.add_top_bar(header)
-        toolbar.add_top_bar(self._progress_bar)
-        toolbar.set_content(self._stack)
-        self.set_content(toolbar)
+        # ToolbarView
+        self.toolbar = Adw.ToolbarView()
+        self.toolbar.add_top_bar(header)
+        self.toolbar.add_top_bar(self._progress_bar)
+        self.toolbar.set_content(stack)
 
     # ============================================================
     # Refresh
@@ -92,7 +95,7 @@ class VigiaLogGuiWindow(Adw.ApplicationWindow):
         sources = sorted(backend.detect_available_sources())
         if not sources:
             show_error(
-                self,
+                self._refresh_btn,
                 "Nenhuma fonte disponivel",
                 "Nao detectei audit, journal ou fail2ban neste sistema.",
             )
@@ -112,12 +115,12 @@ class VigiaLogGuiWindow(Adw.ApplicationWindow):
     def _on_done(self, bundle: ActivityBundle) -> bool:
         self._set_running(False)
         if bundle.raw_error:
-            show_error(self, "Falha ao coletar", bundle.raw_error)
+            show_error(self._refresh_btn, "Falha ao coletar", bundle.raw_error)
             return False
         self._bundle = bundle
-        self._status.refresh(bundle)
-        self._timeline.refresh(bundle)
-        self._correlations.refresh(bundle)
+        self.status.refresh(bundle)
+        self.timeline.refresh(bundle)
+        self.correlations.refresh(bundle)
         return False
 
     def _set_running(self, running: bool) -> None:
@@ -133,3 +136,17 @@ class VigiaLogGuiWindow(Adw.ApplicationWindow):
     def _pulse_tick(self) -> bool:
         self._progress_bar.pulse()
         return self._running
+
+
+def build_content() -> Gtk.Widget:
+    ctrl = _LogGuiContent()
+    ctrl.toolbar._controller = ctrl  # type: ignore[attr-defined]
+    return ctrl.toolbar
+
+
+class VigiaLogGuiWindow(Adw.ApplicationWindow):
+    def __init__(self, app: Adw.Application):
+        super().__init__(application=app)
+        self.set_title("Activity Log")
+        self.set_default_size(1100, 760)
+        self.set_content(build_content())

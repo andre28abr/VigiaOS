@@ -2,15 +2,27 @@
 
 from __future__ import annotations
 
+import threading
+from dataclasses import dataclass, field
+
 import gi
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 
-from gi.repository import Adw, Gtk  # noqa: E402
+from gi.repository import Adw, GLib, Gtk  # noqa: E402
 
 from .. import backend
 from ._helpers import show_error
+
+
+@dataclass
+class _StatusSnapshot:
+    running: bool = False
+    available: bool = False
+    zones: list = field(default_factory=list)
+    default_zone: str = ""
+    active_zones: list = field(default_factory=list)
 
 
 class StatusTab(Adw.PreferencesPage):
@@ -91,41 +103,52 @@ class StatusTab(Adw.PreferencesPage):
         self.refresh()
 
     def refresh(self) -> None:
-        running = backend.is_running()
+        """Dispara coleta em thread (6+ subprocess firewall-cmd) sem bloquear UI."""
+        threading.Thread(target=self._refresh_worker, daemon=True).start()
 
+    def _refresh_worker(self) -> None:
+        snap = _StatusSnapshot()
+        try:
+            snap.running = backend.is_running()
+            snap.available = backend.is_firewalld_available()
+            snap.zones = backend.list_zones()
+            snap.default_zone = backend.get_default_zone()
+            snap.active_zones = backend.get_active_zones()
+        except Exception:  # pylint: disable=broad-except
+            pass
+        GLib.idle_add(self._apply_status, snap)
+
+    def _apply_status(self, snap: _StatusSnapshot) -> bool:
         # Daemon label
-        self._running_label.set_text("running" if running else "stopped")
+        self._running_label.set_text("running" if snap.running else "stopped")
         for css in ("success", "error"):
             self._running_label.remove_css_class(css)
-        self._running_label.add_css_class("success" if running else "error")
+        self._running_label.add_css_class("success" if snap.running else "error")
 
         # Toggle btn
-        self._toggle_btn.set_label("Stop" if running else "Start")
+        self._toggle_btn.set_label("Stop" if snap.running else "Start")
         for css in ("destructive-action", "suggested-action"):
             self._toggle_btn.remove_css_class(css)
-        self._toggle_btn.add_css_class("destructive-action" if running else "suggested-action")
-        self._toggle_btn.set_sensitive(backend.is_firewalld_available())
+        self._toggle_btn.add_css_class("destructive-action" if snap.running else "suggested-action")
+        self._toggle_btn.set_sensitive(snap.available)
 
         # Default zone combo
-        zones = backend.list_zones()
-        default = backend.get_default_zone()
         self._suppress_combo = True
-        # Limpa StringList e re-popula
         while self._zone_model.get_n_items() > 0:
             self._zone_model.remove(0)
         idx_to_select = 0
-        for i, zname in enumerate(zones):
+        for i, zname in enumerate(snap.zones):
             self._zone_model.append(zname)
-            if zname == default:
+            if zname == snap.default_zone:
                 idx_to_select = i
         self._default_zone_combo.set_selected(idx_to_select)
         self._suppress_combo = False
 
-        # Active zones — limpa rows antigos
+        # Active zones
         for r in self._active_rows:
             self._active_group.remove(r)
         self._active_rows.clear()
-        for az in backend.get_active_zones():
+        for az in snap.active_zones:
             row = Adw.ActionRow()
             row.set_title(az.name)
             parts: list[str] = []
@@ -142,16 +165,28 @@ class StatusTab(Adw.PreferencesPage):
             row.set_subtitle("firewalld parado, ou sem interfaces configuradas.")
             self._active_group.add(row)
             self._active_rows.append(row)
+        return False
 
     def _on_toggle(self, button: Gtk.Button) -> None:
+        # start/stop firewalld via pkexec — pode demorar
+        threading.Thread(target=self._toggle_worker, daemon=True).start()
+
+    def _toggle_worker(self) -> None:
         try:
             if backend.is_running():
                 backend.stop_firewalld()
             else:
                 backend.start_firewalld()
-            self.refresh()
-        except Exception as e:
-            show_error(self, "Falha ao mudar estado do firewalld", str(e))
+            err = None
+        except Exception as e:  # pylint: disable=broad-except
+            err = str(e)
+        GLib.idle_add(self._on_toggle_done, err)
+
+    def _on_toggle_done(self, err: str | None) -> bool:
+        if err is not None:
+            show_error(self, "Falha ao mudar estado do firewalld", err)
+        self.refresh()
+        return False
 
     def _on_default_change(self, combo: Adw.ComboRow, _pspec: object) -> None:
         if self._suppress_combo:
@@ -160,9 +195,21 @@ class StatusTab(Adw.PreferencesPage):
         if idx >= self._zone_model.get_n_items():
             return
         new_zone = self._zone_model.get_string(idx)
+        # set_default_zone faz pkexec — vai pra thread
+        threading.Thread(
+            target=self._default_zone_worker, args=(new_zone,), daemon=True
+        ).start()
+
+    def _default_zone_worker(self, new_zone: str) -> None:
         try:
             backend.set_default_zone(new_zone)
-            self.refresh()
-        except Exception as e:
-            show_error(self, "Falha ao mudar zona padrao", str(e))
-            self.refresh()
+            err = None
+        except Exception as e:  # pylint: disable=broad-except
+            err = str(e)
+        GLib.idle_add(self._on_default_zone_done, err)
+
+    def _on_default_zone_done(self, err: str | None) -> bool:
+        if err is not None:
+            show_error(self, "Falha ao mudar zona padrao", err)
+        self.refresh()
+        return False
