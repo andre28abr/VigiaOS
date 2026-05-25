@@ -110,8 +110,11 @@ enum Output {
     Tui,
     /// Lista textual com narrativa
     Text,
-    /// JSON estruturado (uma linha por evento)
+    /// JSON estruturado (uma linha por evento — NDJSON)
     Json,
+    /// JSON unico envelopando events + correlations + meta.
+    /// Usado pelo frontend Python (vigia-log-gui).
+    JsonBundle,
     /// Apenas correlations (narrativas sintetizadas)
     Correlations,
 }
@@ -149,6 +152,7 @@ fn main() -> Result<()> {
         Output::Tui => tui::run(events, correlations, live)?,
         Output::Text => print_text(&events, &correlations),
         Output::Json => print_json(&events)?,
+        Output::JsonBundle => print_json_bundle(&events, &correlations, &cli.sources)?,
         Output::Correlations => print_correlations(&correlations),
     }
     Ok(())
@@ -317,5 +321,106 @@ fn print_json(events: &[Event]) -> Result<()> {
         serde_json::to_writer(&mut out, ev)?;
         out.write_all(b"\n")?;
     }
+    Ok(())
+}
+
+/// Envelope JSON unico com events + correlations + meta + narrativas pre-renderizadas.
+///
+/// Esse e' o formato que o `vigia-log-gui` (frontend Python GTK4) consome.
+/// O bundle inclui:
+/// - version: schema version (incrementar quando quebrar compat)
+/// - generated_at: ISO timestamp
+/// - sources: quais fontes foram coletadas
+/// - events[]: cada evento ja com narrativa e severidade
+/// - correlations[]: padroes cross-source detectados
+fn print_json_bundle(
+    events: &[Event],
+    correlations: &[correlator::Correlation],
+    sources: &[Source],
+) -> Result<()> {
+    use serde::Serialize;
+
+    #[derive(Serialize)]
+    struct EventWire<'a> {
+        /// Timestamp pre-formatado em string ISO local — conveniencia pro frontend.
+        timestamp: String,
+        /// Origem (`"audit"`, `"journal"`, `"fail2ban"`).
+        source: &'a str,
+        /// Severidade classificada (routine / interesting / suspicious).
+        severity: event::Severity,
+        /// Narrativa pt-BR pre-renderizada.
+        narrative: String,
+        /// Payload bruto do evento (campos type-specific).
+        payload: &'a Event,
+    }
+
+    #[derive(Serialize)]
+    struct CorrelationWire<'a> {
+        kind: &'a str,
+        severity: event::Severity,
+        timestamp: String,
+        end: String,
+        summary: &'a str,
+        contributing_count: usize,
+    }
+
+    #[derive(Serialize)]
+    struct Bundle<'a> {
+        version: u32,
+        generated_at: String,
+        sources: Vec<&'a str>,
+        events_count: usize,
+        correlations_count: usize,
+        events: Vec<EventWire<'a>>,
+        correlations: Vec<CorrelationWire<'a>>,
+    }
+
+    let sources_str: Vec<&str> = sources
+        .iter()
+        .map(|s| match s {
+            Source::Audit => "audit",
+            Source::Journald => "journald",
+            Source::Fail2ban => "fail2ban",
+        })
+        .collect();
+
+    let events_wire: Vec<EventWire> = events
+        .iter()
+        .map(|e| EventWire {
+            timestamp: e.timestamp().format("%Y-%m-%d %H:%M:%S").to_string(),
+            source: e.source(),
+            severity: e.severity(),
+            narrative: narrate(e),
+            payload: e,
+        })
+        .collect();
+
+    let correlations_wire: Vec<CorrelationWire> = correlations
+        .iter()
+        .map(|c| CorrelationWire {
+            kind: c.kind,
+            severity: c.severity,
+            timestamp: c.timestamp.format("%Y-%m-%d %H:%M:%S").to_string(),
+            end: c.end.format("%Y-%m-%d %H:%M:%S").to_string(),
+            summary: &c.summary,
+            contributing_count: c.contributing.len(),
+        })
+        .collect();
+
+    let bundle = Bundle {
+        version: 1,
+        generated_at: chrono::Local::now()
+            .format("%Y-%m-%d %H:%M:%S")
+            .to_string(),
+        sources: sources_str,
+        events_count: events_wire.len(),
+        correlations_count: correlations_wire.len(),
+        events: events_wire,
+        correlations: correlations_wire,
+    };
+
+    let stdout = io::stdout();
+    let out = stdout.lock();
+    serde_json::to_writer(out, &bundle)?;
     Ok(())
 }
