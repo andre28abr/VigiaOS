@@ -19,10 +19,23 @@ gi.require_version("Adw", "1")
 
 from gi.repository import Adw, GLib, Gtk  # noqa: E402
 
-from . import backend
+from . import WRAPPED_PACKAGES, backend
 from .backend import ActivityBundle
-from .tabs import CorrelationsTab, StatusTab, TimelineTab
+from .tabs import AboutTab, CorrelationsTab, StatusTab, TimelineTab
 from .tabs._helpers import show_error
+
+
+def _make_pkg_badges() -> Gtk.Widget:
+    box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
+    box.set_valign(Gtk.Align.CENTER)
+    box.set_margin_end(8)
+    for pkg in WRAPPED_PACKAGES:
+        lbl = Gtk.Label(label=pkg)
+        lbl.add_css_class("monospace")
+        lbl.add_css_class("caption")
+        lbl.add_css_class("dim-label")
+        box.append(lbl)
+    return box
 
 
 class _LogGuiContent:
@@ -36,12 +49,14 @@ class _LogGuiContent:
         self.status = StatusTab()
         self.timeline = TimelineTab()
         self.correlations = CorrelationsTab()
+        self.about = AboutTab()
 
         # ViewStack
         stack = Adw.ViewStack()
         stack.add_titled_with_icon(self.status, "status", "Status", "dialog-information-symbolic")
         stack.add_titled_with_icon(self.timeline, "timeline", "Timeline", "view-list-symbolic")
         stack.add_titled_with_icon(self.correlations, "correlations", "Correlations", "emblem-shared-symbolic")
+        stack.add_titled_with_icon(self.about, "about", "Sobre", "help-about-symbolic")
 
         switcher = Adw.ViewSwitcher()
         switcher.set_stack(stack)
@@ -50,6 +65,8 @@ class _LogGuiContent:
         # Header
         header = Adw.HeaderBar()
         header.set_title_widget(switcher)
+        if WRAPPED_PACKAGES:
+            header.pack_end(_make_pkg_badges())
 
         # Admin switch (left)
         self._admin_switch = Gtk.Switch()

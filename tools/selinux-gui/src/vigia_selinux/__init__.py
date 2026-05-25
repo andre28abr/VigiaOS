@@ -2,3 +2,5 @@
 
 __version__ = "0.2.0"
 __app_id__ = "br.com.vigia.SelinuxGui"
+
+WRAPPED_PACKAGES = ["semanage", "setsebool", "audit2allow"]
