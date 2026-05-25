@@ -24,6 +24,23 @@ _REPO_ROOT = Path(__file__).resolve().parents[4]
 _TOOLS_DIR = _REPO_ROOT / "tools"
 
 
+# Categorias para agrupamento visual na sidebar.
+# Ordem aqui define ordem de exibicao.
+CATEGORIES_ORDER = [
+    "monitoramento",
+    "privacidade",
+    "defesa",
+    "relatorios",
+]
+
+CATEGORY_LABELS = {
+    "monitoramento": "Monitoramento",
+    "privacidade": "Privacidade",
+    "defesa": "Defesa & Hardening",
+    "relatorios": "Relatorios",
+}
+
+
 @dataclass
 class ToolEntry:
     id: str
@@ -40,6 +57,12 @@ class ToolEntry:
     # Quando nao-None E disponivel, o Hub embarca o widget direto no
     # painel direito em vez de abrir a tool via subprocess.
     embedded_module: str | None = None
+    # Categoria para agrupamento visual na sidebar (chave de CATEGORY_LABELS).
+    # Default "monitoramento" se nao especificado.
+    category: str = "monitoramento"
+    # Pacote(s) original(is) que esta tool "wrappa" (ex: ["lynis"]).
+    # Mostrado como badge no header pra dar transparencia ao user.
+    wrapped_packages: list[str] = field(default_factory=list)
 
     def is_available(self) -> bool:
         try:
@@ -50,6 +73,14 @@ class ToolEntry:
     def is_embeddable(self) -> bool:
         """Pode ser embarcada no Hub (vs. abrir externa)?"""
         return self.embedded_module is not None and self.is_available()
+
+
+def tools_by_category(tools: list[ToolEntry]) -> dict[str, list[ToolEntry]]:
+    """Agrupa tools por categoria respeitando CATEGORIES_ORDER."""
+    grouped: dict[str, list[ToolEntry]] = {}
+    for t in tools:
+        grouped.setdefault(t.category, []).append(t)
+    return {c: grouped[c] for c in CATEGORIES_ORDER if c in grouped}
 
 
 # ============================================================================
@@ -88,6 +119,8 @@ TOOLS: list[ToolEntry] = [
         needs_root=False,
         available_fn=lambda: shutil.which("vigia-log-gui") is not None and shutil.which("vigia-log") is not None,
         embedded_module="vigia_log_gui.window",
+        category="monitoramento",
+        wrapped_packages=["vigia-log", "audit", "fail2ban"],
     ),
     ToolEntry(
         id="privacy-controls",
@@ -119,6 +152,8 @@ TOOLS: list[ToolEntry] = [
         needs_terminal=False,
         available_fn=lambda: shutil.which("vigia-privacy") is not None,
         embedded_module="vigia_privacy.window",
+        category="privacidade",
+        wrapped_packages=["dconf", "systemctl"],
     ),
     ToolEntry(
         id="selinux-gui",
@@ -150,6 +185,8 @@ TOOLS: list[ToolEntry] = [
         needs_terminal=False,
         available_fn=lambda: shutil.which("vigia-selinux") is not None,
         embedded_module="vigia_selinux.window",
+        category="defesa",
+        wrapped_packages=["semanage", "setsebool"],
     ),
     ToolEntry(
         id="firewall-gui",
@@ -176,6 +213,8 @@ TOOLS: list[ToolEntry] = [
         needs_terminal=False,
         available_fn=lambda: shutil.which("vigia-firewall") is not None,
         embedded_module="vigia_firewall.window",
+        category="defesa",
+        wrapped_packages=["firewall-cmd"],
     ),
     ToolEntry(
         id="netmon-gui",
@@ -204,6 +243,8 @@ TOOLS: list[ToolEntry] = [
         needs_terminal=False,
         available_fn=lambda: shutil.which("vigia-netmon") is not None,
         embedded_module="vigia_netmon.window",
+        category="monitoramento",
+        wrapped_packages=["ss"],
     ),
     ToolEntry(
         id="hardening-checks",
@@ -236,6 +277,8 @@ TOOLS: list[ToolEntry] = [
         needs_terminal=False,
         available_fn=lambda: shutil.which("vigia-hardening") is not None,
         embedded_module="vigia_hardening.window",
+        category="defesa",
+        wrapped_packages=["lynis"],
     ),
     ToolEntry(
         id="reports",
@@ -266,6 +309,8 @@ TOOLS: list[ToolEntry] = [
         needs_terminal=False,
         available_fn=lambda: shutil.which("vigia-reports") is not None,
         embedded_module="vigia_reports.window",
+        category="relatorios",
+        wrapped_packages=["journalctl", "last"],
     ),
     ToolEntry(
         id="file-integrity",
@@ -299,37 +344,12 @@ TOOLS: list[ToolEntry] = [
         needs_terminal=False,
         available_fn=lambda: shutil.which("vigia-integrity") is not None,
         embedded_module="vigia_integrity.window",
+        category="defesa",
+        wrapped_packages=["aide"],
     ),
-    ToolEntry(
-        id="tool-installer",
-        name="Tool Installer",
-        description="Catalogo curado de security tools via rpm-ostree.",
-        long_description=(
-            "Catalogo de **~22 ferramentas de seguranca** selecionadas para "
-            "Fedora Silverblue. Cada item tem descricao em pt-BR e um *por que "
-            "voce quer isso* que da contexto pratico. **One-click install** "
-            "via `pkexec rpm-ostree install` — sem precisar abrir terminal nem "
-            "lembrar nomes de pacote.\n\n"
-            "Status visual por item: *Disponivel* (cinza), *Instalado* "
-            "(verde), *Pendente* (amber, esperando reboot). Categorias: "
-            "**Auditoria** (lynis, aide, chkrootkit), **Rede** (nmap, "
-            "tcpdump, mtr), **Monitoramento** (htop, lsof, strace, "
-            "fail2ban), **Privacidade** (tor, wireguard, dnscrypt-proxy), "
-            "**Forense** (clamav, binwalk, hashdeep).\n\n"
-            "A aba **Pendentes** mostra mudancas staged pelo `rpm-ostree` "
-            "e oferece botao **Reiniciar agora** para aplicar."
-        ),
-        features=[
-            "**22 ferramentas curadas** com descricao + 'por que voce quer isso'",
-            "Status visual: *disponivel* / *instalado* / *pendente*",
-            "**1 dialog pkexec** por operacao via `rpm-ostree install --idempotent`",
-            "Search filtra por nome, pacote, descricao",
-            "Aba **Pendentes** lista staged changes + botao **Reiniciar agora**",
-        ],
-        icon_path=_TOOLS_DIR / "tool-installer" / "data" / "br.com.vigia.ToolInstaller.svg",
-        exec_cmd=["vigia-installer"],
-        needs_terminal=False,
-        available_fn=lambda: shutil.which("vigia-installer") is not None,
-        embedded_module="vigia_installer.window",
-    ),
+    # NOTA: Tool Installer NAO esta mais nesta lista. Foi promovido a
+    # entidade de primeiro nivel acessivel via icone 'Instalador' na
+    # nav lateral fina do Hub (em vez de virar mais uma tool entre tools).
+    # Definicao continua em tools/tool-installer/ e e' importado pela
+    # window.py do Hub.
 ]

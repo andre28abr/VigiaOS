@@ -275,18 +275,10 @@ CATALOG: list[CatalogEntry] = [
         category="forense",
         binary="clamscan",
     ),
-    CatalogEntry(
-        package="clamtk",
-        name="ClamTK",
-        description="Interface grafica simples para o ClamAV.",
-        why=(
-            "Se voce quer um botao 'escanear pasta' em vez de linha de "
-            "comando, instale clamtk junto com o clamav."
-        ),
-        category="forense",
-        binary="clamtk",
-        related=["clamav"],
-    ),
+    # NOTA: ClamTK removido do catalogo. O Vigia vai criar GUI propria
+    # para o ClamAV (planejada: "Vigia Antivirus" — usa clamav como backend).
+    # Manter ClamTK aqui duplicaria o caso de uso. O clamav (pacote)
+    # continua no catalogo pra que a futura tool Vigia possa usar.
     CatalogEntry(
         package="binwalk",
         name="binwalk",
