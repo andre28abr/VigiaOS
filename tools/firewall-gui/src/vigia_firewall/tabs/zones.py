@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+import threading
+
 import gi
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 
-from gi.repository import Adw, Gtk  # noqa: E402
+from gi.repository import Adw, GLib, Gtk  # noqa: E402
 
 from .. import backend
 from ._helpers import make_clamp, show_error
@@ -86,8 +88,18 @@ class ZonesTab(Gtk.Box):
     # ========================================================================
 
     def _populate_zones(self) -> None:
-        zones = backend.list_zones()
-        default = backend.get_default_zone()
+        """Coleta zonas + default zone em thread (2 firewall-cmd calls)."""
+        threading.Thread(target=self._populate_zones_worker, daemon=True).start()
+
+    def _populate_zones_worker(self) -> None:
+        try:
+            zones = backend.list_zones()
+            default = backend.get_default_zone()
+        except Exception:  # pylint: disable=broad-except
+            zones, default = [], ""
+        GLib.idle_add(self._apply_zones, zones, default)
+
+    def _apply_zones(self, zones: list, default: str) -> bool:
         while self._zone_model.get_n_items() > 0:
             self._zone_model.remove(0)
         idx = 0
@@ -100,6 +112,7 @@ class ZonesTab(Gtk.Box):
         self._suppress_combo = False
         if zones:
             self._refresh_zone_contents(zones[idx])
+        return False
 
     def _current_zone(self) -> str:
         idx = self._zone_combo.get_selected()
@@ -108,11 +121,24 @@ class ZonesTab(Gtk.Box):
         return self._zone_model.get_string(idx)
 
     def _refresh_zone_contents(self, zone: str) -> None:
+        """Dispara fetch async (services + ports da zona via firewall-cmd)."""
+        threading.Thread(
+            target=self._zone_contents_worker, args=(zone,), daemon=True
+        ).start()
+
+    def _zone_contents_worker(self, zone: str) -> None:
+        try:
+            services = backend.list_zone_services(zone)
+            ports = backend.list_zone_ports(zone)
+        except Exception:  # pylint: disable=broad-except
+            services, ports = [], []
+        GLib.idle_add(self._apply_zone_contents, services, ports)
+
+    def _apply_zone_contents(self, services: list, ports: list) -> bool:
         # Services
         for r in self._service_rows:
             self._services_group.remove(r)
         self._service_rows.clear()
-        services = backend.list_zone_services(zone)
         if not services:
             empty = Adw.ActionRow()
             empty.set_title("Nenhum service permitido")
@@ -136,7 +162,6 @@ class ZonesTab(Gtk.Box):
         for r in self._port_rows:
             self._ports_group.remove(r)
         self._port_rows.clear()
-        ports = backend.list_zone_ports(zone)
         if not ports:
             empty = Adw.ActionRow()
             empty.set_title("Nenhuma porta customizada")
@@ -159,6 +184,7 @@ class ZonesTab(Gtk.Box):
                 row.add_suffix(btn)
                 self._ports_group.add(row)
                 self._port_rows.append(row)
+        return False
 
     # ========================================================================
     # Event handlers
@@ -199,14 +225,21 @@ class ZonesTab(Gtk.Box):
             if idx >= len(available):
                 return
             svc = available[idx]
-            try:
-                backend.add_zone_service(zone, svc)
-                self._refresh_zone_contents(zone)
-            except Exception as e:
-                show_error(self, f"Falha ao adicionar '{svc}'", str(e))
+            # add_zone_service faz pkexec — vai pra thread
+            threading.Thread(
+                target=self._add_service_worker, args=(zone, svc), daemon=True
+            ).start()
 
         dlg.connect("response", on_response)
         dlg.present(self.get_root())
+
+    def _add_service_worker(self, zone: str, svc: str) -> None:
+        try:
+            backend.add_zone_service(zone, svc)
+            err = None
+        except Exception as e:  # pylint: disable=broad-except
+            err = str(e)
+        GLib.idle_add(self._on_service_change_done, zone, svc, err)
 
     def _show_add_port_dialog(self) -> None:
         zone = self._current_zone()
@@ -235,27 +268,60 @@ class ZonesTab(Gtk.Box):
                 return
             port = port_entry.get_text().strip()
             proto = ["tcp", "udp"][proto_combo.get_selected()]
-            try:
-                backend.add_zone_port(zone, port, proto)
-                self._refresh_zone_contents(zone)
-            except Exception as e:
-                show_error(self, "Falha ao adicionar porta", str(e))
+            threading.Thread(
+                target=self._add_port_worker, args=(zone, port, proto), daemon=True
+            ).start()
 
         dlg.connect("response", on_response)
         dlg.present(self.get_root())
 
+    def _add_port_worker(self, zone: str, port: str, proto: str) -> None:
+        try:
+            backend.add_zone_port(zone, port, proto)
+            err = None
+        except Exception as e:  # pylint: disable=broad-except
+            err = str(e)
+        GLib.idle_add(self._on_port_change_done, zone, port, proto, err)
+
     def _remove_service(self, service: str) -> None:
         zone = self._current_zone()
+        # remove_zone_service faz pkexec firewall-cmd --reload — vai pra thread
+        threading.Thread(
+            target=self._remove_service_worker, args=(zone, service), daemon=True
+        ).start()
+
+    def _remove_service_worker(self, zone: str, service: str) -> None:
         try:
             backend.remove_zone_service(zone, service)
-            self._refresh_zone_contents(zone)
-        except Exception as e:
-            show_error(self, f"Falha ao remover service '{service}'", str(e))
+            err = None
+        except Exception as e:  # pylint: disable=broad-except
+            err = str(e)
+        GLib.idle_add(self._on_service_change_done, zone, service, err)
+
+    def _on_service_change_done(self, zone: str, service: str, err: str | None) -> bool:
+        if err is not None:
+            show_error(self, f"Falha ao operar service '{service}'", err)
+        self._refresh_zone_contents(zone)
+        return False
 
     def _remove_port(self, port: str, proto: str) -> None:
         zone = self._current_zone()
+        threading.Thread(
+            target=self._remove_port_worker, args=(zone, port, proto), daemon=True
+        ).start()
+
+    def _remove_port_worker(self, zone: str, port: str, proto: str) -> None:
         try:
             backend.remove_zone_port(zone, port, proto)
-            self._refresh_zone_contents(zone)
-        except Exception as e:
-            show_error(self, f"Falha ao remover porta {port}/{proto}", str(e))
+            err = None
+        except Exception as e:  # pylint: disable=broad-except
+            err = str(e)
+        GLib.idle_add(self._on_port_change_done, zone, port, proto, err)
+
+    def _on_port_change_done(
+        self, zone: str, port: str, proto: str, err: str | None
+    ) -> bool:
+        if err is not None:
+            show_error(self, f"Falha ao operar porta {port}/{proto}", err)
+        self._refresh_zone_contents(zone)
+        return False

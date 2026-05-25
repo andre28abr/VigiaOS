@@ -36,12 +36,20 @@ class ToolEntry:
     long_description: str = ""     # paragrafos para painel detalhe
     features: list[str] = field(default_factory=list)
     available_fn: Callable[[], bool] = field(default=lambda: True)
+    # Modulo Python que exporta build_content() -> Gtk.Widget.
+    # Quando nao-None E disponivel, o Hub embarca o widget direto no
+    # painel direito em vez de abrir a tool via subprocess.
+    embedded_module: str | None = None
 
     def is_available(self) -> bool:
         try:
             return self.available_fn()
         except Exception:
             return False
+
+    def is_embeddable(self) -> bool:
+        """Pode ser embarcada no Hub (vs. abrir externa)?"""
+        return self.embedded_module is not None and self.is_available()
 
 
 # ============================================================================
@@ -79,6 +87,7 @@ TOOLS: list[ToolEntry] = [
         needs_terminal=False,
         needs_root=False,
         available_fn=lambda: shutil.which("vigia-log-gui") is not None and shutil.which("vigia-log") is not None,
+        embedded_module="vigia_log_gui.window",
     ),
     ToolEntry(
         id="privacy-controls",
@@ -109,6 +118,7 @@ TOOLS: list[ToolEntry] = [
         exec_cmd=["vigia-privacy"],
         needs_terminal=False,
         available_fn=lambda: shutil.which("vigia-privacy") is not None,
+        embedded_module="vigia_privacy.window",
     ),
     ToolEntry(
         id="selinux-gui",
@@ -139,6 +149,7 @@ TOOLS: list[ToolEntry] = [
         exec_cmd=["vigia-selinux"],
         needs_terminal=False,
         available_fn=lambda: shutil.which("vigia-selinux") is not None,
+        embedded_module="vigia_selinux.window",
     ),
     ToolEntry(
         id="firewall-gui",
@@ -164,6 +175,7 @@ TOOLS: list[ToolEntry] = [
         exec_cmd=["vigia-firewall"],
         needs_terminal=False,
         available_fn=lambda: shutil.which("vigia-firewall") is not None,
+        embedded_module="vigia_firewall.window",
     ),
     ToolEntry(
         id="netmon-gui",
@@ -191,6 +203,7 @@ TOOLS: list[ToolEntry] = [
         exec_cmd=["vigia-netmon"],
         needs_terminal=False,
         available_fn=lambda: shutil.which("vigia-netmon") is not None,
+        embedded_module="vigia_netmon.window",
     ),
     ToolEntry(
         id="hardening-checks",
@@ -222,6 +235,7 @@ TOOLS: list[ToolEntry] = [
         exec_cmd=["vigia-hardening"],
         needs_terminal=False,
         available_fn=lambda: shutil.which("vigia-hardening") is not None,
+        embedded_module="vigia_hardening.window",
     ),
     ToolEntry(
         id="reports",
@@ -251,6 +265,7 @@ TOOLS: list[ToolEntry] = [
         exec_cmd=["vigia-reports"],
         needs_terminal=False,
         available_fn=lambda: shutil.which("vigia-reports") is not None,
+        embedded_module="vigia_reports.window",
     ),
     ToolEntry(
         id="file-integrity",
@@ -283,6 +298,7 @@ TOOLS: list[ToolEntry] = [
         exec_cmd=["vigia-integrity"],
         needs_terminal=False,
         available_fn=lambda: shutil.which("vigia-integrity") is not None,
+        embedded_module="vigia_integrity.window",
     ),
     ToolEntry(
         id="tool-installer",
@@ -314,5 +330,6 @@ TOOLS: list[ToolEntry] = [
         exec_cmd=["vigia-installer"],
         needs_terminal=False,
         available_fn=lambda: shutil.which("vigia-installer") is not None,
+        embedded_module="vigia_installer.window",
     ),
 ]
