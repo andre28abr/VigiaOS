@@ -7,12 +7,14 @@ Suporta dois modos:
 
 from __future__ import annotations
 
+import threading
+
 import gi
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 
-from gi.repository import Adw, Gtk  # noqa: E402
+from gi.repository import Adw, GLib, Gtk  # noqa: E402
 
 from .toggles import ALL_TOGGLES
 from .toggles.base import Toggle
@@ -89,35 +91,83 @@ def _build_page() -> Gtk.Widget:
 
 
 def _build_toggle_row(tog: Toggle) -> Adw.ActionRow:
+    """Constroi row com switch em estado 'carregando' (sensitive=False).
+
+    O estado real (`is_available()`, `is_enabled()`) e' coletado em thread
+    em background e aplicado via _apply_toggle_state. Isso evita rodar
+    `systemctl is-active` × 3 + `bluetoothctl show` no UI thread durante init.
+    """
     row = Adw.ActionRow()
     row.set_title(tog.name)
     row.set_subtitle(tog.description)
 
     switch = Gtk.Switch()
     switch.set_valign(Gtk.Align.CENTER)
-
-    if not tog.is_available():
-        row.set_sensitive(False)
-        row.set_subtitle(f"{tog.description}\n[indisponivel neste sistema]")
-    else:
-        switch.set_active(tog.is_enabled())
-        switch.connect("state-set", _on_toggle, tog)
-
+    switch.set_sensitive(False)  # ate o worker retornar
     row.add_suffix(switch)
     row.set_activatable_widget(switch)
+
+    # Coleta estado em thread
+    threading.Thread(
+        target=_toggle_state_worker, args=(switch, row, tog), daemon=True
+    ).start()
     return row
 
 
+def _toggle_state_worker(switch: Gtk.Switch, row: Adw.ActionRow, tog: Toggle) -> None:
+    try:
+        available = tog.is_available()
+        enabled = tog.is_enabled() if available else False
+    except Exception:  # pylint: disable=broad-except
+        available, enabled = False, False
+    GLib.idle_add(_apply_toggle_state, switch, row, tog, available, enabled)
+
+
+def _apply_toggle_state(
+    switch: Gtk.Switch,
+    row: Adw.ActionRow,
+    tog: Toggle,
+    available: bool,
+    enabled: bool,
+) -> bool:
+    if not available:
+        row.set_sensitive(False)
+        row.set_subtitle(f"{tog.description}\n[indisponivel neste sistema]")
+        return False
+    switch.set_active(enabled)
+    switch.set_sensitive(True)
+    switch.connect("state-set", _on_toggle, tog)
+    return False
+
+
 def _on_toggle(switch: Gtk.Switch, value: bool, tog: Toggle) -> bool:
-    """Callback do switch — aplica mudanca no sistema."""
+    """Callback do switch — aplica em thread (set_enabled pode rodar pkexec)."""
+    switch.set_sensitive(False)
+    threading.Thread(
+        target=_apply_toggle_worker, args=(switch, value, tog), daemon=True
+    ).start()
+    return True  # block default — vamos setar state via idle_add
+
+
+def _apply_toggle_worker(switch: Gtk.Switch, value: bool, tog: Toggle) -> None:
     try:
         tog.set_enabled(value)
-    except Exception as e:
+        err = None
+    except Exception as e:  # pylint: disable=broad-except
+        err = str(e)
+    GLib.idle_add(_on_apply_done, switch, value, tog, err)
+
+
+def _on_apply_done(
+    switch: Gtk.Switch, value: bool, tog: Toggle, err: str | None
+) -> bool:
+    switch.set_sensitive(True)
+    if err is not None:
         switch.set_state(not value)
-        _show_error(switch, tog, str(e))
-        return True
-    switch.set_state(value)
-    return True
+        _show_error(switch, tog, err)
+    else:
+        switch.set_state(value)
+    return False
 
 
 def _show_error(widget: Gtk.Widget, tog: Toggle, message: str) -> None:

@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+import threading
+
 import gi
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 
-from gi.repository import Adw, Gtk  # noqa: E402
+from gi.repository import Adw, GLib, Gtk  # noqa: E402
 
 from .. import backend
 from ._helpers import make_clamp, show_error
@@ -95,12 +97,28 @@ class FilesTab(Gtk.Box):
 
         self._restore_btn.set_sensitive(False)
         self._restore_btn.set_label("Executando...")
+        self._output_view.get_buffer().set_text("Executando pkexec restorecon… (pode demorar bastante)")
+
+        # restorecon pode levar minutos numa arvore grande — vai pra thread
+        threading.Thread(
+            target=self._restore_worker,
+            args=(path, recursive, verbose),
+            daemon=True,
+        ).start()
+
+    def _restore_worker(self, path: str, recursive: bool, verbose: bool) -> None:
         try:
             output = backend.restorecon(path, recursive=recursive, verbose=verbose)
-            self._output_view.get_buffer().set_text(output)
-        except Exception as e:
-            show_error(self, "restorecon falhou", str(e))
-            self._output_view.get_buffer().set_text(f"ERRO: {e}")
-        finally:
-            self._restore_btn.set_sensitive(True)
-            self._restore_btn.set_label("Restaurar contextos")
+            err = None
+        except Exception as e:  # pylint: disable=broad-except
+            output = f"ERRO: {e}"
+            err = str(e)
+        GLib.idle_add(self._on_restore_done, output, err)
+
+    def _on_restore_done(self, output: str, err: str | None) -> bool:
+        self._output_view.get_buffer().set_text(output)
+        if err is not None:
+            show_error(self, "restorecon falhou", err)
+        self._restore_btn.set_sensitive(True)
+        self._restore_btn.set_label("Restaurar contextos")
+        return False

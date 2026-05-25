@@ -42,7 +42,12 @@ class BrowseTab(Adw.Bin):
         super().__init__()
         self._on_changed = on_changed
         self._running = False
+        self._initial_load_done = False
+        self._pulse_id: int | None = None
         self._row_widgets: dict[str, dict] = {}  # package -> {row, btn, status_lbl}
+        # Cache de status atualizado pelo worker async (refresh_statuses_async).
+        # Evita subprocess no _on_action_clicked.
+        self._installed_set: set[str] = set()
 
         # Header
         header_lbl = Gtk.Label(label="Catalogo curado")
@@ -102,7 +107,11 @@ class BrowseTab(Adw.Bin):
         self.set_child(scrolled)
 
         self._build_catalog()
-        self.refresh_statuses()
+        # Init nao bloqueia UI thread: coleta de status (rpm -q x N + rpm-ostree
+        # status) roda em worker thread; widgets mostram '...' ate o resultado
+        # chegar via GLib.idle_add.
+        self._show_loading_state()
+        self.refresh_statuses_async()
 
     # ============================================================
     # Build
@@ -175,17 +184,55 @@ class BrowseTab(Adw.Bin):
         }
 
     # ============================================================
-    # Status refresh
+    # Status refresh (async — nao bloqueia UI thread)
     # ============================================================
 
+    def refresh_statuses_async(self) -> None:
+        """Coleta status em worker thread + atualiza UI via idle_add."""
+        threading.Thread(target=self._status_worker, daemon=True).start()
+
+    # Alias para call sites legados (apos install/uninstall)
     def refresh_statuses(self) -> None:
-        pending = backend.pending_changes()
+        self.refresh_statuses_async()
+
+    def _show_loading_state(self) -> None:
+        """Placeholder enquanto worker coleta status."""
+        for pkg, widgets in self._row_widgets.items():
+            status: Gtk.Label = widgets["status"]
+            btn: Gtk.Button = widgets["btn"]
+            for cls in ("success", "warning", "error"):
+                status.remove_css_class(cls)
+            status.add_css_class("dim-label")
+            status.set_label("…")
+            btn.set_label("…")
+            btn.set_sensitive(False)
+
+    def _status_worker(self) -> None:
+        """Coleta installed/pending em thread. SEMPRE termina chamando
+        idle_add (mesmo em erro) pra UI nao ficar travada em loading state."""
+        try:
+            installed_set: set[str] = set()
+            for pkg in self._row_widgets.keys():
+                if backend.is_package_installed(pkg):
+                    installed_set.add(pkg)
+            pending = backend.pending_changes()
+        except Exception:  # pylint: disable=broad-except
+            installed_set = set()
+            pending = backend.PendingChanges()
+        finally:
+            GLib.idle_add(self._apply_statuses, installed_set, pending)
+
+    def _apply_statuses(
+        self,
+        installed_set: set[str],
+        pending: "backend.PendingChanges",
+    ) -> bool:
+        """Aplica status coletado nos widgets. Roda no UI thread."""
         pending_set = set(pending.pending_added)
         pending_removed_set = set(pending.pending_removed)
 
         for pkg, widgets in self._row_widgets.items():
-            installed = backend.is_package_installed(pkg)
-            row = widgets["row"]
+            installed = pkg in installed_set
             status: Gtk.Label = widgets["status"]
             btn: Gtk.Button = widgets["btn"]
 
@@ -221,6 +268,10 @@ class BrowseTab(Adw.Bin):
                 btn.remove_css_class("destructive-action")
                 btn.remove_css_class("flat")
 
+        self._installed_set = installed_set
+        self._initial_load_done = True
+        return False
+
     # ============================================================
     # Filter
     # ============================================================
@@ -246,8 +297,8 @@ class BrowseTab(Adw.Bin):
     def _on_action_clicked(self, btn: Gtk.Button, package: str) -> None:
         if self._running:
             return
-        installed = backend.is_package_installed(package)
-        if installed:
+        # Usa cache em vez de rodar `rpm -q` sync na UI thread
+        if package in self._installed_set:
             self._confirm_uninstall(package)
         else:
             self._do_install(package)
@@ -277,7 +328,10 @@ class BrowseTab(Adw.Bin):
         threading.Thread(target=self._install_worker, args=(package,), daemon=True).start()
 
     def _install_worker(self, package: str) -> None:
-        ok, out = backend.install_packages_blocking([package])
+        try:
+            ok, out = backend.install_packages_blocking([package])
+        except Exception as e:  # pylint: disable=broad-except
+            ok, out = False, f"Excecao no worker: {e}"
         GLib.idle_add(self._on_install_finished, ok, out, package)
 
     def _on_install_finished(self, ok: bool, out: str, package: str) -> bool:
@@ -299,7 +353,10 @@ class BrowseTab(Adw.Bin):
         threading.Thread(target=self._uninstall_worker, args=(package,), daemon=True).start()
 
     def _uninstall_worker(self, package: str) -> None:
-        ok, out = backend.uninstall_packages_blocking([package])
+        try:
+            ok, out = backend.uninstall_packages_blocking([package])
+        except Exception as e:  # pylint: disable=broad-except
+            ok, out = False, f"Excecao no worker: {e}"
         GLib.idle_add(self._on_uninstall_finished, ok, out, package)
 
     def _on_uninstall_finished(self, ok: bool, out: str, package: str) -> bool:
@@ -325,15 +382,16 @@ class BrowseTab(Adw.Bin):
         self._progress_box.set_visible(running)
         self._progress_label.set_label(label)
         if running:
-            self._pulse_id = GLib.timeout_add(100, self._pulse_tick)
+            if self._pulse_id is None:
+                self._pulse_id = GLib.timeout_add(100, self._pulse_tick)
         else:
-            pid = getattr(self, "_pulse_id", None)
-            if pid is not None:
-                GLib.source_remove(pid)
+            if self._pulse_id is not None:
+                GLib.source_remove(self._pulse_id)
                 self._pulse_id = None
-        # Desabilita todos os botoes durante operacao
-        for widgets in self._row_widgets.values():
-            widgets["btn"].set_sensitive(not running)
+        # Desabilita todos os botoes durante operacao (mas so depois do load inicial)
+        if self._initial_load_done:
+            for widgets in self._row_widgets.values():
+                widgets["btn"].set_sensitive(not running)
 
     def _pulse_tick(self) -> bool:
         self._progress_bar.pulse()

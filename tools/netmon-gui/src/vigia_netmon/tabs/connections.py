@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import threading
 from typing import Callable
 
 import gi
@@ -123,10 +124,24 @@ class ConnectionsTab(Gtk.Box):
         self._row_search_text: dict[Adw.ActionRow, str] = {}
         self._refresh_source_id: int | None = None
         self._refresh_interval_s = 3
+        self._initial_load_done = False
+        self._fetch_running = False  # evita acumular refreshes concorrentes
 
-        # Estado inicial: refresh + start auto
+        # Empty placeholder ate o primeiro fetch terminar
+        loading_row = Adw.ActionRow()
+        loading_row.set_title("Carregando…")
+        loading_row.set_subtitle("Coletando conexoes via `ss -tunap`")
+        loading_row.add_css_class("dim-label")
+        self._list.append(loading_row)
+        self._count_label.set_text("Carregando…")
+
+        # Auto-refresh so liga quando o widget esta mapped (visivel).
+        # Pausa quando o usuario sai pra outra tool no Hub.
+        self.connect("map", self._on_widget_map)
+        self.connect("unmap", self._on_widget_unmap)
+
+        # Dispara primeiro fetch em thread — nao bloqueia UI
         self._refresh()
-        self._start_auto_refresh()
 
     # ========================================================================
     # Subclass hook — Listening tab override para usar backend.list_listening()
@@ -136,47 +151,65 @@ class ConnectionsTab(Gtk.Box):
         return backend.list_connections(elevated=self._elevated_mode)
 
     # ========================================================================
-    # Refresh logic
+    # Refresh logic (async — subprocess vai pra worker thread)
     # ========================================================================
 
     def _refresh(self) -> None:
-        # Salva contexto: query atual + scroll position
-        query = self._search.get_text()
-
-        # Limpa lista
-        while child := self._list.get_first_child():
-            self._list.remove(child)
-        self._row_search_text.clear()
-
-        conns = self._fetch()
-        # Ordena: ESTABLISHED primeiro, depois LISTEN, depois resto
-        order_key: Callable[[backend.NetConnection], tuple] = lambda c: (
-            0 if c.state == "ESTAB" else (1 if c.state == "LISTEN" else 2),
-            c.process,
-            c.local_addr,
-        )
-        conns = sorted(conns, key=order_key)
-
-        if not conns:
-            empty = Adw.ActionRow()
-            empty.set_title("Sem conexoes")
-            empty.set_subtitle("`ss -tunap` nao retornou nada (raro) ou nao esta disponivel.")
-            self._list.append(empty)
-            self._count_label.set_text("0 conexoes")
+        """Dispara fetch em thread. Idempotente: se ja ha fetch em andamento,
+        no-op (evita acumular pkexec dialogs sob spam de clique)."""
+        if self._fetch_running:
             return
+        self._fetch_running = True
+        threading.Thread(target=self._refresh_worker, daemon=True).start()
 
-        for c in conns:
-            row = self._build_row(c)
-            self._list.append(row)
-            self._row_search_text[row] = (
-                f"{c.process} {c.pid} {c.local_addr} {c.peer_addr} "
-                f"{c.proto} {c.state}"
-            ).lower()
+    def _refresh_worker(self) -> None:
+        try:
+            conns = self._fetch()
+        except Exception:  # pylint: disable=broad-except
+            conns = []
+        GLib.idle_add(self._apply_conns, conns)
 
-        self._count_label.set_text(f"{len(conns)} conexoes")
-        # Re-aplica filtro com query atual
-        if query:
-            self._list.invalidate_filter()
+    def _apply_conns(self, conns: list[backend.NetConnection]) -> bool:
+        """Atualiza widgets com lista coletada. Roda no UI thread."""
+        try:
+            query = self._search.get_text()
+
+            # Limpa lista
+            while child := self._list.get_first_child():
+                self._list.remove(child)
+            self._row_search_text.clear()
+
+            # Ordena: ESTABLISHED primeiro, depois LISTEN, depois resto
+            order_key: Callable[[backend.NetConnection], tuple] = lambda c: (
+                0 if c.state == "ESTAB" else (1 if c.state == "LISTEN" else 2),
+                c.process,
+                c.local_addr,
+            )
+            conns = sorted(conns, key=order_key)
+
+            if not conns:
+                empty = Adw.ActionRow()
+                empty.set_title("Sem conexoes")
+                empty.set_subtitle("`ss -tunap` nao retornou nada (raro) ou nao esta disponivel.")
+                self._list.append(empty)
+                self._count_label.set_text("0 conexoes")
+                return False
+
+            for c in conns:
+                row = self._build_row(c)
+                self._list.append(row)
+                self._row_search_text[row] = (
+                    f"{c.process} {c.pid} {c.local_addr} {c.peer_addr} "
+                    f"{c.proto} {c.state}"
+                ).lower()
+
+            self._count_label.set_text(f"{len(conns)} conexoes")
+            if query:
+                self._list.invalidate_filter()
+        finally:
+            self._fetch_running = False
+            self._initial_load_done = True
+        return False
 
     def _build_row(self, c: backend.NetConnection) -> Adw.ActionRow:
         row = Adw.ActionRow()
@@ -219,7 +252,10 @@ class ConnectionsTab(Gtk.Box):
         return True
 
     def _start_auto_refresh(self) -> None:
-        if self._refresh_source_id is None:
+        # So liga se o widget esta visivel. Quando o user troca de tool no
+        # Hub, _on_widget_unmap chama _stop_auto_refresh; quando volta,
+        # _on_widget_map chama _start_auto_refresh.
+        if self._refresh_source_id is None and self.get_mapped():
             self._refresh_source_id = GLib.timeout_add_seconds(
                 self._refresh_interval_s, self._on_auto_tick
             )
@@ -232,6 +268,20 @@ class ConnectionsTab(Gtk.Box):
     def _on_auto_tick(self) -> bool:
         self._refresh()
         return True  # GLib.SOURCE_CONTINUE
+
+    # ========================================================================
+    # Visibility tracking (Hub embedded mode)
+    # ========================================================================
+
+    def _on_widget_map(self, _widget) -> None:
+        """Widget acabou de ficar visivel (tool selecionada no Hub)."""
+        if self._auto_switch.get_active() and not self._elevated_mode:
+            self._start_auto_refresh()
+
+    def _on_widget_unmap(self, _widget) -> None:
+        """Widget ficou invisivel (user trocou de tool). Para o auto-refresh
+        pra nao gastar CPU/subprocess em background."""
+        self._stop_auto_refresh()
 
     def _on_elevated_toggle(self, switch: Gtk.Switch, value: bool) -> bool:
         """Toggle modo admin (pkexec)."""

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import threading
 from typing import Callable
 
 import gi
@@ -9,7 +10,7 @@ import gi
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 
-from gi.repository import Adw, Gtk  # noqa: E402
+from gi.repository import Adw, GLib, Gtk  # noqa: E402
 
 from .. import backend
 from ..catalog import find_by_package
@@ -94,12 +95,21 @@ class PendingTab(Adw.Bin):
         self.refresh()
 
     # ============================================================
-    # Refresh
+    # Refresh (async: subprocess vai pra worker thread)
     # ============================================================
 
     def refresh(self) -> None:
-        pending = backend.pending_changes()
+        """Dispara coleta em thread. UI thread fica livre."""
+        threading.Thread(target=self._refresh_worker, daemon=True).start()
 
+    def _refresh_worker(self) -> None:
+        try:
+            pending = backend.pending_changes()
+        except Exception:  # pylint: disable=broad-except
+            pending = backend.PendingChanges()
+        GLib.idle_add(self._apply_pending, pending)
+
+    def _apply_pending(self, pending: "backend.PendingChanges") -> bool:
         # Hero
         for cls in ("success", "warning", "dim-label"):
             self._state_label.remove_css_class(cls)
@@ -168,6 +178,7 @@ class PendingTab(Adw.Bin):
             self._current_group.set_visible(False)
 
         self._on_changed()
+        return False  # GLib.idle_add: nao repete
 
     def _build_pkg_row(self, package: str, suffix_text: str, css: str) -> Adw.ActionRow:
         entry = find_by_package(package)

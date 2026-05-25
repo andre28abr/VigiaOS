@@ -2,15 +2,26 @@
 
 from __future__ import annotations
 
+import threading
+from dataclasses import dataclass
+
 import gi
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 
-from gi.repository import Adw, Gtk  # noqa: E402
+from gi.repository import Adw, GLib, Gtk  # noqa: E402
 
 from .. import backend
 from ._helpers import show_error
+
+
+@dataclass
+class _StatusSnapshot:
+    mode: str = ""
+    policy: str = ""
+    version: str = ""
+    persistent: str = ""
 
 
 class StatusTab(Adw.PreferencesPage):
@@ -121,46 +132,68 @@ class StatusTab(Adw.PreferencesPage):
         self.refresh()
 
     def refresh(self) -> None:
-        mode = backend.get_mode()
-        policy = backend.get_policy_type()
-        version = backend.get_policy_version()
-        persistent = backend.get_persistent_mode()
+        """Dispara fetch em thread. UI thread fica livre."""
+        threading.Thread(target=self._refresh_worker, daemon=True).start()
 
-        self._mode_value.set_text(mode)
-        self._persistent_value.set_text(persistent)
-        self._policy_value.set_text(policy)
-        self._version_value.set_text(version)
+    def _refresh_worker(self) -> None:
+        snap = _StatusSnapshot()
+        try:
+            snap.mode = backend.get_mode()
+            snap.policy = backend.get_policy_type()
+            snap.version = backend.get_policy_version()
+            snap.persistent = backend.get_persistent_mode()
+        except Exception:  # pylint: disable=broad-except
+            pass
+        GLib.idle_add(self._apply_status, snap)
+
+    def _apply_status(self, snap: _StatusSnapshot) -> bool:
+        self._mode_value.set_text(snap.mode or "—")
+        self._persistent_value.set_text(snap.persistent or "—")
+        self._policy_value.set_text(snap.policy or "—")
+        self._version_value.set_text(snap.version or "—")
 
         for css in ("error", "warning", "success"):
             self._mode_value.remove_css_class(css)
-        if mode == "Enforcing":
+        if snap.mode == "Enforcing":
             self._mode_value.add_css_class("success")
-        elif mode == "Permissive":
+        elif snap.mode == "Permissive":
             self._mode_value.add_css_class("warning")
         else:
             self._mode_value.add_css_class("error")
 
-        # Switch sem disparar callback
-        is_enforcing = mode == "Enforcing"
+        is_enforcing = snap.mode == "Enforcing"
         self._enforcing_switch.set_active(is_enforcing)
         self._enforcing_switch.set_state(is_enforcing)
-        self._enforcing_switch.set_sensitive(mode in ("Enforcing", "Permissive"))
+        self._enforcing_switch.set_sensitive(snap.mode in ("Enforcing", "Permissive"))
 
-        # Combo: ajusta para o modo persistente atual
         idx_map = {"enforcing": 0, "permissive": 1, "disabled": 2}
-        idx = idx_map.get(persistent, 0)
+        idx = idx_map.get(snap.persistent, 0)
         self._suppress_combo = True
         self._persistent_combo.set_selected(idx)
         self._suppress_combo = False
+        return False
 
     def _on_enforcing_toggle(self, switch: Gtk.Switch, value: bool) -> bool:
+        threading.Thread(
+            target=self._enforcing_worker, args=(switch, value), daemon=True
+        ).start()
+        return True
+
+    def _enforcing_worker(self, switch: Gtk.Switch, value: bool) -> None:
         try:
             backend.set_mode_enforcing(value)
+            err = None
+        except Exception as e:  # pylint: disable=broad-except
+            err = str(e)
+        GLib.idle_add(self._on_enforcing_done, switch, value, err)
+
+    def _on_enforcing_done(self, switch: Gtk.Switch, value: bool, err: str | None) -> bool:
+        if err is None:
             switch.set_state(value)
-        except Exception as e:
+        else:
             switch.set_state(not value)
-            show_error(self, "Falha ao mudar modo runtime", str(e))
-        return True
+            show_error(self, "Falha ao mudar modo runtime", err)
+        return False
 
     def _on_persistent_change(self, combo: Adw.ComboRow, _pspec: object) -> None:
         if self._suppress_combo:
@@ -170,9 +203,20 @@ class StatusTab(Adw.PreferencesPage):
             return
         idx = combo.get_selected()
         mode = model.get_string(idx)
+        threading.Thread(
+            target=self._persistent_worker, args=(mode,), daemon=True
+        ).start()
+
+    def _persistent_worker(self, mode: str) -> None:
         try:
             backend.set_persistent_mode(mode)
-            self.refresh()
-        except Exception as e:
-            show_error(self, "Falha ao editar /etc/selinux/config", str(e))
-            self.refresh()
+            err = None
+        except Exception as e:  # pylint: disable=broad-except
+            err = str(e)
+        GLib.idle_add(self._on_persistent_done, err)
+
+    def _on_persistent_done(self, err: str | None) -> bool:
+        if err is not None:
+            show_error(self, "Falha ao editar /etc/selinux/config", err)
+        self.refresh()
+        return False
