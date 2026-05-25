@@ -22,18 +22,31 @@ from .toggles import ALL_TOGGLES
 from .toggles.base import Toggle
 
 
-def _make_pkg_badges() -> Gtk.Widget:
-    """Box horizontal com badges dos pacotes 'wrapped' (mostra no header)."""
-    box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
-    box.set_valign(Gtk.Align.CENTER)
-    box.set_margin_end(8)
+def _make_pkg_badges_bar() -> Gtk.Widget:
+    """Sub-bar com badges dos pacotes 'wrapped' (mostrada abaixo do header).
+
+    Em vez de pack_end no header (que apertava as tabs quando muitas),
+    vira uma subheader bar via toolbar.add_top_bar() depois do header.
+    """
+    bar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+    bar.set_margin_start(12)
+    bar.set_margin_end(12)
+    bar.set_margin_top(4)
+    bar.set_margin_bottom(4)
+
+    intro = Gtk.Label(label="Wrapper de:")
+    intro.add_css_class("caption")
+    intro.add_css_class("dim-label")
+    bar.append(intro)
+
     for pkg in WRAPPED_PACKAGES:
-        lbl = Gtk.Label(label=pkg)
-        lbl.add_css_class("monospace")
-        lbl.add_css_class("caption")
-        lbl.add_css_class("dim-label")
-        box.append(lbl)
-    return box
+        pill = Gtk.Label(label=pkg)
+        pill.add_css_class("monospace")
+        pill.add_css_class("caption")
+        pill.add_css_class("dim-label")
+        bar.append(pill)
+
+    return bar
 
 
 # ============================================================
@@ -61,11 +74,11 @@ def build_content() -> Gtk.Widget:
     # Header
     header = Adw.HeaderBar()
     header.set_title_widget(switcher)
-    if WRAPPED_PACKAGES:
-        header.pack_end(_make_pkg_badges())
 
     toolbar = Adw.ToolbarView()
     toolbar.add_top_bar(header)
+    if WRAPPED_PACKAGES:
+        toolbar.add_top_bar(_make_pkg_badges_bar())
     toolbar.set_content(stack)
     return toolbar
 
