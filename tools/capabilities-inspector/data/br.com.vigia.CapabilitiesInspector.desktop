@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Vigia Capabilities Inspector
+GenericName=Auditoria de Capabilities
+Comment=Audita Linux capabilities (getcap) com UI grafica
+Exec=vigia-caps
+Icon=br.com.vigia.CapabilitiesInspector
+Categories=System;Security;
+Keywords=capabilities;getcap;setcap;audit;security;vigia;
+StartupNotify=true
+Terminal=false
