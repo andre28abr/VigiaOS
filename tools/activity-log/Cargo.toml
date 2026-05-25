@@ -1,6 +1,6 @@
 [package]
 name        = "vigia-activity-log"
-version     = "0.7.0"
+version     = "0.7.1"
 edition     = "2021"
 description = "Parseador de logs do Linux com narrativa human-readable"
 license     = "Apache-2.0"

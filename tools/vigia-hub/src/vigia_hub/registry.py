@@ -54,28 +54,31 @@ TOOLS: list[ToolEntry] = [
         name="Activity Log",
         description="Visualizador de logs do sistema com narrativa human-readable.",
         long_description=(
-            "Parser **inteligente** de logs do Linux: `audit.log`, `systemd journal` "
-            "e `fail2ban.log` sao consolidados numa **unica linha do tempo**, "
+            "Frontend **GTK4** do `vigia-log` (parser Rust). Consolida `audit.log`, "
+            "`systemd journal` e `fail2ban.log` numa **unica linha do tempo**, "
             "traduzidos do formato cru para frases em portugues que dizem *o que "
             "aconteceu*, *quem fez*, *quando* e *por que e' notavel*.\n\n"
-            "Alem de visualizar, detecta **correlations** entre fontes — por "
-            "exemplo: *fail2ban baniu 192.0.2.42 apos 3 tentativas SSH em 10s*, "
-            "*Sistema OOM killed chromium*, *SELinux bloqueou httpd multiplas "
-            "vezes em 60s*. O **severity classifier** reduz ruido em ate 98% "
-            "num `audit.log` tipico."
+            "Detecta **correlations** cross-source — *fail2ban baniu 192.0.2.42 "
+            "apos 3 tentativas SSH em 10s*, *Sistema OOM killed chromium*, "
+            "*SELinux bloqueou httpd multiplas vezes em 60s*. O **severity "
+            "classifier** reduz ruido em ate 98% num `audit.log` tipico.\n\n"
+            "Arquitetura: o parser Rust (`vigia-log --output json-bundle`) faz "
+            "todo trabalho pesado e cospe JSON; este GUI Python apenas renderiza. "
+            "**Modo admin** opt-in via `pkexec` (1 dialog) habilita audit + "
+            "journal do sistema + fail2ban."
         ),
         features=[
+            "**3 tabs**: Status (KPIs), Timeline (eventos), Correlations",
             "Multi-source: `audit` + `journald` + `fail2ban` interleavados por timestamp",
             "4 patterns de correlation cross-source (`fail2ban_burst`, `oom_kill`, `selinux_burst`, `ssh_suspeito`)",
             "Classificador automatico: **routine** / **interesting** / **suspicious**",
-            "Live tail mode (`-f`) com refresh 2s",
-            "TUI Ratatui com paleta *zinc + emerald*, filtros, search incremental",
+            "Engine Rust mantida — performance preservada em logs grandes",
         ],
-        icon_path=_REPO_ROOT / "packaging" / "vigia-log.svg",
-        exec_cmd=["vigia-log", "--sources", "audit", "journald", "fail2ban"],
-        needs_terminal=True,
-        needs_root=True,
-        available_fn=lambda: shutil.which("vigia-log") is not None,
+        icon_path=_TOOLS_DIR / "activity-log-gui" / "data" / "br.com.vigia.ActivityLog.svg",
+        exec_cmd=["vigia-log-gui"],
+        needs_terminal=False,
+        needs_root=False,
+        available_fn=lambda: shutil.which("vigia-log-gui") is not None and shutil.which("vigia-log") is not None,
     ),
     ToolEntry(
         id="privacy-controls",
