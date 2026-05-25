@@ -191,6 +191,42 @@ TOOLS: list[ToolEntry] = [
         wrapped_packages=["wireguard-tools", "wg-quick"],
     ),
     ToolEntry(
+        id="dns-manager",
+        name="DNS Manager",
+        description="Gerenciador DNS com provedores curados e DoT.",
+        long_description=(
+            "Gerencia o DNS do sistema via **systemd-resolved**. Catalogo de "
+            "**9 provedores populares** (Cloudflare, Quad9, AdGuard, Mullvad, "
+            "Google, etc.) com descricao + filtros (ads, malware, adulto) e "
+            "**1-click apply**.\n\n"
+            "**DNS over TLS (DoT)** encriptado por padrao — sem isso, ISP "
+            "e qualquer um na sua rede ve seu historico de navegacao. "
+            "Substitui o passo-a-passo manual em `/etc/systemd/resolved.conf` "
+            "+ `systemctl restart`.\n\n"
+            "**Backup automatico** do config atual antes de aplicar — "
+            "permite voltar com 1 botao. **Flush cache** quando precisar "
+            "forcar nova resolucao.\n\n"
+            "Provedores com filtros (Cloudflare Family, AdGuard, Mullvad "
+            "AdBlock) bloqueiam ads/malware/adulto no **nivel DNS** — antes "
+            "do navegador nem requisitar. Mais leve que ad-blocker no browser "
+            "e funciona em todos os apps."
+        ),
+        features=[
+            "**3 tabs**: Status (provedor + interfaces), Provedores (catalogo), Sobre",
+            "Catalogo com **9 provedores curados** (Cloudflare, Quad9, AdGuard, Mullvad, ...)",
+            "Toggle **DNS over TLS (DoT)** — encripta queries",
+            "Backup automatico do `/etc/systemd/resolved.conf` antes de aplicar",
+            "**Flush cache** + **Restaurar padrao** com 1 clique",
+        ],
+        icon_path=_TOOLS_DIR / "dns-manager" / "data" / "br.com.vigia.DnsManager.svg",
+        exec_cmd=["vigia-dns"],
+        needs_terminal=False,
+        available_fn=lambda: shutil.which("vigia-dns") is not None,
+        embedded_module="vigia_dns.window",
+        category="privacidade",
+        wrapped_packages=["systemd-resolved", "resolvectl"],
+    ),
+    ToolEntry(
         id="selinux-gui",
         name="SELinux Manager",
         description="Gerenciador GTK4 moderno para SELinux.",
