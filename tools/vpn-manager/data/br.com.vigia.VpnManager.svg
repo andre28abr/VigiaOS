@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#18181b"/>
+      <stop offset="100%" stop-color="#09090b"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="42%" r="40%">
+      <stop offset="0%" stop-color="#34d399" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#34d399" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="256" height="256" rx="48" fill="url(#bg)"/>
+  <rect width="256" height="256" rx="48" fill="url(#glow)"/>
+
+  <!-- Tunnel concept: dois enderecos conectados por linha encriptada -->
+  <g transform="translate(128 128)">
+    <!-- Linha do tunnel (curva, emerald) -->
+    <path d="M -76 0 Q -38 -32, 0 0 Q 38 32, 76 0"
+          fill="none"
+          stroke="#34d399"
+          stroke-width="6"
+          stroke-linecap="round"/>
+
+    <!-- Pontos finais (endpoints) — circles brancos com aro emerald -->
+    <circle cx="-76" cy="0" r="14" fill="#09090b" stroke="#fafafa" stroke-width="2.5"/>
+    <circle cx="-76" cy="0" r="6" fill="#34d399"/>
+
+    <circle cx="76" cy="0" r="14" fill="#09090b" stroke="#fafafa" stroke-width="2.5"/>
+    <circle cx="76" cy="0" r="6" fill="#34d399"/>
+
+    <!-- Cadeado no meio (indica encriptado) -->
+    <g transform="translate(0 -8)">
+      <!-- Arco do cadeado -->
+      <path d="M -10 0 Q -10 -14, 0 -14 Q 10 -14, 10 0"
+            fill="none"
+            stroke="#fafafa"
+            stroke-width="2.5"
+            stroke-opacity="0.85"
+            stroke-linecap="round"/>
+      <!-- Corpo do cadeado -->
+      <rect x="-13" y="0" width="26" height="20" rx="3"
+            fill="#fafafa"
+            fill-opacity="0.15"
+            stroke="#fafafa"
+            stroke-width="2.5"
+            stroke-opacity="0.85"/>
+      <!-- Furo da chave -->
+      <circle cx="0" cy="10" r="2.5" fill="#34d399"/>
+    </g>
+  </g>
+
+  <!-- Wordmark -->
+  <g transform="translate(128 230)" text-anchor="middle"
+     font-family="JetBrains Mono, ui-monospace, monospace"
+     font-weight="700" font-size="13" letter-spacing="4"
+     fill="#fafafa" opacity="0.9">
+    <text>VIGIA<tspan fill="#34d399">·</tspan>VPN</text>
+  </g>
+</svg>

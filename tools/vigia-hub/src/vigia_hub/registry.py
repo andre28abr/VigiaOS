@@ -156,6 +156,41 @@ TOOLS: list[ToolEntry] = [
         wrapped_packages=["dconf", "systemctl"],
     ),
     ToolEntry(
+        id="vpn-manager",
+        name="VPN Manager",
+        description="Gerenciador WireGuard com UI grafica.",
+        long_description=(
+            "Gerencia conexoes **WireGuard** com UI grafica. Lista perfis "
+            "em `/etc/wireguard/*.conf`, conecta/desconecta com 1 clique e "
+            "mostra status detalhado dos peers (handshake, dados "
+            "transferidos, endpoints).\n\n"
+            "Substitui o passo-a-passo manual no terminal "
+            "(`sudo wg-quick up <perfil>`, `sudo wg show <iface>`). Cada "
+            "operacao usa **1 dialog `pkexec`** — sem precisar abrir terminal.\n\n"
+            "Suporta **importar** novo perfil colando o conteudo do `.conf` "
+            "(recebido do servidor VPN ou provedor como Mullvad, ProtonVPN). "
+            "Vigia instala em `/etc/wireguard/` com permissions corretas "
+            "(`0700` no diretorio, `0600` no arquivo).\n\n"
+            "OpenVPN vira em **v0.2**. Por agora, foco em WireGuard que e' "
+            "o estado-da-arte (kernel module, criptografia moderna, config "
+            "simples)."
+        ),
+        features=[
+            "**3 tabs**: Status (hero card + peers), Perfis (CRUD), Sobre",
+            "Connect/Disconnect via `pkexec wg-quick up/down` (1 dialog cada)",
+            "Importacao de `.conf` via dialog (paste do conteudo)",
+            "Status detalhado: peers, handshake, rx/tx bytes, allowed IPs",
+            "Listing inicial de perfis via `pkexec` (1 dialog cobre todos)",
+        ],
+        icon_path=_TOOLS_DIR / "vpn-manager" / "data" / "br.com.vigia.VpnManager.svg",
+        exec_cmd=["vigia-vpn"],
+        needs_terminal=False,
+        available_fn=lambda: shutil.which("vigia-vpn") is not None,
+        embedded_module="vigia_vpn.window",
+        category="privacidade",
+        wrapped_packages=["wireguard-tools", "wg-quick"],
+    ),
+    ToolEntry(
         id="selinux-gui",
         name="SELinux Manager",
         description="Gerenciador GTK4 moderno para SELinux.",
