@@ -22,9 +22,36 @@ from datetime import datetime
 from pathlib import Path
 
 
-AIDE_DB = Path("/var/lib/aide/aide.db.gz")
-AIDE_DB_NEW = Path("/var/lib/aide/aide.db.new.gz")
-AIDE_CONF = Path("/etc/aide.conf")
+# ============================================================
+# Paths: AIDE tem dois "perfis" possiveis em uso pelo Vigia:
+#
+# 1. SISTEMA (default): /etc/aide.conf + /var/lib/aide/aide.db.gz
+#    O config padrao do Fedora monitora /usr, /sbin, /boot etc — paths
+#    que em Silverblue mudam toda atualizacao (rpm-ostree muda a tree
+#    inteira). Resultado: ruido massivo, dificil distinguir update
+#    legitimo de comprometimento.
+#
+# 2. VIGIA-SILVERBLUE: /etc/aide-vigia.conf + /var/lib/aide/aide.db.vigia.gz
+#    Config customizado que EXCLUI /usr/, /boot/, /ostree/ (cobertos
+#    pelo OSTree do proprio Silverblue) e foca em /etc, /root, paths
+#    mutaveis em /var. Pega o que importa: cron jobs, sudoers, ssh
+#    keys, /etc/passwd, systemd units locais.
+#
+# Quando /etc/aide-vigia.conf existe, e' considerado o perfil ativo.
+# ============================================================
+
+AIDE_DB_SYSTEM = Path("/var/lib/aide/aide.db.gz")
+AIDE_DB_NEW_SYSTEM = Path("/var/lib/aide/aide.db.new.gz")
+AIDE_CONF_SYSTEM = Path("/etc/aide.conf")
+
+AIDE_DB_VIGIA = Path("/var/lib/aide/aide.db.vigia.gz")
+AIDE_DB_NEW_VIGIA = Path("/var/lib/aide/aide.db.vigia.new.gz")
+AIDE_CONF_VIGIA = Path("/etc/aide-vigia.conf")
+
+# Aliases mantidos para compatibilidade
+AIDE_DB = AIDE_DB_SYSTEM
+AIDE_DB_NEW = AIDE_DB_NEW_SYSTEM
+AIDE_CONF = AIDE_CONF_SYSTEM
 
 # Cache local de metadata (ultimo check, summary, etc.)
 STATE_DIR = Path.home() / ".config" / "vigia"
@@ -68,6 +95,32 @@ class CheckResult:
 
 
 # ============================================================
+# Profile resolution
+# ============================================================
+
+
+def silverblue_profile_active() -> bool:
+    """True se o config customizado Vigia para Silverblue esta instalado."""
+    return AIDE_CONF_VIGIA.is_file()
+
+
+def active_conf_path() -> Path:
+    return AIDE_CONF_VIGIA if silverblue_profile_active() else AIDE_CONF_SYSTEM
+
+
+def active_db_path() -> Path:
+    return AIDE_DB_VIGIA if silverblue_profile_active() else AIDE_DB_SYSTEM
+
+
+def active_db_new_path() -> Path:
+    return AIDE_DB_NEW_VIGIA if silverblue_profile_active() else AIDE_DB_NEW_SYSTEM
+
+
+def active_profile_name() -> str:
+    return "Silverblue (Vigia)" if silverblue_profile_active() else "Sistema padrao"
+
+
+# ============================================================
 # Sanity checks
 # ============================================================
 
@@ -77,20 +130,23 @@ def aide_installed() -> bool:
 
 
 def baseline_exists() -> bool:
-    return AIDE_DB.is_file()
+    """Baseline do perfil ATIVO existe?"""
+    return active_db_path().is_file()
 
 
 def baseline_age_seconds() -> int | None:
-    if not AIDE_DB.is_file():
+    db = active_db_path()
+    if not db.is_file():
         return None
     try:
-        return int(time.time() - AIDE_DB.stat().st_mtime)
+        return int(time.time() - db.stat().st_mtime)
     except OSError:
         return None
 
 
 def aide_conf_exists() -> bool:
-    return AIDE_CONF.is_file()
+    """Config do perfil ATIVO existe?"""
+    return active_conf_path().is_file()
 
 
 def format_age(seconds: int | None) -> str:
@@ -297,7 +353,8 @@ def _extract_changed_properties(line: str) -> list[str]:
 
 def run_init_blocking() -> tuple[bool, str]:
     """`aide --init` + `mv aide.db.new.gz aide.db.gz`. Bloqueante.
-    Retorna (success, error_message).
+
+    Usa o config + db do PERFIL ATIVO (sistema ou Silverblue Vigia).
     """
     if not aide_installed():
         return False, (
@@ -307,19 +364,21 @@ def run_init_blocking() -> tuple[bool, str]:
             "systemctl reboot"
         )
 
-    if not aide_conf_exists():
-        return False, f"Arquivo de configuracao {AIDE_CONF} nao encontrado."
+    conf = active_conf_path()
+    db = active_db_path()
+    db_new = active_db_new_path()
 
-    # rm -f remove um db.new.gz orfao de run anterior abortado — sem
-    # isso, aide --init pode falhar OU promover um banco parcial a oficial.
-    # `set -e` aborta se aide --init falhar (codigo != 0).
-    script = """set -e
-rm -f /var/lib/aide/aide.db.new.gz
-aide --init
-if [ -f /var/lib/aide/aide.db.new.gz ]; then
-    mv -f /var/lib/aide/aide.db.new.gz /var/lib/aide/aide.db.gz
+    if not conf.is_file():
+        return False, f"Arquivo de configuracao {conf} nao encontrado."
+
+    # rm -f remove orfaos de runs abortados.
+    script = f"""set -e
+rm -f {db_new}
+aide -c {conf} --init
+if [ -f {db_new} ]; then
+    mv -f {db_new} {db}
 else
-    echo "ERRO: aide --init nao gerou aide.db.new.gz" >&2
+    echo "ERRO: aide --init nao gerou {db_new}" >&2
     exit 1
 fi
 """
@@ -328,7 +387,7 @@ fi
             ["pkexec", "bash", "-c", script],
             capture_output=True,
             text=True,
-            timeout=1800,  # 30min — bases grandes demoram
+            timeout=1800,
         )
     except subprocess.TimeoutExpired:
         return False, "aide --init demorou mais de 30 minutos. Cancelado."
@@ -353,13 +412,16 @@ def run_check_blocking() -> CheckResult:
         result.error = "AIDE nao esta instalado."
         return result
     if not baseline_exists():
-        result.error = f"Baseline nao existe ({AIDE_DB}). Crie primeiro com 'Criar baseline'."
+        result.error = (
+            f"Baseline nao existe ({active_db_path()}). "
+            "Crie primeiro com 'Criar baseline'."
+        )
         return result
 
     t0 = time.monotonic()
     try:
         proc = subprocess.run(
-            ["pkexec", "aide", "--check"],
+            ["pkexec", "aide", "-c", str(active_conf_path()), "--check"],
             capture_output=True,
             text=True,
             timeout=1800,
@@ -401,10 +463,14 @@ def run_update_blocking() -> tuple[bool, str]:
     if not baseline_exists():
         return False, "Sem baseline para atualizar. Use 'Criar baseline'."
 
-    script = """set -e
-aide --update
-if [ -f /var/lib/aide/aide.db.new.gz ]; then
-    mv -f /var/lib/aide/aide.db.new.gz /var/lib/aide/aide.db.gz
+    conf = active_conf_path()
+    db = active_db_path()
+    db_new = active_db_new_path()
+
+    script = f"""set -e
+aide -c {conf} --update
+if [ -f {db_new} ]; then
+    mv -f {db_new} {db}
 fi
 """
     try:
@@ -430,21 +496,198 @@ fi
 
 
 # ============================================================
+# Silverblue profile (perfil Vigia otimizado para sistemas atomicos)
+# ============================================================
+
+# Template do /etc/aide-vigia.conf. Pensado para Silverblue/atomic:
+# - EXCLUI /usr, /boot, /ostree, /sysroot (cobertos pelo OSTree
+#   criptografico; rpm-ostree upgrade muda a tree inteira, geraria ruido).
+# - INCLUI /etc completo (mutavel, contem sudoers, ssh config, passwd...).
+# - INCLUI /root inteiro (.ssh/, dotfiles).
+# - INCLUI paths criticos em /var (cron, systemd units locais, etc.).
+SILVERBLUE_AIDE_CONF_TEMPLATE = """# /etc/aide-vigia.conf — perfil otimizado para Fedora Silverblue.
+# Gerado pela Vigia File Integrity. Editar /etc/aide-vigia.conf direto
+# (precisa root). Database em /var/lib/aide/aide.db.vigia.gz.
+#
+# Filosofia: foca em paths MUTAVEIS criticos. /usr e /boot sao
+# cobertos pelo OSTree do Silverblue (verificacao criptografica do
+# commit no boot) — duplicar aqui geraria ruido massivo.
+
+# Locais dos bancos
+database=file:/var/lib/aide/aide.db.vigia.gz
+database_out=file:/var/lib/aide/aide.db.vigia.new.gz
+gzip_dbout=yes
+
+# Verbosity moderada
+verbose=5
+
+# Output report
+report_url=stdout
+
+# ============================================================
+# Grupos de checks (definicoes)
+# ============================================================
+# R = permissoes, owner, group, size, mtime, ctime, links, sha256
+# CONTENT = R + checksums
+NORMAL = R+sha256
+DIR = p+u+g+acl+xattrs
+LOGS = p+u+g+n+S
+DATAONLY = p+n+u+g+s+acl+selinux+xattrs+sha256
+
+# ============================================================
+# Paths monitorados
+# ============================================================
+
+# /etc inteiro — config files, sudoers, passwd, shadow, ssh config
+/etc NORMAL
+
+# /root inteiro — incluindo .ssh/, dotfiles, scripts
+/root NORMAL
+
+# /home/*/.ssh — chaves SSH dos users (descomente se quiser)
+# /home NORMAL
+
+# Cron jobs — vetor classico de persistence
+/var/spool/cron NORMAL
+/var/spool/at NORMAL
+
+# Systemd units locais (overrides de servicos)
+/usr/local NORMAL
+
+# Bibliotecas locais (instalacoes via /usr/local fora do OSTree)
+/usr/local/bin NORMAL
+/usr/local/sbin NORMAL
+/usr/local/lib NORMAL
+/usr/local/lib64 NORMAL
+
+# ============================================================
+# Exclusoes (paths ignorados)
+# ============================================================
+
+# Coberto pelo OSTree criptografico no Silverblue
+!/usr/bin
+!/usr/sbin
+!/usr/lib
+!/usr/lib64
+!/usr/libexec
+!/usr/share
+
+# OSTree internals
+!/ostree
+!/sysroot
+!/boot
+
+# Volatile / runtime
+!/var/log
+!/var/cache
+!/var/tmp
+!/var/spool/mail
+!/var/spool/postfix
+!/var/lib/sss
+!/var/lib/systemd
+!/var/lib/NetworkManager
+!/var/lib/dnf
+
+# /etc files que mudam normalmente (resolve.conf, mtab, etc.)
+!/etc/mtab
+!/etc/blkid
+!/etc/lvm/archive
+!/etc/lvm/backup
+!/etc/random-seed
+!/etc/resolv.conf
+!/etc/adjtime
+!/etc/.updated
+!/etc/machine-id
+!/etc/.pwd.lock
+!/etc/cups/printers.conf.O
+
+# Bancos do AIDE em si
+!/var/lib/aide/aide.db.vigia.gz
+!/var/lib/aide/aide.db.vigia.new.gz
+!/var/lib/aide/aide.db.gz
+!/var/lib/aide/aide.db.new.gz
+"""
+
+
+def apply_silverblue_profile() -> tuple[bool, str]:
+    """Instala /etc/aide-vigia.conf via pkexec.
+
+    Apos isso, todas as operacoes (init, check, update) usam o perfil
+    Silverblue automaticamente (active_*_path resolve para o vigia).
+
+    Note: o baseline anterior (se houver, em /var/lib/aide/aide.db.gz
+    do perfil sistema) NAO e' tocado — fica disponivel se o user
+    voltar ao perfil padrao via remove_silverblue_profile().
+    """
+    # Heredoc dentro do bash -c — usamos delimiter unico para evitar
+    # colisao com qualquer conteudo do template
+    import uuid
+    delim = f"AIDEVIGIA_{uuid.uuid4().hex}"
+    script = f"""set -e
+cat > /etc/aide-vigia.conf << '{delim}'
+{SILVERBLUE_AIDE_CONF_TEMPLATE}
+{delim}
+chmod 644 /etc/aide-vigia.conf
+chown root:root /etc/aide-vigia.conf
+"""
+    try:
+        result = subprocess.run(
+            ["pkexec", "bash", "-c", script],
+            capture_output=True, text=True, timeout=30,
+        )
+    except (subprocess.TimeoutExpired, FileNotFoundError):
+        return False, "Falha ao executar pkexec."
+
+    if result.returncode in (126, 127):
+        return False, "Autenticacao cancelada."
+    if result.returncode != 0:
+        stderr = (result.stderr or "").strip()
+        return False, f"Falha ao instalar perfil:\n\n{stderr[:500]}"
+
+    return True, ""
+
+
+def remove_silverblue_profile() -> tuple[bool, str]:
+    """Remove /etc/aide-vigia.conf + database vigia. Volta pro perfil sistema."""
+    script = """set -e
+rm -f /etc/aide-vigia.conf
+rm -f /var/lib/aide/aide.db.vigia.gz
+rm -f /var/lib/aide/aide.db.vigia.new.gz
+"""
+    try:
+        result = subprocess.run(
+            ["pkexec", "bash", "-c", script],
+            capture_output=True, text=True, timeout=30,
+        )
+    except (subprocess.TimeoutExpired, FileNotFoundError):
+        return False, "Falha ao executar pkexec."
+
+    if result.returncode in (126, 127):
+        return False, "Autenticacao cancelada."
+    if result.returncode != 0:
+        stderr = (result.stderr or "").strip()
+        return False, f"Falha ao remover perfil:\n\n{stderr[:500]}"
+
+    return True, ""
+
+
+# ============================================================
 # Helpers de UI
 # ============================================================
 
 
 def parse_conf_watched_paths() -> list[str]:
-    """Extrai paths monitorados de /etc/aide.conf. Heuristica simples.
+    """Extrai paths monitorados do config do perfil ATIVO.
 
     Procura por linhas como '/etc f' ou '/usr/bin Norm' (path seguido de
     nome de grupo). Funciona como overview, nao e' completo.
     """
-    if not AIDE_CONF.is_file():
+    conf = active_conf_path()
+    if not conf.is_file():
         return []
     paths: list[str] = []
     try:
-        text = AIDE_CONF.read_text(encoding="utf-8", errors="replace")
+        text = conf.read_text(encoding="utf-8", errors="replace")
     except OSError:
         return []
 
