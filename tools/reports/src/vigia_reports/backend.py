@@ -14,15 +14,13 @@ from __future__ import annotations
 import json
 import re
 import subprocess
+import uuid
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
 
 
 REPORTS_DIR = Path.home() / "Documents" / "VigiaReports"
-
-# Separador usado para dividir secoes na saida do bash -c
-_BATCH_SEP = "===VIGIA-REPORTS-SEP==="
 
 
 @dataclass
@@ -274,7 +272,9 @@ def collect_all_elevated(period: Period) -> dict[str, list[dict]] | None:
     """
     since = period.journalctl_since()
     until = period.journalctl_until()
-    sep = _BATCH_SEP
+    # UUID por execucao garante que o separador nao colide com conteudo
+    # natural dos logs (improvavel mas plausivel com copy/paste de logs).
+    sep = f"===VIGIA-{uuid.uuid4().hex}==="
 
     # `set +e` para nao parar no primeiro comando que falhar.
     # `2>/dev/null` em last/lastb porque podem nao ter arquivo.
