@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#18181b"/>
+      <stop offset="100%" stop-color="#09090b"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="42%" r="40%">
+      <stop offset="0%" stop-color="#34d399" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#34d399" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="256" height="256" rx="48" fill="url(#bg)"/>
+  <rect width="256" height="256" rx="48" fill="url(#glow)"/>
+
+  <!-- Shield with virus icon -->
+  <g transform="translate(128 128)">
+    <!-- Shield outline -->
+    <path d="M 0 -64 L 52 -42 L 52 8 Q 52 44, 0 64 Q -52 44, -52 8 L -52 -42 Z"
+          fill="#09090b"
+          stroke="#34d399"
+          stroke-width="4"
+          stroke-linejoin="round"/>
+    <!-- Inner shield fill subtle -->
+    <path d="M 0 -56 L 44 -36 L 44 6 Q 44 38, 0 56 Q -44 38, -44 6 L -44 -36 Z"
+          fill="#34d399"
+          fill-opacity="0.08"/>
+
+    <!-- Virus particle (center) — circle with spikes -->
+    <g transform="translate(0 0)">
+      <!-- Spikes (8 directions) -->
+      <g stroke="#34d399" stroke-width="2.5" stroke-linecap="round">
+        <line x1="0" y1="-26" x2="0" y2="-18"/>
+        <line x1="0" y1="18" x2="0" y2="26"/>
+        <line x1="-26" y1="0" x2="-18" y2="0"/>
+        <line x1="18" y1="0" x2="26" y2="0"/>
+        <line x1="-18" y1="-18" x2="-13" y2="-13"/>
+        <line x1="18" y1="-18" x2="13" y2="-13"/>
+        <line x1="-18" y1="18" x2="-13" y2="13"/>
+        <line x1="18" y1="18" x2="13" y2="13"/>
+      </g>
+      <!-- Spike tips -->
+      <g fill="#34d399">
+        <circle cx="0" cy="-26" r="3"/>
+        <circle cx="0" cy="26" r="3"/>
+        <circle cx="-26" cy="0" r="3"/>
+        <circle cx="26" cy="0" r="3"/>
+        <circle cx="-18" cy="-18" r="2.5"/>
+        <circle cx="18" cy="-18" r="2.5"/>
+        <circle cx="-18" cy="18" r="2.5"/>
+        <circle cx="18" cy="18" r="2.5"/>
+      </g>
+      <!-- Virus body -->
+      <circle cx="0" cy="0" r="14" fill="#09090b" stroke="#fafafa" stroke-width="2.5"/>
+      <!-- Dots on body -->
+      <circle cx="-5" cy="-3" r="2" fill="#34d399"/>
+      <circle cx="5" cy="3" r="2" fill="#34d399"/>
+      <circle cx="3" cy="-5" r="1.5" fill="#fafafa" fill-opacity="0.6"/>
+    </g>
+  </g>
+
+  <!-- Wordmark -->
+  <g transform="translate(128 230)" text-anchor="middle"
+     font-family="JetBrains Mono, ui-monospace, monospace"
+     font-weight="700" font-size="13" letter-spacing="3"
+     fill="#fafafa" opacity="0.9">
+    <text>VIGIA<tspan fill="#34d399">·</tspan>AV</text>
+  </g>
+</svg>

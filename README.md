@@ -15,20 +15,28 @@ Resultado: as ferramentas funcionam em qualquer Fedora Atomic (Silverblue,
 Kinoite, Bluefin, Bazzite, Aurora), aproveitando atualizações automáticas
 do sistema-base sem complicação.
 
-## O que está incluído (v2 em desenvolvimento)
+## O que está incluído (v2 — 15 ferramentas funcionais)
 
-| Componente | Status | Função |
-|---|---|---|
-| `bootstrap.sh` | 🟡 Em desenvolvimento | Script one-liner que instala ferramentas essenciais de segurança/privacidade/dev em Silverblue vanilla |
-| **[Vigia Hub](tools/vigia-hub/)** | 🟡 v0.1 MVP | Launcher mestre da suite — 1 ícone no GNOME que lista e abre todas as ferramentas. Python + GTK4. |
-| **[Vigia Activity Log](tools/activity-log/)** | 🟢 v0.7 funcional | Parser de audit + journald + fail2ban com narrativa human-readable, correlations cross-source, classificador de severidade, live tail mode |
-| **[Vigia Privacy Controls](tools/privacy-controls/)** | 🟢 v0.3 funcional | App GTK4 com 13 toggles (10 user-scope dconf + 3 system-scope via pkexec: firewall, SSH, Tor). Python + PyGObject + libadwaita. |
-| **[Vigia SELinux GUI](tools/selinux-gui/)** | 🟢 v0.2 funcional | 6 tabs: Status (com persistent mode), Booleans (pt-BR), Denials+audit2allow, Files+restorecon, Network ports, Processes |
-| **[Vigia Firewall GUI](tools/firewall-gui/)** | 🟡 v0.1 MVP | Gerenciador GTK4 de firewalld: status, zona padrão, edição de services/ports por zona. |
-| **[Vigia Network Monitor](tools/netmon-gui/)** | 🟡 v0.1 MVP | Conexões TCP/UDP em tempo real (`ss` wrapper) com auto-refresh, filtros, tab Listening separada. |
-| Vigia Control Center | ⚪ Futuro | App GTK4 central — tabs de ferramentas, privacidade, SELinux, logs |
-| SELinux GUI moderno | ⚪ Futuro | Substituto de `system-config-selinux` em GTK4 |
-| Tema VigiaOS (opcional) | ⚪ Futuro | Script aplicador do tema zinc + emerald (do app SentinelBR) |
+| # | Componente | Stack | Status |
+|---|---|---|---|
+| 1 | `bootstrap.sh` | bash | 🟡 Em desenvolvimento |
+| 2 | **[Vigia Hub](tools/vigia-hub/)** v0.5 | Python + GTK4 | 🟢 3 painéis (nav fina + sidebar categorizada + content), embedded mode |
+| 3 | **[Vigia Activity Log](tools/activity-log/)** v0.7 (core) + [GUI](tools/activity-log-gui/) v0.1 | Rust + Python | 🟢 audit + journald + fail2ban + correlations |
+| 4 | **[Vigia Privacy Controls](tools/privacy-controls/)** v0.3 | Python + GTK4 | 🟢 13 toggles user+system scope |
+| 5 | **[Vigia SELinux GUI](tools/selinux-gui/)** v0.2 | Python + GTK4 | 🟢 6 tabs + pt-BR + audit2allow |
+| 6 | **[Vigia Firewall GUI](tools/firewall-gui/)** v0.1 | Python + GTK4 | 🟡 Status + zones CRUD |
+| 7 | **[Vigia Network Monitor](tools/netmon-gui/)** v0.1 | Python + GTK4 | 🟡 Conexões + modo admin opt-in |
+| 8 | **[Vigia Hardening Checks](tools/hardening-checks/)** v0.1.2 | Python + GTK4 | 🟢 Lynis wrapper + perfil Silverblue |
+| 9 | **[Vigia Reports](tools/reports/)** v0.1.1 | Python + Jinja2 + WeasyPrint | 🟢 PDF/HTML LGPD |
+| 10 | **[Vigia File Integrity](tools/file-integrity/)** v0.1.3 | Python + GTK4 | 🟢 AIDE wrapper + perfil Silverblue |
+| 11 | **[Vigia Tool Installer](tools/tool-installer/)** v0.1 | Python + GTK4 | 🟢 Catálogo via `rpm-ostree install` |
+| 12 | **[Vigia VPN Manager](tools/vpn-manager/)** v0.1.1 | Python + GTK4 | 🟢 WireGuard wrapper |
+| 13 | **[Vigia DNS Manager](tools/dns-manager/)** v0.1 | Python + GTK4 | 🟢 systemd-resolved + 9 providers DoT |
+| 14 | **[Vigia Capabilities Inspector](tools/capabilities-inspector/)** v0.1 | Python + GTK4 | 🟢 getcap audit + 41 caps pt-BR |
+| 15 | **[Vigia Antivirus](tools/antivirus/)** v0.1 | Python + GTK4 | 🟢 ClamAV wrapper (substitui clamtk) |
+| 16 | **[Vigia Network Scanner](tools/network-scanner/)** v0.1 | Python + GTK4 | 🟢 nmap GUI com 6 perfis |
+| 17 | **[Vigia Firmware Analyzer](tools/firmware-analyzer/)** v0.1 | Python + GTK4 | 🟢 binwalk: signatures + extract + entropia |
+| 18 | **[Vigia Hash Tools](tools/hash-tools/)** v0.1 | Python + GTK4 | 🟢 SHA-256/512, baseline+diff |
 
 ## Instalação rápida (quando bootstrap.sh estiver pronto)
 

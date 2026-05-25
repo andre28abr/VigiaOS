@@ -4,7 +4,7 @@
 > contexto completo para retomar o desenvolvimento (humano ou IA) sem
 > precisar reler histórico de PRs ou conversas anteriores.
 >
-> Última atualização: 2026-05-25
+> Última atualização: 2026-05-25 (revisão 2: +4 tools novas)
 
 ---
 
@@ -49,7 +49,7 @@ software por cima (layered + flatpak).
 advocacia** — ambiente onde clientes confiam dados sensíveis e o
 profissional precisa demonstrar diligência.
 
-**Estado atual** (2026-05-25): **13 ferramentas funcionais** integradas
+**Estado atual** (2026-05-25): **17 ferramentas funcionais** integradas
 via Hub com layout master-detail-content (3 painéis) + categorias +
 modo embedded.
 
@@ -69,6 +69,10 @@ modo embedded.
 | 12 | **VPN Manager** | v0.1.1 | Python + GTK4 | 🟢 WireGuard wrapper + paste fallback |
 | 13 | **DNS Manager** | v0.1.0 | Python + GTK4 | 🟢 systemd-resolved + 9 providers DoT |
 | 14 | **Capabilities Inspector** | v0.1.0 | Python + GTK4 | 🟢 getcap audit + catálogo pt-BR de 41 caps |
+| 15 | **Antivirus** | v0.1.0 | Python + GTK4 | 🟢 ClamAV wrapper — substitui clamtk |
+| 16 | **Network Scanner** | v0.1.0 | Python + GTK4 | 🟢 nmap GUI com 6 perfis pré-definidos |
+| 17 | **Firmware Analyzer** | v0.1.0 | Python + GTK4 | 🟢 binwalk: signatures + extract + entropia |
+| 18 | **Hash Tools** | v0.1.0 | Python + GTK4 | 🟢 SHA-256/512 + baseline+diff de diretório |
 
 ---
 
@@ -90,13 +94,14 @@ para consulta.
 ### 2.2 Expansão do toolkit (2026-05-22 a 2026-05-25)
 
 Iniciou com 6 ferramentas (Hub, Activity Log, Privacy, SELinux, Firewall,
-NetMon). Expandiu para **13 ferramentas** em 3 ciclos:
+NetMon). Expandiu para **17 ferramentas** em 4 ciclos:
 
 | Ciclo | Adições | Foco |
 |---|---|---|
 | **Inicial** | Hub + 5 tools | Master-detail layout, fundação |
 | **Compliance/audit** | Hardening Checks, Reports, File Integrity, Tool Installer, Activity Log GUI | LGPD + audit estendido |
 | **Network/integrity** | VPN, DNS, Capabilities | Camada de rede privada + audit fino |
+| **Security toolkit** | Antivirus, Network Scanner, Firmware Analyzer, Hash Tools | Análise prática (scan/RE/integrity) |
 
 ### 2.3 Refatorações de arquitetura
 
@@ -177,7 +182,11 @@ VigiaOS/
     ├── tool-installer/          # Python — catálogo via rpm-ostree
     ├── vpn-manager/             # Python — wrapper WireGuard
     ├── dns-manager/             # Python — wrapper systemd-resolved
-    └── capabilities-inspector/  # Python — getcap audit
+    ├── capabilities-inspector/  # Python — getcap audit
+    ├── antivirus/               # Python — wrapper ClamAV
+    ├── network-scanner/         # Python — GUI nmap
+    ├── firmware-analyzer/       # Python — wrapper binwalk
+    └── hash-tools/              # Python — hash + baseline diff
 ```
 
 Cada ferramenta em `tools/` é um **projeto independente** com seu próprio
@@ -585,6 +594,173 @@ power tools pra isso.
 
 ---
 
+### 5.15 Vigia Antivirus (`tools/antivirus/`, v0.1.0)
+
+**Função**: Antivirus on-demand para Linux desktop, wrapper de ClamAV.
+
+**Stack**: Python + PyGObject + GTK4 + libadwaita.
+
+**Tabs**: Status (estado + scans recentes) + Scan (alvo + run + findings) +
+Base de dados (info + freshclam update) + Sobre.
+
+**Substituição do `clamtk`**: o clamtk tinha UI envelhecida e quebrava
+com frequência em GTK4. Vigia Antivirus provê GUI nativa libadwaita.
+
+**Streaming**: scan async via `subprocess.Popen` lendo stdout linha-a-linha
+em thread + `GLib.idle_add` para atualizar UI. Findings aparecem em tempo
+real conforme detectados.
+
+**Update de base**: `pkexec freshclam` num só dialog. Aceita rc=0 (atualizado)
+ou rc=1 (já atualizado) como sucesso.
+
+**Histórico**: reports em `~/.local/share/vigia-antivirus/scan-<timestamp>.json`
+com `chmod 0600` (LGPD).
+
+**Atalhos de target**: Home, Downloads, Documents, /tmp para escolha rápida.
+
+**SVG**: shield com vírus (círculo + spikes) no centro.
+
+**Wrapper de**: `clamav` (binário `clamscan`) + `clamav-update` (binário
+`freshclam`).
+
+---
+
+### 5.16 Vigia Network Scanner (`tools/network-scanner/`, v0.1.0)
+
+**Função**: GUI moderna para nmap — discovery e port scan com perfis
+pré-definidos.
+
+**Stack**: Python + PyGObject + GTK4 + libadwaita.
+
+**Tabs**: Scan (target + perfil + run) + Hosts (histórico) + Perfis
+(catálogo) + Sobre.
+
+**6 perfis** em `profiles.py` (dataclass `ScanProfile`):
+| Perfil | Args | Root? | Velocidade | Intrusividade |
+|---|---|---|---|---|
+| Discovery (ping scan) | `-sn` | não | rápido | baixo |
+| Quick (top 100) | `-F` | não | rápido | baixo |
+| Standard (top 1000 + version) | `-sV` | não | médio | médio |
+| Stealth (SYN scan) | `-sS -sV` | sim | médio | médio |
+| Aggressive (-A) | `-A` | sim | lento | alto |
+| Full (todas) | `-p- -sV` | não | lento | alto |
+
+**Parse XML do nmap**: `nmap -oX -` → `ElementTree.fromstring()` → estrutura
+`Host(address, hostname, status, ports)` com `Port(port, protocol, state,
+service, product, version)`.
+
+**Validação de target**: regex `^[a-zA-Z0-9.\-_:/, ]+$` rejeita chars de
+shell injection. Aceita IPv4, IPv6, hostname, CIDR.
+
+**Uso ético**: banner no header da aba Scan + seção dedicada na aba Sobre
+explicando art. 154-A do CP (Lei Carolina Dieckmann).
+
+**Histórico**: em `~/.local/share/vigia-netscan/scan-<timestamp>.json`
+com `chmod 0600` (inclui hosts + portas + versões detectadas).
+
+**SVG**: radar (círculos concêntricos) com nós descobertos + cone de varredura.
+
+**Wrapper de**: `nmap`.
+
+---
+
+### 5.17 Vigia Firmware Analyzer (`tools/firmware-analyzer/`, v0.1.0)
+
+**Função**: GUI para binwalk — análise de firmware de roteadores, IoT,
+cameras IP e binários genéricos.
+
+**Stack**: Python + PyGObject + GTK4 + libadwaita.
+
+**Tabs**: Analisar (signatures) + Extrair + Entropia + Sobre.
+
+**Operações** (sem pkexec — binwalk roda em arquivos que o user lê):
+- `analyze_blocking(path)` → `binwalk <path>` → parse output texto →
+  `list[Signature(offset, offset_hex, description)]`
+- `extract_blocking(path, outdir)` → `binwalk -e --directory <out> <path>`
+  → conta arquivos em `_<basename>.extracted/`
+- `entropy_blocking(path)` → `binwalk -E --nplot` → parse edges →
+  `list[EntropyPoint(offset, entropy)]`
+
+**Entropia (qualitativa)** — labels visuais por faixa:
+- <0.3: "padrão repetitivo" (verde)
+- 0.3-0.6: "dados estruturados" (verde)
+- 0.6-0.85: "dados densos" (dim)
+- >0.95: "compactado/encryptado" (warning)
+
+**Casos de uso documentados na aba Sobre**: auditar firmware antes de
+instalar em câmeras IP / roteadores num escritório (LGPD context).
+
+**Limitação v0.1**: gráfico visual de entropia (Cairo) fica para v0.2.
+v0.1 mostra apenas edges com labels qualitativos.
+
+**SVG**: chip em camadas (firmware → bytes → arquivos extraídos → report).
+
+**Wrapper de**: `binwalk`.
+
+---
+
+### 5.18 Vigia Hash Tools (`tools/hash-tools/`, v0.1.0)
+
+**Função**: Cálculo e verificação de hashes criptográficos, + baseline
+diff de diretório.
+
+**Stack**: Python + PyGObject + GTK4 + libadwaita.
+
+**Tabs**: Hash (single file) + Verificar (compare expected vs computed) +
+Baseline (snapshot + diff) + Sobre.
+
+**Algoritmos** (`hashlib` stdlib, sem subprocess):
+- SHA-256 (default)
+- SHA-512
+- SHA-1 (depreciado, só compat legacy)
+- MD5 (quebrado, só compat legacy)
+
+**Hash streaming**: lê em chunks de 1 MB (`f.read(1 << 20)`) — funciona
+em arquivos grandes sem carregar tudo na memória.
+
+**Baseline JSON format**:
+```json
+{
+  "directory": "/etc",
+  "algorithm": "sha256",
+  "created_at": "2026-05-25T14:30:00",
+  "file_count": 1247,
+  "hashes": {
+    "passwd": "abc123...",
+    "hostname": "def456...",
+    ...
+  }
+}
+```
+
+**Diff visual**: 3 categorias com badges colorides:
+- MOD (warning/amarelo) — modificado
+- ADD (success/verde) — adicionado
+- REM (error/vermelho) — removido
+
+Limit de 30 paths visíveis por categoria + "... +N more" para não estourar.
+
+**Complementar a `vigia-integrity` (AIDE)**: AIDE é mais robusto (mtime,
+size, perms, inode, link target, attrs), `vigia-hash` é mais simples
+(só conteúdo). Use AIDE para `/etc/` + system files; use Hash Tools para
+projetos/diretórios específicos.
+
+**Copy to clipboard**: 1 clique no botão "Copiar" → hash no clipboard
+via `Gdk.Display.get_clipboard().set(text)`.
+
+**Limitação v0.1**: `hashdeep` paralelo (multi-thread) chega em v0.2.
+v0.1 usa `hashlib` single-threaded — pode ser lento em diretórios com
+100k+ arquivos.
+
+**Baselines**: `~/.local/share/vigia-hash/baseline-<dirname>-<ts>.json`
+com `chmod 0600` (LGPD).
+
+**SVG**: documento → função hash (caixa com `#`) → digest (blocos hex).
+
+**Wrapper de**: `coreutils` (sha256sum/512/1, md5sum) + `hashdeep`.
+
+---
+
 ## 6. Padrões e convenções comuns
 
 ### 6.1 Stack consistente
@@ -813,7 +989,9 @@ sudo rpm-ostree install \
     libadwaita gtk4 \
     aide lynis \
     wireguard-tools \
-    systemd-resolved
+    systemd-resolved \
+    clamav clamav-update \
+    nmap binwalk hashdeep
 systemctl reboot
 ```
 
@@ -835,14 +1013,16 @@ sudo install -m 0755 target/release/vigia-log /usr/local/bin/vigia-log
 # Tools Python — editable install user-scope
 for d in vigia-hub privacy-controls selinux-gui firewall-gui netmon-gui \
          hardening-checks reports file-integrity tool-installer \
-         vpn-manager dns-manager capabilities-inspector activity-log-gui; do
+         vpn-manager dns-manager capabilities-inspector activity-log-gui \
+         antivirus network-scanner firmware-analyzer hash-tools; do
   (cd ../$d && pip install --user -e .)
 done
 
 # Symlink em /usr/local/bin para acesso via sudo
 for tool in vigia-hub vigia-privacy vigia-selinux vigia-firewall vigia-netmon \
             vigia-hardening vigia-reports vigia-integrity vigia-installer \
-            vigia-vpn vigia-dns vigia-capabilities vigia-activity; do
+            vigia-vpn vigia-dns vigia-capabilities vigia-log-gui \
+            vigia-antivirus vigia-netscan vigia-firmware vigia-hash; do
   sudo ln -sf "$HOME/.local/bin/$tool" /usr/local/bin/$tool
 done
 
@@ -984,9 +1164,35 @@ sugere Flatpaks (Tor Browser, KeePassXC, Signal) via Tool Installer.
 - VPN dialog paste fallback (botão + grab_focus inicial)
 - Bumps: file-integrity 0.1.2→0.1.3, vpn-manager 0.1.0→0.1.1
 
-### 2026-05-25 — Docs (commit pendente)
+### 2026-05-25 — Docs (commit `5eebc9a`)
 - DEVELOPMENT.md reescrito cobrindo 13 tools, layout redesign, polish history,
   embedded mode, roadmap atualizado
+
+### 2026-05-25 — Security toolkit (4 tools novas)
+Cycle "Security toolkit" — adiciona 4 tools de análise prática:
+
+- **Vigia Antivirus v0.1**: wrapper ClamAV com streaming de findings,
+  update via freshclam, atalhos de target (Home/Downloads/Documents/tmp).
+  Substitui o clamtk (UI quebrada em GTK4).
+- **Vigia Network Scanner v0.1**: wrapper nmap com 6 perfis pré-definidos
+  (Discovery/Quick/Standard/Stealth/Aggressive/Full). Parse XML do nmap →
+  Host/Port dataclasses. Validação de target contra shell injection.
+  Banner ético + seção dedicada na aba Sobre.
+- **Vigia Firmware Analyzer v0.1**: wrapper binwalk com 3 modos —
+  Analisar (signatures), Extrair (binwalk -e), Entropia (edges +
+  classificação qualitativa). Casos de uso documentados pra audit
+  de firmware em camera IP / roteador num escritório.
+- **Vigia Hash Tools v0.1**: 4 algoritmos (SHA-256/512, SHA-1, MD5).
+  3 modos — Hash (single file), Verificar (expected vs computed),
+  Baseline (snapshot JSON + diff added/modified/removed). Complementar
+  ao File Integrity (AIDE).
+
+Todas as 4 tools seguem o padrão da v2: `build_content() -> Gtk.Widget`,
+4 tabs com aba Sobre, sub-bar `WRAPPED_PACKAGES`, reports em
+`~/.local/share/vigia-<name>/` com `chmod 0600` (LGPD).
+
+Hub registry expande de 11 para 15 entries (Tool Installer continua
+fora da lista — fica no ícone fixo da nav lateral fina).
 
 ---
 
@@ -1063,28 +1269,31 @@ sugere Flatpaks (Tor Browser, KeePassXC, Signal) via Tool Installer.
 - Comparativo "expected vs actual" baseado em policy
 - Export findings para Activity Log
 
-### 10.2 Ferramentas novas planejadas
+### 10.2 Ferramentas novas planejadas (post-v0.1)
 
-**Vigia Antivirus** (v1.0 alvo) — wrapper de ClamAV:
-- Substitui o `clamtk` (clamtk era candidato no Tool Installer, removido por
-  ter UI ruim — VigiaOS vai prover GUI moderna nativa)
-- Scan on-demand + scheduled + quarentena visual
-- Stack: Python + GTK4 + libclamav (via subprocess `clamscan`)
+**Antivirus / Network Scanner / Firmware Analyzer / Hash Tools** — IMPLEMENTADAS
+no ciclo 2026-05-25 (security toolkit). Roadmap delas em §10.1 acima.
 
-**Vigia Network Scanner** (v1.0 alvo) — GUI moderna para nmap:
-- Discovery + port scan + service detection
-- Templates de scan (Quick, Standard, Aggressive)
-- Stack: Python + GTK4 + libxml2 (parse XML do nmap)
+**Vigia Container Audit** (v0.5 alvo):
+- Audit de containers Podman/Docker rodando
+- Detecta containers privilegiados, com mounts sensíveis, com caps adicionais
+- Stack: Python + GTK4 + `podman ps --format json`
 
-**Vigia Firmware Analyzer** (v1.x) — wrapper de binwalk:
-- Análise de firmware/imagens (extração, entropia, signatures)
-- Visualização gráfica de entropia
-- Stack: Python + GTK4 + binwalk CLI
+**Vigia Sandbox Manager** (v0.5 alvo):
+- Wrap de Bubblewrap / Flatpak sandbox para rodar binários suspeitos
+- "Run in sandbox" — UI que mostra o que o programa tentou acessar
+- Stack: Python + GTK4 + `bwrap` + strace/seccomp logs
 
-**Vigia Hash Tools** (v1.x) — wrapper de hashdeep/md5deep:
-- Hash baseline + comparativo
-- Bulk verify de arquivos
+**Vigia GPG Manager** (v0.5 alvo):
+- Wrap de `gpg --list-keys` + sign + verify
+- Geração de chaves com defaults seguros (ed25519)
+- Integração com SentinelBR password manager (futuro)
 - Stack: Python + GTK4
+
+**Vigia Disk Encryption** (v1.0 alvo):
+- Manage LUKS volumes + headers backup
+- Senha master + recovery keys
+- Stack: Python + GTK4 + `cryptsetup`
 
 ### 10.3 Empacotamento e distribuição (meta-trabalho)
 
@@ -1293,27 +1502,32 @@ sudo install -m 0755 target/release/vigia-log /usr/local/bin/vigia-log
 cd tools/<nome>
 pip install --user -e .
 
-# Symlinks sudo-friendly (todos os 13 entrypoints)
+# Symlinks sudo-friendly (todos os 17 entrypoints)
 for tool in vigia-hub vigia-privacy vigia-selinux vigia-firewall vigia-netmon \
             vigia-hardening vigia-reports vigia-integrity vigia-installer \
-            vigia-vpn vigia-dns vigia-capabilities vigia-activity; do
+            vigia-vpn vigia-dns vigia-capabilities vigia-log-gui \
+            vigia-antivirus vigia-netscan vigia-firmware vigia-hash; do
   sudo ln -sf "$HOME/.local/bin/$tool" /usr/local/bin/$tool
 done
 
 # Testar tudo via Hub
 vigia-hub
 # Ou tools individuais
-vigia-log         # CLI/TUI do core Rust
-vigia-activity    # GUI do Activity Log (Python)
-vigia-privacy     # toggles
-vigia-selinux     # SELinux manager
-vigia-firewall    # firewalld manager
-vigia-netmon      # network monitor
-vigia-hardening   # Lynis wrapper
-vigia-reports     # PDF LGPD
-vigia-integrity   # AIDE wrapper
-vigia-installer   # catálogo de tools
-vigia-vpn         # WireGuard manager
-vigia-dns         # systemd-resolved manager
+vigia-log          # CLI/TUI do core Rust
+vigia-log-gui      # GUI do Activity Log (Python)
+vigia-privacy      # toggles
+vigia-selinux      # SELinux manager
+vigia-firewall     # firewalld manager
+vigia-netmon       # network monitor
+vigia-hardening    # Lynis wrapper
+vigia-reports      # PDF LGPD
+vigia-integrity    # AIDE wrapper
+vigia-installer    # catálogo de tools
+vigia-vpn          # WireGuard manager
+vigia-dns          # systemd-resolved manager
 vigia-capabilities # getcap audit
+vigia-antivirus    # ClamAV wrapper
+vigia-netscan      # nmap GUI
+vigia-firmware     # binwalk wrapper
+vigia-hash         # hash + baseline
 ```

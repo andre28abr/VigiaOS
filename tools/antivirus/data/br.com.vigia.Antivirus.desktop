@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Vigia Antivirus
+GenericName=Antivirus
+Comment=Antivirus on-demand para Linux com UI GTK4 (ClamAV)
+Exec=vigia-antivirus
+Icon=br.com.vigia.Antivirus
+Categories=System;Security;
+Keywords=antivirus;clamav;malware;scan;vigia;
+StartupNotify=true
+Terminal=false

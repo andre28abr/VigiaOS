@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#18181b"/>
+      <stop offset="100%" stop-color="#09090b"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="42%" r="42%">
+      <stop offset="0%" stop-color="#34d399" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#34d399" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="256" height="256" rx="48" fill="url(#bg)"/>
+  <rect width="256" height="256" rx="48" fill="url(#glow)"/>
+
+  <!-- Chip with cracked open layers -->
+  <g transform="translate(128 128)">
+    <!-- Bottom layer (firmware/blob) -->
+    <rect x="-60" y="14" width="120" height="36" rx="4"
+          fill="#09090b" stroke="#34d399" stroke-width="2.5"
+          stroke-opacity="0.85"/>
+    <!-- Pattern de bytes (linhas finas) -->
+    <g stroke="#34d399" stroke-width="1.5" stroke-opacity="0.4">
+      <line x1="-52" y1="22" x2="-30" y2="22"/>
+      <line x1="-22" y1="22" x2="0" y2="22"/>
+      <line x1="8" y1="22" x2="30" y2="22"/>
+      <line x1="38" y1="22" x2="52" y2="22"/>
+      <line x1="-52" y1="30" x2="-20" y2="30"/>
+      <line x1="-12" y1="30" x2="12" y2="30"/>
+      <line x1="20" y1="30" x2="52" y2="30"/>
+      <line x1="-52" y1="38" x2="-25" y2="38"/>
+      <line x1="-17" y1="38" x2="5" y2="38"/>
+      <line x1="13" y1="38" x2="52" y2="38"/>
+    </g>
+
+    <!-- Middle layer (parsed structure) -->
+    <rect x="-60" y="-26" width="120" height="36" rx="4"
+          fill="#09090b" stroke="#34d399" stroke-width="2.5"/>
+    <!-- Mini blocks representando arquivos extraidos -->
+    <g fill="#34d399">
+      <rect x="-52" y="-20" width="24" height="22" rx="2" fill-opacity="0.4"/>
+      <rect x="-22" y="-20" width="14" height="22" rx="2" fill-opacity="0.6"/>
+      <rect x="-2" y="-20" width="20" height="22" rx="2" fill-opacity="0.5"/>
+      <rect x="22" y="-20" width="30" height="22" rx="2" fill-opacity="0.45"/>
+    </g>
+
+    <!-- Top layer (analysis report) -->
+    <rect x="-60" y="-66" width="120" height="32" rx="4"
+          fill="#09090b" stroke="#fafafa" stroke-width="2.5"
+          stroke-opacity="0.85"/>
+    <!-- Text lines -->
+    <g stroke="#fafafa" stroke-width="2" stroke-opacity="0.7" stroke-linecap="round">
+      <line x1="-50" y1="-58" x2="0" y2="-58"/>
+      <line x1="-50" y1="-50" x2="-10" y2="-50"/>
+      <line x1="-50" y1="-42" x2="20" y2="-42"/>
+    </g>
+    <!-- Status dot -->
+    <circle cx="44" cy="-50" r="4" fill="#34d399"/>
+
+    <!-- Connection lines between layers -->
+    <g stroke="#34d399" stroke-width="1.2" stroke-opacity="0.45" stroke-dasharray="2 2">
+      <line x1="-40" y1="-34" x2="-40" y2="-26"/>
+      <line x1="0" y1="-34" x2="0" y2="-26"/>
+      <line x1="40" y1="-34" x2="40" y2="-26"/>
+      <line x1="-40" y1="10" x2="-40" y2="14"/>
+      <line x1="0" y1="10" x2="0" y2="14"/>
+      <line x1="40" y1="10" x2="40" y2="14"/>
+    </g>
+  </g>
+
+  <!-- Wordmark -->
+  <g transform="translate(128 232)" text-anchor="middle"
+     font-family="JetBrains Mono, ui-monospace, monospace"
+     font-weight="700" font-size="11" letter-spacing="3"
+     fill="#fafafa" opacity="0.9">
+    <text>VIGIA<tspan fill="#34d399">·</tspan>FIRMWARE</text>
+  </g>
+</svg>
