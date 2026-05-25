@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Vigia Activity Log
+GenericName=Visualizador de Logs
+Comment=Timeline unificada de audit, journal e fail2ban com narrativa pt-BR
+Exec=vigia-log-gui
+Icon=br.com.vigia.ActivityLog
+Categories=System;Security;Monitor;
+Keywords=audit;journal;fail2ban;log;activity;vigia;
+StartupNotify=true
+Terminal=false
