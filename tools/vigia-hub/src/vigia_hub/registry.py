@@ -418,6 +418,42 @@ TOOLS: list[ToolEntry] = [
         category="defesa",
         wrapped_packages=["aide"],
     ),
+    ToolEntry(
+        id="capabilities-inspector",
+        name="Capabilities Inspector",
+        description="Auditoria de Linux capabilities (getcap).",
+        long_description=(
+            "Audita **Linux capabilities** no sistema. Capabilities sao "
+            "permissoes granulares que substituem o 'tudo ou nada' do "
+            "root — ex: `/usr/bin/ping` precisa apenas de `cap_net_raw` "
+            "em vez de SUID root completo.\n\n"
+            "Escaneia via `getcap -r` (1 dialog `pkexec` cobre todo o "
+            "sistema). Lista cada binario com capabilities setadas, com "
+            "**classificacao de risco** ALTO/MEDIO/BAIXO. **Vetor classico "
+            "de privilege escalation**: atacante adiciona `cap_setuid` em "
+            "um binario inocuo e ganha root sem precisar de SUID.\n\n"
+            "**Catalogo das ~40 capabilities** do kernel Linux como aba "
+            "dedicada — descricao em pt-BR + classe de risco + contexto "
+            "de uso comum. Util pra entender o que cada cap permite "
+            "exatamente.\n\n"
+            "Read-only nesta v0.1 (nao modifica capabilities). Modificacao "
+            "via UI chega na v0.2."
+        ),
+        features=[
+            "**4 tabs**: Visao Geral, Binarios, Capabilities (catalogo), Sobre",
+            "Scan completo via `pkexec getcap -r /usr /opt /var` (1 dialog)",
+            "Quick scan sem pkexec (paths user-readable)",
+            "**40 capabilities catalogadas** pt-BR com classe de risco",
+            "Filtros: por risco (ALTO/MEDIO/BAIXO), search por path ou cap name",
+        ],
+        icon_path=_TOOLS_DIR / "capabilities-inspector" / "data" / "br.com.vigia.CapabilitiesInspector.svg",
+        exec_cmd=["vigia-caps"],
+        needs_terminal=False,
+        available_fn=lambda: shutil.which("vigia-caps") is not None,
+        embedded_module="vigia_caps.window",
+        category="defesa",
+        wrapped_packages=["libcap", "getcap"],
+    ),
     # NOTA: Tool Installer NAO esta mais nesta lista. Foi promovido a
     # entidade de primeiro nivel acessivel via icone 'Instalador' na
     # nav lateral fina do Hub (em vez de virar mais uma tool entre tools).
