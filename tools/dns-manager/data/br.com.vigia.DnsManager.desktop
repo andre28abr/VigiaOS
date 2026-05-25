@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Vigia DNS Manager
+GenericName=Gerenciador DNS
+Comment=Gerencia DNS via systemd-resolved com DoT e provedores curados
+Exec=vigia-dns
+Icon=br.com.vigia.DnsManager
+Categories=System;Network;Security;
+Keywords=dns;dot;privacy;resolver;cloudflare;quad9;adguard;mullvad;vigia;
+StartupNotify=true
+Terminal=false
