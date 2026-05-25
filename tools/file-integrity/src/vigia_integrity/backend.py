@@ -372,11 +372,15 @@ def run_init_blocking() -> tuple[bool, str]:
         return False, f"Arquivo de configuracao {conf} nao encontrado."
 
     # rm -f remove orfaos de runs abortados.
+    # chmod 755 no diretorio: permite ao UI (user andre) fazer Path.is_file()
+    # nos db files. Sem isso, /var/lib/aide/ default 0700 bloqueia ate stat.
+    # O conteudo dos arquivos db continua 0600 — so listing/stat e' afetado.
     script = f"""set -e
 rm -f {db_new}
 aide -c {conf} --init
 if [ -f {db_new} ]; then
     mv -f {db_new} {db}
+    chmod 755 /var/lib/aide/ 2>/dev/null || true
 else
     echo "ERRO: aide --init nao gerou {db_new}" >&2
     exit 1
@@ -471,6 +475,7 @@ def run_update_blocking() -> tuple[bool, str]:
 aide -c {conf} --update
 if [ -f {db_new} ]; then
     mv -f {db_new} {db}
+    chmod 755 /var/lib/aide/ 2>/dev/null || true
 fi
 """
     try:
