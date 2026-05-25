@@ -4,6 +4,7 @@ Cada modulo expoe uma classe (subclass de Gtk.Widget) e e' instanciada
 em window.py e adicionada ao Adw.ViewStack.
 """
 
+from .about import AboutTab
 from .booleans import BooleansTab
 from .denials import DenialsTab
 from .files import FilesTab
@@ -18,4 +19,5 @@ __all__ = [
     "FilesTab",
     "NetworkTab",
     "ProcessesTab",
+    "AboutTab",
 ]
