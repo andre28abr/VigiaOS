@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "vigia-vpn"
-version = "0.1.0"
+version = "0.1.1"
 description = "Gerenciador WireGuard com UI GTK4 — parte da Vigia Suite"
 license = { text = "Apache-2.0" }
 readme = "README.md"

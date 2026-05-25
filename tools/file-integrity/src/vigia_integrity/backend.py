@@ -601,6 +601,12 @@ DIR = p+u+g+acl+xattrs
 !/etc/.pwd.lock
 !/etc/cups/printers.conf.O
 
+# systemd resource control runtime files — gerados/modificados pelo
+# systemd toda hora ao aplicar CPUWeight/IOWeight/MemoryLow/MemoryMin
+# para slices e services. NAO indicam comprometimento; sao volateis
+# por design. Excluir evita ruido em CADA aide --check.
+!/etc/systemd/system.control
+
 # Bancos do AIDE em si
 !/var/lib/aide/aide.db.vigia.gz
 !/var/lib/aide/aide.db.vigia.new.gz
