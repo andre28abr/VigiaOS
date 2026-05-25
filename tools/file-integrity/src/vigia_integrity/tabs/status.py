@@ -1,4 +1,4 @@
-"""Tab Status: estado do baseline + acoes principais."""
+"""Tab Status: estado do baseline + acoes principais + controle de perfil."""
 
 from __future__ import annotations
 
@@ -19,9 +19,14 @@ from ._helpers import make_clamp, show_error, show_info
 class StatusTab(Adw.Bin):
     """Hero card + acoes: criar baseline, verificar, atualizar."""
 
-    def __init__(self, on_check_done: Callable[["backend.CheckResult"], None]) -> None:
+    def __init__(
+        self,
+        on_check_done: Callable[["backend.CheckResult"], None],
+        on_profile_changed: Callable[[], None] | None = None,
+    ) -> None:
         super().__init__()
         self._on_check_done = on_check_done
+        self._on_profile_changed = on_profile_changed or (lambda: None)
         self._running = False
         self._pulse_id: int | None = None
         self._operation_label = "Trabalhando..."
@@ -95,6 +100,30 @@ class StatusTab(Adw.Bin):
         self._row_baseline_age.add_suffix(self._lbl_baseline_age)
         self._baseline_group.add(self._row_baseline_age)
 
+        # ---- Profile (perfil AIDE ativo: sistema padrao ou Silverblue Vigia) ---- #
+        self._profile_group = Adw.PreferencesGroup()
+        self._profile_group.set_title("Perfil AIDE")
+        self._profile_group.set_description(
+            "Em Silverblue, /usr e' OSTree imutavel — o perfil Vigia exclui "
+            "esse path e foca em /etc, /root, cron. Veja 'Sobre' pra detalhes."
+        )
+
+        # Status row do perfil
+        self._profile_status_row = Adw.ActionRow(title="Em uso")
+        self._profile_status_row.add_css_class("property")
+        self._profile_badge = Gtk.Label(label="…")
+        self._profile_badge.add_css_class("monospace")
+        self._profile_status_row.add_suffix(self._profile_badge)
+        self._profile_group.add(self._profile_status_row)
+
+        # Botao Aplicar/Voltar
+        self._profile_action_row = Adw.ActionRow()
+        self._profile_btn = Gtk.Button()
+        self._profile_btn.set_valign(Gtk.Align.CENTER)
+        self._profile_btn.add_css_class("pill")
+        self._profile_action_row.add_suffix(self._profile_btn)
+        self._profile_group.add(self._profile_action_row)
+
         # ---- Actions ---- #
         self._actions_group = Adw.PreferencesGroup()
         self._actions_group.set_title("Acoes")
@@ -146,6 +175,7 @@ class StatusTab(Adw.Bin):
         outer.append(self._hero)
         outer.append(self._stats_group)
         outer.append(self._baseline_group)
+        outer.append(self._profile_group)
         outer.append(self._actions_group)
         outer.append(self._progress_box)
 
@@ -224,6 +254,45 @@ class StatusTab(Adw.Bin):
         self._init_btn.set_sensitive(installed and not self._running)
         self._init_btn.set_label("Recriar" if has_baseline else "Criar")
         self._update_btn.set_sensitive(installed and has_baseline and not self._running)
+
+        # Perfil ativo
+        is_silverblue = backend.silverblue_profile_active()
+        for cls in ("success", "dim-label"):
+            self._profile_badge.remove_css_class(cls)
+        self._profile_badge.set_label(backend.active_profile_name())
+        self._profile_badge.add_css_class("success" if is_silverblue else "dim-label")
+
+        # Reset connections antes de re-conectar
+        try:
+            self._profile_btn.disconnect_by_func(self._on_apply_profile_clicked)
+        except (TypeError, AttributeError):
+            pass
+        try:
+            self._profile_btn.disconnect_by_func(self._on_remove_profile_clicked)
+        except (TypeError, AttributeError):
+            pass
+
+        for cls in ("suggested-action", "destructive-action"):
+            self._profile_btn.remove_css_class(cls)
+
+        if is_silverblue:
+            self._profile_action_row.set_title("Voltar ao perfil padrao do sistema")
+            self._profile_action_row.set_subtitle(
+                "Remove /etc/aide-vigia.conf e o db Vigia. AIDE volta a usar /etc/aide.conf padrao."
+            )
+            self._profile_btn.set_label("Remover")
+            self._profile_btn.add_css_class("destructive-action")
+            self._profile_btn.connect("clicked", self._on_remove_profile_clicked)
+        else:
+            self._profile_action_row.set_title("Aplicar perfil Silverblue")
+            self._profile_action_row.set_subtitle(
+                "Instala /etc/aide-vigia.conf otimizado. Exige criar baseline novo."
+            )
+            self._profile_btn.set_label("Aplicar")
+            self._profile_btn.add_css_class("suggested-action")
+            self._profile_btn.connect("clicked", self._on_apply_profile_clicked)
+
+        self._profile_btn.set_sensitive(installed and not self._running)
 
     # ============================================================
     # Actions
@@ -340,6 +409,99 @@ class StatusTab(Adw.Bin):
         return False
 
     # ============================================================
+    # Perfil AIDE (aplicar/voltar Silverblue)
+    # ============================================================
+
+    def _on_apply_profile_clicked(self, _btn: Gtk.Button) -> None:
+        dlg = Adw.AlertDialog(
+            heading="Aplicar perfil Silverblue?",
+            body=(
+                "Vai criar /etc/aide-vigia.conf otimizado para sistemas "
+                "atomicos.\n\nApos aplicar, voce precisa criar um baseline "
+                "novo (botao 'Criar' abaixo). O baseline do perfil padrao "
+                "(se houver) fica intacto e disponivel se voltar atras."
+            ),
+        )
+        dlg.add_response("cancel", "Cancelar")
+        dlg.add_response("apply", "Aplicar")
+        dlg.set_response_appearance("apply", Adw.ResponseAppearance.SUGGESTED)
+        dlg.set_default_response("cancel")
+        dlg.connect("response", self._on_apply_profile_confirmed)
+        dlg.present(self.get_root())
+
+    def _on_apply_profile_confirmed(self, _dlg, response: str) -> None:
+        if response != "apply":
+            return
+        self._set_running(True, "Aplicando perfil Silverblue...")
+        threading.Thread(target=self._apply_profile_worker, daemon=True).start()
+
+    def _apply_profile_worker(self) -> None:
+        try:
+            ok, err = backend.apply_silverblue_profile()
+        except Exception as e:  # pylint: disable=broad-except
+            ok, err = False, f"Excecao: {e}"
+        GLib.idle_add(self._on_apply_profile_done, ok, err)
+
+    def _on_apply_profile_done(self, ok: bool, err: str) -> bool:
+        self._set_running(False)
+        if not ok:
+            show_error(self, "Falha ao aplicar perfil", err)
+        else:
+            show_info(
+                self,
+                "Perfil Silverblue aplicado",
+                "Agora clique 'Criar' para gerar o baseline novo.",
+            )
+        self.refresh()
+        self._on_profile_changed()
+        return False
+
+    def _on_remove_profile_clicked(self, _btn: Gtk.Button) -> None:
+        dlg = Adw.AlertDialog(
+            heading="Voltar ao perfil padrao?",
+            body=(
+                "Vai deletar /etc/aide-vigia.conf e /var/lib/aide/aide.db.vigia.gz "
+                "(baseline do perfil Vigia). AIDE volta a usar /etc/aide.conf "
+                "padrao (que monitora /usr, /boot — gera ruido em Silverblue).\n\n"
+                "O baseline do perfil padrao, se existir, NAO sera tocado."
+            ),
+        )
+        dlg.add_response("cancel", "Cancelar")
+        dlg.add_response("remove", "Remover")
+        dlg.set_response_appearance("remove", Adw.ResponseAppearance.DESTRUCTIVE)
+        dlg.set_default_response("cancel")
+        dlg.connect("response", self._on_remove_profile_confirmed)
+        dlg.present(self.get_root())
+
+    def _on_remove_profile_confirmed(self, _dlg, response: str) -> None:
+        if response != "remove":
+            return
+        self._set_running(True, "Removendo perfil Silverblue...")
+        threading.Thread(target=self._remove_profile_worker, daemon=True).start()
+
+    def _remove_profile_worker(self) -> None:
+        try:
+            ok, err = backend.remove_silverblue_profile()
+        except Exception as e:  # pylint: disable=broad-except
+            ok, err = False, f"Excecao: {e}"
+        GLib.idle_add(self._on_remove_profile_done, ok, err)
+
+    def _on_remove_profile_done(self, ok: bool, err: str) -> bool:
+        self._set_running(False)
+        if not ok:
+            show_error(self, "Falha ao remover perfil", err)
+        else:
+            show_info(
+                self,
+                "Perfil padrao ativo",
+                "AIDE voltou a usar /etc/aide.conf. Crie um baseline com o "
+                "perfil sistema se quiser monitorar nesse modo.",
+            )
+        self.refresh()
+        self._on_profile_changed()
+        return False
+
+    # ============================================================
     # Progress
     # ============================================================
 
@@ -358,6 +520,7 @@ class StatusTab(Adw.Bin):
         self._check_btn.set_sensitive(installed and has_baseline and not running)
         self._init_btn.set_sensitive(installed and not running)
         self._update_btn.set_sensitive(installed and has_baseline and not running)
+        self._profile_btn.set_sensitive(installed and not running)
 
     def _pulse_tick(self) -> bool:
         self._progress_bar.pulse()

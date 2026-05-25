@@ -18,9 +18,12 @@ from .tabs import AboutTab, ChangesTab, StatusTab
 
 class _IntegrityContent:
     def __init__(self) -> None:
-        self.status = StatusTab(on_check_done=self._on_check_done)
         self.changes = ChangesTab()
         self.about = AboutTab()
+        self.status = StatusTab(
+            on_check_done=self._on_check_done,
+            on_profile_changed=self._on_profile_changed,
+        )
 
         stack = Adw.ViewStack()
         stack.add_titled_with_icon(self.status, "status", "Status", "dialog-information-symbolic")
@@ -40,6 +43,11 @@ class _IntegrityContent:
 
     def _on_check_done(self, result: CheckResult) -> None:
         self.changes.refresh(result.changes)
+
+    def _on_profile_changed(self) -> None:
+        """Quando o perfil AIDE muda (aplica/remove), atualiza tabs que
+        mostram info do perfil (Sobre tem indicador read-only)."""
+        self.about.refresh()
 
 
 def build_content() -> Gtk.Widget:
