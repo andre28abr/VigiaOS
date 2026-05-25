@@ -109,7 +109,11 @@ class _LogGuiContent:
         ).start()
 
     def _worker(self, sources: list[str], elevated: bool) -> None:
-        bundle = backend.run_bundle(sources=sources, elevated=elevated, limit=500)
+        try:
+            bundle = backend.run_bundle(sources=sources, elevated=elevated, limit=500)
+        except Exception as e:  # pylint: disable=broad-except
+            bundle = ActivityBundle()
+            bundle.raw_error = f"Excecao no worker: {e}"
         GLib.idle_add(self._on_done, bundle)
 
     def _on_done(self, bundle: ActivityBundle) -> bool:

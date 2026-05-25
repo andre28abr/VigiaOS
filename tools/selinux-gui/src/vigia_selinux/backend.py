@@ -292,6 +292,9 @@ def restorecon(path: str, recursive: bool = True, verbose: bool = True) -> str:
         args.append("-R")
     if verbose:
         args.append("-v")
+    # '--' separa flags de argumentos posicionais. Sem isso, path tipo
+    # '--help' ou '-F' seria interpretado como flag pelo restorecon.
+    args.append("--")
     args.append(path)
     result = subprocess.run(args, capture_output=True, text=True, timeout=120)
     if result.returncode != 0:

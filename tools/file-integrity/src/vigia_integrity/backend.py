@@ -249,16 +249,19 @@ def _content_lines(block: str) -> list[str]:
     return out
 
 
+_PATH_LINE_RE = re.compile(r"^[fld][^:]*?:\s+(/.*)$")
+
+
 def _extract_path_from_line(line: str) -> str:
     """As linhas tem formato: 'f++++++++: /path/to/file' ou 'f<flags>: /path'.
-    Pegamos tudo apos o ultimo ':' como path."""
-    if ":" not in line:
-        return ""
-    # Apos o ":" — strip
-    path = line.rsplit(":", 1)[1].strip()
-    if path.startswith("/"):
-        return path
-    return ""
+
+    Antes usavamos `line.rsplit(":", 1)[1]` que falhava silenciosamente
+    com paths contendo ':' (ex: '/var/foo:bar' virava 'bar'). Agora usa
+    regex que casa flags + ': ' + path absoluto, capturando tudo do '/'
+    em diante (incluindo ':' no nome).
+    """
+    m = _PATH_LINE_RE.match(line)
+    return m.group(1).strip() if m else ""
 
 
 _PROP_NAMES = {
@@ -307,10 +310,17 @@ def run_init_blocking() -> tuple[bool, str]:
     if not aide_conf_exists():
         return False, f"Arquivo de configuracao {AIDE_CONF} nao encontrado."
 
+    # rm -f remove um db.new.gz orfao de run anterior abortado — sem
+    # isso, aide --init pode falhar OU promover um banco parcial a oficial.
+    # `set -e` aborta se aide --init falhar (codigo != 0).
     script = """set -e
+rm -f /var/lib/aide/aide.db.new.gz
 aide --init
 if [ -f /var/lib/aide/aide.db.new.gz ]; then
     mv -f /var/lib/aide/aide.db.new.gz /var/lib/aide/aide.db.gz
+else
+    echo "ERRO: aide --init nao gerou aide.db.new.gz" >&2
+    exit 1
 fi
 """
     try:
