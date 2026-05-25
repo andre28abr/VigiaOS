@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Vigia Hash Tools
+GenericName=Hash Tools
+Comment=Calculo e verificacao de hashes (SHA-256, MD5, etc)
+Exec=vigia-hash
+Icon=br.com.vigia.HashTools
+Categories=System;Security;Utility;
+Keywords=hash;sha256;md5;hashdeep;integrity;vigia;
+StartupNotify=true
+Terminal=false

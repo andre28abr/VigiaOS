@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Vigia Network Scanner
+GenericName=Network Scanner
+Comment=GUI moderna para nmap (discovery + port scan)
+Exec=vigia-netscan
+Icon=br.com.vigia.NetworkScanner
+Categories=System;Network;Security;
+Keywords=nmap;network;scanner;discovery;portscan;vigia;
+StartupNotify=true
+Terminal=false

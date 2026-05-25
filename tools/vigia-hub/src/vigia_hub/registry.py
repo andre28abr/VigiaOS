@@ -454,6 +454,136 @@ TOOLS: list[ToolEntry] = [
         category="defesa",
         wrapped_packages=["libcap", "getcap"],
     ),
+    ToolEntry(
+        id="antivirus",
+        name="Antivirus",
+        description="Scan on-demand de malware com ClamAV.",
+        long_description=(
+            "Antivirus on-demand para Linux desktop usando o engine **ClamAV**. "
+            "Escaneia arquivos e diretorios sob demanda, mantem a base de "
+            "assinaturas atualizada (~250 MB) e mostra findings em UI moderna.\n\n"
+            "Substitui o `clamtk` (UI envelhecida, problemas em GTK4) com "
+            "interface nativa libadwaita. Streaming de progress durante scan, "
+            "summary com contagens, historico em JSON com permissoes 0600.\n\n"
+            "**Quando usar**: escanear downloads recebidos via email, validar "
+            "arquivos antes de mandar pra clientes Windows, audit periodico "
+            "para LGPD-compliance (logs sao evidencia de processo)."
+        ),
+        features=[
+            "**4 tabs**: Status, Scan, Base de dados, Sobre",
+            "Streaming de findings em tempo real durante scan",
+            "Update de base com 1 dialog `pkexec freshclam`",
+            "Atalhos: Home, Downloads, Documents, /tmp",
+            "Historico em `~/.local/share/vigia-antivirus/` (mode 0600)",
+            "Detecta daemon `clamd` (futuro: usar para scans mais rapidos)",
+        ],
+        icon_path=_TOOLS_DIR / "antivirus" / "data" / "br.com.vigia.Antivirus.svg",
+        exec_cmd=["vigia-antivirus"],
+        needs_terminal=False,
+        available_fn=lambda: shutil.which("vigia-antivirus") is not None,
+        embedded_module="vigia_antivirus.window",
+        category="defesa",
+        wrapped_packages=["clamav", "clamav-update"],
+    ),
+    ToolEntry(
+        id="network-scanner",
+        name="Network Scanner",
+        description="Discovery e port scan via nmap.",
+        long_description=(
+            "GUI moderna para o **nmap**. Descobre hosts numa rede (ping scan), "
+            "escaneia portas TCP, identifica servicos e versoes. Wrapper para "
+            "evitar decorar flags de CLI e parsear output texto.\n\n"
+            "**Perfis pre-definidos** com trade-off velocidade x ruido: "
+            "Discovery (so ping), Quick (top 100 portas), Standard (top 1000 "
+            "+ versao), Stealth (SYN scan), Aggressive (-A: OS + scripts + "
+            "traceroute), Full (todas as 65535 portas). Perfis com flags "
+            "previlegiadas usam `pkexec`.\n\n"
+            "**Uso etico**: scan de redes sem autorizacao e' crime (Lei "
+            "Carolina Dieckmann, art. 154-A do CP). Use apenas em redes "
+            "proprias, sistemas autorizados, CTFs ou `scanme.nmap.org`."
+        ),
+        features=[
+            "**4 tabs**: Scan, Hosts (historico), Perfis (catalogo), Sobre",
+            "6 perfis pre-definidos com badges de velocidade/intrusividade",
+            "Parse XML do nmap — hosts + portas + servicos + OS guess",
+            "Validacao de target (aceita IP, hostname, CIDR)",
+            "Modo admin via `pkexec` para SYN scan e -A",
+            "Historico em `~/.local/share/vigia-netscan/` (mode 0600)",
+        ],
+        icon_path=_TOOLS_DIR / "network-scanner" / "data" / "br.com.vigia.NetworkScanner.svg",
+        exec_cmd=["vigia-netscan"],
+        needs_terminal=False,
+        available_fn=lambda: shutil.which("vigia-netscan") is not None,
+        embedded_module="vigia_netscan.window",
+        category="defesa",
+        wrapped_packages=["nmap"],
+    ),
+    ToolEntry(
+        id="firmware-analyzer",
+        name="Firmware Analyzer",
+        description="Analise de firmware e binarios via binwalk.",
+        long_description=(
+            "GUI para o **binwalk** — analise de firmware de roteadores, "
+            "cameras IP, dispositivos IoT e outros binarios genericos. Detecta "
+            "arquivos embarcados (imagens, archives, kernels, filesystems "
+            "SquashFS/JFFS2), extrai componentes individuais e calcula "
+            "entropia para identificar regioes compactadas/criptografadas.\n\n"
+            "**Quando usar**: auditar firmware antes de instalar em "
+            "equipamento de escritorio (cameras IP, NAS, roteadores) — "
+            "regulatorio LGPD demanda conhecer o que rodam dispositivos que "
+            "manipulam dados pessoais.\n\n"
+            "**Tab Entropia** identifica edges de mudanca brusca — "
+            "<0.3 (estruturado) vs >0.95 (criptografado/compactado). Util "
+            "para localizar componentes interessantes sem documentacao."
+        ),
+        features=[
+            "**4 tabs**: Analisar (signatures), Extrair, Entropia, Sobre",
+            "Detecta signatures via magic numbers (catalogo do binwalk)",
+            "Extracao automatica com `binwalk -e` para diretorio custom",
+            "Edges de entropia listados com classificacao qualitativa",
+            "100% local — nenhum dado enviado a rede",
+        ],
+        icon_path=_TOOLS_DIR / "firmware-analyzer" / "data" / "br.com.vigia.FirmwareAnalyzer.svg",
+        exec_cmd=["vigia-firmware"],
+        needs_terminal=False,
+        available_fn=lambda: shutil.which("vigia-firmware") is not None,
+        embedded_module="vigia_firmware.window",
+        category="defesa",
+        wrapped_packages=["binwalk"],
+    ),
+    ToolEntry(
+        id="hash-tools",
+        name="Hash Tools",
+        description="Hash, verificacao e baseline de integridade.",
+        long_description=(
+            "Calculo e verificacao de **hashes criptograficos** "
+            "(SHA-256/512, SHA-1, MD5). Wrapper de `hashdeep` + coreutils "
+            "com UI moderna.\n\n"
+            "Tres modos: **Hash** (digest de um arquivo), **Verificar** "
+            "(compara hash esperado vs computado), **Baseline** (snapshot "
+            "de diretorio em JSON, depois detecta added/modified/removed "
+            "contra estado atual).\n\n"
+            "**Caso de uso classico**: voce hashea `/etc/` apos um setup "
+            "limpo do servidor. Apos algum tempo, roda comparativo — "
+            "qualquer arquivo modificado e' suspeito. Tool complementar ao "
+            "**Vigia File Integrity** (AIDE), util pra cenarios mais simples."
+        ),
+        features=[
+            "**4 tabs**: Hash, Verificar, Baseline, Sobre",
+            "4 algoritmos: SHA-256 (default), SHA-512, SHA-1, MD5 (legacy)",
+            "Baseline JSON com hashes de diretorio inteiro",
+            "Diff visual: added (verde), modified (amarelo), removed (vermelho)",
+            "Copia hash com 1 clique para clipboard",
+            "Baselines em `~/.local/share/vigia-hash/` (mode 0600)",
+        ],
+        icon_path=_TOOLS_DIR / "hash-tools" / "data" / "br.com.vigia.HashTools.svg",
+        exec_cmd=["vigia-hash"],
+        needs_terminal=False,
+        available_fn=lambda: shutil.which("vigia-hash") is not None,
+        embedded_module="vigia_hash.window",
+        category="defesa",
+        wrapped_packages=["coreutils", "hashdeep"],
+    ),
     # NOTA: Tool Installer NAO esta mais nesta lista. Foi promovido a
     # entidade de primeiro nivel acessivel via icone 'Instalador' na
     # nav lateral fina do Hub (em vez de virar mais uma tool entre tools).

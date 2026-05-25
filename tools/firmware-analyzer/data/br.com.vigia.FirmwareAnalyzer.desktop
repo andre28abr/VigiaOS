@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Vigia Firmware Analyzer
+GenericName=Firmware Analyzer
+Comment=Analise de firmware e binarios com binwalk
+Exec=vigia-firmware
+Icon=br.com.vigia.FirmwareAnalyzer
+Categories=System;Security;Development;
+Keywords=binwalk;firmware;reverse-engineering;forensics;vigia;
+StartupNotify=true
+Terminal=false
