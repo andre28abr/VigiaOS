@@ -216,9 +216,23 @@ def run_audit_blocking() -> tuple[bool, str]:
             "systemctl reboot"
         )
 
+    # Bug fix critico: Lynis roda como root via pkexec e gera
+    # /var/log/lynis-report.dat com perms 600 (root only). Sem `chmod`,
+    # o backend (rodando como user) nao consegue ler o report — parser
+    # silenciosamente retorna vazio (UI mostra "Nao avaliado").
+    #
+    # Solucao: bash -c que roda Lynis + chmod o report file (+ o .log)
+    # antes de retornar. Mesmo pkexec dialog cobre as duas operacoes.
+    script = """set +e
+lynis audit system --quiet --no-colors
+rc=$?
+chmod 644 /var/log/lynis-report.dat 2>/dev/null || true
+chmod 644 /var/log/lynis.log 2>/dev/null || true
+exit $rc
+"""
     try:
         result = subprocess.run(
-            ["pkexec", "lynis", "audit", "system", "--quiet", "--no-colors"],
+            ["pkexec", "bash", "-c", script],
             capture_output=True,
             text=True,
             timeout=600,
