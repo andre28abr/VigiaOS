@@ -236,7 +236,13 @@ class StatusTab(Adw.Bin):
         threading.Thread(target=self._check_worker, daemon=True).start()
 
     def _check_worker(self) -> None:
-        result = backend.run_check_blocking()
+        try:
+            result = backend.run_check_blocking()
+        except Exception as e:  # pylint: disable=broad-except
+            result = backend.CheckResult(
+                success=False, summary=backend.CheckSummary(), changes=[],
+                error=f"Excecao no worker: {e}",
+            )
         GLib.idle_add(self._on_check_finished, result)
 
     def _on_check_finished(self, result: backend.CheckResult) -> bool:
@@ -278,7 +284,10 @@ class StatusTab(Adw.Bin):
         threading.Thread(target=self._init_worker, daemon=True).start()
 
     def _init_worker(self) -> None:
-        ok, err = backend.run_init_blocking()
+        try:
+            ok, err = backend.run_init_blocking()
+        except Exception as e:  # pylint: disable=broad-except
+            ok, err = False, f"Excecao no worker: {e}"
         GLib.idle_add(self._on_init_finished, ok, err)
 
     def _on_init_finished(self, ok: bool, err: str) -> bool:
@@ -315,7 +324,10 @@ class StatusTab(Adw.Bin):
         threading.Thread(target=self._update_worker, daemon=True).start()
 
     def _update_worker(self) -> None:
-        ok, err = backend.run_update_blocking()
+        try:
+            ok, err = backend.run_update_blocking()
+        except Exception as e:  # pylint: disable=broad-except
+            ok, err = False, f"Excecao no worker: {e}"
         GLib.idle_add(self._on_update_finished, ok, err)
 
     def _on_update_finished(self, ok: bool, err: str) -> bool:

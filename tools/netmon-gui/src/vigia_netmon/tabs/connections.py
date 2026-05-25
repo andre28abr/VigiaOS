@@ -284,16 +284,20 @@ class ConnectionsTab(Gtk.Box):
         self._stop_auto_refresh()
 
     def _on_elevated_toggle(self, switch: Gtk.Switch, value: bool) -> bool:
-        """Toggle modo admin (pkexec)."""
+        """Toggle modo admin (pkexec).
+
+        Importante: NAO forca refresh imediato. Se um misclick liga/desliga
+        o switch varias vezes, sem o force-refresh nao acumula dialogs de
+        polkit. O usuario clica 'Atualizar' quando quiser ver o resultado
+        com privilegios elevados.
+        """
         self._elevated_mode = value
         if value:
-            # Desliga auto-refresh para nao spammar polkit
+            # Desliga auto-refresh para nao spammar polkit em background
             if self._auto_switch.get_active():
                 self._auto_switch.set_active(False)
             self._auto_switch.set_sensitive(False)
         else:
             self._auto_switch.set_sensitive(True)
-        # Forca refresh imediato (vai disparar polkit se elevated=True)
-        self._refresh()
         switch.set_state(value)
         return True
