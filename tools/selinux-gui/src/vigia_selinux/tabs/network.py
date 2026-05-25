@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+import threading
+
 import gi
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 
-from gi.repository import Adw, Gtk  # noqa: E402
+from gi.repository import Adw, GLib, Gtk  # noqa: E402
 
 from .. import backend
 from ._helpers import make_clamp
@@ -56,29 +58,53 @@ class NetworkTab(Gtk.Box):
         inner.append(btn)
 
         self._row_search_text: dict[Adw.ActionRow, str] = {}
+        self._fetch_running = False
+
+        # Placeholder
+        loading = Adw.ActionRow()
+        loading.set_title("Carregando…")
+        loading.add_css_class("dim-label")
+        self._list.append(loading)
+
         self._refresh()
 
     def _refresh(self) -> None:
-        while child := self._list.get_first_child():
-            self._list.remove(child)
-        self._row_search_text.clear()
-
-        ports = backend.list_ports()
-        if not ports:
-            empty = Adw.ActionRow()
-            empty.set_title("Sem dados")
-            empty.set_subtitle("semanage nao disponivel ou retornou vazio.")
-            self._list.append(empty)
+        if self._fetch_running:
             return
+        self._fetch_running = True
+        threading.Thread(target=self._refresh_worker, daemon=True).start()
 
-        for p in sorted(ports, key=lambda x: x.context):
-            row = Adw.ActionRow()
-            row.set_title(p.context)
-            row.set_subtitle(f"{p.proto.upper()}: {p.ports}")
-            self._row_search_text[row] = (
-                p.context.lower() + " " + p.proto.lower() + " " + p.ports.lower()
-            )
-            self._list.append(row)
+    def _refresh_worker(self) -> None:
+        try:
+            ports = backend.list_ports()
+        except Exception:  # pylint: disable=broad-except
+            ports = []
+        GLib.idle_add(self._apply_ports, ports)
+
+    def _apply_ports(self, ports: list) -> bool:
+        try:
+            while child := self._list.get_first_child():
+                self._list.remove(child)
+            self._row_search_text.clear()
+
+            if not ports:
+                empty = Adw.ActionRow()
+                empty.set_title("Sem dados")
+                empty.set_subtitle("semanage nao disponivel ou retornou vazio.")
+                self._list.append(empty)
+                return False
+
+            for p in sorted(ports, key=lambda x: x.context):
+                row = Adw.ActionRow()
+                row.set_title(p.context)
+                row.set_subtitle(f"{p.proto.upper()}: {p.ports}")
+                self._row_search_text[row] = (
+                    p.context.lower() + " " + p.proto.lower() + " " + p.ports.lower()
+                )
+                self._list.append(row)
+        finally:
+            self._fetch_running = False
+        return False
 
     def _filter(self, row: Gtk.ListBoxRow) -> bool:
         query = self._search.get_text().lower().strip()

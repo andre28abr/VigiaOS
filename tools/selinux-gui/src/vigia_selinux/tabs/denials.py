@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+import threading
+
 import gi
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 
-from gi.repository import Adw, Gtk  # noqa: E402
+from gi.repository import Adw, GLib, Gtk  # noqa: E402
 
 from .. import backend
 from ._helpers import make_clamp, show_error
@@ -87,18 +89,27 @@ class DenialsTab(Gtk.Box):
         self._load_btn.set_sensitive(False)
         self._load_btn.set_label("Carregando...")
 
+        # ausearch via pkexec pode demorar — vai pra thread
+        threading.Thread(target=self._load_worker, args=(since,), daemon=True).start()
+
+    def _load_worker(self, since: str) -> None:
         try:
             denials = backend.get_recent_denials(since=since)
-        except Exception as e:
-            self._render_empty(f"Erro: {e}")
-            show_error(self, "Falha ao carregar denials", str(e))
-            self._load_btn.set_sensitive(True)
-            self._load_btn.set_label("Carregar denials")
-            return
+            err = None
+        except Exception as e:  # pylint: disable=broad-except
+            denials = []
+            err = str(e)
+        GLib.idle_add(self._on_load_done, denials, err)
 
-        self._render_denials(denials)
+    def _on_load_done(self, denials: list, err: str | None) -> bool:
         self._load_btn.set_sensitive(True)
         self._load_btn.set_label("Carregar denials")
+        if err is not None:
+            self._render_empty(f"Erro: {err}")
+            show_error(self, "Falha ao carregar denials", err)
+            return False
+        self._render_denials(denials)
+        return False
 
     def _render_denials(self, denials: list) -> None:
         while child := self._list.get_first_child():
@@ -146,7 +157,19 @@ class DenialsTab(Gtk.Box):
         return row
 
     def _show_audit2allow(self, denial: backend.Denial) -> None:
-        suggestion = backend.audit2allow_suggest(denial.raw)
+        # audit2allow pode demorar 1-5s — roda em thread
+        threading.Thread(
+            target=self._audit2allow_worker, args=(denial,), daemon=True
+        ).start()
+
+    def _audit2allow_worker(self, denial: backend.Denial) -> None:
+        try:
+            suggestion = backend.audit2allow_suggest(denial.raw)
+        except Exception as e:  # pylint: disable=broad-except
+            suggestion = f"(falha: {e})"
+        GLib.idle_add(self._show_audit2allow_dialog, denial, suggestion)
+
+    def _show_audit2allow_dialog(self, denial: backend.Denial, suggestion: str) -> bool:
         dlg = Adw.AlertDialog(
             heading=f"Policy sugerida para denial de '{denial.comm}'",
             body=f"audit2allow propos:\n\n{suggestion}\n\n"
@@ -157,3 +180,4 @@ class DenialsTab(Gtk.Box):
         )
         dlg.add_response("ok", "Fechar")
         dlg.present(self.get_root())
+        return False
