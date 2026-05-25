@@ -76,10 +76,26 @@ def render_html(template_id: str, data: dict) -> str:
 
 
 def write_report(html: str, template_id: str, output_dir: Path) -> Path:
-    """Salva HTML em output_dir/<template>-<timestamp>.html, retorna o path."""
+    """Salva HTML em output_dir/<template>-<timestamp>.html, retorna o path.
+
+    LGPD: relatorios contem IPs, comandos sudo, historico de login (lastb).
+    Em sistema multi-user ou shared NFS, defaults 0644 expoem isso para
+    outros usuarios. Forcamos 0600 (owner read/write apenas) no arquivo
+    e 0700 no diretorio.
+    """
     output_dir.mkdir(parents=True, exist_ok=True)
+    # mkdir nao define mode (chmod nao roda se ja existir). Forcamos:
+    try:
+        output_dir.chmod(0o700)
+    except OSError:
+        pass
+
     stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     filename = f"{template_id}-{stamp}.html"
     path = output_dir / filename
     path.write_text(html, encoding="utf-8")
+    try:
+        path.chmod(0o600)
+    except OSError:
+        pass
     return path

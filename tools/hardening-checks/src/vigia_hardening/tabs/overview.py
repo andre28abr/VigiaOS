@@ -29,6 +29,7 @@ class OverviewTab(Adw.Bin):
         super().__init__()
         self._on_audit_done = on_audit_done
         self._running = False
+        self._pulse_id: int | None = None
 
         # ---- Hero box ---- #
         self._hero = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
@@ -191,7 +192,10 @@ class OverviewTab(Adw.Bin):
         threading.Thread(target=self._audit_worker, daemon=True).start()
 
     def _audit_worker(self) -> None:
-        ok, err = run_audit_blocking()
+        try:
+            ok, err = run_audit_blocking()
+        except Exception as e:  # pylint: disable=broad-except
+            ok, err = False, f"Excecao no worker: {e}"
         GLib.idle_add(self._on_audit_finished, ok, err)
 
     def _on_audit_finished(self, ok: bool, err: str) -> bool:

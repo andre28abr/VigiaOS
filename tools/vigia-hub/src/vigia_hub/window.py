@@ -373,7 +373,9 @@ class VigiaHubWindow(Adw.ApplicationWindow):
     def _launch_tool(self, tool: ToolEntry) -> None:
         cmd = list(tool.exec_cmd)
         if tool.needs_root:
-            cmd = ["sudo"] + cmd
+            # Politica do projeto: privilege escalation grafica via pkexec
+            # (NUNCA sudo, que requer TTY-prompt). Ver feedback-pkexec-not-sudo.
+            cmd = ["pkexec"] + cmd
         if tool.needs_terminal:
             found = find_terminal()
             if found is None:
