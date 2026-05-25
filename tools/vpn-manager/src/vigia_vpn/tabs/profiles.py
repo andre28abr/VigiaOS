@@ -268,13 +268,47 @@ class ProfilesTab(Adw.Bin):
         name_entry.set_placeholder_text("ex: meu-vpn")
         body.append(name_entry)
 
-        body.append(Gtk.Label(label="Conteudo do .conf:"))
+        # Header do textarea com botao 'Colar' (fallback se Ctrl+V nao funcionar)
+        ta_header = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        ta_label = Gtk.Label(label="Conteudo do .conf:")
+        ta_label.set_hexpand(True)
+        ta_label.set_xalign(0)
+        ta_header.append(ta_label)
+        paste_btn = Gtk.Button.new_from_icon_name("edit-paste-symbolic")
+        paste_btn.set_tooltip_text("Colar da area de transferencia")
+        paste_btn.add_css_class("flat")
+        ta_header.append(paste_btn)
+        body.append(ta_header)
+
         text_view = Gtk.TextView()
+        text_view.set_editable(True)
+        text_view.set_can_focus(True)
+        text_view.set_accepts_tab(False)
         text_view.set_monospace(True)
         text_view.set_top_margin(8)
         text_view.set_bottom_margin(8)
         text_view.set_left_margin(8)
         text_view.set_right_margin(8)
+
+        # Handler do botao Colar
+        def _on_paste_clicked(_btn: Gtk.Button) -> None:
+            display = text_view.get_display()
+            if display is None:
+                return
+            clipboard = display.get_clipboard()
+            clipboard.read_text_async(None, _on_clipboard_read)
+
+        def _on_clipboard_read(clipboard, result):
+            try:
+                text = clipboard.read_text_finish(result)
+            except Exception:  # pylint: disable=broad-except
+                return
+            if text:
+                buf = text_view.get_buffer()
+                buf.set_text(text)
+
+        paste_btn.connect("clicked", _on_paste_clicked)
+
         scrolled = Gtk.ScrolledWindow()
         scrolled.set_min_content_height(180)
         scrolled.set_min_content_width(420)
@@ -289,6 +323,11 @@ class ProfilesTab(Adw.Bin):
         dlg.set_response_appearance("import", Adw.ResponseAppearance.SUGGESTED)
         dlg.connect("response", self._on_import_response, name_entry, text_view)
         dlg.present(self.get_root())
+
+        # Foco inicial no name_entry para o usuario poder digitar imediatamente.
+        # Sem isso, o dialog abria com foco em nenhum lugar, e Ctrl+V no
+        # TextView nao funcionava porque o widget nao tinha keyboard focus.
+        GLib.idle_add(name_entry.grab_focus)
 
     def _on_import_response(
         self,
