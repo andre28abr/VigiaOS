@@ -2,3 +2,6 @@
 
 __version__ = "0.1.0"
 __app_id__ = "br.com.vigia.ActivityLog"
+
+# Pacotes originais que esta tool envelopa (mostrado como badge no header).
+WRAPPED_PACKAGES = ["vigia-log", "audit", "fail2ban"]

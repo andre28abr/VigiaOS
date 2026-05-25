@@ -16,8 +16,24 @@ gi.require_version("Adw", "1")
 
 from gi.repository import Adw, GLib, Gtk  # noqa: E402
 
+from . import WRAPPED_PACKAGES
+from .about import AboutTab
 from .toggles import ALL_TOGGLES
 from .toggles.base import Toggle
+
+
+def _make_pkg_badges() -> Gtk.Widget:
+    """Box horizontal com badges dos pacotes 'wrapped' (mostra no header)."""
+    box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
+    box.set_valign(Gtk.Align.CENTER)
+    box.set_margin_end(8)
+    for pkg in WRAPPED_PACKAGES:
+        lbl = Gtk.Label(label=pkg)
+        lbl.add_css_class("monospace")
+        lbl.add_css_class("caption")
+        lbl.add_css_class("dim-label")
+        box.append(lbl)
+    return box
 
 
 # ============================================================
@@ -26,15 +42,31 @@ from .toggles.base import Toggle
 
 
 def build_content() -> Gtk.Widget:
-    """Constroi o conteudo principal da tool (header + page de toggles).
+    """Constroi o conteudo principal: ViewStack com 2 abas (Toggles + Sobre).
 
     Retorna um Adw.ToolbarView pronto para ser:
     - content de uma Adw.ApplicationWindow (modo standalone)
     - embarcado num Gtk.Stack do Vigia Hub (modo embedded)
     """
+    # ViewStack: 2 tabs
+    stack = Adw.ViewStack()
+    stack.add_titled_with_icon(_build_page(), "toggles", "Toggles", "preferences-system-symbolic")
+    stack.add_titled_with_icon(AboutTab(), "about", "Sobre", "help-about-symbolic")
+
+    # Switcher
+    switcher = Adw.ViewSwitcher()
+    switcher.set_stack(stack)
+    switcher.set_policy(Adw.ViewSwitcherPolicy.WIDE)
+
+    # Header
+    header = Adw.HeaderBar()
+    header.set_title_widget(switcher)
+    if WRAPPED_PACKAGES:
+        header.pack_end(_make_pkg_badges())
+
     toolbar = Adw.ToolbarView()
-    toolbar.add_top_bar(_build_header())
-    toolbar.set_content(_build_page())
+    toolbar.add_top_bar(header)
+    toolbar.set_content(stack)
     return toolbar
 
 
@@ -54,16 +86,6 @@ class VigiaPrivacyWindow(Adw.ApplicationWindow):
 # ============================================================
 # Builders internos
 # ============================================================
-
-
-def _build_header() -> Adw.HeaderBar:
-    header = Adw.HeaderBar()
-    title = Adw.WindowTitle(
-        title="Privacy Controls",
-        subtitle="Vigia Suite",
-    )
-    header.set_title_widget(title)
-    return header
 
 
 def _build_page() -> Gtk.Widget:
