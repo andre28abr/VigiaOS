@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Vigia VPN Manager
+GenericName=Gerenciador VPN
+Comment=Gerencia conexoes WireGuard com UI grafica
+Exec=vigia-vpn
+Icon=br.com.vigia.VpnManager
+Categories=System;Network;Security;
+Keywords=vpn;wireguard;tunnel;privacy;vigia;
+StartupNotify=true
+Terminal=false
