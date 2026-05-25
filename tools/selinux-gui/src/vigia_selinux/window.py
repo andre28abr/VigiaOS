@@ -13,7 +13,9 @@ gi.require_version("Adw", "1")
 
 from gi.repository import Adw, Gtk  # noqa: E402
 
+from . import WRAPPED_PACKAGES
 from .tabs import (
+    AboutTab,
     BooleansTab,
     DenialsTab,
     FilesTab,
@@ -21,6 +23,19 @@ from .tabs import (
     ProcessesTab,
     StatusTab,
 )
+
+
+def _make_pkg_badges() -> Gtk.Widget:
+    box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
+    box.set_valign(Gtk.Align.CENTER)
+    box.set_margin_end(8)
+    for pkg in WRAPPED_PACKAGES:
+        lbl = Gtk.Label(label=pkg)
+        lbl.add_css_class("monospace")
+        lbl.add_css_class("caption")
+        lbl.add_css_class("dim-label")
+        box.append(lbl)
+    return box
 
 
 # Cada entry: (id, titulo, icon, classe da tab)
@@ -31,6 +46,7 @@ TABS = [
     ("files",     "Files",     "folder-symbolic",             FilesTab),
     ("network",   "Network",   "network-wired-symbolic",      NetworkTab),
     ("processes", "Processes", "system-run-symbolic",         ProcessesTab),
+    ("about",     "Sobre",     "help-about-symbolic",         AboutTab),
 ]
 
 
@@ -46,6 +62,8 @@ def build_content() -> Gtk.Widget:
 
     header = Adw.HeaderBar()
     header.set_title_widget(switcher)
+    if WRAPPED_PACKAGES:
+        header.pack_end(_make_pkg_badges())
 
     toolbar = Adw.ToolbarView()
     toolbar.add_top_bar(header)

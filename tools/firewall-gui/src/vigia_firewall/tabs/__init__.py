@@ -1,4 +1,5 @@
+from .about import AboutTab
 from .status import StatusTab
 from .zones import ZonesTab
 
-__all__ = ["StatusTab", "ZonesTab"]
+__all__ = ["StatusTab", "ZonesTab", "AboutTab"]

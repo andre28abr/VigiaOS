@@ -12,8 +12,22 @@ gi.require_version("Adw", "1")
 
 from gi.repository import Adw, Gtk  # noqa: E402
 
+from . import WRAPPED_PACKAGES
 from .backend import LynisReport, parse_report
-from .tabs import CategoriesTab, OverviewTab, SuggestionsTab, WarningsTab
+from .tabs import AboutTab, CategoriesTab, OverviewTab, SuggestionsTab, WarningsTab
+
+
+def _make_pkg_badges() -> Gtk.Widget:
+    box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
+    box.set_valign(Gtk.Align.CENTER)
+    box.set_margin_end(8)
+    for pkg in WRAPPED_PACKAGES:
+        lbl = Gtk.Label(label=pkg)
+        lbl.add_css_class("monospace")
+        lbl.add_css_class("caption")
+        lbl.add_css_class("dim-label")
+        box.append(lbl)
+    return box
 
 
 class _HardeningContent:
@@ -26,6 +40,7 @@ class _HardeningContent:
         self.warnings = WarningsTab()
         self.suggestions = SuggestionsTab()
         self.categories = CategoriesTab()
+        self.about = AboutTab()
         self._tabs = (self.overview, self.warnings, self.suggestions, self.categories)
 
         self.toolbar = self._build_toolbar()
@@ -37,6 +52,7 @@ class _HardeningContent:
         stack.add_titled_with_icon(self.warnings, "warnings", "Warnings", "dialog-warning-symbolic")
         stack.add_titled_with_icon(self.suggestions, "suggestions", "Suggestions", "starred-symbolic")
         stack.add_titled_with_icon(self.categories, "categories", "Categorias", "view-list-symbolic")
+        stack.add_titled_with_icon(self.about, "about", "Sobre", "help-about-symbolic")
 
         switcher = Adw.ViewSwitcher()
         switcher.set_stack(stack)
@@ -44,6 +60,8 @@ class _HardeningContent:
 
         header = Adw.HeaderBar()
         header.set_title_widget(switcher)
+        if WRAPPED_PACKAGES:
+            header.pack_end(_make_pkg_badges())
 
         toolbar = Adw.ToolbarView()
         toolbar.add_top_bar(header)
