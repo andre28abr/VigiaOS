@@ -86,6 +86,16 @@ class OverviewTab(Adw.Bin):
         self._tests_count.add_css_class("monospace")
         self._row_tests.add_suffix(self._tests_count)
 
+        self._row_tests_skipped = Adw.ActionRow(title="Tests pulados (skipped)")
+        self._row_tests_skipped.set_subtitle(
+            "Lynis pula testes que nao se aplicam ao sistema. Esperado "
+            "em Silverblue (alguns checks assumem dnf, /usr mutavel)."
+        )
+        self._row_tests_skipped.add_css_class("property")
+        self._tests_skipped_count = Gtk.Label(label="—")
+        self._tests_skipped_count.add_css_class("monospace")
+        self._row_tests_skipped.add_suffix(self._tests_skipped_count)
+
         self._row_last_run = Adw.ActionRow(title="Ultima execucao")
         self._row_last_run.add_css_class("property")
         self._last_run_label = Gtk.Label(label="Nunca")
@@ -95,7 +105,15 @@ class OverviewTab(Adw.Bin):
         self._stats_group.add(self._row_warnings)
         self._stats_group.add(self._row_suggestions)
         self._stats_group.add(self._row_tests)
+        self._stats_group.add(self._row_tests_skipped)
         self._stats_group.add(self._row_last_run)
+
+        # Banner de contexto (escondido por padrao). Aparece em casos
+        # tipo "Lynis rodou mas nao gerou hardening_index" ou
+        # "% alto de tests skipped — esperado em Silverblue".
+        self._context_banner = Adw.Banner()
+        self._context_banner.set_revealed(False)
+        self._context_banner.set_title("")
 
         # ---- Action group ---- #
         self._action_group = Adw.PreferencesGroup()
@@ -132,6 +150,7 @@ class OverviewTab(Adw.Bin):
         outer.set_margin_start(20)
         outer.set_margin_end(20)
         outer.append(self._hero)
+        outer.append(self._context_banner)
         outer.append(self._stats_group)
         outer.append(self._action_group)
         outer.append(self._progress_box)
@@ -167,10 +186,67 @@ class OverviewTab(Adw.Bin):
         self._severity_label.add_css_class(severity_css_class(score))
 
         # Stats
-        self._warnings_count.set_label(str(len(report.warnings)) if report.has_data() else "—")
-        self._suggestions_count.set_label(str(len(report.suggestions)) if report.has_data() else "—")
-        self._tests_count.set_label(str(report.tests_executed) if report.has_data() else "—")
+        has_data = report.has_data()
+        self._warnings_count.set_label(str(len(report.warnings)) if has_data else "—")
+        self._suggestions_count.set_label(str(len(report.suggestions)) if has_data else "—")
+        self._tests_count.set_label(str(report.tests_executed) if has_data else "—")
+        self._tests_skipped_count.set_label(
+            str(report.tests_skipped) if has_data else "—"
+        )
         self._last_run_label.set_label(format_age(report_age_minutes()))
+
+        # Banner de contexto
+        self._update_context_banner(report)
+
+    def _update_context_banner(self, report: LynisReport) -> None:
+        """Decide se mostra banner explicativo e qual mensagem."""
+        for cls in ("warning", "error"):
+            self._context_banner.remove_css_class(cls)
+
+        if not report.has_data():
+            self._context_banner.set_revealed(False)
+            return
+
+        total_warn_sug = len(report.warnings) + len(report.suggestions)
+
+        # Caso 1: rodou mas nao gerou hardening_index — bug ou parser falhou
+        if report.hardening_index is None and report.tests_executed > 0:
+            self._context_banner.set_title(
+                "Lynis rodou mas nao gerou Hardening Index. "
+                "Verifique /var/log/lynis-report.dat manualmente."
+            )
+            self._context_banner.add_css_class("error")
+            self._context_banner.set_revealed(True)
+            return
+
+        # Caso 2: rodou, gerou indice, mas zero findings — pode ser normal
+        # ou parser nao pegou
+        if report.hardening_index is not None and total_warn_sug == 0:
+            self._context_banner.set_title(
+                "Lynis nao encontrou warnings nem suggestions. "
+                "Pode ser sistema bem configurado OU testes que nao se "
+                "aplicam (esperado em Silverblue)."
+            )
+            self._context_banner.add_css_class("warning")
+            self._context_banner.set_revealed(True)
+            return
+
+        # Caso 3: muitos tests skipped (>30%) — Silverblue tipico
+        total = report.tests_executed + report.tests_skipped
+        if total > 0:
+            skip_ratio = report.tests_skipped / total
+            if skip_ratio > 0.3:
+                pct = int(skip_ratio * 100)
+                self._context_banner.set_title(
+                    f"{report.tests_skipped} testes pulados ({pct}% do total). "
+                    "Comum em Silverblue: alguns checks assumem dnf ou "
+                    "/usr mutavel — irrelevantes em sistema atomico."
+                )
+                self._context_banner.set_revealed(True)
+                return
+
+        # Sem caso especial — esconde
+        self._context_banner.set_revealed(False)
 
     # ============================================================
     # Audit run (threading + GLib.idle_add)
