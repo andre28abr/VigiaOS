@@ -94,7 +94,10 @@ class LynisReport:
     controls_passed: list[str] = field(default_factory=list)
     controls_failed: list[str] = field(default_factory=list)
     plugins: list[str] = field(default_factory=list)
+    exceptions: list[str] = field(default_factory=list)
     auditor: str = ""
+    # finish=true significa que Lynis completou o run sem abortar.
+    finish: bool = False
 
     def has_data(self) -> bool:
         return self.tests_executed > 0 or self.hardening_index is not None
@@ -170,15 +173,16 @@ def parse_report(path: Path = REPORT_PATH) -> LynisReport:
             except ValueError:
                 pass
         elif key == "tests_executed":
-            try:
-                rep.tests_executed = int(value)
-            except ValueError:
-                pass
+            # Lynis grava como lista de test IDs separados por '|' (com
+            # '|' no final). Ex: "HRDN-7231|HRDN-7230|...|CORE-1000|".
+            # Contamos os ids nao-vazios.
+            rep.tests_executed = len([t for t in value.split("|") if t.strip()])
         elif key == "tests_skipped":
-            try:
-                rep.tests_skipped = int(value)
-            except ValueError:
-                pass
+            rep.tests_skipped = len([t for t in value.split("|") if t.strip()])
+        elif key == "finish":
+            rep.finish = value.strip().lower() == "true"
+        elif key == "exception_event[]":
+            rep.exceptions.append(value)
         elif key == "report_datetime_start":
             rep.started_at = _parse_datetime(value)
         elif key == "report_datetime_end":
