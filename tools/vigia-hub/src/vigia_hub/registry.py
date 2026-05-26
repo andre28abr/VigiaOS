@@ -89,6 +89,41 @@ def tools_by_category(tools: list[ToolEntry]) -> dict[str, list[ToolEntry]]:
 
 TOOLS: list[ToolEntry] = [
     ToolEntry(
+        id="dashboard",
+        name="Dashboard",
+        description="Sistema em tempo real (CPU, RAM, disco, rede, processos).",
+        long_description=(
+            "Dashboard de sistema em tempo real — CPU, memoria, disco I/O, "
+            "rede e processos com graficos via Cairo + GTK4. Substitui o uso "
+            "de `htop`, `btop`, `glances`, `iotop` e `iftop` em uma UI "
+            "nativa libadwaita.\n\n"
+            "Dados vem do `/proc` e `/sys` direto (kernel interface) — "
+            "**sem subprocess** para a maioria das metricas, **sem deps "
+            "externas pip**. Refresh 1Hz (CPU/RAM/Rede) e 2Hz (Processos).\n\n"
+            "**Cores semanticas**: CPU em emerald, RAM em amber, Disco em "
+            "ciano, Rede em violeta. Faciliter identificar de relance "
+            "qual metrica esta picando.\n\n"
+            "**Kill de processos** com confirmacao (SIGTERM ou SIGKILL). "
+            "Processos de outros users requerem admin via pkexec."
+        ),
+        features=[
+            "**4 tabs**: Visao Geral, Recursos, Processos, Sobre",
+            "Sparklines de CPU, RAM, RX/TX (60s de historico)",
+            "Graficos Cairo: CPU por core + StackedBar de RAM + linha de Disco/Rede",
+            "Temperatura via `/sys/class/thermal` (sem deps externas)",
+            "Top 30 processos com filtros (search, sort, 'so meus')",
+            "Kill com confirmacao + pkexec para processos do sistema",
+            "**Sem persistencia** em disco — dados somem ao fechar",
+        ],
+        icon_path=_TOOLS_DIR / "dashboard" / "data" / "br.com.vigia.Dashboard.svg",
+        exec_cmd=["vigia-dashboard"],
+        needs_terminal=False,
+        available_fn=lambda: shutil.which("vigia-dashboard") is not None,
+        embedded_module="vigia_dashboard.window",
+        category="monitoramento",
+        wrapped_packages=["procfs"],
+    ),
+    ToolEntry(
         id="activity-log",
         name="Activity Log",
         description="Visualizador de logs do sistema com narrativa human-readable.",

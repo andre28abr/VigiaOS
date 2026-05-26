@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Vigia Dashboard
+GenericName=System Dashboard
+Comment=Dashboard de sistema em tempo real
+Exec=vigia-dashboard
+Icon=br.com.vigia.Dashboard
+Categories=System;Monitor;
+Keywords=dashboard;htop;system-monitor;cpu;memory;vigia;
+StartupNotify=true
+Terminal=false
