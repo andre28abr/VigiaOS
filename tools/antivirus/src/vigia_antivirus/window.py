@@ -1,4 +1,10 @@
-"""Janela principal — orquestra 4 tabs (Status + Scan + Database + Sobre)."""
+"""Janela principal — orquestra 3 tabs (Scan + Base de dados + Sobre).
+
+Em v0.1.1 removemos a tab Status (era redundante — ClamAV nao tem
+status complexo). O estado essencial (idade da base, daemon) agora
+aparece como banner no topo da aba Scan; historico de scans esta
+na aba Base de dados.
+"""
 
 from __future__ import annotations
 
@@ -10,7 +16,7 @@ gi.require_version("Adw", "1")
 from gi.repository import Adw, Gtk  # noqa: E402
 
 from . import WRAPPED_PACKAGES
-from .tabs import AboutTab, DatabaseTab, ScanTab, StatusTab
+from .tabs import AboutTab, DatabaseTab, ScanTab
 
 
 def _make_pkg_badges_bar() -> Gtk.Widget:
@@ -33,14 +39,12 @@ def _make_pkg_badges_bar() -> Gtk.Widget:
 
 
 def build_content() -> Gtk.Widget:
-    """Constroi header + viewstack das 4 tabs como Adw.ToolbarView."""
-    status_tab = StatusTab()
+    """Constroi header + viewstack das 3 tabs como Adw.ToolbarView."""
     scan_tab = ScanTab()
     db_tab = DatabaseTab()
     about_tab = AboutTab()
 
     stack = Adw.ViewStack()
-    stack.add_titled_with_icon(status_tab, "status", "Status", "dialog-information-symbolic")
     stack.add_titled_with_icon(scan_tab, "scan", "Scan", "edit-find-symbolic")
     stack.add_titled_with_icon(db_tab, "database", "Base de dados", "drive-multidisk-symbolic")
     stack.add_titled_with_icon(about_tab, "about", "Sobre", "help-about-symbolic")
