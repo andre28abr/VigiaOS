@@ -20,6 +20,7 @@ classifiers = [
     "Topic :: Security",
 ]
 dependencies = [
+    "vigia-common",
     "jinja2>=3.0",
 ]
 

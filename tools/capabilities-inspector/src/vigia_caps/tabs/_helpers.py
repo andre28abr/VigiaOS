@@ -1,4 +1,8 @@
-"""Helpers compartilhados."""
+"""Helpers especificos desta tool.
+
+Re-exporta de `vigia_common.helpers` (mantem compat com codigo
+existente que usa `from .._helpers import ...`).
+"""
 
 from __future__ import annotations
 
@@ -9,33 +13,27 @@ gi.require_version("Adw", "1")
 
 from gi.repository import Adw, Gtk  # noqa: E402
 
+# Funcoes compartilhadas via vigia_common (1 fonte unica)
+from vigia_common.helpers import (
+    show_error,
+    show_info,
+    make_clamp as _make_clamp_base,
+)
 
+# Customizado para esta tool (largura/aperto do clamp)
 CONTENT_MAX_WIDTH = 860
 CONTENT_TIGHTENING = 680
 
 
 def make_clamp(child: Gtk.Widget) -> Adw.Clamp:
-    clamp = Adw.Clamp(
-        maximum_size=CONTENT_MAX_WIDTH,
-        tightening_threshold=CONTENT_TIGHTENING,
-    )
-    clamp.set_child(child)
-    return clamp
+    """Wrappa widget em Adw.Clamp com as constantes desta tool."""
+    return _make_clamp_base(child, CONTENT_MAX_WIDTH, CONTENT_TIGHTENING)
 
 
-def show_error(parent: Gtk.Widget, heading: str, message: str) -> None:
-    win = parent.get_root()
-    dlg = Adw.AlertDialog(heading=heading, body=message)
-    dlg.add_response("ok", "OK")
-    dlg.present(win)
-
-
-def show_info(parent: Gtk.Widget, heading: str, message: str) -> None:
-    win = parent.get_root()
-    dlg = Adw.AlertDialog(heading=heading, body=message)
-    dlg.add_response("ok", "OK")
-    dlg.present(win)
-
+# ============================================================
+# Funcoes ESPECIFICAS desta tool — nao migradas para vigia_common
+# (sao usadas apenas aqui)
+# ============================================================
 
 def risk_css(risk: str) -> str:
     """Mapeia risco -> CSS class."""
@@ -44,7 +42,6 @@ def risk_css(risk: str) -> str:
         "medio": "warning",
         "baixo": "success",
     }.get(risk, "dim-label")
-
 
 def escape_markup(s: str) -> str:
     return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")

@@ -20,7 +20,7 @@ classifiers = [
     "Topic :: Security",
     "Topic :: System :: Networking",
 ]
-dependencies = []
+dependencies = ["vigia-common"]
 
 [project.scripts]
 vigia-netscan = "vigia_netscan.__main__:main"

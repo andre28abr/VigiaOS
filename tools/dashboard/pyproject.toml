@@ -19,7 +19,7 @@ classifiers = [
     "Programming Language :: Python :: 3 :: Only",
     "Topic :: System :: Monitoring",
 ]
-dependencies = []
+dependencies = ["vigia-common"]
 
 [project.scripts]
 vigia-dashboard = "vigia_dashboard.__main__:main"
