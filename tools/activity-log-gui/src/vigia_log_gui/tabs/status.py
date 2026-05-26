@@ -98,6 +98,7 @@ class StatusTab(Adw.Bin):
 
         # Sources disponiveis
         self._sources_group = Adw.PreferencesGroup()
+        self._sources_group.set_margin_top(24)
         self._sources_group.set_title("Fontes disponiveis")
         self._sources_group.set_description(
             "Sources detectadas neste sistema. Selecione no header quais coletar."
@@ -119,6 +120,7 @@ class StatusTab(Adw.Bin):
 
         # vigia-log info
         info_group = Adw.PreferencesGroup()
+        info_group.set_margin_top(24)
         info_group.set_title("Engine")
         row_bin = Adw.ActionRow(title="vigia-log no PATH")
         row_bin.add_css_class("property")

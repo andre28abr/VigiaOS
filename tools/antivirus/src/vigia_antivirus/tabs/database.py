@@ -117,6 +117,7 @@ class DatabaseTab(Adw.Bin):
 
         # Recent scans group
         self._recent_group = Adw.PreferencesGroup()
+        self._recent_group.set_margin_top(24)
         self._recent_group.set_title("Scans recentes")
         self._recent_group.set_description(
             "Historico em ~/.local/share/vigia-antivirus/ (permissoes 0600)"

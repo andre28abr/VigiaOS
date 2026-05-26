@@ -57,6 +57,7 @@ class StatusTab(Adw.PreferencesPage):
 
         # ============= Grupo zona default ============= #
         zonegrp = Adw.PreferencesGroup()
+        zonegrp.set_margin_top(24)
         zonegrp.set_title("Zona padrao")
         zonegrp.set_description(
             "Zona aplicada a interfaces que nao tem zona explicita."
@@ -79,6 +80,7 @@ class StatusTab(Adw.PreferencesPage):
 
         # ============= Grupo active zones ============= #
         active = Adw.PreferencesGroup()
+        active.set_margin_top(24)
         active.set_title("Zonas ativas")
         active.set_description(
             "Quais zonas estao em uso por quais interfaces/sources."
@@ -89,6 +91,7 @@ class StatusTab(Adw.PreferencesPage):
 
         # ============= Refresh ============= #
         refresh = Adw.PreferencesGroup()
+        refresh.set_margin_top(24)
         refresh_row = Adw.ActionRow()
         refresh_row.set_title("Recarregar estado")
         btn = Gtk.Button(label="Atualizar")

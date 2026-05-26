@@ -79,6 +79,7 @@ class StatusTab(Adw.PreferencesPage):
 
         # ---- Grupo acoes runtime ----
         runtime = Adw.PreferencesGroup()
+        runtime.set_margin_top(24)
         runtime.set_title("Acoes runtime")
         runtime.set_description("Mudam o estado atual. NAO persistem no reboot.")
 
@@ -99,6 +100,7 @@ class StatusTab(Adw.PreferencesPage):
 
         # ---- Grupo acoes persistentes ----
         persistent = Adw.PreferencesGroup()
+        persistent.set_margin_top(24)
         persistent.set_title("Modo persistente (/etc/selinux/config)")
         persistent.set_description(
             "Toma efeito no proximo boot. Disabled exige reboot para tomar efeito."
@@ -117,6 +119,7 @@ class StatusTab(Adw.PreferencesPage):
 
         # ---- Refresh ----
         refresh = Adw.PreferencesGroup()
+        refresh.set_margin_top(24)
         refresh_row = Adw.ActionRow()
         refresh_row.set_title("Recarregar estado")
         btn = Gtk.Button(label="Atualizar")

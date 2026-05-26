@@ -26,7 +26,7 @@ class HostsTab(Adw.Bin):
         header_lbl = Gtk.Label(label="Historico de scans")
         header_lbl.add_css_class("title-2")
         header_lbl.set_halign(Gtk.Align.START)
-        header_lbl.set_margin_bottom(4)
+        header_lbl.set_margin_bottom(8)
 
         header_desc = Gtk.Label(
             label=(
@@ -38,7 +38,7 @@ class HostsTab(Adw.Bin):
         header_desc.set_halign(Gtk.Align.START)
         header_desc.set_wrap(True)
         header_desc.set_xalign(0)
-        header_desc.set_margin_bottom(16)
+        header_desc.set_margin_bottom(24)
         header_desc.set_use_markup(True)
 
         # Toolbar
@@ -59,10 +59,10 @@ class HostsTab(Adw.Bin):
 
         # Layout
         outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-        outer.set_margin_top(20)
-        outer.set_margin_bottom(20)
-        outer.set_margin_start(20)
-        outer.set_margin_end(20)
+        outer.set_margin_top(24)
+        outer.set_margin_bottom(32)
+        outer.set_margin_start(28)
+        outer.set_margin_end(28)
         outer.append(header_lbl)
         outer.append(header_desc)
         outer.append(toolbar)

@@ -86,6 +86,7 @@ class OverviewTab(Adw.Bin):
 
         # Action group
         self._action_group = Adw.PreferencesGroup()
+        self._action_group.set_margin_top(24)
         self._action_group.set_title("Scan")
         self._action_group.set_description(
             "Lista todos os binarios em /usr, /opt, /var, /srv com capabilities setadas. "

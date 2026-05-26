@@ -43,6 +43,7 @@ class ZonesTab(Gtk.Box):
 
         # ============= Services group ============= #
         self._services_group = Adw.PreferencesGroup()
+        self._services_group.set_margin_top(24)
         self._services_group.set_title("Services permitidos nesta zona")
         self._services_group.set_description(
             "Services pre-definidos do firewalld. Ex: ssh, http, https, dhcpv6-client."
@@ -63,6 +64,7 @@ class ZonesTab(Gtk.Box):
 
         # ============= Ports group ============= #
         self._ports_group = Adw.PreferencesGroup()
+        self._ports_group.set_margin_top(24)
         self._ports_group.set_title("Portas permitidas nesta zona")
         self._ports_group.set_description(
             "Portas/protocolo customizados. Use services acima para portas conhecidas."

@@ -28,7 +28,7 @@ class BaselineTab(Adw.Bin):
         header_lbl = Gtk.Label(label="Baseline & comparativo")
         header_lbl.add_css_class("title-2")
         header_lbl.set_halign(Gtk.Align.START)
-        header_lbl.set_margin_bottom(4)
+        header_lbl.set_margin_bottom(8)
 
         header_desc = Gtk.Label(
             label=(
@@ -45,7 +45,7 @@ class BaselineTab(Adw.Bin):
         header_desc.set_halign(Gtk.Align.START)
         header_desc.set_wrap(True)
         header_desc.set_xalign(0)
-        header_desc.set_margin_bottom(16)
+        header_desc.set_margin_bottom(24)
 
         # Create baseline group
         create_group = Adw.PreferencesGroup()
@@ -84,9 +84,12 @@ class BaselineTab(Adw.Bin):
         self._create_status.set_halign(Gtk.Align.START)
         self._create_status.set_wrap(True)
         self._create_status.set_xalign(0)
+        self._create_status.set_margin_top(12)
+        self._create_status.set_margin_bottom(4)
 
         # Compare group
         compare_group = Adw.PreferencesGroup()
+        compare_group.set_margin_top(24)
         compare_group.set_title("Comparar contra baseline")
 
         self._baseline_entry = Gtk.Entry()
@@ -113,14 +116,18 @@ class BaselineTab(Adw.Bin):
         self._compare_status.set_halign(Gtk.Align.START)
         self._compare_status.set_wrap(True)
         self._compare_status.set_xalign(0)
+        self._compare_status.set_margin_top(12)
+        self._compare_status.set_margin_bottom(4)
 
         self._diff_group = Adw.PreferencesGroup()
+        self._diff_group.set_margin_top(24)
         self._diff_group.set_title("Diferencas detectadas")
         self._diff_rows: list = []
         self._render_diff()
 
         # Available baselines
         list_group = Adw.PreferencesGroup()
+        list_group.set_margin_top(24)
         list_group.set_title("Baselines disponiveis")
         list_group.set_description(
             "Baselines criados pelo Vigia, em ~/.local/share/vigia-hash/."
@@ -140,10 +147,10 @@ class BaselineTab(Adw.Bin):
 
         # Layout
         outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-        outer.set_margin_top(20)
-        outer.set_margin_bottom(20)
-        outer.set_margin_start(20)
-        outer.set_margin_end(20)
+        outer.set_margin_top(24)
+        outer.set_margin_bottom(32)
+        outer.set_margin_start(28)
+        outer.set_margin_end(28)
         outer.append(header_lbl)
         outer.append(header_desc)
         outer.append(create_group)

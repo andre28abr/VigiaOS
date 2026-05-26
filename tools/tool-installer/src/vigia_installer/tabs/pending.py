@@ -59,10 +59,13 @@ class PendingTab(Adw.Bin):
         self._added_group.set_title("Sera instalado no proximo boot")
 
         self._removed_group = Adw.PreferencesGroup()
+
+        self._removed_group.set_margin_top(24)
         self._removed_group.set_title("Sera removido no proximo boot")
 
         # Current layered
         self._current_group = Adw.PreferencesGroup()
+        self._current_group.set_margin_top(24)
         self._current_group.set_title("Atualmente instalados (camada rpm-ostree)")
         self._current_group.set_description(
             "Pacotes que ja estao na camada atual (instalados antes do boot atual)."
@@ -71,9 +74,9 @@ class PendingTab(Adw.Bin):
         # Layout
         outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=20)
         outer.set_margin_top(0)
-        outer.set_margin_bottom(20)
-        outer.set_margin_start(20)
-        outer.set_margin_end(20)
+        outer.set_margin_bottom(32)
+        outer.set_margin_start(28)
+        outer.set_margin_end(28)
         outer.append(self._state_label)
         outer.append(self._state_sub)
         outer.append(action_box)

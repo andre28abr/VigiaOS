@@ -95,6 +95,7 @@ class StatusTab(Adw.Bin):
 
         # Interfaces group
         self._ifaces_group = Adw.PreferencesGroup()
+        self._ifaces_group.set_margin_top(24)
         self._ifaces_group.set_title("Interfaces de rede")
         self._ifaces_group.set_description(
             "DNS configurado por interface (NetworkManager/dhcpcd) — sobrescreve o global."
@@ -102,6 +103,7 @@ class StatusTab(Adw.Bin):
 
         # System info
         self._sys_group = Adw.PreferencesGroup()
+        self._sys_group.set_margin_top(24)
         self._sys_group.set_title("Sistema")
         self._row_resolved = Adw.ActionRow(title="systemd-resolved")
         self._row_resolved.add_css_class("property")
@@ -113,9 +115,9 @@ class StatusTab(Adw.Bin):
         # Layout
         outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=20)
         outer.set_margin_top(0)
-        outer.set_margin_bottom(28)
-        outer.set_margin_start(20)
-        outer.set_margin_end(20)
+        outer.set_margin_bottom(32)
+        outer.set_margin_start(28)
+        outer.set_margin_end(28)
         outer.append(self._hero)
         outer.append(action_box)
         outer.append(self._global_group)
