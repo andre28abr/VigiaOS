@@ -134,6 +134,17 @@ class ProcessesTab(Adw.Bin):
             GLib.source_remove(self._tick_id)
             self._tick_id = 0
 
+    # PERF: pause/resume usado por window.py
+    def pause_tick(self) -> None:
+        if self._tick_id:
+            GLib.source_remove(self._tick_id)
+            self._tick_id = 0
+
+    def resume_tick(self) -> None:
+        if self._tick_id == 0:
+            self._refresh()
+            self._tick_id = GLib.timeout_add(REFRESH_MS, self._refresh)
+
     # ============================================================
     # Filters callbacks
     # ============================================================

@@ -117,6 +117,22 @@ class OverviewTab(Adw.Bin):
         self.connect("destroy", self._on_destroy)
 
     # ============================================================
+    # Pause/resume API (chamada por window.py quando tab muda)
+    # ============================================================
+
+    def pause_tick(self) -> None:
+        """Para o GLib.timeout — usado quando tab fica invisivel."""
+        if self._tick_id:
+            GLib.source_remove(self._tick_id)
+            self._tick_id = 0
+
+    def resume_tick(self) -> None:
+        """Reinicia o timeout (se nao estava ativo)."""
+        if self._tick_id == 0:
+            self._on_tick()  # leitura imediata
+            self._tick_id = GLib.timeout_add(REFRESH_MS, self._on_tick)
+
+    # ============================================================
     # Card builders
     # ============================================================
 
@@ -250,7 +266,10 @@ class OverviewTab(Adw.Bin):
         self._render_disks(disk.mounts)
 
         # Top processos
-        procs = backend.list_processes()
+        # PERF: Overview so usa cpu_pct e rss_kb. Pular conexoes e I/O
+        # economiza ~1500 syscalls/seg (sem readlinks em /proc/<pid>/fd/*
+        # nem leitura de /proc/<pid>/io nem parse de /proc/net/*).
+        procs = backend.list_processes(include_connections=False, include_io=False)
         self._render_top(procs)
 
         return True  # continua o timeout

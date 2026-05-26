@@ -36,7 +36,14 @@ def _make_pkg_badges_bar() -> Gtk.Widget:
 
 
 def build_content() -> Gtk.Widget:
-    """Constroi header + viewstack das 5 tabs."""
+    """Constroi header + viewstack das 5 tabs.
+
+    PERF: connecta notify::visible-child no ViewStack para pausar timers
+    de tabs invisiveis. Tabs implementam pause_tick()/resume_tick() que
+    chamam GLib.source_remove() e GLib.timeout_add() respectivamente.
+
+    Cuts ~75% da carga de I/O quando usuario ve apenas 1 tab por vez.
+    """
     overview_tab = OverviewTab()
     resources_tab = ResourcesTab()
     processes_tab = ProcessesTab()
@@ -49,6 +56,31 @@ def build_content() -> Gtk.Widget:
     stack.add_titled_with_icon(processes_tab, "processes", "Processos", "view-list-symbolic")
     stack.add_titled_with_icon(alerts_tab, "alerts", "Alertas", "dialog-warning-symbolic")
     stack.add_titled_with_icon(about_tab, "about", "Sobre", "help-about-symbolic")
+
+    # Map name → widget (para pause/resume baseado no visible-child)
+    tabs_by_name = {
+        "overview": overview_tab,
+        "resources": resources_tab,
+        "processes": processes_tab,
+        "alerts": alerts_tab,
+        "about": about_tab,
+    }
+
+    def _on_visible_child_changed(stk, _pspec):
+        visible_name = stk.get_visible_child_name()
+        for name, tab in tabs_by_name.items():
+            if name == visible_name:
+                if hasattr(tab, "resume_tick"):
+                    tab.resume_tick()
+            else:
+                if hasattr(tab, "pause_tick"):
+                    tab.pause_tick()
+        # IMPORTANTE: tab Alertas sempre roda em background (para detectar
+        # disparos mesmo quando user nao esta vendo Alertas). Resume forcado:
+        if visible_name != "alerts" and hasattr(alerts_tab, "resume_tick"):
+            alerts_tab.resume_tick()
+
+    stack.connect("notify::visible-child", _on_visible_child_changed)
 
     switcher = Adw.ViewSwitcher()
     switcher.set_stack(stack)

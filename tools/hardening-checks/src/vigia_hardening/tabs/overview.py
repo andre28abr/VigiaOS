@@ -31,6 +31,9 @@ class OverviewTab(Adw.Bin):
         self._running = False
         self._pulse_id: int | None = None
 
+        # Cleanup ao destruir (memory leak fix do GLib.timeout)
+        self.connect("destroy", self._on_destroy)
+
         # ---- Hero box ---- #
         self._hero = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
         self._hero.set_halign(Gtk.Align.CENTER)
@@ -299,3 +302,12 @@ class OverviewTab(Adw.Bin):
     def _pulse_tick(self) -> bool:
         self._progress_bar.pulse()
         return self._running  # continua enquanto running
+
+    def _on_destroy(self, *_args) -> None:
+        """Cleanup: para o GLib.timeout do pulse bar (memory leak fix)."""
+        if self._pulse_id is not None:
+            try:
+                GLib.source_remove(self._pulse_id)
+            except Exception:  # pylint: disable=broad-except
+                pass
+            self._pulse_id = None

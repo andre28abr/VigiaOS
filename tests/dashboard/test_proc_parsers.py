@@ -178,12 +178,19 @@ SAMPLE_PROC_NET_TCP = """  sl  local_address rem_address   st tx_queue rx_queue 
 
 
 class TestSocketParsing:
+    """Cache TTL 1s e' limpo via fixture autouse (isolamento)."""
+
+    @pytest.fixture(autouse=True)
+    def reset_sock_cache(self):
+        backend._SOCK_INODES_CACHE = (0.0, {})
+        yield
+        backend._SOCK_INODES_CACHE = (0.0, {})
+
     def test_parses_tcp(self):
         """Mock /proc/net/tcp com 3 sockets; resto retorna empty."""
         from io import StringIO
 
         def fake_open(path, *args, **kwargs):
-            # Se for /proc/net/tcp, retorna sample. Outros, vazio.
             if path == "/proc/net/tcp":
                 return StringIO(SAMPLE_PROC_NET_TCP)
             return StringIO("header line\n")
