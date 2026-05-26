@@ -67,32 +67,26 @@ def build_content() -> Gtk.Widget:
     # ============================================================
     def _refresh_mode_dependent_tabs() -> None:
         """Refresh tabs que dependem do modo (advanced/simple)."""
-        try:
-            blocklists_tab.refresh()
-        except Exception:  # pylint: disable=broad-except
-            pass
-        try:
-            stats_tab.refresh()
-        except Exception:  # pylint: disable=broad-except
-            pass
+        for tab in (resolvers_tab, blocklists_tab, stats_tab):
+            try:
+                tab.refresh()
+            except Exception:  # pylint: disable=broad-except
+                pass
 
     status_tab.on_mode_changed = _refresh_mode_dependent_tabs
 
     def _on_visible_child_changed(stk, _pspec):
         visible_name = stk.get_visible_child_name()
-        if visible_name == "blocklists":
+        tab_map = {
+            "status": status_tab,
+            "resolvers": resolvers_tab,
+            "blocklists": blocklists_tab,
+            "stats": stats_tab,
+        }
+        tab = tab_map.get(visible_name)
+        if tab is not None and hasattr(tab, "refresh"):
             try:
-                blocklists_tab.refresh()
-            except Exception:  # pylint: disable=broad-except
-                pass
-        elif visible_name == "stats":
-            try:
-                stats_tab.refresh()
-            except Exception:  # pylint: disable=broad-except
-                pass
-        elif visible_name == "status":
-            try:
-                status_tab.refresh()
+                tab.refresh()
             except Exception:  # pylint: disable=broad-except
                 pass
 
