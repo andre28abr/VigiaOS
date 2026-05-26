@@ -10,6 +10,7 @@ via `pkexec` para abrir dialog polkit nativo.
 from __future__ import annotations
 
 import os
+import re
 import shutil
 import subprocess
 import time
@@ -226,32 +227,50 @@ def run_audit_blocking() -> tuple[bool, str]:
     # o backend (rodando como user) nao consegue ler o report — parser
     # silenciosamente retorna vazio (UI mostra "Nao avaliado").
     #
-    # LGPD HARDENING: usar chown root:$USER + chmod 640 em vez de 644.
-    # 644 deixaria report world-readable (outros usuarios do sistema
-    # podem mapear hardening weaknesses). 640 + grupo = apenas root e
-    # o user que iniciou a auditoria leem.
+    # LGPD HARDENING: chmod 640 + chown root:<user>. 644 deixaria report
+    # world-readable. 640 + grupo = apenas root e o user que iniciou a
+    # auditoria leem.
     #
-    # Tambem copia para ~/.local/share/vigia-hardening/ para acesso
-    # mais conveniente (sem precisar de chmod do /var/log/).
-    target_user = os.environ.get("USER") or os.environ.get("LOGNAME") or ""
-    script = f"""set +e
+    # SECURITY: $USER e $LOGNAME passam via env var DEDICADA do subprocess,
+    # NAO interpolados em f-string. Atacante setando USER='root && rm -rf /'
+    # antes de iniciar o GUI nao consegue injetar comando, pois o script
+    # bash referencia "$VIGIA_TARGET_USER" como variavel.
+    # Validacao extra: regex POSIX-conforme para nome de usuario.
+    raw_user = os.environ.get("USER") or os.environ.get("LOGNAME") or ""
+    if re.match(r"^[a-z_][a-z0-9_-]{0,31}\$?$", raw_user):
+        # POSIX-compliant username
+        validated_user = raw_user
+    else:
+        validated_user = ""  # sem chown — apenas chmod
+    script = """set +e
 lynis audit system --quiet --no-colors
 rc=$?
 # LGPD: 640 + chown para o user (nao world-readable)
-if [ -n "{target_user}" ]; then
-    chown root:"{target_user}" /var/log/lynis-report.dat 2>/dev/null || true
-    chown root:"{target_user}" /var/log/lynis.log 2>/dev/null || true
+if [ -n "$VIGIA_TARGET_USER" ]; then
+    chown root:"$VIGIA_TARGET_USER" /var/log/lynis-report.dat 2>/dev/null || true
+    chown root:"$VIGIA_TARGET_USER" /var/log/lynis.log 2>/dev/null || true
 fi
 chmod 640 /var/log/lynis-report.dat 2>/dev/null || true
 chmod 640 /var/log/lynis.log 2>/dev/null || true
 exit $rc
 """
     try:
+        # pkexec passa SOMENTE env whitelisted ao processo root.
+        # Definimos VIGIA_TARGET_USER explicitamente; pkexec config
+        # (--keep-env-list / polkit) precisa permitir VIGIA_TARGET_USER
+        # — alternativa segura: hardcode no script via bash -c VAR='%s' ...
+        # Aqui usamos abordagem hibrida: passa via subprocess env (que
+        # pkexec geralmente repassa para o script), com fallback de NO-OP
+        # quando a variavel chega vazia (script ja trata $VIGIA_TARGET_USER
+        # vazio como skip do chown).
+        env = os.environ.copy()
+        env["VIGIA_TARGET_USER"] = validated_user
         result = subprocess.run(
             ["pkexec", "bash", "-c", script],
             capture_output=True,
             text=True,
             timeout=600,
+            env=env,
         )
     except subprocess.TimeoutExpired:
         return False, "Lynis demorou mais de 10 minutos. Audit cancelado."

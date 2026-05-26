@@ -170,9 +170,23 @@ def _read_distro() -> str:
     return _DISTRO_CACHE
 
 
+_USERS_LOGGED_CACHE: tuple[float, int] = (0.0, 0)
+_USERS_LOGGED_TTL_SEC = 30.0
+
+
 def _count_logged_users() -> int:
-    """Conta usuarios logados (lendo /proc/*/loginuid ou utmp)."""
-    # Heuristica simples: conta entries unicas em /proc com loginuid != -1
+    """Conta usuarios logados (lendo /proc/*/loginuid).
+
+    PERF: cache TTL 30s — antes esta funcao abria ~200 files a cada
+    call do Overview (1Hz). users_logged muda raramente (login/logout
+    eh evento ocasional), 30s de stale e' aceitavel.
+    """
+    global _USERS_LOGGED_CACHE
+    now = time.time()
+    cached_at, cached_n = _USERS_LOGGED_CACHE
+    if now - cached_at < _USERS_LOGGED_TTL_SEC:
+        return cached_n
+
     seen = set()
     try:
         for pid_dir in Path("/proc").iterdir():
@@ -187,6 +201,8 @@ def _count_logged_users() -> int:
                 continue
     except OSError:
         pass
+
+    _USERS_LOGGED_CACHE = (now, len(seen))
     return len(seen)
 
 
@@ -593,11 +609,26 @@ if _CLOCK_TICKS <= 0:
 # ============================================================
 
 
+# PERF: cache de socket inodes (4 arquivos /proc/net/*) com TTL 1s.
+# Sockets nao mudam de inode rapidamente — releitura a 1Hz e' suficiente.
+# Sistemas com 500+ conexoes parseiam 2000 linhas/call sem cache.
+_SOCK_INODES_CACHE: tuple[float, dict[int, str]] = (0.0, {})
+_SOCK_INODES_TTL_SEC = 1.0
+
+
 def _read_socket_inodes_to_conn() -> dict[int, str]:
     """Le /proc/net/tcp{,6}/udp{,6} e retorna mapa inode -> tipo.
 
     Tipos: 'tcp_established', 'tcp_listen', 'tcp_other', 'udp'.
+
+    PERF: cacheado por 1s.
     """
+    global _SOCK_INODES_CACHE
+    now = time.time()
+    cached_at, cached_map = _SOCK_INODES_CACHE
+    if now - cached_at < _SOCK_INODES_TTL_SEC:
+        return cached_map
+
     inode_to_type: dict[int, str] = {}
 
     # TCP states do kernel:
@@ -634,6 +665,7 @@ def _read_socket_inodes_to_conn() -> dict[int, str]:
         except (OSError, PermissionError):
             continue
 
+    _SOCK_INODES_CACHE = (now, inode_to_type)
     return inode_to_type
 
 
@@ -710,7 +742,9 @@ def list_processes(include_connections: bool = True, include_io: bool = True) ->
                 continue
             comm = stat[l_paren + 1:r_paren]
             rest = stat[r_paren + 2:].split()
-            # rest[0] = state, rest[12] = utime, rest[13] = stime, rest[18] = nice
+            # Indices (apos `)` + space, 0-based, man proc(5) field# - 3):
+            # rest[0]=state, rest[11]=utime, rest[12]=stime,
+            # rest[15]=priority, rest[16]=nice
             state = rest[0] if rest else "?"
             utime = int(rest[11]) if len(rest) > 11 else 0
             stime = int(rest[12]) if len(rest) > 12 else 0

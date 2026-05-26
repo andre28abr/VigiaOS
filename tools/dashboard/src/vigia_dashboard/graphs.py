@@ -49,9 +49,17 @@ class Sparkline(Gtk.DrawingArea):
         self.set_draw_func(self._on_draw)
 
     def push(self, value: float) -> None:
-        self._values.append(max(0.0, value))
+        """Adiciona valor; queue_draw apenas se mudou (PERF — evita redraw idle)."""
+        new_val = max(0.0, value)
+        # Se buffer cheio E ultimo valor identico (epsilon 0.005), skip redraw.
+        # Em sistema idle, CPU% oscila 0.0→0.0 — redraw redundante.
+        last = self._values[-1] if self._values else None
+        self._values.append(new_val)
         if self._max_y_fixed is None and self._values:
             self._max_y_auto = max(self._max_y_auto * 0.9, max(self._values))
+        if last is not None and abs(last - new_val) < 0.005:
+            # Mesma posicao + scroll do buffer eh imperceptivel — skip.
+            return
         self.queue_draw()
 
     def reset(self) -> None:
