@@ -103,20 +103,14 @@ class HashTab(Adw.Bin):
         result_row.set_activatable(False)
         self._result_group.add(result_row)
 
-        # Copy action
+        # Copy action — botao FORA do card pra ter espaco proprio
         copy_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
         copy_box.set_halign(Gtk.Align.END)
-        copy_box.set_margin_top(6)
-        copy_box.set_margin_bottom(6)
+        copy_box.set_margin_top(16)
         self._copy_btn = Gtk.Button(label="Copiar")
         self._copy_btn.set_sensitive(False)
         self._copy_btn.connect("clicked", lambda _b: self._do_copy())
         copy_box.append(self._copy_btn)
-
-        copy_row = Adw.PreferencesRow()
-        copy_row.set_child(copy_box)
-        copy_row.set_activatable(False)
-        self._result_group.add(copy_row)
 
         self._status_label = Gtk.Label(label="")
         self._status_label.add_css_class("dim-label")
@@ -136,6 +130,7 @@ class HashTab(Adw.Bin):
         outer.append(action_box)
         outer.append(self._status_label)
         outer.append(self._result_group)
+        outer.append(copy_box)
 
         scrolled = Gtk.ScrolledWindow()
         scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
