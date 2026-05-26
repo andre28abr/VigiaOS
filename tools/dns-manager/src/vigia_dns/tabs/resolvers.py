@@ -1,7 +1,23 @@
-"""Tab Resolvers: catalogo de provedores DNS + apply."""
+"""Tab Resolvers/Provedores: catalogo de DNS providers + apply.
+
+v0.2.3: mode-aware. Conteudo adapta ao backend ativo:
+
+- Modo simples (systemd-resolved):
+    Mostra catalogo DoT classico (9 providers do _resolvers_module).
+    DoT switch no topo. Apply edita /etc/systemd/resolved.conf.
+
+- Modo avancado (dnscrypt-proxy):
+    Mostra catalogo dnscrypt-proxy (11 servers de dnscrypt_catalog).
+    Sem DoT switch (todos sao DoH/DoT/DNSCrypt nativos). Apply
+    edita server_names = [...] em /etc/dnscrypt-proxy/dnscrypt-proxy.toml.
+
+Refresh chamado pelo window.py quando user troca de tab ou quando
+mode muda (callback do StatusTab).
+"""
 
 from __future__ import annotations
 
+import re
 import threading
 
 import gi
@@ -12,14 +28,14 @@ gi.require_version("Adw", "1")
 from gi.repository import Adw, GLib, Gtk  # noqa: E402
 
 from .. import backend
+from .. import dnscrypt_backend as dc
+from .. import dnscrypt_catalog
+from .. import migration
 from .._resolvers_module import CATALOG, DnsResolver
 from ._helpers import make_clamp, show_error, show_info
 
 
 # Markdown leve compartilhado
-import re
-
-
 def _md_to_pango(md: str) -> str:
     s = md.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
     s = re.sub(r"`([^`]+)`", r"<tt>\1</tt>", s)
@@ -28,6 +44,7 @@ def _md_to_pango(md: str) -> str:
     return s
 
 
+# Badges para o modo simples (CATALOG.filters)
 FILTER_LABELS = {
     "malware": "🛡 malware",
     "ads": "🚫 ads",
@@ -36,36 +53,47 @@ FILTER_LABELS = {
 }
 
 
+# Headers diferenciados por modo
+HEADER_SIMPLE = (
+    "Cada provedor tem politicas de privacidade e filtros diferentes. "
+    "Aplicar muda /etc/systemd/resolved.conf via pkexec e reinicia "
+    "o servico. DNS over TLS e' ligado quando o provedor suportar."
+)
+
+HEADER_ADVANCED = (
+    "Servers dnscrypt-proxy (DoH, DNSCrypt). Aplicar edita "
+    "server_names em /etc/dnscrypt-proxy/dnscrypt-proxy.toml e "
+    "reinicia o servico. Cada server tem politicas proprias."
+)
+
+
 class ResolversTab(Adw.Bin):
-    """Lista de DNS providers + apply button."""
+    """Catalogo de DNS providers — adapta ao modo ativo."""
 
     def __init__(self) -> None:
         super().__init__()
         self._running = False
+        self._current_mode = "unknown"
+        self._provider_rows: list = []
 
-        # Header
-        header_lbl = Gtk.Label(label="Provedores DNS curados")
-        header_lbl.add_css_class("title-2")
-        header_lbl.set_halign(Gtk.Align.START)
-        header_lbl.set_margin_bottom(8)
+        # ===== Header (mode-aware via refresh) =====
+        self._header_lbl = Gtk.Label(label="Provedores DNS curados")
+        self._header_lbl.add_css_class("title-2")
+        self._header_lbl.set_halign(Gtk.Align.START)
+        self._header_lbl.set_margin_bottom(8)
 
-        header_desc = Gtk.Label(
-            label=(
-                "Cada provedor tem politicas de privacidade e filtros diferentes. "
-                "Aplicar muda /etc/systemd/resolved.conf via pkexec e reinicia "
-                "o servico. DNS over TLS e' ligado quando o provedor suportar."
-            )
-        )
-        header_desc.add_css_class("dim-label")
-        header_desc.set_halign(Gtk.Align.START)
-        header_desc.set_wrap(True)
-        header_desc.set_xalign(0)
-        header_desc.set_margin_bottom(20)
+        self._header_desc = Gtk.Label(label=HEADER_SIMPLE)
+        self._header_desc.add_css_class("dim-label")
+        self._header_desc.set_halign(Gtk.Align.START)
+        self._header_desc.set_wrap(True)
+        self._header_desc.set_xalign(0)
+        self._header_desc.set_margin_bottom(20)
 
-        # Switch DoT
-        dot_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
-        dot_box.set_margin_bottom(20)
-        dot_box.add_css_class("card")
+        # ===== Switch DoT (visivel so em modo simples) =====
+        self._dot_container = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
+        self._dot_container.set_margin_bottom(20)
+        self._dot_container.add_css_class("card")
+
         dot_lbl = Gtk.Label()
         dot_lbl.set_markup(
             "<b>DNS over TLS</b> — encripta queries entre voce e o resolver. "
@@ -77,30 +105,27 @@ class ResolversTab(Adw.Bin):
         dot_lbl.set_margin_start(12)
         dot_lbl.set_margin_top(12)
         dot_lbl.set_margin_bottom(12)
-        dot_box.append(dot_lbl)
+        self._dot_container.append(dot_lbl)
 
         self._dot_switch = Gtk.Switch()
         self._dot_switch.set_valign(Gtk.Align.CENTER)
         self._dot_switch.set_margin_end(12)
         self._dot_switch.set_active(True)
-        dot_box.append(self._dot_switch)
+        self._dot_container.append(self._dot_switch)
 
-        # Providers list
+        # ===== Providers list (populado dinamicamente em _apply_mode) =====
         self._providers_group = Adw.PreferencesGroup()
         self._providers_group.set_title("Provedores")
 
-        for resolver in CATALOG:
-            self._providers_group.add(self._build_provider_row(resolver))
-
-        # Layout
+        # ===== Layout =====
         outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
         outer.set_margin_top(24)
         outer.set_margin_bottom(32)
         outer.set_margin_start(28)
         outer.set_margin_end(28)
-        outer.append(header_lbl)
-        outer.append(header_desc)
-        outer.append(dot_box)
+        outer.append(self._header_lbl)
+        outer.append(self._header_desc)
+        outer.append(self._dot_container)
         outer.append(self._providers_group)
 
         scrolled = Gtk.ScrolledWindow()
@@ -109,11 +134,91 @@ class ResolversTab(Adw.Bin):
         scrolled.set_child(make_clamp(outer))
         self.set_child(scrolled)
 
+        # Carrega catalogo inicial
+        self.refresh()
+
     # ============================================================
-    # Provider row
+    # Refresh — detecta modo e atualiza catalogo
     # ============================================================
 
-    def _build_provider_row(self, resolver: DnsResolver) -> Adw.ExpanderRow:
+    def refresh(self) -> None:
+        """Recarrega catalogo baseado no modo ativo."""
+        threading.Thread(target=self._refresh_worker, daemon=True).start()
+
+    def _refresh_worker(self) -> None:
+        try:
+            mode = migration.get_current_mode()
+        except Exception:  # pylint: disable=broad-except
+            mode = "unknown"
+
+        # Em modo avancado, tambem precisamos saber quais servers ja
+        # estao configurados (pra eventualmente destacar na lista)
+        active_servers: list[str] = []
+        if mode == "advanced":
+            try:
+                st = dc.get_status()
+                active_servers = list(st.server_names)
+            except Exception:  # pylint: disable=broad-except
+                pass
+
+        GLib.idle_add(self._apply_mode, mode, active_servers)
+
+    def _apply_mode(self, mode: str, active_servers: list[str]) -> bool:
+        # Mode equal? Re-renderiza so se algo importante mudou
+        if mode == self._current_mode and self._provider_rows:
+            # Mesmo modo e rows ja existem — so atualiza marcacao de active
+            self._update_active_markers(active_servers)
+            return False
+
+        self._current_mode = mode
+
+        # Limpa rows antigos
+        for row in self._provider_rows:
+            self._providers_group.remove(row)
+        self._provider_rows = []
+
+        is_advanced = (mode == "advanced")
+
+        # DoT switch so em modo simples
+        self._dot_container.set_visible(not is_advanced)
+
+        # Header descricao
+        self._header_desc.set_label(
+            HEADER_ADVANCED if is_advanced else HEADER_SIMPLE
+        )
+
+        # Title do group
+        self._providers_group.set_title(
+            "Servers dnscrypt-proxy" if is_advanced else "Provedores"
+        )
+
+        # Popula catalogo apropriado
+        if is_advanced:
+            for server in dnscrypt_catalog.SERVERS:
+                row = self._build_dnscrypt_row(server, active=server.id in active_servers)
+                self._providers_group.add(row)
+                self._provider_rows.append(row)
+        else:
+            for resolver in CATALOG:
+                row = self._build_dot_row(resolver)
+                self._providers_group.add(row)
+                self._provider_rows.append(row)
+
+        return False
+
+    def _update_active_markers(self, active_servers: list[str]) -> None:
+        """No modo avancado, marca quais servers estao em uso."""
+        if self._current_mode != "advanced":
+            return
+        # Reconstroi rows (mais simples que mexer in-place)
+        self._current_mode = "unknown"  # forca rebuild
+        self._apply_mode("advanced", active_servers)
+
+    # ============================================================
+    # Build row — Modo simples (systemd-resolved DoT)
+    # ============================================================
+
+    def _build_dot_row(self, resolver: DnsResolver) -> Adw.ExpanderRow:
         row = Adw.ExpanderRow()
         row.set_title(resolver.name)
         row.set_subtitle(resolver.description)
@@ -122,7 +227,7 @@ class ResolversTab(Adw.Bin):
         apply_btn = Gtk.Button(label="Aplicar")
         apply_btn.set_valign(Gtk.Align.CENTER)
         apply_btn.add_css_class("suggested-action")
-        apply_btn.connect("clicked", self._on_apply_clicked, resolver)
+        apply_btn.connect("clicked", self._on_apply_dot_clicked, resolver)
         row.add_suffix(apply_btn)
 
         # Filter badges as prefix
@@ -137,7 +242,7 @@ class ResolversTab(Adw.Bin):
                 box.append(pill)
             row.add_prefix(box)
 
-        # Details (expanded)
+        # Details
         why_label = Gtk.Label()
         why_label.set_markup(_md_to_pango(resolver.why))
         why_label.set_wrap(True)
@@ -152,7 +257,6 @@ class ResolversTab(Adw.Bin):
         why_row.set_activatable(False)
         row.add_row(why_row)
 
-        # IPs row
         ips_row = Adw.ActionRow(title="Servidores IPv4")
         ips_row.add_css_class("property")
         ips_lbl = Gtk.Label(label=", ".join(resolver.servers_v4))
@@ -161,7 +265,6 @@ class ResolversTab(Adw.Bin):
         ips_row.add_suffix(ips_lbl)
         row.add_row(ips_row)
 
-        # Protocols row
         protos: list[str] = []
         if resolver.supports_dot:
             protos.append("DoT")
@@ -180,10 +283,108 @@ class ResolversTab(Adw.Bin):
         return row
 
     # ============================================================
-    # Apply
+    # Build row — Modo avancado (dnscrypt-proxy)
     # ============================================================
 
-    def _on_apply_clicked(self, _btn: Gtk.Button, resolver: DnsResolver) -> None:
+    def _build_dnscrypt_row(
+        self, server: dnscrypt_catalog.DnsCryptServer, active: bool = False,
+    ) -> Adw.ExpanderRow:
+        row = Adw.ExpanderRow()
+        row.set_title(server.label)
+        sub_bits = [server.provider, server.protocol]
+        if server.country:
+            sub_bits.append(server.country)
+        if active:
+            sub_bits.append("ATIVO")
+        row.set_subtitle(" · ".join(sub_bits))
+
+        # Apply button (com label diferente se ja ativo)
+        apply_btn = Gtk.Button(label="Em uso" if active else "Aplicar")
+        apply_btn.set_valign(Gtk.Align.CENTER)
+        if active:
+            apply_btn.add_css_class("flat")
+            apply_btn.set_sensitive(False)
+        else:
+            apply_btn.add_css_class("suggested-action")
+            apply_btn.connect("clicked", self._on_apply_dnscrypt_clicked, server)
+        row.add_suffix(apply_btn)
+
+        # Prefix badges
+        badges = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
+        badges.set_valign(Gtk.Align.CENTER)
+
+        if server.no_logs:
+            b = Gtk.Label(label="🔒 no-logs")
+            b.add_css_class("caption")
+            b.add_css_class("dim-label")
+            badges.append(b)
+
+        if not server.no_filter:
+            b = Gtk.Label(label="🛡 filtered")
+            b.add_css_class("caption")
+            b.add_css_class("dim-label")
+            badges.append(b)
+
+        if server.dnssec:
+            b = Gtk.Label(label="🔐 DNSSEC")
+            b.add_css_class("caption")
+            b.add_css_class("dim-label")
+            badges.append(b)
+
+        row.add_prefix(badges)
+
+        # Description (expanded)
+        desc_label = Gtk.Label()
+        desc_label.set_markup(_md_to_pango(server.description))
+        desc_label.set_wrap(True)
+        desc_label.set_xalign(0)
+        desc_label.set_selectable(True)
+        desc_label.set_margin_start(12)
+        desc_label.set_margin_end(12)
+        desc_label.set_margin_top(8)
+        desc_label.set_margin_bottom(12)
+        desc_row = Adw.PreferencesRow()
+        desc_row.set_child(desc_label)
+        desc_row.set_activatable(False)
+        row.add_row(desc_row)
+
+        # ID dnscrypt (server name no config)
+        id_row = Adw.ActionRow(title="ID dnscrypt")
+        id_row.add_css_class("property")
+        id_row.set_subtitle("Nome usado em server_names = [...] do .toml")
+        id_lbl = Gtk.Label(label=server.id)
+        id_lbl.add_css_class("monospace")
+        id_lbl.add_css_class("caption")
+        id_row.add_suffix(id_lbl)
+        row.add_row(id_row)
+
+        # Provider info
+        provider_row = Adw.ActionRow(title="Operador")
+        provider_row.add_css_class("property")
+        provider_lbl = Gtk.Label(
+            label=f"{server.provider}" + (f" ({server.country})" if server.country else "")
+        )
+        provider_lbl.add_css_class("monospace")
+        provider_lbl.add_css_class("caption")
+        provider_row.add_suffix(provider_lbl)
+        row.add_row(provider_row)
+
+        # Protocol
+        proto_row = Adw.ActionRow(title="Protocolo")
+        proto_row.add_css_class("property")
+        proto_lbl = Gtk.Label(label=server.protocol)
+        proto_lbl.add_css_class("monospace")
+        proto_lbl.add_css_class("caption")
+        proto_row.add_suffix(proto_lbl)
+        row.add_row(proto_row)
+
+        return row
+
+    # ============================================================
+    # Apply — Modo simples (systemd-resolved)
+    # ============================================================
+
+    def _on_apply_dot_clicked(self, _btn: Gtk.Button, resolver: DnsResolver) -> None:
         if self._running:
             return
 
@@ -192,7 +393,8 @@ class ResolversTab(Adw.Bin):
             body=(
                 f"Vai escrever /etc/systemd/resolved.conf com:\n"
                 f"  DNS = {' '.join(resolver.servers_v4)}\n"
-                f"  DNSOverTLS = {'yes' if self._dot_switch.get_active() and resolver.supports_dot else 'no'}\n\n"
+                f"  DNSOverTLS = "
+                f"{'yes' if self._dot_switch.get_active() and resolver.supports_dot else 'no'}\n\n"
                 "Backup do config atual sera salvo em "
                 "/etc/systemd/resolved.conf.vigia-backup (se nao existir).\n\n"
                 "systemd-resolved sera reiniciado."
@@ -202,10 +404,10 @@ class ResolversTab(Adw.Bin):
         dlg.add_response("apply", "Aplicar")
         dlg.set_response_appearance("apply", Adw.ResponseAppearance.SUGGESTED)
         dlg.set_default_response("cancel")
-        dlg.connect("response", self._on_apply_confirmed, resolver)
+        dlg.connect("response", self._on_apply_dot_confirmed, resolver)
         dlg.present(self.get_root())
 
-    def _on_apply_confirmed(
+    def _on_apply_dot_confirmed(
         self, _dlg, response: str, resolver: DnsResolver
     ) -> None:
         if response != "apply":
@@ -213,10 +415,10 @@ class ResolversTab(Adw.Bin):
         use_dot = self._dot_switch.get_active() and resolver.supports_dot
         self._running = True
         threading.Thread(
-            target=self._apply_worker, args=(resolver, use_dot), daemon=True
+            target=self._apply_dot_worker, args=(resolver, use_dot), daemon=True
         ).start()
 
-    def _apply_worker(self, resolver: DnsResolver, use_dot: bool) -> None:
+    def _apply_dot_worker(self, resolver: DnsResolver, use_dot: bool) -> None:
         try:
             ok, err = backend.set_global_dns_elevated(
                 servers=resolver.servers_v4,
@@ -224,9 +426,11 @@ class ResolversTab(Adw.Bin):
             )
         except Exception as e:  # pylint: disable=broad-except
             ok, err = False, f"Excecao: {e}"
-        GLib.idle_add(self._on_apply_done, ok, err, resolver)
+        GLib.idle_add(self._on_apply_dot_done, ok, err, resolver)
 
-    def _on_apply_done(self, ok: bool, err: str, resolver: DnsResolver) -> bool:
+    def _on_apply_dot_done(
+        self, ok: bool, err: str, resolver: DnsResolver
+    ) -> bool:
         self._running = False
         if not ok:
             show_error(self, f"Falha ao aplicar {resolver.name}", err)
@@ -237,4 +441,69 @@ class ResolversTab(Adw.Bin):
                 f"DNS configurado pra usar {' / '.join(resolver.servers_v4)}. "
                 "Va para a aba Status para verificar.",
             )
+        return False
+
+    # ============================================================
+    # Apply — Modo avancado (dnscrypt-proxy)
+    # ============================================================
+
+    def _on_apply_dnscrypt_clicked(
+        self, _btn: Gtk.Button, server: dnscrypt_catalog.DnsCryptServer,
+    ) -> None:
+        if self._running:
+            return
+
+        dlg = Adw.AlertDialog(
+            heading=f"Aplicar {server.label}?",
+            body=(
+                f"Vai editar /etc/dnscrypt-proxy/dnscrypt-proxy.toml:\n"
+                f"  server_names = ['{server.id}']\n\n"
+                f"Backup do .toml atual sera salvo em "
+                f"dnscrypt-proxy.toml.vigia-backup (se nao existir).\n\n"
+                f"dnscrypt-proxy sera reiniciado.\n\n"
+                f"<i>Operador</i>: {server.provider} ({server.country})\n"
+                f"<i>Protocolo</i>: {server.protocol}"
+            ),
+        )
+        dlg.add_response("cancel", "Cancelar")
+        dlg.add_response("apply", "Aplicar")
+        dlg.set_response_appearance("apply", Adw.ResponseAppearance.SUGGESTED)
+        dlg.set_default_response("cancel")
+        dlg.connect("response", self._on_apply_dnscrypt_confirmed, server)
+        dlg.present(self.get_root())
+
+    def _on_apply_dnscrypt_confirmed(
+        self, _dlg, response: str, server: dnscrypt_catalog.DnsCryptServer,
+    ) -> None:
+        if response != "apply":
+            return
+        self._running = True
+        threading.Thread(
+            target=self._apply_dnscrypt_worker, args=(server,), daemon=True
+        ).start()
+
+    def _apply_dnscrypt_worker(
+        self, server: dnscrypt_catalog.DnsCryptServer,
+    ) -> None:
+        try:
+            ok, err = dc.set_servers_blocking([server.id])
+        except Exception as e:  # pylint: disable=broad-except
+            ok, err = False, f"Excecao: {e}"
+        GLib.idle_add(self._on_apply_dnscrypt_done, ok, err, server)
+
+    def _on_apply_dnscrypt_done(
+        self, ok: bool, err: str, server: dnscrypt_catalog.DnsCryptServer,
+    ) -> bool:
+        self._running = False
+        if not ok:
+            show_error(self, f"Falha ao aplicar {server.label}", err)
+        else:
+            show_info(
+                self,
+                f"{server.label} ativo",
+                f"dnscrypt-proxy reconfigurado para usar '{server.id}'. "
+                "Va para a aba Status para verificar.",
+            )
+            # Refresh para atualizar marcador ATIVO
+            self.refresh()
         return False
