@@ -21,7 +21,7 @@ do sistema-base sem complicação.
 |---|---|---|---|
 | 1 | `bootstrap.sh` | bash | 🟡 Em desenvolvimento |
 | 2 | **[Vigia Hub](tools/vigia-hub/)** v0.5 | Python + GTK4 | 🟢 3 painéis (nav fina + sidebar categorizada + content), embedded mode |
-| 3 | **[Vigia Dashboard](tools/dashboard/)** v0.1 | Python + GTK4 + Cairo | 🟢 Sistema em tempo real (CPU/RAM/disco/rede/processos) — substitui htop/btop |
+| 3 | **[Vigia Dashboard](tools/dashboard/)** v0.2 | Python + GTK4 + Cairo | 🟢 Sistema em tempo real + per-process I/O + alertas (substitui htop/btop/iotop) |
 | 4 | **[Vigia Activity Log](tools/activity-log/)** v0.7 (core) + [GUI](tools/activity-log-gui/) v0.1 | Rust + Python | 🟢 audit + journald + fail2ban + correlations |
 | 5 | **[Vigia Privacy Controls](tools/privacy-controls/)** v0.3 | Python + GTK4 | 🟢 13 toggles user+system scope |
 | 6 | **[Vigia SELinux GUI](tools/selinux-gui/)** v0.2 | Python + GTK4 | 🟢 6 tabs + pt-BR + audit2allow |
@@ -39,9 +39,17 @@ do sistema-base sem complicação.
 | 18 | **[Vigia Firmware Analyzer](tools/firmware-analyzer/)** v0.1 | Python + GTK4 | 🟢 binwalk: signatures + extract + entropia |
 | 19 | **[Vigia Hash Tools](tools/hash-tools/)** v0.1.1 | Python + GTK4 | 🟢 SHA-256/512, baseline+diff |
 
-## Instalação rápida (quando bootstrap.sh estiver pronto)
+## Instalação rápida
 
-Em qualquer Fedora Silverblue (ou Kinoite/Bluefin/etc.) já instalado:
+**Via COPR** (specs RPM preparados em [`packaging/`](packaging/) — pendente de ativação):
+
+```bash
+sudo rpm-ostree copr enable andre28abr/vigia
+sudo rpm-ostree install vigia-suite   # metapackage instala todas as 18 tools
+sudo systemctl reboot
+```
+
+**Via bootstrap.sh** (em desenvolvimento):
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/andre28abr/VigiaOS/main/bootstrap.sh | bash
