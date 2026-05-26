@@ -12,6 +12,8 @@ gi.require_version("Adw", "1")
 from gi.repository import Adw, GLib, Gtk  # noqa: E402
 
 from .. import backend
+from .. import dnscrypt_backend as dc
+from .. import migration
 from .._resolvers_module import find_resolver_for_servers
 from ._helpers import make_clamp, show_error, show_info
 
@@ -112,6 +114,44 @@ class StatusTab(Adw.Bin):
         self._row_resolved.add_suffix(self._lbl_resolved)
         self._sys_group.add(self._row_resolved)
 
+        # ===== Modo avancado (v0.2): switch + info dnscrypt-proxy =====
+        self._adv_group = Adw.PreferencesGroup()
+        self._adv_group.set_margin_top(24)
+        self._adv_group.set_title("Modo avancado (v0.2)")
+        self._adv_group.set_description(
+            "Substitui systemd-resolved por dnscrypt-proxy. Habilita "
+            "DoH, blocklists locais, anonymized DNS e estatisticas. "
+            "Requer dnscrypt-proxy instalado."
+        )
+
+        # Switch row para alternar modo
+        self._adv_switch_row = Adw.SwitchRow()
+        self._adv_switch_row.set_title("Ativar modo avancado")
+        self._adv_switch_row.set_subtitle(
+            "Faz backup de resolved.conf e ativa dnscrypt-proxy em 127.0.0.1"
+        )
+        # Connect via handler_id para suprimir signal quando atualizamos
+        # programaticamente o estado do switch
+        self._adv_switch_handler = self._adv_switch_row.connect(
+            "notify::active", self._on_adv_switch_toggled
+        )
+        self._adv_group.add(self._adv_switch_row)
+
+        # Info dnscrypt-proxy
+        self._adv_status_row = Adw.ActionRow(title="dnscrypt-proxy")
+        self._adv_status_row.add_css_class("property")
+        self._lbl_adv_status = Gtk.Label(label="—")
+        self._lbl_adv_status.add_css_class("monospace")
+        self._adv_status_row.add_suffix(self._lbl_adv_status)
+        self._adv_group.add(self._adv_status_row)
+
+        self._adv_version_row = Adw.ActionRow(title="Versao")
+        self._adv_version_row.add_css_class("property")
+        self._lbl_adv_version = Gtk.Label(label="—")
+        self._lbl_adv_version.add_css_class("monospace")
+        self._adv_version_row.add_suffix(self._lbl_adv_version)
+        self._adv_group.add(self._adv_version_row)
+
         # Layout
         outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=20)
         outer.set_margin_top(0)
@@ -123,6 +163,7 @@ class StatusTab(Adw.Bin):
         outer.append(self._global_group)
         outer.append(self._ifaces_group)
         outer.append(self._sys_group)
+        outer.append(self._adv_group)
 
         scrolled = Gtk.ScrolledWindow()
         scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
@@ -144,9 +185,18 @@ class StatusTab(Adw.Bin):
             st = backend.get_status()
         except Exception:  # pylint: disable=broad-except
             st = backend.ResolvedStatus()
-        GLib.idle_add(self._apply, st)
+        # v0.2: tambem coleta status do dnscrypt-proxy
+        try:
+            dc_st = dc.get_status()
+        except Exception:  # pylint: disable=broad-except
+            dc_st = dc.DnsCryptStatus()
+        try:
+            mode = migration.get_current_mode()
+        except Exception:  # pylint: disable=broad-except
+            mode = "unknown"
+        GLib.idle_add(self._apply, st, dc_st, mode)
 
-    def _apply(self, st: backend.ResolvedStatus) -> bool:
+    def _apply(self, st: backend.ResolvedStatus, dc_st=None, mode: str = "unknown") -> bool:
         # Hero
         for cls in ("success", "warning", "error", "dim-label"):
             self._state_label.remove_css_class(cls)
@@ -269,6 +319,153 @@ class StatusTab(Adw.Bin):
                 self._ifaces_group.add(row)
                 self._iface_rows.append(row)
 
+        # ===== v0.2: dnscrypt-proxy info + switch state =====
+        if dc_st is not None:
+            self._update_advanced_section(dc_st, mode)
+
+        return False
+
+    def _update_advanced_section(self, dc_st, mode: str) -> None:
+        """Atualiza secao 'Modo avancado' com info do dnscrypt-proxy."""
+        # Suprime signal do switch enquanto setamos programaticamente
+        self._adv_switch_row.handler_block(self._adv_switch_handler)
+        try:
+            advanced_active = (mode == "advanced")
+            self._adv_switch_row.set_active(advanced_active)
+            # Desabilita switch se dnscrypt-proxy nao esta instalado
+            self._adv_switch_row.set_sensitive(dc_st.installed)
+            if not dc_st.installed:
+                self._adv_switch_row.set_subtitle(
+                    "dnscrypt-proxy nao instalado — instale via Vigia Tool Installer"
+                )
+            elif advanced_active:
+                self._adv_switch_row.set_subtitle(
+                    f"Ativo · {len(dc_st.server_names)} servers configurados"
+                )
+            else:
+                self._adv_switch_row.set_subtitle(
+                    "Faz backup de resolved.conf e ativa dnscrypt-proxy em 127.0.0.1"
+                )
+        finally:
+            self._adv_switch_row.handler_unblock(self._adv_switch_handler)
+
+        # dnscrypt-proxy status label
+        for cls in ("success", "warning", "error", "dim-label"):
+            self._lbl_adv_status.remove_css_class(cls)
+        if not dc_st.installed:
+            self._lbl_adv_status.set_label("nao instalado")
+            self._lbl_adv_status.add_css_class("dim-label")
+        elif dc_st.active:
+            self._lbl_adv_status.set_label("ativo")
+            self._lbl_adv_status.add_css_class("success")
+        else:
+            self._lbl_adv_status.set_label("inativo")
+            self._lbl_adv_status.add_css_class("warning")
+
+        # Versao
+        for cls in ("dim-label",):
+            self._lbl_adv_version.remove_css_class(cls)
+        if dc_st.version:
+            self._lbl_adv_version.set_label(dc_st.version)
+        else:
+            self._lbl_adv_version.set_label("—")
+            self._lbl_adv_version.add_css_class("dim-label")
+
+    # ============================================================
+    # v0.2: Switch de modo avancado
+    # ============================================================
+
+    def _on_adv_switch_toggled(self, switch_row: Adw.SwitchRow, _pspec) -> None:
+        """Handler do switch: confirma e dispara migration."""
+        if self._running:
+            return
+        new_state = switch_row.get_active()
+
+        # Confirma com dialog
+        if new_state:
+            heading = "Ativar modo avancado (dnscrypt-proxy)?"
+            body = (
+                "Esta acao:\n"
+                "• Faz backup de /etc/systemd/resolved.conf\n"
+                "• Desativa o systemd-resolved\n"
+                "• Ativa o dnscrypt-proxy em 127.0.0.1\n"
+                "• Aponta /etc/resolv.conf para 127.0.0.1\n\n"
+                "Voce pode reverter a qualquer momento desligando este switch. "
+                "Sera pedida senha admin (pkexec)."
+            )
+            response_label = "Ativar"
+            response_appearance = Adw.ResponseAppearance.SUGGESTED
+        else:
+            heading = "Desativar modo avancado?"
+            body = (
+                "Esta acao:\n"
+                "• Desativa o dnscrypt-proxy\n"
+                "• Restaura /etc/systemd/resolved.conf do backup\n"
+                "• Restaura /etc/resolv.conf\n"
+                "• Reativa o systemd-resolved\n\n"
+                "Sera pedida senha admin (pkexec)."
+            )
+            response_label = "Desativar"
+            response_appearance = Adw.ResponseAppearance.DESTRUCTIVE
+
+        dlg = Adw.AlertDialog(heading=heading, body=body)
+        dlg.add_response("cancel", "Cancelar")
+        dlg.add_response("confirm", response_label)
+        dlg.set_default_response("cancel")
+        dlg.set_response_appearance("confirm", response_appearance)
+        dlg.connect("response", self._on_adv_switch_response, new_state)
+        dlg.present(self.get_root())
+
+    def _on_adv_switch_response(self, _dlg, response: str, target_state: bool) -> None:
+        if response != "confirm":
+            # User cancelou — reverte o switch sem disparar signal de novo
+            self._adv_switch_row.handler_block(self._adv_switch_handler)
+            try:
+                self._adv_switch_row.set_active(not target_state)
+            finally:
+                self._adv_switch_row.handler_unblock(self._adv_switch_handler)
+            return
+
+        # Dispara migration em thread
+        self._running = True
+        self._adv_switch_row.set_sensitive(False)
+        threading.Thread(
+            target=self._adv_switch_worker, args=(target_state,), daemon=True,
+        ).start()
+
+    def _adv_switch_worker(self, target_state: bool) -> None:
+        if target_state:
+            ok, err = migration.activate_advanced_mode_blocking()
+        else:
+            ok, err = migration.deactivate_advanced_mode_blocking()
+        GLib.idle_add(self._on_adv_switch_done, ok, err, target_state)
+
+    def _on_adv_switch_done(self, ok: bool, err: str, target_state: bool) -> bool:
+        self._running = False
+        self._adv_switch_row.set_sensitive(True)
+
+        if not ok:
+            # Reverte o switch (operacao falhou)
+            self._adv_switch_row.handler_block(self._adv_switch_handler)
+            try:
+                self._adv_switch_row.set_active(not target_state)
+            finally:
+                self._adv_switch_row.handler_unblock(self._adv_switch_handler)
+            show_error(
+                self,
+                "Falha ao alterar modo",
+                err or "Operacao retornou erro desconhecido.",
+            )
+        else:
+            label = "ativado" if target_state else "desativado"
+            show_info(
+                self,
+                f"Modo avancado {label}",
+                "Operacao concluida. Pode levar alguns segundos para todas as "
+                "queries comecarem a passar pelo novo resolver.",
+            )
+            # Refresh imediato para reverificar estado
+            self.refresh()
         return False
 
     # ============================================================

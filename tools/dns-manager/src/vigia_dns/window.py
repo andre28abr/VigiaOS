@@ -1,4 +1,10 @@
-"""Janela principal — 3 tabs (Status + Provedores + Sobre)."""
+"""Janela principal — 5 tabs (v0.2: +Blocklists +Stats).
+
+Status + Provedores + Blocklists + Stats + Sobre.
+
+Blocklists e Stats so sao funcionais com modo avancado ativo
+(dnscrypt-proxy). Em modo simples, mostram banner explicativo.
+"""
 
 from __future__ import annotations
 
@@ -10,7 +16,7 @@ gi.require_version("Adw", "1")
 from gi.repository import Adw, Gtk  # noqa: E402
 
 from . import WRAPPED_PACKAGES
-from .tabs import AboutTab, ResolversTab, StatusTab
+from .tabs import AboutTab, BlocklistsTab, ResolversTab, StatsTab, StatusTab
 
 
 def _make_pkg_badges_bar() -> Gtk.Widget:
@@ -35,11 +41,15 @@ def _make_pkg_badges_bar() -> Gtk.Widget:
 def build_content() -> Gtk.Widget:
     status_tab = StatusTab()
     resolvers_tab = ResolversTab()
+    blocklists_tab = BlocklistsTab()
+    stats_tab = StatsTab()
     about_tab = AboutTab()
 
     stack = Adw.ViewStack()
     stack.add_titled_with_icon(status_tab, "status", "Status", "dialog-information-symbolic")
     stack.add_titled_with_icon(resolvers_tab, "resolvers", "Provedores", "view-list-symbolic")
+    stack.add_titled_with_icon(blocklists_tab, "blocklists", "Blocklists", "action-unavailable-symbolic")
+    stack.add_titled_with_icon(stats_tab, "stats", "Stats", "view-statistics-symbolic")
     stack.add_titled_with_icon(about_tab, "about", "Sobre", "help-about-symbolic")
 
     switcher = Adw.ViewSwitcher()
