@@ -4,7 +4,7 @@
 > contexto completo para retomar o desenvolvimento (humano ou IA) sem
 > precisar reler histórico de PRs ou conversas anteriores.
 >
-> Última atualização: 2026-05-26 (revisão 3: +Dashboard, polish UI completo)
+> Última atualização: 2026-05-26 (revisão 4: +Dashboard v0.2, vigia_common, COPR specs)
 
 ---
 
@@ -73,7 +73,10 @@ modo embedded.
 | 16 | **Network Scanner** | v0.1.0 | Python + GTK4 | 🟢 nmap GUI com 6 perfis pré-definidos |
 | 17 | **Firmware Analyzer** | v0.1.0 | Python + GTK4 | 🟢 binwalk: signatures + extract + entropia |
 | 18 | **Hash Tools** | v0.1.1 | Python + GTK4 | 🟢 SHA-256/512 + baseline+diff de diretório |
-| 19 | **Dashboard** | v0.1.0 | Python + GTK4 + Cairo | 🟢 Sistema em tempo real (substitui htop/btop) |
+| 19 | **Dashboard** | v0.2.0 | Python + GTK4 + Cairo | 🟢 Sistema em tempo real + per-process I/O + alertas |
+
+**Lib interna** (não conta como tool):
+- **vigia-common** v0.1.0 — helpers compartilhados (make_clamp, show_error/info, md_to_pango, badges, constantes de layout). Reduz duplicação de ~600 linhas em 16 `_helpers.py`. Tools migradas via re-export retro-compatível.
 
 ---
 
@@ -1349,6 +1352,56 @@ Hub registry: 15 → 16 entries. Dashboard é o **primeiro** da categoria
 "monitoramento" (porta de entrada visual). Tool Installer ganha nota
 em htop/iotop indicando que Dashboard cobre o mesmo escopo.
 
+### 2026-05-26 — Dashboard v0.2 + vigia_common + COPR
+
+3 grandes entregas numa sessão:
+
+**1. Dashboard v0.2** (1 commit):
+- `ProcessInfo` ganha: `read_mbs`, `write_mbs`, `n_tcp_established`,
+  `n_tcp_listen`, `n_udp`
+- Backend lê `/proc/<pid>/io` para per-process I/O com cache
+  `_PROC_IO_PREV` (delta vs leitura anterior → MB/s)
+- Backend mapeia socket inodes para PIDs via parse de
+  `/proc/net/tcp{,6}/udp{,6}` + leitura de `/proc/<pid>/fd/*`
+- Sort novo: "I/O (read+write)" e "Conexoes ativas"
+- Nova tab "Alertas" com módulo `alerts.py`: `AlertRule`,
+  `AlertManager`, persistência em `~/.config/vigia/dashboard-alerts.json`
+  (mode 0600), notificação via `Gio.Notification`
+- 4 regras default (todas opt-in): CPU>95%, RAM>90%,
+  temp>85°C, disco/>95%
+- Dashboard: 4 → 5 tabs
+
+**2. vigia_common package** (1 commit):
+- Nova lib interna em `tools/vigia-common/` (`pip install -e .`)
+- Módulos: `helpers.py`, `markdown.py`, `badges.py`, constantes
+  de layout em `__init__.py`
+- 16 `_helpers.py` migrados: cada um vira arquivo fino que
+  re-exporta de vigia_common + preserva constantes locais
+  (CONTENT_MAX_WIDTH varia por tool: 720-1000)
+- Funções específicas (severity_css, escape_markup, risk_css)
+  ficam preservadas localmente
+- `vigia_hub/markdown.py` esvaziado para re-export
+- 18 `pyproject.toml` ganham `dependencies = ["vigia-common"]`
+- Implementação via 2 scripts: `refactor_helpers.py` (regex +
+  AST-light) + `add_dependency.py`
+- **Retro-compatibilidade total**: código `from .._helpers import
+  make_clamp` continua funcionando sem mudanças
+
+**3. COPR packaging** (1 commit):
+- 20 spec files RPM em `packaging/`:
+  - `vigia-suite.spec` (metapackage — `Requires` os 19 pacotes)
+  - `vigia-common.spec` (lib interna noarch)
+  - `vigia-activity-log.spec` (Rust core, pre-existente)
+  - 17 spec files para tools Python (gerados via script)
+- `Makefile` com targets: srpm-all, rpm-all, copr-push, copr-setup
+- `README.md` completo: setup COPR, build local, webhook SCM,
+  bump de versão, detalhes técnicos
+- **Status**: pronto para ativação, falta apenas criar conta COPR
+  e configurar webhook (passos manuais documentados)
+
+Total da sessão: 12 commits, ~3500 linhas adicionadas, 18 tools
+afetadas por algum refator.
+
 ---
 
 ## 10. Roadmap
@@ -1633,6 +1686,31 @@ upstream mas o **kernel direto**. `/proc/stat`, `/meminfo`, `/diskstats`,
 sem subprocess. Performance: ~1ms para snapshot completo do sistema.
 Trade-off único: parsing manual de cada formato (mas formatos são
 documentados em `man 5 proc`).
+
+### 11.20 Refator de duplicação só funciona com retro-compat
+A migração para `vigia_common` (16 tools, ~600 linhas duplicadas)
+funcionou porque cada `_helpers.py` foi preservado como **fachada de
+re-export**, não removido. Código existente que faz
+`from .._helpers import make_clamp` continuou funcionando inalterado.
+
+Se eu tivesse forçado migração breaking (remover `_helpers.py`,
+trocar imports em todas as tabs), o blast radius seria maior:
+~50 arquivos com mudanças de import, possibilidade de breakage
+em algum lugar não testado. A abordagem de fachada custou ~25 linhas
+por tool (16 × 25 = 400 linhas), mas isolou o blast radius ao
+próprio `_helpers.py`. Lição: refatores ortogonais à API pública
+têm que respeitar a fronteira existente.
+
+### 11.21 RPM spec generation via script é robusto
+17 specs Python gerados via `/tmp/generate_specs.py` com template +
+dataclass. Mais resiliente que escrever manualmente (humano esquece
+detalhe em 17º arquivo). Template tem ~90 linhas; cada tool adiciona
+~10 linhas de config (nome, versão, deps extras, descrição).
+
+Risk: template muda → regerar todos. Mitigação: comitar o script junto
+com os specs, manter idempotente. Pré-condição: estrutura dos specs
+ser uniforme (todas tools Python seguem padrão pip wheel + .desktop +
+.svg + post hooks).
 
 ---
 
