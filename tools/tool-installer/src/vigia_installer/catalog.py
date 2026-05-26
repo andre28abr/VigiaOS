@@ -255,11 +255,16 @@ CATALOG: list[CatalogEntry] = [
     CatalogEntry(
         package="dnscrypt-proxy",
         name="dnscrypt-proxy",
-        description="DNS over HTTPS/TLS local.",
+        description="DNS over HTTPS/TLS local (gerenciado pelo Vigia DNS Manager v0.2+).",
         why=(
             "**Encripta as queries DNS** que normalmente vao em texto puro. "
-            "Roda como servico local que substitui o resolver default. "
-            "O Vigia DNS Manager (futuro) vai gerenciar este servico."
+            "Roda como servico local que substitui o resolver default — "
+            "mais poderoso que o `systemd-resolved` (DoH + blocklists + "
+            "anonymized DNS + stats).\n\n"
+            "*Sera gerenciado nativamente pelo **Vigia DNS Manager v0.2+** "
+            "como modo avancado opt-in (switch no topo da tool). Por agora, "
+            "se instalar, a configuracao via UI ainda nao esta disponivel — "
+            "edite manual em `/etc/dnscrypt-proxy/dnscrypt-proxy.toml`.*"
         ),
         category="privacidade",
         binary="dnscrypt-proxy",
