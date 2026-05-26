@@ -23,7 +23,7 @@ classifiers = [
 ]
 # PyGObject vem do sistema (python3-gobject RPM); nao listamos como pip dep
 # para evitar conflito.
-dependencies = []
+dependencies = ["vigia-common"]
 
 [project.scripts]
 vigia-privacy = "vigia_privacy.__main__:main"

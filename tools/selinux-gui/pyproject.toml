@@ -21,7 +21,7 @@ classifiers = [
     "Programming Language :: Python :: 3 :: Only",
     "Topic :: Security",
 ]
-dependencies = []
+dependencies = ["vigia-common"]
 
 [project.scripts]
 vigia-selinux = "vigia_selinux.__main__:main"

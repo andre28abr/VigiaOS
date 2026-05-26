@@ -20,7 +20,7 @@ classifiers = [
     "Operating System :: POSIX :: Linux",
     "Programming Language :: Python :: 3 :: Only",
 ]
-dependencies = []
+dependencies = ["vigia-common"]
 
 [project.scripts]
 vigia-hub = "vigia_hub.__main__:main"

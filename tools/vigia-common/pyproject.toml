@@ -3,26 +3,23 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "vigia-integrity"
-version = "0.1.3"
-description = "Monitor de integridade de arquivos (wrapper AIDE) — parte da Vigia Suite"
+name = "vigia-common"
+version = "0.1.0"
+description = "Helpers compartilhados entre as ferramentas da Vigia Suite"
 license = { text = "Apache-2.0" }
 readme = "README.md"
 requires-python = ">=3.11"
 authors = [{ name = "André Augusto Azarias de Souza" }]
-keywords = ["aide", "integrity", "tripwire", "security", "vigia", "gnome", "gtk4"]
+keywords = ["vigia", "gnome", "gtk4", "helpers"]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Environment :: X11 Applications :: GTK",
     "License :: OSI Approved :: Apache Software License",
     "Operating System :: POSIX :: Linux",
     "Programming Language :: Python :: 3 :: Only",
-    "Topic :: Security",
+    "Topic :: Software Development :: Libraries",
 ]
-dependencies = ["vigia-common"]
-
-[project.scripts]
-vigia-integrity = "vigia_integrity.__main__:main"
+dependencies = []
 
 [tool.setuptools.packages.find]
 where = ["src"]
