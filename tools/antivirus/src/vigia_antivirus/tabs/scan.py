@@ -141,6 +141,7 @@ class ScanTab(Adw.Bin):
         # Findings group
         # ------------------------------------------------------------
         self._findings_group = Adw.PreferencesGroup()
+        self._findings_group.set_margin_top(24)
         self._findings_group.set_title("Findings")
         self._findings_group.set_description(
             "Arquivos suspeitos detectados durante o scan"

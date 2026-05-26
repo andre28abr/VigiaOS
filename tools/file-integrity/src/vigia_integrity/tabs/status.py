@@ -91,6 +91,7 @@ class StatusTab(Adw.Bin):
 
         # ---- Baseline info ---- #
         self._baseline_group = Adw.PreferencesGroup()
+        self._baseline_group.set_margin_top(24)
         self._baseline_group.set_title("Baseline")
 
         self._row_baseline_age = Adw.ActionRow(title="Criado")
@@ -102,6 +103,7 @@ class StatusTab(Adw.Bin):
 
         # ---- Profile (perfil AIDE ativo: sistema padrao ou Silverblue Vigia) ---- #
         self._profile_group = Adw.PreferencesGroup()
+        self._profile_group.set_margin_top(24)
         self._profile_group.set_title("Perfil AIDE")
         self._profile_group.set_description(
             "Em Silverblue, /usr e' OSTree imutavel — o perfil Vigia exclui "
@@ -125,6 +127,7 @@ class StatusTab(Adw.Bin):
 
         # ---- Actions ---- #
         self._actions_group = Adw.PreferencesGroup()
+        self._actions_group.set_margin_top(24)
         self._actions_group.set_title("Acoes")
 
         # Check

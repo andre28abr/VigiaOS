@@ -66,6 +66,7 @@ class StatusTab(Adw.Bin):
 
         # System info group
         self._sys_group = Adw.PreferencesGroup()
+        self._sys_group.set_margin_top(24)
         self._sys_group.set_title("Sistema")
         self._wg_row = Adw.ActionRow(title="WireGuard instalado")
         self._wg_row.add_css_class("property")
@@ -77,9 +78,9 @@ class StatusTab(Adw.Bin):
         # Layout
         outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=20)
         outer.set_margin_top(0)
-        outer.set_margin_bottom(28)
-        outer.set_margin_start(20)
-        outer.set_margin_end(20)
+        outer.set_margin_bottom(32)
+        outer.set_margin_start(28)
+        outer.set_margin_end(28)
         outer.append(self._hero)
         outer.append(action_box)
         outer.append(self._ifaces_group)

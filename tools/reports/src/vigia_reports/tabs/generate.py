@@ -55,6 +55,7 @@ class GenerateTab(Adw.Bin):
 
         # ---- Periodo group ---- #
         period_group = Adw.PreferencesGroup()
+        period_group.set_margin_top(24)
         period_group.set_title("Periodo")
         period_group.set_description("Janela de tempo a consolidar.")
 
@@ -66,6 +67,7 @@ class GenerateTab(Adw.Bin):
 
         # ---- Coleta group ---- #
         collect_group = Adw.PreferencesGroup()
+        collect_group.set_margin_top(24)
         collect_group.set_title("Coleta")
         collect_group.set_description(
             "Modo admin usa pkexec para acessar journal do sistema e historico btmp "
@@ -81,6 +83,7 @@ class GenerateTab(Adw.Bin):
 
         # ---- Action group ---- #
         action_group = Adw.PreferencesGroup()
+        action_group.set_margin_top(24)
         action_row = Adw.ActionRow(title="Gerar relatorio")
         action_row.set_subtitle("HTML sera salvo em ~/Documents/VigiaReports/")
         self._generate_btn = Gtk.Button(label="Gerar")

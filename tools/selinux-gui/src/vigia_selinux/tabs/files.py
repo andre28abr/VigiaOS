@@ -37,6 +37,7 @@ class FilesTab(Gtk.Box):
 
         # Input + botoes
         form_group = Adw.PreferencesGroup()
+        form_group.set_margin_top(24)
         form_group.set_title("Caminho a restaurar")
 
         self._path_row = Adw.EntryRow()
@@ -69,6 +70,7 @@ class FilesTab(Gtk.Box):
 
         # Output area
         out_group = Adw.PreferencesGroup()
+        out_group.set_margin_top(24)
         out_group.set_title("Saida do comando")
         out_scroll = Gtk.ScrolledWindow()
         out_scroll.set_vexpand(True)

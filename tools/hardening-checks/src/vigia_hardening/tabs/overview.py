@@ -117,6 +117,7 @@ class OverviewTab(Adw.Bin):
 
         # ---- Action group ---- #
         self._action_group = Adw.PreferencesGroup()
+        self._action_group.set_margin_top(24)
         self._action_group.set_title("Auditoria")
         self._action_group.set_description(
             "Lynis examina ~250 controles de seguranca (kernel, boot, "
