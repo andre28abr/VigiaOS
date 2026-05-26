@@ -1467,10 +1467,47 @@ afetadas por algum refator.
 - Stats: bytes in/out por sessão
 - Suporte OpenVPN (atualmente só WireGuard)
 
-**DNS Manager v0.2+**:
-- Blocklists locais (Pi-hole-like)
-- Stats: queries blocked/answered
-- DNSSEC validation toggle
+**DNS Manager v0.2+** — Modo avançado opt-in via `dnscrypt-proxy`:
+
+A v0.1 wrappa apenas `systemd-resolved` (DoT, 9 providers curados). A
+v0.2 adiciona um **switch no topo** para alternar entre dois backends:
+
+- **Modo simples** (default, atual): `systemd-resolved`. Ideal para user
+  casual. DoT + providers pré-curados. Sem blocklists, sem stats.
+- **Modo avançado** (opt-in): `dnscrypt-proxy`. Substitui o resolver
+  default em `127.0.0.1:53`. Mais features, mais complexo.
+
+Features do modo avançado (somente `dnscrypt-proxy` cobre):
+
+- **DoH** (DNS-over-HTTPS, porta 443) — indistinguível de HTTPS normal,
+  passa por censura/inspecao de rede. systemd-resolved só faz DoT.
+- **DNSCrypt** (protocolo próprio) — alternativa madura ao DoT/DoH
+- **Blocklists locais** (Pi-hole-like): formato `.txt` linha-por-linha
+  com domínios bloqueados (`doubleclick.net`, `googletagmanager.com`,
+  etc.). Util para escritório que quer **bloquear tracking corporate**
+  sem rodar Pi-hole em hardware separado.
+- **Anonymized DNS**: relay servers entre user e resolver — esconde o
+  IP do user do resolver final (~Tor-light para DNS). Util para LGPD-
+  paranoia.
+- **Stats**: queries answered / blocked / cached (últimas 24h) com
+  histórico por domínio. UI estilo Pi-hole dashboard mini.
+- **DNSSEC validation toggle** explícito (default ON).
+
+Implementação:
+- Backend novo `dnscrypt_backend.py` paralelo ao `backend.py` atual
+- UI condicional: tabs `Status`, `Provedores`, `Sobre` se adaptam ao
+  modo ativo (modo avançado adiciona tabs `Blocklists` e `Stats`)
+- Migração sem perda: backup do `/etc/systemd/resolved.conf` antes
+  de ativar dnscrypt; rollback com 1 click
+- Detecção automática: se `dnscrypt-proxy` não está instalado, modo
+  avançado fica desabilitado com tooltip "instalar via Vigia Tool
+  Installer ou `rpm-ostree install dnscrypt-proxy`"
+
+Notas:
+- `dnscrypt-proxy` foi REMOVIDO do catálogo do Tool Installer (estava
+  em "privacidade") porque será **gerenciado pelo DNS Manager v0.2+**.
+  Mesmo padrão que `htop`/`iotop` que ganharam nota "cobertos pelo
+  Dashboard" — evita duplicação de UX.
 
 **Capabilities Inspector v0.2+**:
 - Modificação de capabilities (`setcap`) com confirmação forte
