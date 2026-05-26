@@ -65,19 +65,16 @@ class BaselineTab(Adw.Bin):
         algo_row.add_suffix(self._create_algo)
         create_group.add(algo_row)
 
-        # Create action
-        create_btn_row = Adw.ActionRow()
+        # Create action — botao FORA do card pra ter espaco proprio
         create_btn_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
         create_btn_box.set_halign(Gtk.Align.END)
+        create_btn_box.set_margin_top(16)
+        self._create_spinner = Gtk.Spinner()
+        create_btn_box.append(self._create_spinner)
         self._create_btn = Gtk.Button(label="Criar baseline")
         self._create_btn.add_css_class("suggested-action")
         self._create_btn.connect("clicked", lambda _b: self._start_create())
         create_btn_box.append(self._create_btn)
-        self._create_spinner = Gtk.Spinner()
-        create_btn_box.append(self._create_spinner)
-        create_btn_row.set_child(create_btn_box)
-        create_btn_row.set_activatable(False)
-        create_group.add(create_btn_row)
 
         self._create_status = Gtk.Label(label="")
         self._create_status.add_css_class("dim-label")
@@ -89,7 +86,7 @@ class BaselineTab(Adw.Bin):
 
         # Compare group
         compare_group = Adw.PreferencesGroup()
-        compare_group.set_margin_top(24)
+        compare_group.set_margin_top(28)
         compare_group.set_title("Comparar contra baseline")
 
         self._baseline_entry = Gtk.Entry()
@@ -97,18 +94,16 @@ class BaselineTab(Adw.Bin):
         self._baseline_entry.set_hexpand(True)
         compare_group.add(make_file_picker_row("Baseline file", self._baseline_entry))
 
-        cmp_btn_row = Adw.ActionRow()
+        # Compare action — botao FORA do card
         cmp_btn_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
         cmp_btn_box.set_halign(Gtk.Align.END)
+        cmp_btn_box.set_margin_top(16)
+        self._compare_spinner = Gtk.Spinner()
+        cmp_btn_box.append(self._compare_spinner)
         self._compare_btn = Gtk.Button(label="Comparar")
         self._compare_btn.add_css_class("suggested-action")
         self._compare_btn.connect("clicked", lambda _b: self._start_compare())
         cmp_btn_box.append(self._compare_btn)
-        self._compare_spinner = Gtk.Spinner()
-        cmp_btn_box.append(self._compare_spinner)
-        cmp_btn_row.set_child(cmp_btn_box)
-        cmp_btn_row.set_activatable(False)
-        compare_group.add(cmp_btn_row)
 
         # Compare results
         self._compare_status = Gtk.Label(label="")
@@ -120,14 +115,14 @@ class BaselineTab(Adw.Bin):
         self._compare_status.set_margin_bottom(4)
 
         self._diff_group = Adw.PreferencesGroup()
-        self._diff_group.set_margin_top(24)
+        self._diff_group.set_margin_top(28)
         self._diff_group.set_title("Diferencas detectadas")
         self._diff_rows: list = []
         self._render_diff()
 
         # Available baselines
         list_group = Adw.PreferencesGroup()
-        list_group.set_margin_top(24)
+        list_group.set_margin_top(28)
         list_group.set_title("Baselines disponiveis")
         list_group.set_description(
             "Baselines criados pelo Vigia, em ~/.local/share/vigia-hash/."
@@ -135,15 +130,13 @@ class BaselineTab(Adw.Bin):
         self._list_group = list_group
         self._list_rows: list = []
 
-        list_btn_row = Adw.ActionRow()
-        list_btn_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        list_btn_box.set_halign(Gtk.Align.END)
+        # Refresh list action — botao FORA do card
+        refresh_btn_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        refresh_btn_box.set_halign(Gtk.Align.END)
+        refresh_btn_box.set_margin_top(16)
         refresh_btn = Gtk.Button(label="Recarregar lista")
         refresh_btn.connect("clicked", lambda _b: self._refresh_baselines())
-        list_btn_box.append(refresh_btn)
-        list_btn_row.set_child(list_btn_box)
-        list_btn_row.set_activatable(False)
-        list_group.add(list_btn_row)
+        refresh_btn_box.append(refresh_btn)
 
         # Layout
         outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
@@ -154,11 +147,14 @@ class BaselineTab(Adw.Bin):
         outer.append(header_lbl)
         outer.append(header_desc)
         outer.append(create_group)
+        outer.append(create_btn_box)
         outer.append(self._create_status)
         outer.append(compare_group)
+        outer.append(cmp_btn_box)
         outer.append(self._compare_status)
         outer.append(self._diff_group)
         outer.append(list_group)
+        outer.append(refresh_btn_box)
 
         scrolled = Gtk.ScrolledWindow()
         scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
