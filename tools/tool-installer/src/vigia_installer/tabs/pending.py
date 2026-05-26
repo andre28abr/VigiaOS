@@ -46,7 +46,6 @@ class PendingTab(Adw.Bin):
 
         self._reboot_btn = Gtk.Button(label="Reiniciar agora")
         self._reboot_btn.add_css_class("suggested-action")
-        self._reboot_btn.add_css_class("pill")
         self._reboot_btn.connect("clicked", self._on_reboot_clicked)
         action_box.append(self._reboot_btn)
 

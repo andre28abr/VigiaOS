@@ -108,7 +108,6 @@ class HashTab(Adw.Bin):
         copy_box.set_margin_top(6)
         copy_box.set_margin_bottom(6)
         self._copy_btn = Gtk.Button(label="Copiar")
-        self._copy_btn.add_css_class("pill")
         self._copy_btn.set_sensitive(False)
         self._copy_btn.connect("clicked", lambda _b: self._do_copy())
         copy_box.append(self._copy_btn)

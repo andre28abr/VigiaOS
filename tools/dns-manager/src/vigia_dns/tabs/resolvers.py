@@ -121,7 +121,6 @@ class ResolversTab(Adw.Bin):
         # Apply button
         apply_btn = Gtk.Button(label="Aplicar")
         apply_btn.set_valign(Gtk.Align.CENTER)
-        apply_btn.add_css_class("pill")
         apply_btn.add_css_class("suggested-action")
         apply_btn.connect("clicked", self._on_apply_clicked, resolver)
         row.add_suffix(apply_btn)

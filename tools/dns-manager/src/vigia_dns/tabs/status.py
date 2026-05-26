@@ -51,17 +51,14 @@ class StatusTab(Adw.Bin):
         action_box.set_margin_bottom(20)
 
         self._refresh_btn = Gtk.Button(label="Atualizar")
-        self._refresh_btn.add_css_class("pill")
         self._refresh_btn.connect("clicked", lambda _b: self.refresh())
         action_box.append(self._refresh_btn)
 
         self._flush_btn = Gtk.Button(label="Limpar cache DNS")
-        self._flush_btn.add_css_class("pill")
         self._flush_btn.connect("clicked", self._on_flush_clicked)
         action_box.append(self._flush_btn)
 
         self._restore_btn = Gtk.Button(label="Restaurar padrao")
-        self._restore_btn.add_css_class("pill")
         self._restore_btn.add_css_class("destructive-action")
         self._restore_btn.set_tooltip_text(
             "Restaura /etc/systemd/resolved.conf do backup (se houver)"

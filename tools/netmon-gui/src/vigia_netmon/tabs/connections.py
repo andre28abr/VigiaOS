@@ -64,7 +64,6 @@ class ConnectionsTab(Gtk.Box):
 
         # Refresh now button
         self._refresh_btn = Gtk.Button(label="Atualizar")
-        self._refresh_btn.add_css_class("pill")
         self._refresh_btn.connect("clicked", lambda _b: self._refresh())
         toolbar.append(self._refresh_btn)
 

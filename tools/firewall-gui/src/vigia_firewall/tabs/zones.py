@@ -53,7 +53,7 @@ class ZonesTab(Gtk.Box):
         self._add_svc_row.set_title("Adicionar service")
         self._add_svc_btn = Gtk.Button(label="+ Adicionar")
         self._add_svc_btn.set_valign(Gtk.Align.CENTER)
-        self._add_svc_btn.add_css_class("pill")
+        self._add_svc_btn.add_css_class("suggested-action")
         self._add_svc_btn.connect("clicked", lambda _b: self._show_add_service_dialog())
         self._add_svc_row.add_suffix(self._add_svc_btn)
         self._services_group.add(self._add_svc_row)
@@ -72,7 +72,7 @@ class ZonesTab(Gtk.Box):
         self._add_port_row.set_title("Adicionar porta")
         self._add_port_btn = Gtk.Button(label="+ Adicionar")
         self._add_port_btn.set_valign(Gtk.Align.CENTER)
-        self._add_port_btn.add_css_class("pill")
+        self._add_port_btn.add_css_class("suggested-action")
         self._add_port_btn.connect("clicked", lambda _b: self._show_add_port_dialog())
         self._add_port_row.add_suffix(self._add_port_btn)
         self._ports_group.add(self._add_port_row)
@@ -151,7 +151,6 @@ class ZonesTab(Gtk.Box):
                 row.set_title(svc)
                 btn = Gtk.Button(label="Remover")
                 btn.add_css_class("destructive-action")
-                btn.add_css_class("pill")
                 btn.set_valign(Gtk.Align.CENTER)
                 btn.connect("clicked", lambda _b, s=svc: self._remove_service(s))
                 row.add_suffix(btn)
@@ -175,7 +174,6 @@ class ZonesTab(Gtk.Box):
                 row.set_subtitle(f"Porta {p.port} via {p.protocol.upper()}")
                 btn = Gtk.Button(label="Remover")
                 btn.add_css_class("destructive-action")
-                btn.add_css_class("pill")
                 btn.set_valign(Gtk.Align.CENTER)
                 btn.connect(
                     "clicked",
