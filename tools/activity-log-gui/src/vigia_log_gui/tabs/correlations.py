@@ -43,7 +43,7 @@ class CorrelationsTab(Adw.Bin):
         self._header_desc.set_wrap(True)
         self._header_desc.set_xalign(0)
         self._header_desc.set_use_markup(False)
-        self._header_desc.set_margin_bottom(16)
+        self._header_desc.set_margin_bottom(24)
 
         # List
         self._list = Gtk.ListBox()
@@ -63,10 +63,10 @@ class CorrelationsTab(Adw.Bin):
 
         # Layout
         outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-        outer.set_margin_top(20)
-        outer.set_margin_bottom(20)
-        outer.set_margin_start(20)
-        outer.set_margin_end(20)
+        outer.set_margin_top(24)
+        outer.set_margin_bottom(32)
+        outer.set_margin_start(28)
+        outer.set_margin_end(28)
         outer.append(self._header_label)
         outer.append(self._header_desc)
         outer.append(self._stack)

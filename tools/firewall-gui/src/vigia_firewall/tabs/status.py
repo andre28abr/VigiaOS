@@ -120,14 +120,14 @@ class StatusTab(Adw.PreferencesPage):
         GLib.idle_add(self._apply_status, snap)
 
     def _apply_status(self, snap: _StatusSnapshot) -> bool:
-        # Daemon label
-        self._running_label.set_text("running" if snap.running else "stopped")
+        # Daemon label (pt-BR — consistente com outras tools)
+        self._running_label.set_text("ativo" if snap.running else "parado")
         for css in ("success", "error"):
             self._running_label.remove_css_class(css)
         self._running_label.add_css_class("success" if snap.running else "error")
 
-        # Toggle btn
-        self._toggle_btn.set_label("Stop" if snap.running else "Start")
+        # Toggle btn (pt-BR)
+        self._toggle_btn.set_label("Parar" if snap.running else "Iniciar")
         for css in ("destructive-action", "suggested-action"):
             self._toggle_btn.remove_css_class(css)
         self._toggle_btn.add_css_class("destructive-action" if snap.running else "suggested-action")

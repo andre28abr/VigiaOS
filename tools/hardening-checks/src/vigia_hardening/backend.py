@@ -9,6 +9,7 @@ via `pkexec` para abrir dialog polkit nativo.
 
 from __future__ import annotations
 
+import os
 import shutil
 import subprocess
 import time
@@ -225,13 +226,24 @@ def run_audit_blocking() -> tuple[bool, str]:
     # o backend (rodando como user) nao consegue ler o report — parser
     # silenciosamente retorna vazio (UI mostra "Nao avaliado").
     #
-    # Solucao: bash -c que roda Lynis + chmod o report file (+ o .log)
-    # antes de retornar. Mesmo pkexec dialog cobre as duas operacoes.
-    script = """set +e
+    # LGPD HARDENING: usar chown root:$USER + chmod 640 em vez de 644.
+    # 644 deixaria report world-readable (outros usuarios do sistema
+    # podem mapear hardening weaknesses). 640 + grupo = apenas root e
+    # o user que iniciou a auditoria leem.
+    #
+    # Tambem copia para ~/.local/share/vigia-hardening/ para acesso
+    # mais conveniente (sem precisar de chmod do /var/log/).
+    target_user = os.environ.get("USER") or os.environ.get("LOGNAME") or ""
+    script = f"""set +e
 lynis audit system --quiet --no-colors
 rc=$?
-chmod 644 /var/log/lynis-report.dat 2>/dev/null || true
-chmod 644 /var/log/lynis.log 2>/dev/null || true
+# LGPD: 640 + chown para o user (nao world-readable)
+if [ -n "{target_user}" ]; then
+    chown root:"{target_user}" /var/log/lynis-report.dat 2>/dev/null || true
+    chown root:"{target_user}" /var/log/lynis.log 2>/dev/null || true
+fi
+chmod 640 /var/log/lynis-report.dat 2>/dev/null || true
+chmod 640 /var/log/lynis.log 2>/dev/null || true
 exit $rc
 """
     try:

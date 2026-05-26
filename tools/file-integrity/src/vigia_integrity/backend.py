@@ -13,6 +13,7 @@ Todas as operacoes que mexem em /var/lib/aide/ precisam de root → via pkexec.
 from __future__ import annotations
 
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -130,17 +131,34 @@ def aide_installed() -> bool:
 
 
 def baseline_exists() -> bool:
-    """Baseline do perfil ATIVO existe?"""
-    return active_db_path().is_file()
+    """Baseline do perfil ATIVO existe?
+
+    LGPD HARDENING: nao tenta stat /var/lib/aide/ (dir e' 0700 — root only).
+    Usa cache em STATE_FILE como proxy. Atualizado em init/update via
+    `save_state({'baseline_exists': True})`.
+    """
+    state = load_state()
+    if state.get("baseline_exists") is True:
+        return True
+    # Fallback: tenta stat (funciona se /var/lib/aide ja foi chmodded
+    # antes do hardening, ou se rodando como root)
+    try:
+        return active_db_path().is_file()
+    except (OSError, PermissionError):
+        return False
 
 
 def baseline_age_seconds() -> int | None:
+    """Idade do baseline em segundos. Usa STATE_FILE timestamp como proxy."""
+    state = load_state()
+    ts = state.get("baseline_mtime")
+    if isinstance(ts, (int, float)):
+        return int(time.time() - ts)
+    # Fallback: stat direto (precisa permissao)
     db = active_db_path()
-    if not db.is_file():
-        return None
     try:
         return int(time.time() - db.stat().st_mtime)
-    except OSError:
+    except (OSError, PermissionError):
         return None
 
 
@@ -179,9 +197,20 @@ def load_state() -> dict:
 
 
 def save_state(state: dict) -> None:
+    """Salva state em ~/.config/vigia/file-integrity.json com mode 0600.
+
+    LGPD HARDENING: state file contem timestamps de check, contagens de
+    diffs. Em sistema multi-user, outros usuarios poderiam inferir
+    atividade de baseline checking. Forca 0600.
+    """
     STATE_DIR.mkdir(parents=True, exist_ok=True)
     try:
+        os.chmod(STATE_DIR, 0o700)
+    except OSError:
+        pass
+    try:
         STATE_FILE.write_text(json.dumps(state, indent=2, ensure_ascii=False), encoding="utf-8")
+        os.chmod(STATE_FILE, 0o600)
     except OSError:
         pass
 
@@ -380,7 +409,8 @@ rm -f {db_new}
 aide -c {conf} --init
 if [ -f {db_new} ]; then
     mv -f {db_new} {db}
-    chmod 755 /var/lib/aide/ 2>/dev/null || true
+    # NOTA: NAO usamos chmod 755 em /var/lib/aide/ (LGPD: outros users
+    # poderiam mapear baseline existence). Status cacheado em STATE_FILE.
 else
     echo "ERRO: aide --init nao gerou {db_new}" >&2
     exit 1
@@ -403,6 +433,14 @@ fi
     if result.returncode != 0:
         stderr = (result.stderr or "").strip()
         return False, f"aide --init falhou (codigo {result.returncode}):\n\n{stderr[:500]}"
+
+    # LGPD: marca em STATE_FILE que baseline existe (em vez de chmod 755
+    # /var/lib/aide para permitir stat — vazaria info para outros users).
+    state = load_state()
+    state["baseline_exists"] = True
+    state["baseline_mtime"] = int(time.time())
+    state["baseline_profile"] = state.get("baseline_profile", "")
+    save_state(state)
 
     return True, ""
 
@@ -475,7 +513,8 @@ def run_update_blocking() -> tuple[bool, str]:
 aide -c {conf} --update
 if [ -f {db_new} ]; then
     mv -f {db_new} {db}
-    chmod 755 /var/lib/aide/ 2>/dev/null || true
+    # NOTA: NAO usamos chmod 755 em /var/lib/aide/ (LGPD: outros users
+    # poderiam mapear baseline existence). Status cacheado em STATE_FILE.
 fi
 """
     try:
@@ -496,6 +535,12 @@ fi
     if result.returncode > 7:
         stderr = (result.stderr or "").strip()
         return False, f"aide --update falhou (codigo {result.returncode}):\n\n{stderr[:500]}"
+
+    # LGPD: marca update no STATE_FILE (proxy para baseline_age_seconds)
+    state = load_state()
+    state["baseline_exists"] = True
+    state["baseline_mtime"] = int(time.time())
+    save_state(state)
 
     return True, ""
 

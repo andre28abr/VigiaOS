@@ -11,6 +11,7 @@ Sem pkexec — binwalk roda como user em arquivos que o user le.
 
 from __future__ import annotations
 
+import os
 import re
 import shutil
 import subprocess
@@ -182,6 +183,9 @@ def extract_blocking(path: str, outdir: str) -> ExtractResult:
     outp = Path(outdir)
     try:
         outp.mkdir(parents=True, exist_ok=True)
+        # LGPD: firmware extraido pode conter PII de devices (camera IP de
+        # cliente, NAS de escritorio). 0700 garante apenas o user le.
+        os.chmod(outp, 0o700)
     except OSError as e:
         result.error = f"Falha ao criar outdir: {e}"
         return result

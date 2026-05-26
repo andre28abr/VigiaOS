@@ -12,6 +12,7 @@ Estrategia:
 from __future__ import annotations
 
 import json
+import os
 import re
 import subprocess
 import uuid
@@ -20,7 +21,14 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 
-REPORTS_DIR = Path.home() / "Documents" / "VigiaReports"
+# LGPD CRITICAL: reports tem PII (IPs, usernames, comandos sudo, lastb).
+# NAO usar ~/Documents (sync cloud Dropbox/OneDrive/iCloud por default).
+# Usar XDG_DATA_HOME (~/.local/share/) que e' padrao Linux para dados
+# de app, fora de pastas sync por default.
+REPORTS_DIR = Path.home() / ".local" / "share" / "vigia-reports"
+
+# Path legacy — usado apenas para migracao automatica
+_LEGACY_REPORTS_DIR = Path.home() / "Documents" / "VigiaReports"
 
 
 @dataclass
@@ -50,7 +58,39 @@ def make_period(days: int) -> Period:
 
 
 def ensure_reports_dir() -> Path:
+    """Garante ~/.local/share/vigia-reports/ com mode 0700.
+
+    LGPD: applies chmod imediatamente (defense-in-depth — outras chamadas
+    de mkdir podem nao aplicar). Migra de ~/Documents/VigiaReports/ se
+    existir.
+    """
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+    try:
+        os.chmod(REPORTS_DIR, 0o700)
+    except OSError:
+        pass
+
+    # Migracao one-shot: move arquivos de ~/Documents/VigiaReports/
+    # se existir. Isto so roda uma vez (apos move, _LEGACY nao existe).
+    if _LEGACY_REPORTS_DIR.is_dir():
+        try:
+            for f in _LEGACY_REPORTS_DIR.iterdir():
+                if f.is_file():
+                    target = REPORTS_DIR / f.name
+                    if not target.exists():
+                        try:
+                            f.rename(target)
+                            os.chmod(target, 0o600)
+                        except OSError:
+                            pass
+            # Remove dir legacy se vazio
+            try:
+                _LEGACY_REPORTS_DIR.rmdir()
+            except OSError:
+                pass
+        except OSError:
+            pass
+
     return REPORTS_DIR
 
 

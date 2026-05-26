@@ -107,7 +107,7 @@ TOOLS: list[ToolEntry] = [
             "Processos de outros users requerem admin via pkexec."
         ),
         features=[
-            "**4 tabs**: Visao Geral, Recursos, Processos, Sobre",
+            "**5 tabs**: Visao Geral, Recursos, Processos, Alertas, Sobre",
             "Sparklines de CPU, RAM, RX/TX (60s de historico)",
             "Graficos Cairo: CPU por core + StackedBar de RAM + linha de Disco/Rede",
             "Temperatura via `/sys/class/thermal` (sem deps externas)",
@@ -142,7 +142,7 @@ TOOLS: list[ToolEntry] = [
             "journal do sistema + fail2ban."
         ),
         features=[
-            "**3 tabs**: Status (KPIs), Timeline (eventos), Correlations",
+            "**4 tabs**: Status (KPIs), Timeline (eventos), Correlacoes, Sobre",
             "Multi-source: `audit` + `journald` + `fail2ban` interleavados por timestamp",
             "4 patterns de correlation cross-source (`fail2ban_burst`, `oom_kill`, `selinux_burst`, `ssh_suspeito`)",
             "Classificador automatico: **routine** / **interesting** / **suspicious**",
@@ -398,7 +398,7 @@ TOOLS: list[ToolEntry] = [
             "Cada relatorio inclui KPIs no topo (cards com numero grande) seguido "
             "de tabelas detalhadas. Util para *reviews mensais*, *compliance "
             "LGPD* e *resposta a incidentes*.\n\n"
-            "Os HTMLs sao salvos em `~/Documents/VigiaReports/` e listados na aba "
+            "Os HTMLs sao salvos em `~/.local/share/vigia-reports/` e listados na aba "
             "**Biblioteca** com botoes *Abrir* e *Excluir*. **Modo admin** "
             "opt-in via `pkexec` revela dados do journal do sistema e historico "
             "de logins falhados (`lastb` precisa de root)."
@@ -505,7 +505,7 @@ TOOLS: list[ToolEntry] = [
             "para LGPD-compliance (logs sao evidencia de processo)."
         ),
         features=[
-            "**4 tabs**: Status, Scan, Base de dados, Sobre",
+            "**3 tabs**: Scan (com banner inteligente), Base de dados, Sobre",
             "Streaming de findings em tempo real durante scan",
             "Update de base com 1 dialog `pkexec freshclam`",
             "Atalhos: Home, Downloads, Documents, /tmp",
