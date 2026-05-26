@@ -491,7 +491,6 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         if not tool.is_embeddable():
             btn = Gtk.Button(label="Abrir externamente")
             btn.add_css_class("suggested-action" if available else "flat")
-            btn.add_css_class("pill")
             btn.set_halign(Gtk.Align.CENTER)
             btn.set_margin_top(8)
             btn.set_margin_bottom(16)

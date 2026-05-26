@@ -120,7 +120,6 @@ class StatusTab(Adw.PreferencesPage):
         refresh_row = Adw.ActionRow()
         refresh_row.set_title("Recarregar estado")
         btn = Gtk.Button(label="Atualizar")
-        btn.add_css_class("pill")
         btn.set_valign(Gtk.Align.CENTER)
         btn.connect("clicked", lambda _b: self.refresh())
         refresh_row.add_suffix(btn)

@@ -149,7 +149,7 @@ class DenialsTab(Gtk.Box):
         a2a_row.set_title("Sugerir fix via audit2allow")
         a2a_btn = Gtk.Button(label="Gerar")
         a2a_btn.set_valign(Gtk.Align.CENTER)
-        a2a_btn.add_css_class("pill")
+        a2a_btn.add_css_class("suggested-action")
         a2a_btn.connect("clicked", lambda _b, d=d: self._show_audit2allow(d))
         a2a_row.add_suffix(a2a_btn)
         row.add_row(a2a_row)

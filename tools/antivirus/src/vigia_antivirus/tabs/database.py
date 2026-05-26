@@ -104,7 +104,6 @@ class DatabaseTab(Adw.Bin):
 
         self._update_btn = Gtk.Button(label="Atualizar base agora")
         self._update_btn.add_css_class("suggested-action")
-        self._update_btn.add_css_class("pill")
         self._update_btn.connect("clicked", lambda _b: self._do_update())
         action_box.append(self._update_btn)
 

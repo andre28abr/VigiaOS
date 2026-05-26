@@ -119,13 +119,11 @@ class ScanTab(Adw.Bin):
 
         self._run_btn = Gtk.Button(label="Iniciar scan")
         self._run_btn.add_css_class("suggested-action")
-        self._run_btn.add_css_class("pill")
         self._run_btn.connect("clicked", lambda _b: self._start_scan())
         action_box.append(self._run_btn)
 
         self._stop_btn = Gtk.Button(label="Parar")
         self._stop_btn.add_css_class("destructive-action")
-        self._stop_btn.add_css_class("pill")
         self._stop_btn.set_sensitive(False)
         self._stop_btn.connect("clicked", lambda _b: self._request_stop())
         action_box.append(self._stop_btn)

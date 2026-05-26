@@ -169,7 +169,6 @@ class ProfilesTab(Adw.Bin):
         # Connect/Disconnect button
         btn = Gtk.Button()
         btn.set_valign(Gtk.Align.CENTER)
-        btn.add_css_class("pill")
         if is_active:
             btn.set_label("Desconectar")
             btn.add_css_class("destructive-action")

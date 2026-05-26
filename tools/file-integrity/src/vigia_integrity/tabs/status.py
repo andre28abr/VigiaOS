@@ -120,7 +120,6 @@ class StatusTab(Adw.Bin):
         self._profile_action_row = Adw.ActionRow()
         self._profile_btn = Gtk.Button()
         self._profile_btn.set_valign(Gtk.Align.CENTER)
-        self._profile_btn.add_css_class("pill")
         self._profile_action_row.add_suffix(self._profile_btn)
         self._profile_group.add(self._profile_action_row)
 

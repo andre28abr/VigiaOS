@@ -45,7 +45,6 @@ class HostsTab(Adw.Bin):
         toolbar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
         toolbar.set_margin_bottom(16)
         self._refresh_btn = Gtk.Button(label="Recarregar")
-        self._refresh_btn.add_css_class("pill")
         self._refresh_btn.connect("clicked", lambda _b: self.refresh())
         toolbar.append(self._refresh_btn)
 
