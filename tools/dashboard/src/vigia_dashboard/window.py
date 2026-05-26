@@ -38,49 +38,96 @@ def _make_pkg_badges_bar() -> Gtk.Widget:
 def build_content() -> Gtk.Widget:
     """Constroi header + viewstack das 5 tabs.
 
-    PERF: connecta notify::visible-child no ViewStack para pausar timers
-    de tabs invisiveis. Tabs implementam pause_tick()/resume_tick() que
-    chamam GLib.source_remove() e GLib.timeout_add() respectivamente.
+    PERF v0.2.1: lazy tabs. As 4 tabs visuais (Overview, Resources,
+    Processes, About) sao construidas APENAS quando o user navega
+    para elas pela primeira vez. Antes, todas 5 eram instanciadas
+    no startup (~300+ widgets + 4 GLib.timeouts + Cairo charts) —
+    quando o user so vai ver Overview, gastava ~80% de memoria
+    desperdicada.
 
-    Cuts ~75% da carga de I/O quando usuario ve apenas 1 tab por vez.
+    Excecao: AlertsTab e' construida eager porque precisa rodar em
+    background para detectar disparos mesmo quando user esta em
+    outra tab.
+
+    Tambem conecta notify::visible-child para pausar timers de tabs
+    invisiveis (sem destruir widgets — pause_tick/resume_tick).
     """
-    overview_tab = OverviewTab()
-    resources_tab = ResourcesTab()
-    processes_tab = ProcessesTab()
+    # ------------------------------------------------------------
+    # Holders vazios — Adw.ViewStack precisa de widgets reais para
+    # `add_titled_with_icon`. Usamos Gtk.Box como placeholder; quando
+    # a tab for visitada, construimos o widget real e append nele.
+    # ------------------------------------------------------------
+    overview_holder = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+    resources_holder = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+    processes_holder = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+    about_holder = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+
+    # AlertsTab e' eager — precisa rodar em background sempre
     alerts_tab = AlertsTab()
-    about_tab = AboutTab()
 
     stack = Adw.ViewStack()
-    stack.add_titled_with_icon(overview_tab, "overview", "Visao Geral", "view-grid-symbolic")
-    stack.add_titled_with_icon(resources_tab, "resources", "Recursos", "view-statistics-symbolic")
-    stack.add_titled_with_icon(processes_tab, "processes", "Processos", "view-list-symbolic")
+    stack.add_titled_with_icon(overview_holder, "overview", "Visao Geral", "view-grid-symbolic")
+    stack.add_titled_with_icon(resources_holder, "resources", "Recursos", "view-statistics-symbolic")
+    stack.add_titled_with_icon(processes_holder, "processes", "Processos", "view-list-symbolic")
     stack.add_titled_with_icon(alerts_tab, "alerts", "Alertas", "dialog-warning-symbolic")
-    stack.add_titled_with_icon(about_tab, "about", "Sobre", "help-about-symbolic")
+    stack.add_titled_with_icon(about_holder, "about", "Sobre", "help-about-symbolic")
 
-    # Map name → widget (para pause/resume baseado no visible-child)
-    tabs_by_name = {
-        "overview": overview_tab,
-        "resources": resources_tab,
-        "processes": processes_tab,
-        "alerts": alerts_tab,
-        "about": about_tab,
+    # State: tabs reais construidas. None = ainda nao construida.
+    tabs: dict[str, object] = {
+        "overview": None,
+        "resources": None,
+        "processes": None,
+        "alerts": alerts_tab,  # ja construida
+        "about": None,
     }
+
+    holders = {
+        "overview": overview_holder,
+        "resources": resources_holder,
+        "processes": processes_holder,
+        "about": about_holder,
+    }
+
+    constructors = {
+        "overview": OverviewTab,
+        "resources": ResourcesTab,
+        "processes": ProcessesTab,
+        "about": AboutTab,
+    }
+
+    def _build_if_needed(name: str) -> object | None:
+        """Constroi a tab se ainda nao foi, retorna o widget."""
+        if tabs[name] is not None:
+            return tabs[name]
+        ctor = constructors.get(name)
+        if ctor is None:
+            return None
+        widget = ctor()
+        holders[name].append(widget)
+        tabs[name] = widget
+        return widget
 
     def _on_visible_child_changed(stk, _pspec):
         visible_name = stk.get_visible_child_name()
-        for name, tab in tabs_by_name.items():
+        if visible_name is None:
+            return
+        # Constroi a tab visivel sob demanda
+        _build_if_needed(visible_name)
+        # Pause/resume timers das tabs ja construidas
+        for name, tab in tabs.items():
+            if tab is None:
+                continue
             if name == visible_name:
                 if hasattr(tab, "resume_tick"):
                     tab.resume_tick()
-            else:
+            elif name != "alerts":  # Alerts sempre ativo
                 if hasattr(tab, "pause_tick"):
                     tab.pause_tick()
-        # IMPORTANTE: tab Alertas sempre roda em background (para detectar
-        # disparos mesmo quando user nao esta vendo Alertas). Resume forcado:
-        if visible_name != "alerts" and hasattr(alerts_tab, "resume_tick"):
-            alerts_tab.resume_tick()
 
     stack.connect("notify::visible-child", _on_visible_child_changed)
+
+    # Constroi Overview imediatamente (tab default — user ve ela primeiro)
+    _build_if_needed("overview")
 
     switcher = Adw.ViewSwitcher()
     switcher.set_stack(stack)
