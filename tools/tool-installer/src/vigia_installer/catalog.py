@@ -161,7 +161,8 @@ CATALOG: list[CatalogEntry] = [
         description="Top moderno com cores e arvores de processos.",
         why=(
             "**Substituto melhor do `top`**: barras coloridas de CPU/mem/swap, "
-            "tree view, kill com selecao. Use diariamente."
+            "tree view, kill com selecao. Use diariamente no terminal.\n\n"
+            "*Alternativa GUI nativa: **Vigia Dashboard** (ja incluso na suite).*"
         ),
         category="monitoramento",
         binary="htop",
@@ -172,7 +173,9 @@ CATALOG: list[CatalogEntry] = [
         description="Top para uso de disco I/O (precisa root).",
         why=(
             "Quando algo esta deixando o disco lento, o iotop mostra **qual "
-            "processo** esta gerando o I/O. (`sudo iotop` ou `pkexec iotop`)."
+            "processo** esta gerando o I/O. (`sudo iotop` ou `pkexec iotop`).\n\n"
+            "*Visualizacao agregada de I/O por device esta no **Vigia "
+            "Dashboard** (aba Recursos). Per-process I/O chega na v0.2 do Dashboard.*"
         ),
         category="monitoramento",
         binary="iotop",
