@@ -1,109 +1,222 @@
-# Empacotamento RPM via COPR
+# Vigia Suite — Empacotamento RPM (COPR)
 
-Esta pasta contem o spec file e instrucoes para empacotar a **Vigia Suite**
-como RPMs distribuiveis via [Fedora COPR](https://copr.fedorainfracloud.org/).
+Este diretório contém os **spec files RPM** para distribuir a Vigia
+Suite via COPR (Cool Other Package Repo, do Fedora).
 
-## Para o usuario final (instalar)
+## Estado
 
-Quando o COPR estiver publicado, em qualquer Fedora Atomic (Silverblue / Kinoite / Bluefin / etc.):
+- **20 spec files** no total (`vigia-common` + 18 tools + metapackage `vigia-suite`)
+- `Makefile` com targets para SRPM, RPM local e push COPR
+- **COPR ainda não foi ativado** — requer setup manual (instruções abaixo)
+
+## Para o usuário final (instalar)
+
+Quando o COPR estiver publicado, qualquer Fedora Silverblue / Kinoite /
+Bluefin / etc.:
 
 ```bash
-# Habilitar o repo
+# Habilitar repo
 sudo curl -L -o /etc/yum.repos.d/_copr_andre28abr-vigia.repo \
     https://copr.fedorainfracloud.org/coprs/andre28abr/vigia/repo/fedora-44/andre28abr-vigia-fedora-44.repo
 
-# Layerar pelo rpm-ostree (Atomic)
-rpm-ostree install vigia-activity-log
-systemctl reboot
+# Instalar a suite completa (metapackage — instala todas as 18 tools)
+sudo rpm-ostree install vigia-suite
+sudo systemctl reboot
+
+# OU instalar tools individuais
+sudo rpm-ostree install vigia-dashboard vigia-antivirus
+sudo systemctl reboot
 ```
 
-Em Fedora normal (nao-atomic) basta `sudo dnf install vigia-activity-log`.
+Em Fedora não-atomic: `sudo dnf install vigia-suite`.
 
-## Para quem fez build local (sem COPR ainda)
+## Lista de specs
 
-Apos `cargo build --release && sudo install ... /usr/local/bin/`, voce
-pode adicionar a entry "Vigia Activity Log" no menu do GNOME (no seu user)
-sem precisar de COPR ou root:
+| Pacote | Versão | Tipo |
+|---|---|---|
+| `vigia-suite` | 0.1.0 | **metapackage** (instala tudo) |
+| `vigia-common` | 0.1.0 | lib interna (dep de todas) |
+| `vigia-activity-log` | 0.7.0 | core Rust |
+| `vigia-activity-log-gui` | 0.1.0 | frontend Python |
+| `vigia-hub` | 0.5.0 | launcher mestre |
+| `vigia-dashboard` | 0.2.0 | sistema em tempo real |
+| `vigia-privacy` | 0.3.0 | 13 toggles |
+| `vigia-selinux` | 0.2.0 | SELinux GUI |
+| `vigia-firewall` | 0.1.0 | firewalld GUI |
+| `vigia-netmon` | 0.1.0 | conexões TCP/UDP |
+| `vigia-hardening` | 0.1.2 | Lynis |
+| `vigia-reports` | 0.1.1 | PDF LGPD |
+| `vigia-integrity` | 0.1.3 | AIDE |
+| `vigia-installer` | 0.1.0 | catálogo tools |
+| `vigia-vpn` | 0.1.1 | WireGuard |
+| `vigia-dns` | 0.1.0 | systemd-resolved |
+| `vigia-capabilities` | 0.1.0 | getcap |
+| `vigia-antivirus` | 0.1.1 | ClamAV |
+| `vigia-netscan` | 0.1.0 | nmap |
+| `vigia-firmware` | 0.1.0 | binwalk |
+| `vigia-hash-tools` | 0.1.1 | hash + baseline |
+
+## Para o mantenedor (build + submit ao COPR)
+
+### Setup inicial (uma vez)
 
 ```bash
-cd ~/dev/VigiaOS/packaging
-make install-desktop
+make copr-setup    # imprime instruções
 ```
 
-Isso copia o `.desktop` e o icone SVG para `~/.local/share/`. Procure por
-"Vigia" no GNOME Activities (Super tecla). Para remover:
+**Resumo**:
+1. Criar conta em https://copr.fedorainfracloud.org/
+2. Criar projeto `vigia` (chroots: fedora-40/41/42 x86_64/aarch64)
+3. Instalar `copr-cli` (`sudo rpm-ostree install copr-cli`)
+4. Configurar token em `~/.config/copr` (chmod 0600)
+
+### Build local + sanity check
 
 ```bash
-make uninstall-desktop
+cd VigiaOS/packaging
+
+# Gerar todos os SRPMs (sem submeter)
+make srpm-all
+
+# Ou apenas 1 pacote
+make srpm-vigia-dashboard
+
+# Build local via mock (precisa mock instalado)
+make rpm-all
+
+# Output em:
+#   dist/rpmbuild/SOURCES/VigiaOS-0.1.0.tar.gz
+#   dist/rpmbuild/SRPMS/*.src.rpm
+#   dist/rpms/*.rpm  (se rpm-all)
 ```
 
-## Para o mantenedor (build local e submit ao COPR)
-
-### Pre-requisitos
-
-- conta no [copr.fedorainfracloud.org](https://copr.fedorainfracloud.org/)
-- `copr-cli` instalado (`sudo dnf install copr-cli`)
-- token configurado em `~/.config/copr` (gerado em copr → Settings → API)
-
-### Setup inicial do projeto COPR (one-shot)
+### Submit ao COPR
 
 ```bash
-copr-cli create andre28abr/vigia \
-    --chroot fedora-44-aarch64 \
-    --chroot fedora-44-x86_64 \
-    --description "Vigia Suite — security toolkit para Fedora Atomic"
+# Todos os pacotes:
+make copr-push
+
+# Pacote individual:
+make copr-push-vigia-dashboard
 ```
 
-### Build de uma versao
+### Webhook SCM (auto-rebuild)
 
-1. **Tag e push do repo principal** (com versao em Cargo.toml ja bumped):
-   ```bash
-   git tag v0.7.0
-   git push origin v0.7.0
-   ```
-   Isso cria automaticamente um tarball acessivel em
-   `https://github.com/andre28abr/VigiaOS/archive/v0.7.0/VigiaOS-0.7.0.tar.gz`.
+No COPR, project settings → **Builds from SCM**:
+- **Source type**: Git
+- **Clone URL**: `https://github.com/andre28abr/VigiaOS`
+- **Branch**: `main`
+- **Subdirectory**: `packaging`
+- **Build method**: rpkg
 
-2. **Build local opcional** (sanity check com mock):
-   ```bash
-   cd packaging
-   # Gera SRPM
-   rpmbuild -bs vigia-activity-log.spec \
-       --define "_sourcedir $PWD" \
-       --define "_srcrpmdir $PWD" \
-       --define "_topdir $PWD/rpmbuild"
-   # Testa build
-   mock -r fedora-44-aarch64 rpmbuild/*.src.rpm
-   ```
+Apos isso, a cada `git push origin main` o COPR rebuilda
+automaticamente os pacotes que mudaram.
 
-3. **Submit ao COPR**:
-   ```bash
-   copr-cli build andre28abr/vigia rpmbuild/*.src.rpm
-   ```
+### Bump de versão
 
-   Ou (preferido) use o SCM method da web UI:
-   - Project Settings → Packages → New Package
-   - Source Type: SCM
-   - Clone URL: `https://github.com/andre28abr/VigiaOS`
-   - Spec File: `packaging/vigia-activity-log.spec`
-   - Webhook: rebuilda automatico a cada push em main
+1. Bump em `tools/<X>/pyproject.toml` (Python) ou `Cargo.toml` (Rust)
+2. Bump em `tools/<X>/src/vigia_<X>/__init__.py` (`__version__`)
+3. Atualizar `Version:` no spec correspondente em `packaging/`
+4. Adicionar entry em `%changelog`
+5. Bump em `packaging/vigia-suite.spec` (versão mínima no Requires)
+6. Tag: `git tag v0.X.Y && git push origin v0.X.Y`
+7. COPR rebuilda (se webhook configurado)
 
-### Bump de versao
+## Estrutura
 
-1. Atualizar `Version:` no spec file
-2. Atualizar `[package].version` em `tools/activity-log/Cargo.toml`
-3. Adicionar entry ao `%changelog`
-4. Tag novo: `git tag v0.8.0 && git push origin v0.8.0`
-5. COPR rebuilda automatico (se webhook configurado)
+```
+packaging/
+├── README.md                       # este arquivo
+├── Makefile                        # build automation
+│
+├── vigia-suite.spec                # metapackage (Requires: tudo)
+├── vigia-common.spec               # lib interna
+├── vigia-activity-log.spec         # core Rust (pre-existente)
+│
+├── vigia-activity-log-gui.spec     # GUI Python
+├── vigia-hub.spec
+├── vigia-dashboard.spec
+├── vigia-privacy.spec
+├── vigia-selinux.spec
+├── vigia-firewall.spec
+├── vigia-netmon.spec
+├── vigia-hardening.spec
+├── vigia-reports.spec
+├── vigia-integrity.spec
+├── vigia-installer.spec
+├── vigia-vpn.spec
+├── vigia-dns.spec
+├── vigia-capabilities.spec
+├── vigia-antivirus.spec
+├── vigia-netscan.spec
+├── vigia-firmware.spec
+├── vigia-hash-tools.spec
+│
+├── vigia-log.desktop               # pre-existente (Activity Log core)
+└── vigia-log.svg                   # pre-existente
+```
 
-## Verificacao de assinatura
+## Próximos passos
 
-(Se assinatura RPM for habilitada no COPR — opcional para v1)
+- [ ] Criar conta no COPR
+- [ ] Criar projeto `andre28abr/vigia`
+- [ ] Selecionar chroots
+- [ ] Instalar copr-cli + configurar token
+- [ ] `make copr-push` inicial
+- [ ] Configurar webhook SCM
+- [ ] Testar instalação em VM limpa de Silverblue
+- [ ] AppStream metadata em `data/<app-id>.appdata.xml`
+  (para integração com GNOME Software)
+- [ ] Submeter Activity Log para Fedora Workstation Software
+
+## Detalhes técnicos
+
+### Specs Python (17 tools)
+
+Padrão comum:
+- `BuildArch: noarch` — sem código nativo
+- `BuildRequires`: python3-devel + setuptools + wheel + pip
+- Build via `pip wheel --no-deps`
+- Install via `pip install --root --no-deps --no-index`
+- Files: `%{python3_sitelib}/<mod>/`, `.desktop`, `.svg`, `/usr/bin/vigia-X`
+- `desktop-file-validate` no install
+- `%post`/`%postun`/`%posttrans` para `gtk-update-icon-cache` +
+  `update-desktop-database`
+
+### Activity Log core (Rust)
+
+Spec separado (`vigia-activity-log.spec`) porque é Rust.
+`BuildArch` = `%{rust_arches}` (aarch64 + x86_64).
+
+### Metapackage `vigia-suite`
+
+Sem `%files`, apenas `Requires:` listando todos os 19 pacotes.
+Garante versão mínima de cada. Útil para "instalar tudo de uma vez".
+
+### Dependências entre pacotes
+
+`vigia-common` é dependência de **todas** as outras tools Python.
+
+`vigia-activity-log-gui` depende de `vigia-activity-log` (Rust core).
+
+Pacotes que wrappam tools upstream declaram esses como `Requires`:
+- `vigia-selinux` → `policycoreutils-python-utils`, `setools-console`, `audit`
+- `vigia-antivirus` → `clamav`, `clamav-update`
+- `vigia-vpn` → `wireguard-tools`
+- `vigia-integrity` → `aide`
+- etc.
+
+### LGPD / sandbox
+
+Nenhum spec instala ou abre serviço de rede automaticamente. Tudo
+opt-in pelo user via interfaces das tools. Permissões `0600` em
+reports são aplicadas pelos backends (não pelos specs).
+
+## Verificação de assinatura (futuro)
+
+Quando assinatura RPM for habilitada no COPR:
 
 ```bash
-# Importar chave publica do COPR project
 rpm --import https://copr.fedorainfracloud.org/coprs/andre28abr/vigia/pubkey.gpg
-
-# Verificar antes de instalar
-rpm --checksig vigia-activity-log-*.rpm
+rpm --checksig vigia-*.rpm
 ```

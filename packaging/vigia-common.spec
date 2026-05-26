@@ -1,0 +1,57 @@
+# RPM spec para vigia-common (lib interna compartilhada)
+# Buildada via COPR (https://copr.fedorainfracloud.org/coprs/andre28abr/vigia/)
+
+%global pkg_name vigia-common
+%global mod_name vigia_common
+
+Name:           %{pkg_name}
+Version:        0.1.0
+Release:        1%{?dist}
+Summary:        Helpers compartilhados entre as ferramentas da Vigia Suite
+License:        Apache-2.0
+URL:            https://github.com/andre28abr/VigiaOS
+Source0:        %{url}/archive/v%{version}.tar.gz#/VigiaOS-%{version}.tar.gz
+
+BuildArch:      noarch
+
+BuildRequires:  python3-devel
+BuildRequires:  python3-setuptools
+BuildRequires:  python3-wheel
+BuildRequires:  python3-pip
+
+Requires:       python3
+Requires:       python3-gobject
+Requires:       gtk4
+Requires:       libadwaita
+
+%description
+Vigia Common e' a biblioteca interna da Vigia Suite. Centraliza
+helpers de UI (make_clamp, show_error/info, file picker, copy
+to clipboard), o conversor markdown → Pango, e helpers de badges
+para a sub-bar de WRAPPED_PACKAGES.
+
+Sem GUI, sem entry point — biblioteca-base que as outras tools
+da suite importam. Instale apenas se for instalar outras tools
+Vigia (sao deps deste pacote).
+
+%prep
+%autosetup -n VigiaOS-%{version}
+
+%build
+cd tools/vigia-common
+%{__python3} -m pip wheel --no-deps --wheel-dir=../../dist .
+
+%install
+cd tools/vigia-common
+%{__python3} -m pip install --root=%{buildroot} --prefix=/usr \
+    --no-deps --no-index --find-links=../../dist %{pkg_name}
+
+%files
+%license LICENSE
+%doc tools/vigia-common/README.md
+%{python3_sitelib}/%{mod_name}/
+%{python3_sitelib}/%{pkg_name}-*.dist-info/
+
+%changelog
+* Mon May 26 2026 André Augusto Azarias de Souza <andre@vigia.local> - 0.1.0-1
+- Initial release: helpers compartilhados extraidos de 16 tools
