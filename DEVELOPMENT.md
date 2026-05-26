@@ -757,7 +757,9 @@ com `chmod 0600` (LGPD).
 
 **SVG**: documento → função hash (caixa com `#`) → digest (blocos hex).
 
-**Wrapper de**: `coreutils` (sha256sum/512/1, md5sum) + `hashdeep`.
+**Wrapper de**: `coreutils` (sha256sum/512/1, md5sum). `hashdeep` foi
+removido dos repos do Fedora recentes; v0.2 vai usar `md5deep` (contém
+binário `hashdeep`) ou multiprocessing em Python puro.
 
 ---
 
@@ -991,8 +993,11 @@ sudo rpm-ostree install \
     wireguard-tools \
     systemd-resolved \
     clamav clamav-update \
-    nmap binwalk hashdeep
+    nmap binwalk
 systemctl reboot
+
+# Nota: hashdeep foi removido dos repos do Fedora. Hash Tools v0.1
+# usa hashlib do Python puro — nao precisa instalar nada.
 ```
 
 (`reports/` requer adicional `python3-jinja2 python3-weasyprint` — instalar
