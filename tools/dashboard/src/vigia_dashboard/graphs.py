@@ -297,8 +297,9 @@ class StackedBar(Gtk.DrawingArea):
         self.queue_draw()
 
     def _on_draw(self, _area: Gtk.DrawingArea, cr, width: int, height: int) -> None:
-        # Background
-        cr.set_source_rgba(0.18, 0.18, 0.20, 1.0)
+        # Background: zinc-950 (mais escuro que o card) para dar contraste
+        # com o segmento "free" (zinc-600). Antes era 0.18 e ficava igual.
+        cr.set_source_rgba(0.06, 0.06, 0.07, 1.0)
         radius = min(8, height / 2)
         _rounded_rect(cr, 0, 0, width, height, radius)
         cr.fill()

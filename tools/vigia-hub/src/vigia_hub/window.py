@@ -407,6 +407,13 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         widget = builder()
         self._content_stack.add_named(widget, self._embedded_name(tool.id))
         self._embedded_widgets[tool.id] = widget
+
+        # PERF: forca garbage collection apos construir tool (tooltips de
+        # dataclasses + closures temporarias do builder podem liberar
+        # alguns MB). Tambem ajuda com fragmentation do heap Python.
+        import gc
+        gc.collect()
+
         return widget
 
     @staticmethod

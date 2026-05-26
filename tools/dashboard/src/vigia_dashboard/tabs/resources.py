@@ -271,22 +271,24 @@ class ResourcesTab(Adw.Bin):
         # Push valores
         self._cpu_chart.push(*cpu.per_core_pct[1:])
 
-        # Frequencia
+        # Frequencia — esconde row se nao disponivel (VM tipicamente)
         if cpu.freq_mhz > 0:
+            self._cpu_freq_row.set_visible(True)
             if cpu.freq_mhz >= 1000:
                 self._cpu_freq_lbl.set_label(f"{cpu.freq_mhz / 1000:.2f} GHz")
             else:
                 self._cpu_freq_lbl.set_label(f"{cpu.freq_mhz:.0f} MHz")
         else:
-            self._cpu_freq_lbl.set_label("—")
+            # Sem cpufreq exposto (comum em VM) — esconde a row inteira
+            self._cpu_freq_row.set_visible(False)
 
-        # Temperatura
-        for cls in ("success", "warning", "error", "dim-label"):
-            self._cpu_temp_lbl.remove_css_class(cls)
+        # Temperatura — esconde row se nenhum sensor encontrado
         if cpu.temp_c is None:
-            self._cpu_temp_lbl.set_label("nao disponivel")
-            self._cpu_temp_lbl.add_css_class("dim-label")
+            self._cpu_temp_row.set_visible(False)
         else:
+            self._cpu_temp_row.set_visible(True)
+            for cls in ("success", "warning", "error", "dim-label"):
+                self._cpu_temp_lbl.remove_css_class(cls)
             self._cpu_temp_lbl.set_label(f"{cpu.temp_c:.0f} °C")
             if cpu.temp_c > 85:
                 self._cpu_temp_lbl.add_css_class("error")
@@ -304,10 +306,13 @@ class ResourcesTab(Adw.Bin):
         # free = resto
         free_frac = max(0.0, 1.0 - used_frac - cache_frac)
 
+        # Cores das 3 secoes — ajustadas pra contraste melhor contra o
+        # background (#18181b ≈ 0.094 rgb). O segmento "free" antes era
+        # 0.18/0.18/0.20 — quase invisivel. Agora 0.32/0.32/0.36 (zinc-600).
         self._mem_bar.set_segments([
             (COLOR_RAM, used_frac),
-            ((0.30, 0.42, 0.30), cache_frac),  # verde escuro para cache
-            ((0.18, 0.18, 0.20), free_frac),    # cinza para free
+            ((0.30, 0.55, 0.40), cache_frac),  # verde mais claro para cache
+            ((0.32, 0.32, 0.36), free_frac),    # cinza claro (zinc-600) para free
         ])
 
         self._mem_total_lbl.set_label(backend.format_kb(mem.total_kb))
