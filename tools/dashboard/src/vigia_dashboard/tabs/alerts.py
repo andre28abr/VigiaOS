@@ -427,6 +427,8 @@ class AlertsTab(Adw.Bin):
         )
         dlg.add_response("cancel", "Cancelar")
         dlg.add_response("remove", "Remover")
+        # UX consistency: default em Cancelar (Enter nao deve apagar)
+        dlg.set_default_response("cancel")
         dlg.set_response_appearance("remove", Adw.ResponseAppearance.DESTRUCTIVE)
         dlg.connect("response", self._on_remove_confirmed, rule)
         dlg.present(self.get_root())

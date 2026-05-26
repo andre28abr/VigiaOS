@@ -37,7 +37,7 @@ SECTIONS: list[tuple[str, str]] = [
         "<i>Salvar como PDF</i>. CSS ja tem <tt>@media print</tt> — fica "
         "limpo.\n\n"
         "<b>Aba Biblioteca</b>: lista HTMLs salvos em "
-        "<tt>~/Documents/VigiaReports/</tt>. Botoes Abrir e Excluir."
+        "<tt>~/.local/share/vigia-reports/</tt>. Botoes Abrir e Excluir."
     ),
     (
         "Conceitos importantes",
@@ -64,7 +64,7 @@ SECTIONS: list[tuple[str, str]] = [
         "Saiba mais",
         "- Templates HTML: <tt>tools/reports/src/vigia_reports/templates/</tt>\n"
         "- <tt>man journalctl</tt> — coletor principal\n"
-        "- Pasta dos relatorios: <tt>~/Documents/VigiaReports/</tt>"
+        "- Pasta dos relatorios: <tt>~/.local/share/vigia-reports/</tt>"
     ),
 ]
 

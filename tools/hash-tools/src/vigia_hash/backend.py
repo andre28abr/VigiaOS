@@ -83,7 +83,13 @@ def _ensure_baseline_dir() -> Path:
 
 
 def hash_blocking(path: str, algorithm: str = "sha256") -> tuple[str, str]:
-    """Calcula hash de um arquivo. Retorna (hash_hex, error)."""
+    """Calcula hash de um arquivo. Retorna (hash_hex, error).
+
+    Rejeita device files (/dev/zero, /dev/urandom, /proc/kcore, ...) —
+    causariam loop infinito de I/O.
+    """
+    import stat as stat_mod
+
     if algorithm not in ALGORITHMS:
         return "", f"Algoritmo nao suportado: {algorithm}"
 
@@ -92,6 +98,15 @@ def hash_blocking(path: str, algorithm: str = "sha256") -> tuple[str, str]:
         return "", f"Arquivo nao existe: {path}"
     if not p.is_file():
         return "", "Caminho nao e' um arquivo."
+
+    # Hardening: rejeita special files (block/char devices, fifos, sockets,
+    # /proc/*, /sys/*). Caso contrario hash de /dev/zero trava infinito.
+    try:
+        st = p.stat()
+        if not stat_mod.S_ISREG(st.st_mode):
+            return "", "Caminho nao e' um arquivo regular (e' device/fifo/socket)."
+    except OSError as e:
+        return "", f"Falha ao stat: {e}"
 
     try:
         h = hashlib.new(algorithm)

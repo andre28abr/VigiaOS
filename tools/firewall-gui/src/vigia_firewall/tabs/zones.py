@@ -284,7 +284,26 @@ class ZonesTab(Gtk.Box):
         GLib.idle_add(self._on_port_change_done, zone, port, proto, err)
 
     def _remove_service(self, service: str) -> None:
+        """Confirma antes de remover (UX: consistente com outras tools)."""
         zone = self._current_zone()
+        dlg = Adw.AlertDialog(
+            heading=f"Remover '{service}' da zona '{zone}'?",
+            body=(
+                "Esta acao remove o service do firewall (--permanent + --reload). "
+                "Outras conexoes desse service serao bloqueadas pela zona padrao "
+                "ate voce re-adicionar."
+            ),
+        )
+        dlg.add_response("cancel", "Cancelar")
+        dlg.add_response("remove", "Remover")
+        dlg.set_default_response("cancel")
+        dlg.set_response_appearance("remove", Adw.ResponseAppearance.DESTRUCTIVE)
+        dlg.connect("response", self._on_remove_service_confirmed, zone, service)
+        dlg.present(self.get_root())
+
+    def _on_remove_service_confirmed(self, _dlg, response: str, zone: str, service: str) -> None:
+        if response != "remove":
+            return
         # remove_zone_service faz pkexec firewall-cmd --reload — vai pra thread
         threading.Thread(
             target=self._remove_service_worker, args=(zone, service), daemon=True
@@ -305,7 +324,25 @@ class ZonesTab(Gtk.Box):
         return False
 
     def _remove_port(self, port: str, proto: str) -> None:
+        """Confirma antes de remover."""
         zone = self._current_zone()
+        dlg = Adw.AlertDialog(
+            heading=f"Remover porta {port}/{proto.upper()} da zona '{zone}'?",
+            body=(
+                "Esta acao remove a porta do firewall (--permanent + --reload). "
+                "Conexoes nessa porta+protocolo deixarao de ser permitidas."
+            ),
+        )
+        dlg.add_response("cancel", "Cancelar")
+        dlg.add_response("remove", "Remover")
+        dlg.set_default_response("cancel")
+        dlg.set_response_appearance("remove", Adw.ResponseAppearance.DESTRUCTIVE)
+        dlg.connect("response", self._on_remove_port_confirmed, zone, port, proto)
+        dlg.present(self.get_root())
+
+    def _on_remove_port_confirmed(self, _dlg, response: str, zone: str, port: str, proto: str) -> None:
+        if response != "remove":
+            return
         threading.Thread(
             target=self._remove_port_worker, args=(zone, port, proto), daemon=True
         ).start()

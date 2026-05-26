@@ -85,7 +85,7 @@ class GenerateTab(Adw.Bin):
         action_group = Adw.PreferencesGroup()
         action_group.set_margin_top(24)
         action_row = Adw.ActionRow(title="Gerar relatorio")
-        action_row.set_subtitle("HTML sera salvo em ~/Documents/VigiaReports/")
+        action_row.set_subtitle("HTML sera salvo em ~/.local/share/vigia-reports/")
         self._generate_btn = Gtk.Button(label="Gerar")
         self._generate_btn.add_css_class("suggested-action")
         self._generate_btn.set_valign(Gtk.Align.CENTER)

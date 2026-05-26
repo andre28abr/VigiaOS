@@ -70,14 +70,36 @@ def validate_target(target: str) -> tuple[bool, str]:
     """Valida que target e' IP/hostname/CIDR razoavel.
 
     Aceita: 192.168.1.1, 10.0.0.0/24, scanme.nmap.org, fe80::1.
-    Rejeita: strings com espacos, ;, |, $ (injection).
+    Rejeita:
+    - strings com espacos, ;, |, $ (injection)
+    - strings comecando com '-' (flag injection: --script=evil.nse,
+      -iL/etc/shadow, -oN/tmp/exec.sh, etc.)
+    - strings vazias ou longas demais (>200 chars)
+
+    CRITICAL: nao rejeitar '-' inicial permite ESCALATION para RCE em
+    perfis com pkexec (stealth, aggressive). Ex: 'target=-iL/etc/shadow'
+    faria nmap ler /etc/shadow como input list.
     """
     if not target or len(target) > 200:
         return False, "Target vazio ou muito longo."
 
+    # CRITICAL: rejeitar prefixo '-' (flag injection no nmap).
+    # Mesmo com -- separator no cmd, esse check e' defense-in-depth.
+    if target.lstrip().startswith("-"):
+        return False, (
+            "Target nao pode comecar com '-' (interpretado como flag pelo "
+            "nmap). Use o nome do host sem prefixo."
+        )
+
     # Caracteres permitidos: letras, digitos, . - _ : / espaco para multi-target
     if not re.match(r"^[a-zA-Z0-9.\-_:/, ]+$", target):
         return False, "Target contem caracteres invalidos."
+
+    # Rejeita targets multi onde QUALQUER um comeca com '-' (multi-target
+    # com flag injection: 'host1,-iL/etc/shadow')
+    for sub_target in re.split(r"[,\s]+", target):
+        if sub_target and sub_target.startswith("-"):
+            return False, f"Sub-target invalido (comeca com '-'): {sub_target}"
 
     return True, ""
 
@@ -130,7 +152,9 @@ def scan_blocking(target: str, profile: ScanProfile, timeout: int = 600) -> Scan
         base_cmd = ["nmap"]
 
     # XML output para parsing robusto. Stats every 10s pra futuro streaming.
-    cmd = base_cmd + profile.args + ["-oX", "-", target]
+    # CRITICAL: '--' separator obriga nmap a interpretar `target` SEMPRE
+    # como hostname, nunca como flag. Defense-in-depth alem de validate_target.
+    cmd = base_cmd + profile.args + ["-oX", "-", "--", target]
 
     start = time.time()
     rc, out, err = _run(cmd, timeout=timeout)
