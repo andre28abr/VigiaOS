@@ -13,17 +13,40 @@ from gi.repository import Adw, Gtk  # noqa: E402
 SECTIONS: list[tuple[str, str]] = [
     (
         "O que faz",
-        "Gerencia o DNS do sistema via <b>systemd-resolved</b> (padrao em "
-        "Fedora Silverblue). Oferece um catalogo curado de provedores "
-        "(Cloudflare, Quad9, AdGuard, Mullvad, etc.) com 1-click para "
-        "aplicar.\n\n"
-        "Substitui o passo-a-passo manual:\n"
-        "<tt>sudo nano /etc/systemd/resolved.conf</tt>\n"
-        "<tt>sudo systemctl restart systemd-resolved</tt>\n"
-        "<tt>resolvectl status</tt>\n\n"
-        "Tambem oferece <b>DNS over TLS</b> (DoT) para encriptar suas "
-        "queries — sem isso, qualquer um na sua rede ou ISP pode ver "
-        "que sites voce visita."
+        "Gerencia o DNS do sistema com <b>dois modos de operacao</b>:\n\n"
+        "<b>Modo simples (default)</b>: wrappa o <tt>systemd-resolved</tt> "
+        "(padrao em Fedora Silverblue). Catalogo curado de 9 provedores "
+        "DoT (Cloudflare, Quad9, AdGuard, Mullvad, Google + variantes) "
+        "com 1-click para aplicar.\n\n"
+        "<b>Modo avancado (v0.2, opt-in)</b>: substitui o systemd-resolved "
+        "por <tt>dnscrypt-proxy</tt> em <tt>127.0.0.1:53</tt>. Habilita:\n"
+        "• DoH (DNS-over-HTTPS, porta 443 — passa por censura/inspecao)\n"
+        "• Blocklists locais (Pi-hole-like — bloquear ads/tracking)\n"
+        "• Anonymized DNS (relays escondem seu IP do resolver final)\n"
+        "• Estatisticas de queries (24h)\n"
+        "• DNSSEC validation explicito\n\n"
+        "Toggle pelo switch <i>Ativar modo avancado</i> no rodape da aba "
+        "Status. Migracao com backup automatico do <tt>resolved.conf</tt> "
+        "e rollback 1-click."
+    ),
+    (
+        "Modo avancado: por que usar",
+        "<b>Casos de uso (escritorio LGPD)</b>:\n\n"
+        "• Bloquear dominios de tracking corporate (DoubleClick, "
+        "GoogleTagManager, Facebook Pixel, etc.) em toda a rede do "
+        "escritorio sem instalar Pi-hole em hardware separado.\n\n"
+        "• Forcar DNSSEC validation explicito — garante que ninguem "
+        "esta interceptando ou modificando respostas DNS no caminho.\n\n"
+        "• Usar Anonymized DNS — o resolver final nao ve seu IP, ve "
+        "apenas o IP do relay (similar a Tor, mas so para DNS).\n\n"
+        "• Auditar queries do sistema — saber quais dominios foram "
+        "consultados nas ultimas 24h (util para identificar apps "
+        "fofoqueiros ou exfiltracao).\n\n"
+        "<b>Quando NAO usar</b>:\n"
+        "• Setup home casual onde systemd-resolved + DoT ja basta\n"
+        "• Sistemas que dependem de DNS-from-DHCP automatico (a config "
+        "do dnscrypt e' estatica — voce escolhe quais servers)\n"
+        "• Ambientes com proxy corporate que intercepta DNS no firewall"
     ),
     (
         "Como usar",
