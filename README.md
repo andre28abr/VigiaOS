@@ -39,17 +39,50 @@ do sistema-base sem complicação.
 | 18 | **[Vigia Firmware Analyzer](tools/firmware-analyzer/)** v0.1 | Python + GTK4 | 🟢 binwalk: signatures + extract + entropia |
 | 19 | **[Vigia Hash Tools](tools/hash-tools/)** v0.1.1 | Python + GTK4 | 🟢 SHA-256/512, baseline+diff |
 
-## Instalação rápida
+## Instalação
 
-**Via COPR** (specs RPM preparados em [`packaging/`](packaging/) — pendente de ativação):
+### Atual: `pip install --user -e .` (desenvolvimento)
+
+Por enquanto, as tools são instaladas via pip em editable mode.
+Roteiro completo em [DEVELOPMENT.md §8](DEVELOPMENT.md#8-setup-numa-máquina-nova-silverblue-limpa).
 
 ```bash
-sudo rpm-ostree copr enable andre28abr/vigia
-sudo rpm-ostree install vigia-suite   # metapackage instala todas as 18 tools
+git clone https://github.com/andre28abr/VigiaOS.git ~/dev/VigiaOS
+cd ~/dev/VigiaOS
+# Instala vigia-common primeiro (dep das outras)
+(cd tools/vigia-common && pip install --user -e .)
+# Depois cada tool
+for d in vigia-hub privacy-controls selinux-gui firewall-gui netmon-gui \
+         hardening-checks reports file-integrity tool-installer \
+         vpn-manager dns-manager capabilities-inspector activity-log-gui \
+         antivirus network-scanner firmware-analyzer hash-tools dashboard; do
+  (cd tools/$d && pip install --user -e .)
+done
+vigia-hub   # abre o launcher
+```
+
+### Futuro: via COPR (em preparação)
+
+As specs RPM estão prontas em [`packaging/`](packaging/), mas o **repo
+COPR ainda não foi ativado** (precisa criar conta, projeto e fazer
+build inicial — passos manuais em
+[`packaging/README.md`](packaging/README.md)).
+
+Quando ativo, em Silverblue/Kinoite/Bluefin/Bazzite/Aurora:
+
+```bash
+# Habilita o repo COPR (download direto do .repo file)
+sudo wget -O /etc/yum.repos.d/_copr_andre28abr-vigia.repo \
+  https://copr.fedorainfracloud.org/coprs/andre28abr/vigia/repo/fedora-$(rpm -E %fedora)/andre28abr-vigia-fedora-$(rpm -E %fedora).repo
+
+# Instala a suite completa (metapackage com as 18 tools)
+sudo rpm-ostree install vigia-suite
 sudo systemctl reboot
 ```
 
-**Via bootstrap.sh** (em desenvolvimento):
+Em Fedora não-atomic: `sudo dnf copr enable andre28abr/vigia && sudo dnf install vigia-suite`.
+
+### Futuro alternativo: bootstrap.sh
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/andre28abr/VigiaOS/main/bootstrap.sh | bash
