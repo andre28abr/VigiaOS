@@ -134,6 +134,13 @@ class ProcessInfo:
     cmdline: str
     state: str         # R, S, D, Z, T
     nice: int = 0
+    # v0.2 — Per-process I/O (de /proc/<pid>/io, calculado vs prev call)
+    read_mbs: float = 0.0
+    write_mbs: float = 0.0
+    # v0.2 — Per-process conexoes (de /proc/<pid>/fd/* + /proc/net/tcp{,6}/udp{,6})
+    n_tcp_established: int = 0
+    n_tcp_listen: int = 0
+    n_udp: int = 0
 
 
 # ============================================================
@@ -574,13 +581,93 @@ def _uid_to_name(uid: int) -> str:
 
 # Cache de CPU time anterior por PID, para calcular % de CPU
 _PROC_CPU_PREV: dict[int, tuple[int, float]] = {}  # pid → (total_time_ticks, snap_time)
+# Cache de I/O bytes anterior por PID, para calcular MB/s (v0.2)
+_PROC_IO_PREV: dict[int, tuple[int, int, float]] = {}  # pid → (read_bytes, write_bytes, snap_time)
 _CLOCK_TICKS = os.sysconf(os.sysconf_names.get("SC_CLK_TCK", -1)) if hasattr(os, "sysconf_names") else 100
 if _CLOCK_TICKS <= 0:
     _CLOCK_TICKS = 100
 
 
-def list_processes() -> list[ProcessInfo]:
-    """Lista processos ativos com %CPU calculado vs ultima call."""
+# ============================================================
+# Per-process connections (v0.2)
+# ============================================================
+
+
+def _read_socket_inodes_to_conn() -> dict[int, str]:
+    """Le /proc/net/tcp{,6}/udp{,6} e retorna mapa inode -> tipo.
+
+    Tipos: 'tcp_established', 'tcp_listen', 'tcp_other', 'udp'.
+    """
+    inode_to_type: dict[int, str] = {}
+
+    # TCP states do kernel:
+    # 01 ESTABLISHED, 02 SYN_SENT, 03 SYN_RECV, 04 FIN_WAIT1, 05 FIN_WAIT2,
+    # 06 TIME_WAIT, 07 CLOSE, 08 CLOSE_WAIT, 09 LAST_ACK, 0A LISTEN, 0B CLOSING
+
+    for path, proto in (("/proc/net/tcp", "tcp"),
+                         ("/proc/net/tcp6", "tcp"),
+                         ("/proc/net/udp", "udp"),
+                         ("/proc/net/udp6", "udp")):
+        try:
+            with open(path, "r") as f:
+                next(f, None)  # skip header
+                for line in f:
+                    parts = line.split()
+                    if len(parts) < 10:
+                        continue
+                    try:
+                        state = parts[3]
+                        inode = int(parts[9])
+                    except (ValueError, IndexError):
+                        continue
+                    if inode == 0:
+                        continue
+                    if proto == "tcp":
+                        if state == "01":
+                            inode_to_type[inode] = "tcp_established"
+                        elif state == "0A":
+                            inode_to_type[inode] = "tcp_listen"
+                        else:
+                            inode_to_type[inode] = "tcp_other"
+                    else:
+                        inode_to_type[inode] = "udp"
+        except (OSError, PermissionError):
+            continue
+
+    return inode_to_type
+
+
+def _get_pid_sockets(pid: int) -> list[int]:
+    """Le /proc/<pid>/fd/* e retorna lista de socket inodes do PID.
+
+    /proc/<pid>/fd/N e' simbolic link tipo 'socket:[12345]'.
+    """
+    inodes: list[int] = []
+    try:
+        fd_dir = Path("/proc") / str(pid) / "fd"
+        for entry in fd_dir.iterdir():
+            try:
+                target = os.readlink(str(entry))
+                if target.startswith("socket:["):
+                    # 'socket:[12345]' → 12345
+                    inode_str = target[8:-1]
+                    inodes.append(int(inode_str))
+            except (OSError, ValueError):
+                continue
+    except (OSError, PermissionError):
+        # Sem permissao em /proc/<pid>/fd/ (outro user e sem CAP_SYS_PTRACE)
+        pass
+    return inodes
+
+
+def list_processes(include_connections: bool = True, include_io: bool = True) -> list[ProcessInfo]:
+    """Lista processos ativos com %CPU calculado vs ultima call.
+
+    Args:
+        include_connections: se True, conta TCP/UDP por PID (v0.2).
+                            Mais lento (le /proc/<pid>/fd/* para cada PID).
+        include_io: se True, le /proc/<pid>/io e calcula MB/s vs ultima call (v0.2).
+    """
     now = time.time()
     procs: list[ProcessInfo] = []
 
@@ -593,6 +680,11 @@ def list_processes() -> list[ProcessInfo]:
                     break
     except (OSError, ValueError, IndexError):
         mem_total_kb = 1
+
+    # Pre-carrega socket inodes uma vez (eficiente — varios PIDs reusam)
+    inode_to_conn: dict[int, str] = {}
+    if include_connections:
+        inode_to_conn = _read_socket_inodes_to_conn()
 
     seen_pids: set[int] = set()
 
@@ -674,6 +766,50 @@ def list_processes() -> list[ProcessInfo]:
 
             mem_pct = (rss_kb / mem_total_kb * 100.0) if mem_total_kb else 0.0
 
+            # v0.2 — I/O de /proc/<pid>/io
+            read_mbs = 0.0
+            write_mbs = 0.0
+            if include_io:
+                try:
+                    read_bytes = 0
+                    write_bytes = 0
+                    with open(pid_dir / "io", "r") as f:
+                        for io_line in f:
+                            if io_line.startswith("read_bytes:"):
+                                read_bytes = int(io_line.split(":")[1].strip())
+                            elif io_line.startswith("write_bytes:"):
+                                write_bytes = int(io_line.split(":")[1].strip())
+                    prev_io = _PROC_IO_PREV.get(pid)
+                    if prev_io is not None:
+                        prev_r, prev_w, prev_io_time = prev_io
+                        dt = now - prev_io_time
+                        if dt > 0:
+                            read_mbs = max(0.0,
+                                (read_bytes - prev_r) / dt / 1024 / 1024
+                            )
+                            write_mbs = max(0.0,
+                                (write_bytes - prev_w) / dt / 1024 / 1024
+                            )
+                    _PROC_IO_PREV[pid] = (read_bytes, write_bytes, now)
+                except (OSError, PermissionError, ValueError):
+                    # /proc/<pid>/io requer CAP_SYS_PTRACE para outros users
+                    pass
+
+            # v0.2 — Conexoes: olha quais sockets do PID estao na tabela tcp/udp
+            n_tcp_est = 0
+            n_tcp_listen = 0
+            n_udp = 0
+            if include_connections and inode_to_conn:
+                pid_sockets = _get_pid_sockets(pid)
+                for inode in pid_sockets:
+                    ctype = inode_to_conn.get(inode)
+                    if ctype == "tcp_established":
+                        n_tcp_est += 1
+                    elif ctype == "tcp_listen":
+                        n_tcp_listen += 1
+                    elif ctype == "udp":
+                        n_udp += 1
+
             procs.append(ProcessInfo(
                 pid=pid,
                 user=_uid_to_name(uid),
@@ -684,6 +820,11 @@ def list_processes() -> list[ProcessInfo]:
                 cmdline=cmdline,
                 state=state,
                 nice=nice,
+                read_mbs=read_mbs,
+                write_mbs=write_mbs,
+                n_tcp_established=n_tcp_est,
+                n_tcp_listen=n_tcp_listen,
+                n_udp=n_udp,
             ))
         except (OSError, ValueError, IndexError):
             continue
@@ -692,6 +833,7 @@ def list_processes() -> list[ProcessInfo]:
     dead_pids = set(_PROC_CPU_PREV.keys()) - seen_pids
     for d in dead_pids:
         _PROC_CPU_PREV.pop(d, None)
+        _PROC_IO_PREV.pop(d, None)
 
     return procs
 

@@ -1,4 +1,7 @@
-"""Janela principal — orquestra 4 tabs (Visao Geral + Recursos + Processos + Sobre)."""
+"""Janela principal — orquestra 5 tabs (v0.2: +Alertas).
+
+Visao Geral + Recursos + Processos + Alertas + Sobre.
+"""
 
 from __future__ import annotations
 
@@ -10,7 +13,7 @@ gi.require_version("Adw", "1")
 from gi.repository import Adw, Gtk  # noqa: E402
 
 from . import WRAPPED_PACKAGES
-from .tabs import AboutTab, OverviewTab, ProcessesTab, ResourcesTab
+from .tabs import AboutTab, AlertsTab, OverviewTab, ProcessesTab, ResourcesTab
 
 
 def _make_pkg_badges_bar() -> Gtk.Widget:
@@ -33,16 +36,18 @@ def _make_pkg_badges_bar() -> Gtk.Widget:
 
 
 def build_content() -> Gtk.Widget:
-    """Constroi header + viewstack das 4 tabs."""
+    """Constroi header + viewstack das 5 tabs."""
     overview_tab = OverviewTab()
     resources_tab = ResourcesTab()
     processes_tab = ProcessesTab()
+    alerts_tab = AlertsTab()
     about_tab = AboutTab()
 
     stack = Adw.ViewStack()
     stack.add_titled_with_icon(overview_tab, "overview", "Visao Geral", "view-grid-symbolic")
     stack.add_titled_with_icon(resources_tab, "resources", "Recursos", "view-statistics-symbolic")
     stack.add_titled_with_icon(processes_tab, "processes", "Processos", "view-list-symbolic")
+    stack.add_titled_with_icon(alerts_tab, "alerts", "Alertas", "dialog-warning-symbolic")
     stack.add_titled_with_icon(about_tab, "about", "Sobre", "help-about-symbolic")
 
     switcher = Adw.ViewSwitcher()

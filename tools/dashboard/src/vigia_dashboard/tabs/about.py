@@ -33,8 +33,46 @@ SECTIONS: list[tuple[str, str]] = [
         "- Disco I/O: read e write em MB/s\n"
         "- Rede: RX/TX por interface\n\n"
         "<b>Processos</b>: top 30 por defaut, com filtros (search por nome, "
-        "ordenacao, 'so meus'). Kill com confirmacao (SIGTERM ou SIGKILL). "
-        "Processos de outros users requerem admin (pkexec)."
+        "ordenacao, 'so meus'). Cada processo mostra <b>I/O em MB/s</b> e "
+        "<b>numero de conexoes</b> (v0.2). Kill com confirmacao (SIGTERM "
+        "ou SIGKILL). Processos de outros users requerem admin (pkexec).\n\n"
+        "<b>Alertas</b> (v0.2): regras configuraveis tipo \"CPU &gt; 95% "
+        "por 60s\" disparam notificacao desktop. Persistencia em "
+        "<tt>~/.config/vigia/dashboard-alerts.json</tt> (mode 0600).\n\n"
+        "<b>Sobre</b>: este manual."
+    ),
+    (
+        "v0.2 — Per-process I/O e conexoes",
+        "<b>Per-process I/O</b>: leitura de <tt>/proc/&lt;pid&gt;/io</tt> "
+        "campos <tt>read_bytes</tt> e <tt>write_bytes</tt> (cumulativos). "
+        "Delta vs leitura anterior → MB/s por PID. Substitui o uso de "
+        "<tt>iotop</tt>. Limitacao: outros users so se rodando com "
+        "<tt>CAP_SYS_PTRACE</tt> ou como root.\n\n"
+        "<b>Per-process conexoes</b>: parse de <tt>/proc/net/tcp</tt>, "
+        "<tt>/proc/net/tcp6</tt>, <tt>/proc/net/udp</tt>, <tt>/proc/net/udp6</tt> "
+        "→ mapa <i>inode → tipo de conexao</i>. Para cada PID, le "
+        "<tt>/proc/&lt;pid&gt;/fd/*</tt> (symbolic links como "
+        "<tt>socket:[12345]</tt>) → match inode → conta.\n\n"
+        "Estados TCP exibidos: ESTABLISHED, LISTEN, UDP. Bytes/s por "
+        "processo exigiria eBPF (alvo v0.3)."
+    ),
+    (
+        "v0.2 — Alertas configuraveis",
+        "Regras tipo <tt>metric op threshold</tt> + <tt>duration</tt> + "
+        "<tt>cooldown</tt>. Quando uma regra dispara, recebe "
+        "<b>notificacao desktop</b> via <tt>Gio.Notification</tt>.\n\n"
+        "<b>Metricas suportadas</b>:\n"
+        "- cpu_pct (0-100)\n"
+        "- mem_pct (0-100)\n"
+        "- swap_pct (0-100)\n"
+        "- load_1 (load average 1min, raw)\n"
+        "- cpu_temp_c (Celsius)\n"
+        "- disk_pct_root, disk_pct_home (%)\n\n"
+        "<b>Operadores</b>: <tt>gt</tt> (&gt;) e <tt>lt</tt> (&lt;).\n\n"
+        "<b>Duration</b>: tempo minimo acima do threshold antes de "
+        "disparar (evita falsos positivos por picos isolados).\n\n"
+        "<b>Cooldown</b>: tempo minimo entre disparos consecutivos do "
+        "mesmo alerta (evita spam de notificacao para o mesmo problema)."
     ),
     (
         "Como ler os numeros",

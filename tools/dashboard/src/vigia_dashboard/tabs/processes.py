@@ -20,6 +20,8 @@ TOP_N = 30
 SORT_OPTIONS = [
     ("cpu", "CPU"),
     ("mem", "Memoria"),
+    ("io", "I/O (read+write)"),
+    ("conn", "Conexoes ativas"),
     ("pid", "PID"),
     ("name", "Nome"),
 ]
@@ -187,6 +189,14 @@ class ProcessesTab(Adw.Bin):
             procs = sorted(procs, key=lambda p: p.cpu_pct, reverse=True)
         elif self._sort_by == "mem":
             procs = sorted(procs, key=lambda p: p.rss_kb, reverse=True)
+        elif self._sort_by == "io":
+            procs = sorted(procs, key=lambda p: p.read_mbs + p.write_mbs, reverse=True)
+        elif self._sort_by == "conn":
+            procs = sorted(
+                procs,
+                key=lambda p: p.n_tcp_established + p.n_tcp_listen + p.n_udp,
+                reverse=True,
+            )
         elif self._sort_by == "pid":
             procs = sorted(procs, key=lambda p: p.pid)
         elif self._sort_by == "name":
@@ -218,10 +228,24 @@ class ProcessesTab(Adw.Bin):
     def _build_row(self, p: backend.ProcessInfo, my_user: str) -> Adw.ExpanderRow:
         row = Adw.ExpanderRow()
         row.set_title(p.comm)
-        row.set_subtitle(
-            f"PID {p.pid} · {p.user} · "
-            f"{p.cpu_pct:.1f}% CPU · {backend.format_kb(p.rss_kb)} RAM"
-        )
+
+        # Subtitle inclui I/O e conexoes se relevantes (v0.2)
+        sub_bits = [
+            f"PID {p.pid}",
+            p.user,
+            f"{p.cpu_pct:.1f}% CPU",
+            backend.format_kb(p.rss_kb) + " RAM",
+        ]
+        io_total = p.read_mbs + p.write_mbs
+        if io_total > 0.01:
+            sub_bits.append(
+                f"I/O {backend.format_mbps(p.read_mbs)}↓ {backend.format_mbps(p.write_mbs)}↑"
+            )
+        n_conn = p.n_tcp_established + p.n_tcp_listen + p.n_udp
+        if n_conn > 0:
+            sub_bits.append(f"{n_conn} conexao(oes)")
+        row.set_subtitle(" · ".join(sub_bits))
+        row.set_subtitle_lines(2)
         row.add_css_class("property")
 
         # CPU badge (prefix)
@@ -261,6 +285,37 @@ class ProcessesTab(Adw.Bin):
         state_lbl.add_css_class("caption")
         state_row.add_suffix(state_lbl)
         row.add_row(state_row)
+
+        # v0.2 — I/O row
+        io_row = Adw.ActionRow(title="I/O em tempo real")
+        io_row.add_css_class("property")
+        io_row.set_subtitle("Bytes/s lidos/escritos vs leitura anterior")
+        io_lbl = Gtk.Label(
+            label=f"↓ {backend.format_mbps(p.read_mbs)} · ↑ {backend.format_mbps(p.write_mbs)}"
+        )
+        io_lbl.add_css_class("monospace")
+        io_lbl.add_css_class("caption")
+        io_row.add_suffix(io_lbl)
+        row.add_row(io_row)
+
+        # v0.2 — Conexoes row
+        conn_row = Adw.ActionRow(title="Conexoes")
+        conn_row.add_css_class("property")
+        conn_row.set_subtitle(
+            "TCP estabelecidas + TCP listening + UDP. Bytes/s "
+            "por PID exigem eBPF (futuro)."
+        )
+        conn_lbl = Gtk.Label(
+            label=(
+                f"{p.n_tcp_established} EST · "
+                f"{p.n_tcp_listen} LISTEN · "
+                f"{p.n_udp} UDP"
+            )
+        )
+        conn_lbl.add_css_class("monospace")
+        conn_lbl.add_css_class("caption")
+        conn_row.add_suffix(conn_lbl)
+        row.add_row(conn_row)
 
         # Action row: kill buttons
         kill_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
