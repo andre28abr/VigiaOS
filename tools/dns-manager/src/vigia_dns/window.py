@@ -52,6 +52,52 @@ def build_content() -> Gtk.Widget:
     stack.add_titled_with_icon(stats_tab, "stats", "Stats", "view-statistics-symbolic")
     stack.add_titled_with_icon(about_tab, "about", "Sobre", "help-about-symbolic")
 
+    # ============================================================
+    # Sincronia entre tabs (v0.2.1):
+    # Blocklists/Stats dependem do modo (advanced/simple) detectado
+    # pelo StatusTab. Sem propagacao, o banner "modo avancado nao esta
+    # ativo" ficaria stale apos o user ativar o switch.
+    #
+    # 2 mecanismos:
+    # 1. Callback direto: status_tab.on_mode_changed dispara refresh
+    #    imediato em blocklists_tab e stats_tab quando o switch muda
+    # 2. Refresh on-activation: trocar para Blocklists/Stats sempre
+    #    refresca (catch-all caso o callback falhe ou estado mude
+    #    externamente)
+    # ============================================================
+    def _refresh_mode_dependent_tabs() -> None:
+        """Refresh tabs que dependem do modo (advanced/simple)."""
+        try:
+            blocklists_tab.refresh()
+        except Exception:  # pylint: disable=broad-except
+            pass
+        try:
+            stats_tab.refresh()
+        except Exception:  # pylint: disable=broad-except
+            pass
+
+    status_tab.on_mode_changed = _refresh_mode_dependent_tabs
+
+    def _on_visible_child_changed(stk, _pspec):
+        visible_name = stk.get_visible_child_name()
+        if visible_name == "blocklists":
+            try:
+                blocklists_tab.refresh()
+            except Exception:  # pylint: disable=broad-except
+                pass
+        elif visible_name == "stats":
+            try:
+                stats_tab.refresh()
+            except Exception:  # pylint: disable=broad-except
+                pass
+        elif visible_name == "status":
+            try:
+                status_tab.refresh()
+            except Exception:  # pylint: disable=broad-except
+                pass
+
+    stack.connect("notify::visible-child", _on_visible_child_changed)
+
     switcher = Adw.ViewSwitcher()
     switcher.set_stack(stack)
     switcher.set_policy(Adw.ViewSwitcherPolicy.WIDE)

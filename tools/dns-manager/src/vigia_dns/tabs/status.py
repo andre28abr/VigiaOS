@@ -25,6 +25,10 @@ class StatusTab(Adw.Bin):
         super().__init__()
         self._iface_rows: list = []
         self._running = False
+        # Callback chamado quando modo avancado e' ativado/desativado.
+        # Window.py seta isso para refrescar Blocklists/Stats que
+        # dependem do mode atual.
+        self.on_mode_changed: callable | None = None
 
         # Hero
         self._hero = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
@@ -464,8 +468,14 @@ class StatusTab(Adw.Bin):
                 "Operacao concluida. Pode levar alguns segundos para todas as "
                 "queries comecarem a passar pelo novo resolver.",
             )
-            # Refresh imediato para reverificar estado
+            # Refresh imediato para reverificar estado proprio
             self.refresh()
+            # Notifica tabs irmaos (Blocklists, Stats) que dependem do modo
+            if self.on_mode_changed is not None:
+                try:
+                    self.on_mode_changed()
+                except Exception:  # pylint: disable=broad-except
+                    pass
         return False
 
     # ============================================================
