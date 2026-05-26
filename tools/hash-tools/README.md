@@ -19,18 +19,19 @@ v0.1.0 — alpha. Hash single + verify + baseline (criação e comparação).
 ## Setup
 
 ```bash
-sudo rpm-ostree install hashdeep
-systemctl reboot
+# coreutils ja vem por default no Fedora — nada para instalar.
 pip install --user -e .
 vigia-hash
 ```
 
-`coreutils` (sha256sum, md5sum) já vem por padrão no Fedora.
-
 ## Wrapper de
 
-- `hashdeep` (para baseline com múltiplos algoritmos simultâneos)
 - `coreutils` (sha256sum, sha512sum, sha1sum, md5sum)
+
+> Em v0.2 plano integrar paralelismo via `md5deep` (que contém `hashdeep`)
+> para diretórios grandes. Atual implementação usa `hashlib` puro do
+> Python (sem subprocess) — funciona bem em arquivos individuais e
+> baselines de até ~10k arquivos.
 
 ## Roadmap
 

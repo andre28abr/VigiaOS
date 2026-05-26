@@ -582,7 +582,7 @@ TOOLS: list[ToolEntry] = [
         available_fn=lambda: shutil.which("vigia-hash") is not None,
         embedded_module="vigia_hash.window",
         category="defesa",
-        wrapped_packages=["coreutils", "hashdeep"],
+        wrapped_packages=["coreutils"],
     ),
     # NOTA: Tool Installer NAO esta mais nesta lista. Foi promovido a
     # entidade de primeiro nivel acessivel via icone 'Instalador' na
