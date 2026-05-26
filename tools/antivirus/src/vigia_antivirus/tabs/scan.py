@@ -1,7 +1,12 @@
-"""Tab Scan: escolhe alvo, roda clamscan com progress streaming."""
+"""Tab Scan: escolhe alvo, roda clamscan com progress streaming.
+
+Em v0.1.1 absorveu o que era a aba Status — banner no topo mostra
+estado essencial do ClamAV (idade da base de dados, daemon ativo).
+"""
 
 from __future__ import annotations
 
+import threading
 from pathlib import Path
 
 import gi
@@ -33,25 +38,41 @@ class ScanTab(Adw.Bin):
         self._stop_requested = False
         self._current_findings: list[backend.Finding] = []
 
+        # ------------------------------------------------------------
+        # Banner de estado (idade da base + ClamAV instalado?)
+        # ------------------------------------------------------------
+        self._status_banner = Adw.Banner()
+        self._status_banner.set_revealed(False)
+        # Adw.Banner por design fica colado nas bordas — colocamos
+        # acima do clamp para ocupar largura inteira.
+
+        # ------------------------------------------------------------
         # Header
+        # ------------------------------------------------------------
         header_lbl = Gtk.Label(label="Scan on-demand")
         header_lbl.add_css_class("title-2")
         header_lbl.set_halign(Gtk.Align.START)
-        header_lbl.set_margin_bottom(4)
+        header_lbl.set_margin_bottom(6)
 
         header_desc = Gtk.Label(
             label=(
-                "Escolha um alvo e clique Iniciar. Scan roda em background; "
-                "findings aparecem na lista abaixo conforme detectados."
+                "Escolha um alvo e clique <i>Iniciar scan</i>. Scan roda em "
+                "background; findings aparecem na lista abaixo conforme "
+                "detectados.\n\n"
+                "Verifique periodicamente a aba <i>Base de dados</i> para "
+                "manter as assinaturas atualizadas (recomendado 1x/semana)."
             )
         )
+        header_desc.set_use_markup(True)
         header_desc.add_css_class("dim-label")
         header_desc.set_halign(Gtk.Align.START)
         header_desc.set_wrap(True)
         header_desc.set_xalign(0)
-        header_desc.set_margin_bottom(16)
+        header_desc.set_margin_bottom(20)
 
+        # ------------------------------------------------------------
         # Target selector
+        # ------------------------------------------------------------
         target_group = Adw.PreferencesGroup()
         target_group.set_title("Alvo do scan")
 
@@ -62,6 +83,7 @@ class ScanTab(Adw.Bin):
 
         choose_btn = Gtk.Button.new_from_icon_name("folder-open-symbolic")
         choose_btn.set_tooltip_text("Escolher pasta")
+        choose_btn.set_valign(Gtk.Align.CENTER)
         choose_btn.connect("clicked", lambda _b: self._open_chooser())
 
         target_row_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
@@ -74,8 +96,6 @@ class ScanTab(Adw.Bin):
 
         # Preset chips
         chip_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-        chip_box.set_margin_top(4)
-        chip_box.set_margin_bottom(4)
         chip_box.set_halign(Gtk.Align.START)
         chip_box.append(Gtk.Label(label="Atalhos:"))
         for _key, label, path in TARGET_PRESETS:
@@ -90,32 +110,38 @@ class ScanTab(Adw.Bin):
         preset_row.set_activatable(False)
         target_group.add(preset_row)
 
+        # ------------------------------------------------------------
         # Run / Stop
+        # ------------------------------------------------------------
         action_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        action_box.set_margin_top(12)
+        action_box.set_margin_top(16)
         action_box.set_margin_bottom(12)
 
         self._run_btn = Gtk.Button(label="Iniciar scan")
         self._run_btn.add_css_class("suggested-action")
+        self._run_btn.add_css_class("pill")
         self._run_btn.connect("clicked", lambda _b: self._start_scan())
         action_box.append(self._run_btn)
 
         self._stop_btn = Gtk.Button(label="Parar")
         self._stop_btn.add_css_class("destructive-action")
+        self._stop_btn.add_css_class("pill")
         self._stop_btn.set_sensitive(False)
         self._stop_btn.connect("clicked", lambda _b: self._request_stop())
         action_box.append(self._stop_btn)
 
-        # Status bar
+        # Status / progress line
         self._status_label = Gtk.Label(label="Pronto.")
         self._status_label.add_css_class("dim-label")
         self._status_label.set_halign(Gtk.Align.START)
         self._status_label.set_margin_top(4)
-        self._status_label.set_margin_bottom(8)
+        self._status_label.set_margin_bottom(16)
         self._status_label.set_wrap(True)
         self._status_label.set_xalign(0)
 
+        # ------------------------------------------------------------
         # Findings group
+        # ------------------------------------------------------------
         self._findings_group = Adw.PreferencesGroup()
         self._findings_group.set_title("Findings")
         self._findings_group.set_description(
@@ -124,7 +150,9 @@ class ScanTab(Adw.Bin):
         self._findings_rows: list = []
         self._render_findings()
 
+        # ------------------------------------------------------------
         # Log group (linhas brutas — collapsable via expander)
+        # ------------------------------------------------------------
         log_expander = Adw.ExpanderRow()
         log_expander.set_title("Log do scan")
         log_expander.set_subtitle("Output bruto do clamscan")
@@ -150,27 +178,38 @@ class ScanTab(Adw.Bin):
         log_expander.add_row(log_row)
 
         log_group = Adw.PreferencesGroup()
+        log_group.set_margin_top(16)
         log_group.add(log_expander)
 
+        # ------------------------------------------------------------
         # Layout
-        outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-        outer.set_margin_top(20)
-        outer.set_margin_bottom(20)
-        outer.set_margin_start(20)
-        outer.set_margin_end(20)
-        outer.append(header_lbl)
-        outer.append(header_desc)
-        outer.append(target_group)
-        outer.append(action_box)
-        outer.append(self._status_label)
-        outer.append(self._findings_group)
-        outer.append(log_group)
+        # ------------------------------------------------------------
+        inner = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+        inner.set_margin_top(24)
+        inner.set_margin_bottom(28)
+        inner.set_margin_start(28)
+        inner.set_margin_end(28)
+        inner.append(header_lbl)
+        inner.append(header_desc)
+        inner.append(target_group)
+        inner.append(action_box)
+        inner.append(self._status_label)
+        inner.append(self._findings_group)
+        inner.append(log_group)
 
         scrolled = Gtk.ScrolledWindow()
         scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         scrolled.set_vexpand(True)
-        scrolled.set_child(make_clamp(outer))
-        self.set_child(scrolled)
+        scrolled.set_child(make_clamp(inner))
+
+        # Banner fica fora do clamp para usar largura total
+        outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+        outer.append(self._status_banner)
+        outer.append(scrolled)
+        self.set_child(outer)
+
+        # Carrega estado da base ao montar
+        self._refresh_status_banner()
 
     # ============================================================
     # File chooser
@@ -188,6 +227,54 @@ class ScanTab(Adw.Bin):
                 self._target_entry.set_text(folder.get_path() or "")
         except GLib.Error:
             pass  # user cancelou
+
+    # ============================================================
+    # Status banner (idade da base + sanity checks)
+    # ============================================================
+
+    def _refresh_status_banner(self) -> None:
+        """Atualiza banner no topo com idade da base / instalacao."""
+        threading.Thread(target=self._status_worker, daemon=True).start()
+
+    def _status_worker(self) -> None:
+        installed = backend.clamav_installed()
+        info = backend.get_db_info() if installed else backend.DbInfo()
+        age = backend.db_age_days(info) if installed else None
+        GLib.idle_add(self._apply_status_banner, installed, info, age)
+
+    def _apply_status_banner(self, installed: bool, info, age) -> bool:
+        if not installed:
+            self._status_banner.set_title(
+                "ClamAV nao instalado. "
+                "Instale via: rpm-ostree install clamav clamav-update"
+            )
+            self._status_banner.set_revealed(True)
+            self._run_btn.set_sensitive(False)
+            return False
+
+        # Instalado — verifica idade da base
+        if age is None:
+            self._status_banner.set_title(
+                "Base de assinaturas: idade desconhecida. "
+                "Atualize na aba 'Base de dados' antes do primeiro scan."
+            )
+            self._status_banner.set_revealed(True)
+        elif age > 14:
+            self._status_banner.set_title(
+                f"Base de assinaturas desatualizada ha {age} dias. "
+                "Va a 'Base de dados' e atualize."
+            )
+            self._status_banner.set_revealed(True)
+        elif age > 7:
+            self._status_banner.set_title(
+                f"Base com {age} dias. Considere atualizar na aba 'Base de dados'."
+            )
+            self._status_banner.set_revealed(True)
+        else:
+            # Tudo bem — esconde o banner
+            self._status_banner.set_revealed(False)
+
+        return False
 
     # ============================================================
     # Scan lifecycle
@@ -249,11 +336,9 @@ class ScanTab(Adw.Bin):
         GLib.idle_add(self._on_done, result)
 
     def _on_line(self, line: str) -> bool:
-        # Append no log
         end = self._log_buf.get_end_iter()
         self._log_buf.insert(end, line + "\n")
 
-        # Se for finding, adiciona na lista
         if " FOUND" in line and ":" in line:
             path, _, rest = line.rpartition(":")
             signature = rest.replace("FOUND", "").strip()
@@ -270,7 +355,6 @@ class ScanTab(Adw.Bin):
             self._status_label.set_label(f"Erro: {result.error}")
             return False
 
-        # Atualiza com finding list canonica do parser do summary
         self._current_findings = result.findings
         self._render_findings()
 
