@@ -4,7 +4,7 @@
 > contexto completo para retomar o desenvolvimento (humano ou IA) sem
 > precisar reler histórico de PRs ou conversas anteriores.
 >
-> Última atualização: 2026-05-25 (revisão 2: +4 tools novas)
+> Última atualização: 2026-05-26 (revisão 3: +Dashboard, polish UI completo)
 
 ---
 
@@ -49,7 +49,7 @@ software por cima (layered + flatpak).
 advocacia** — ambiente onde clientes confiam dados sensíveis e o
 profissional precisa demonstrar diligência.
 
-**Estado atual** (2026-05-25): **17 ferramentas funcionais** integradas
+**Estado atual** (2026-05-26): **18 ferramentas funcionais** integradas
 via Hub com layout master-detail-content (3 painéis) + categorias +
 modo embedded.
 
@@ -69,10 +69,11 @@ modo embedded.
 | 12 | **VPN Manager** | v0.1.1 | Python + GTK4 | 🟢 WireGuard wrapper + paste fallback |
 | 13 | **DNS Manager** | v0.1.0 | Python + GTK4 | 🟢 systemd-resolved + 9 providers DoT |
 | 14 | **Capabilities Inspector** | v0.1.0 | Python + GTK4 | 🟢 getcap audit + catálogo pt-BR de 41 caps |
-| 15 | **Antivirus** | v0.1.0 | Python + GTK4 | 🟢 ClamAV wrapper — substitui clamtk |
+| 15 | **Antivirus** | v0.1.1 | Python + GTK4 | 🟢 ClamAV wrapper — substitui clamtk + UX refinements |
 | 16 | **Network Scanner** | v0.1.0 | Python + GTK4 | 🟢 nmap GUI com 6 perfis pré-definidos |
 | 17 | **Firmware Analyzer** | v0.1.0 | Python + GTK4 | 🟢 binwalk: signatures + extract + entropia |
-| 18 | **Hash Tools** | v0.1.0 | Python + GTK4 | 🟢 SHA-256/512 + baseline+diff de diretório |
+| 18 | **Hash Tools** | v0.1.1 | Python + GTK4 | 🟢 SHA-256/512 + baseline+diff de diretório |
+| 19 | **Dashboard** | v0.1.0 | Python + GTK4 + Cairo | 🟢 Sistema em tempo real (substitui htop/btop) |
 
 ---
 
@@ -94,7 +95,7 @@ para consulta.
 ### 2.2 Expansão do toolkit (2026-05-22 a 2026-05-25)
 
 Iniciou com 6 ferramentas (Hub, Activity Log, Privacy, SELinux, Firewall,
-NetMon). Expandiu para **17 ferramentas** em 4 ciclos:
+NetMon). Expandiu para **18 ferramentas** em 5 ciclos:
 
 | Ciclo | Adições | Foco |
 |---|---|---|
@@ -102,6 +103,7 @@ NetMon). Expandiu para **17 ferramentas** em 4 ciclos:
 | **Compliance/audit** | Hardening Checks, Reports, File Integrity, Tool Installer, Activity Log GUI | LGPD + audit estendido |
 | **Network/integrity** | VPN, DNS, Capabilities | Camada de rede privada + audit fino |
 | **Security toolkit** | Antivirus, Network Scanner, Firmware Analyzer, Hash Tools | Análise prática (scan/RE/integrity) |
+| **System monitoring** | Dashboard | Tempo real (CPU/RAM/disco/rede/processos) |
 
 ### 2.3 Refatorações de arquitetura
 
@@ -123,6 +125,18 @@ NetMon). Expandiu para **17 ferramentas** em 4 ciclos:
 - **Polish v0.2** (commit `e5011e4`): AIDE exclui `/etc/systemd/system.control/`
   (false positives sistêmicos), VPN dialog com paste fallback (botão Colar +
   `grab_focus` inicial).
+- **UI consistency pass** (commits `2cd8862`, `8198df1`, `e089e2f`,
+  `0b72ba8`): 3 passes consecutivos baseados em feedback do user:
+  - Remove `.pill` de 27 botões action (suggested/destructive) → forma
+    retangular como o Reports
+  - Padroniza espaçamentos em 26 arquivos: margens 24/32/28/28,
+    header_lbl margin_bottom 8, header_desc 24, PreferencesGroup
+    secundários ganham margin_top(24)
+  - Tira botões de dentro dos cards do Hash Tools (Comparar, Criar
+    baseline, Recarregar, Copiar) → Box própria com margin_top(16),
+    halign=END. Spinners aparecem ANTES dos botões.
+  - Antivirus v0.1.1: unifica Status+Scan → 3 tabs (era 4), banner
+    inteligente no topo só aparece se há ação requerida.
 
 ---
 
@@ -186,7 +200,8 @@ VigiaOS/
     ├── antivirus/               # Python — wrapper ClamAV
     ├── network-scanner/         # Python — GUI nmap
     ├── firmware-analyzer/       # Python — wrapper binwalk
-    └── hash-tools/              # Python — hash + baseline diff
+    ├── hash-tools/              # Python — hash + baseline diff
+    └── dashboard/               # Python — sistema em tempo real (Cairo)
 ```
 
 Cada ferramenta em `tools/` é um **projeto independente** com seu próprio
@@ -763,6 +778,93 @@ binário `hashdeep`) ou multiprocessing em Python puro.
 
 ---
 
+### 5.19 Vigia Dashboard (`tools/dashboard/`, v0.1.0)
+
+**Função**: Dashboard de sistema em tempo real — CPU, memória, disco
+I/O, rede e processos com gráficos visuais.
+
+**Stack**: Python + PyGObject + GTK4 + libadwaita + **Cairo** (drawing
+custom para gráficos).
+
+**Tabs**: Visão Geral + Recursos + Processos + Sobre.
+
+**Substituições**:
+- `htop` / `btop` → Visão Geral + Recursos + Processos
+- `glances` → Visão Geral (overview multi-recurso)
+- `iotop` → Recursos (agregado por device; per-process I/O em v0.2)
+- `iftop` → Recursos (agregado por interface; per-process em v0.2)
+- `sensors` → Recursos (CPU temp se `lm_sensors` instalado)
+
+**Fonte de dados** (`backend.py`, 100% `/proc` + `/sys`):
+- `/proc/stat` → CPU times por core → delta vs prev = %
+- `/proc/meminfo` → RAM, swap, cache, buffers
+- `/proc/loadavg` → load 1/5/15min
+- `/proc/diskstats` → sectors_read/written por device → MB/s
+- `/proc/net/dev` → RX/TX bytes por interface → MB/s
+- `/proc/<pid>/stat,status,statm,cmdline` → processos
+- `/sys/class/thermal/thermal_zone*/temp` → CPU temp
+- `/sys/devices/system/cpu/cpu*/cpufreq/scaling_cur_freq` → frequência
+- Sem subprocess (exceto fallback de `kill` via `pkexec` para PIDs alheios)
+
+**Gráficos** (`graphs.py`, 3 widgets Cairo):
+
+| Widget | Uso | Tamanho típico |
+|---|---|---|
+| `Sparkline` | Mini gráfico de linha para Visão Geral | 200×42 |
+| `LineChart` | Multi-série com grid + labels Y + legenda | 400×160 |
+| `StackedBar` | Barra horizontal segmentada (RAM used/cache/free) | full × 24 |
+
+Cada widget tem:
+- `set_draw_func()` ligado em `_on_draw()` (Cairo context)
+- `deque(maxlen=60)` para histórico de 60s
+- Push de valor → `queue_draw()` no widget
+
+**Cores semânticas** (paleta Vigia, em `__init__.py`):
+- CPU = emerald `#34d399`
+- RAM = amber `#fbbf24`
+- Disco = cyan `#22d3ee`
+- Rede = violet `#a78bfa`
+
+**Refresh**:
+- Visão Geral, Recursos: 1Hz (`GLib.timeout_add(1000, callback)`)
+- Processos: 0.5Hz (2s — listar 200+ procs é mais pesado)
+- Ao destruir widget: `GLib.source_remove()` para parar timeout
+
+**Processos — recursos especiais**:
+- `_PROC_CPU_PREV` global: cache de `(total_ticks, snap_time)` por PID
+  para calcular `%CPU` vs leitura anterior
+- `_USER_CACHE` global: cache de `uid → username` (evita lookup repetido)
+- `_CLOCK_TICKS` constante: `sysconf(SC_CLK_TCK)` — base do delta de CPU
+- Limpeza automática de PIDs mortos do cache a cada refresh
+
+**Kill com fallback admin**:
+```python
+try:
+    os.kill(pid, signal.SIGTERM)
+    return True, ""
+except PermissionError:
+    # Fallback: pkexec kill -TERM <pid>
+    subprocess.run(["pkexec", "kill", "-TERM", str(pid)], ...)
+```
+
+**Filtros (Processos)**:
+- Search: substring em `comm` ou `cmdline`
+- Sort: `cpu`, `mem`, `pid`, `name`
+- "Apenas meus processos": filtra `p.user == my_user`
+- Limit fixo: top 30 (após filtro)
+
+**SVG**: 4 mini-painéis em 2×2 (line chart emerald, bar chart amber,
+arc cyan, area chart violet) — preview do que a tool faz.
+
+**Sem persistência**: ao fechar a tool, histórico some. Diferente de
+Activity Log / Reports / File Integrity que persistem. Por design —
+dashboard é "agora", não "histórico".
+
+**Wrapper de**: `procfs` (kernel interface, sem pacote externo).
+Opcional: `lm_sensors` para sensores extras.
+
+---
+
 ## 6. Padrões e convenções comuns
 
 ### 6.1 Stack consistente
@@ -1019,7 +1121,7 @@ sudo install -m 0755 target/release/vigia-log /usr/local/bin/vigia-log
 for d in vigia-hub privacy-controls selinux-gui firewall-gui netmon-gui \
          hardening-checks reports file-integrity tool-installer \
          vpn-manager dns-manager capabilities-inspector activity-log-gui \
-         antivirus network-scanner firmware-analyzer hash-tools; do
+         antivirus network-scanner firmware-analyzer hash-tools dashboard; do
   (cd ../$d && pip install --user -e .)
 done
 
@@ -1027,7 +1129,8 @@ done
 for tool in vigia-hub vigia-privacy vigia-selinux vigia-firewall vigia-netmon \
             vigia-hardening vigia-reports vigia-integrity vigia-installer \
             vigia-vpn vigia-dns vigia-capabilities vigia-log-gui \
-            vigia-antivirus vigia-netscan vigia-firmware vigia-hash; do
+            vigia-antivirus vigia-netscan vigia-firmware vigia-hash \
+            vigia-dashboard; do
   sudo ln -sf "$HOME/.local/bin/$tool" /usr/local/bin/$tool
 done
 
@@ -1199,6 +1302,53 @@ Todas as 4 tools seguem o padrão da v2: `build_content() -> Gtk.Widget`,
 Hub registry expande de 11 para 15 entries (Tool Installer continua
 fora da lista — fica no ícone fixo da nav lateral fina).
 
+### 2026-05-26 — UI consistency pass (commits `2cd8862`, `8198df1`, `e089e2f`, `0b72ba8`)
+
+3 passes consecutivos baseados em feedback do usuário (apos testar a
+suite na VM):
+
+1. **Botões action retangulares** (`2cd8862`): remove `.pill` de 27
+   botões `.suggested-action` e `.destructive-action`. Padroniza forma
+   pelo "Gerar" do Reports (retângulo com cantos suaves). Mantém pill
+   em 3 chips compactos `.flat` (Home/Downloads/atalhos).
+
+2. **Antivirus v0.1.1 UX** (`0b72ba8`): tab Status removida (era
+   redundante). Banner inteligente `Adw.Banner` no topo da tab Scan
+   só aparece quando há ação requerida (ClamAV não instalado, base
+   desatualizada). 4 tabs → 3 tabs. Histórico de scans movido para
+   tab "Base de dados".
+
+3. **Padronização de espaçamentos** (`8198df1`): 26 arquivos atualizados
+   via scripts Python (`/tmp/standardize_spacing*.py`):
+   - Margens externas: 20/20/20/20 → 24/32/28/28
+   - `header_lbl.set_margin_bottom`: 4 → 8
+   - `header_desc.set_margin_bottom`: 16 → 24
+   - `Adw.PreferencesGroup` secundários: `set_margin_top(24)`
+
+4. **Botões fora dos cards** (`e089e2f`): Hash Tools tinha botões
+   "Comparar", "Criar baseline", "Recarregar", "Copiar" dentro de
+   `Adw.ActionRow` no card do `PreferencesGroup` — ficavam apertados.
+   Movidos para `Gtk.Box` própria após o card, com `margin_top(16)`
+   e `halign=END`. Spinners passam para esquerda do botão.
+
+### 2026-05-26 — Vigia Dashboard v0.1 (commit `0258a94`)
+
+Nova categoria de tool: **monitoramento de sistema em tempo real**.
+Substitui htop/btop/glances/iotop/iftop em UI nativa.
+
+- **4 tabs**: Visão Geral, Recursos, Processos, Sobre
+- **Cairo charts**: Sparkline + LineChart + StackedBar (3 widgets
+  custom em `graphs.py`, ~220 linhas)
+- **Cores semânticas**: CPU emerald, RAM amber, Disco cyan, Rede violet
+- **Refresh 1Hz** (Visão/Recursos) e 0.5Hz (Processos)
+- **Backend 100% /proc + /sys** — sem subprocess, sem deps pip externas
+- **Kill com pkexec fallback** para PIDs de outros users
+- **Sem persistência** — histórico de 60s em deques circulares na memória
+
+Hub registry: 15 → 16 entries. Dashboard é o **primeiro** da categoria
+"monitoramento" (porta de entrada visual). Tool Installer ganha nota
+em htop/iotop indicando que Dashboard cobre o mesmo escopo.
+
 ---
 
 ## 10. Roadmap
@@ -1273,6 +1423,48 @@ fora da lista — fica no ícone fixo da nav lateral fina).
 - Modificação de capabilities (`setcap`) com confirmação forte
 - Comparativo "expected vs actual" baseado em policy
 - Export findings para Activity Log
+
+**Dashboard v0.2+** (próximas features priorizadas):
+
+*Top-priority (curtos, alto valor)*:
+- **Alertas configuráveis**: limiar por métrica (CPU > 95% por 1min,
+  RAM > 90%, disco > 95%, temp > 85°C) → notificação desktop via
+  `Gio.Notification`. Configuração em `~/.config/vigia/dashboard.json`.
+  Threshold + duração mínima + cooldown entre alerts.
+- **Per-process I/O**: implementar leitura de `/proc/<pid>/io`
+  (read_bytes, write_bytes). Cumulativo desde início do processo.
+  Calcular delta vs leitura anterior → MB/s por PID. Coluna nova na
+  tab Processos. Substitui `iotop` GUI-side.
+- **Per-process bandwidth**: parsing de `/proc/net/tcp6?` + `/proc/<pid>/fd/*`
+  → quais sockets pertencem a qual PID. Subscribe netlink `NETLINK_INET_DIAG`
+  para refresh sem rescan completo. Substitui `nethogs` GUI-side.
+
+*Medium-priority (médios, qualidade visual)*:
+- **Gráfico de barras CPU per-core**: alternativa à linha sobreposta
+  (que pode ficar bagunçada com 16+ cores). Toggle "linha / barra"
+  na aba Recursos.
+- **Top processes na sparkline**: ao passar mouse na sparkline da
+  Visão Geral, mostra qual processo subiu o pico (tooltip).
+- **Disk I/O histograma**: além da linha de read/write, mostrar
+  histograma de latency (p50/p95/p99) por device. Lê `/proc/diskstats`
+  campos 7-10 (read/write completion times).
+- **Network: filtro por interface**: dropdown "Todas / eth0 / wg0 / lo"
+  na aba Recursos. Útil pra isolar VPN vs LAN.
+
+*Lower-priority (longos, infra)*:
+- **Persistência histórica**: SQLite em `~/.local/share/vigia-dashboard/`
+  com aggregates rolling (1min, 5min, 1h, 1d). Aba nova "Histórico"
+  com seletor de janela temporal.
+- **GPU monitoring**: NVIDIA via `nvidia-smi --query-gpu=... --format=csv`
+  (já é JSON-ish), AMD via `/sys/class/drm/card0/device/`. Card opcional
+  na Visão Geral se detectado.
+- **Snapshot export**: botão "Capturar snapshot" gera JSON + PNG
+  do estado atual. Útil pra anexar em ticket de suporte ou relatório
+  Vigia Reports.
+- **Refresh rate configurável**: slider na Visão Geral (0.5s / 1s /
+  2s / 5s). Trade-off CPU usage vs responsividade.
+- **Tema de cores customizável**: usuário escolhe paleta (semantic
+  default, monochrome emerald, high-contrast). Salva em config.
 
 ### 10.2 Ferramentas novas planejadas (post-v0.1)
 
@@ -1407,6 +1599,41 @@ Tentativa inicial de pôr badges no header `pack_end` comprimia tabs
 deu transparência ao usuário (vê qual pacote upstream a tool envolve) sem
 poluir header.
 
+### 11.16 Cairo + `Gtk.DrawingArea` é viável para gráficos custom
+Para gráficos dinâmicos (sparkline, line chart, stacked bar), `Cairo` via
+`Gtk.DrawingArea.set_draw_func()` se mostrou rápido o suficiente para
+refresh 1Hz com 8+ séries. ~220 linhas de código em `graphs.py` cobrem
+3 widgets reusáveis. Alternativas (matplotlib, plotly) trariam deps
+externas pesadas; libs nativas GTK4 (`Adw.AnimationTarget`?) são limitadas.
+
+Pattern bom: `deque(maxlen=60)` por série + `push(v) → queue_draw()` no
+widget. Cairo desenha em coord local; padding interno gerencia eixos +
+labels. Performance: 60 pontos × 8 séries × 1Hz = ~1ms por frame.
+
+### 11.17 `.pill` em botões action foi um erro estético
+Inicialmente apliquei `.pill` em quase todo botão `.suggested-action` /
+`.destructive-action` (achei que ficaria moderno). Feedback do user:
+"queria retangular como o do Reports". Resultado da padronização: remoção
+de pill em 27 botões. Lição: o **default GTK4** já é bom — só desviar
+quando há razão clara. Manter `.pill` apenas em chips compactos com
+`.flat` (atalhos tipo "Home", "Downloads").
+
+### 11.18 Botões dentro de `Adw.PreferencesGroup` sufocam
+Padrão tentador: botão de ação como última row do mesmo `PreferencesGroup`
+que contém o input. **Visualmente apertado** — herda padding mínimo de
+`ActionRow` e fica colado nas bordas do card. Padrão melhor: botão FORA
+do card, em `Gtk.Box` própria com `margin_top(16)` e `halign=END`.
+Aplicado em Hash Tools (Comparar, Criar baseline, Recarregar, Copiar) e
+deve ser padrão para tools futuras.
+
+### 11.19 `/proc` é o melhor "wrapped package" possível
+Dashboard prova que para algumas tools, o "wrap" ideal não é um binário
+upstream mas o **kernel direto**. `/proc/stat`, `/meminfo`, `/diskstats`,
+`/net/dev` são interfaces estáveis (>20 anos), zero overhead, sem deps,
+sem subprocess. Performance: ~1ms para snapshot completo do sistema.
+Trade-off único: parsing manual de cada formato (mas formatos são
+documentados em `man 5 proc`).
+
 ---
 
 ## 12. Tags de restauração
@@ -1422,6 +1649,13 @@ Tags criadas antes de mudanças grandes para permitir rollback fácil:
 | `pre-layout-redesign` | Hub 3 painéis + categorias + aba Sobre | `git checkout pre-layout-redesign` |
 | `pre-polish-v02` | Polish v0.2 (AIDE exclude + VPN paste) | `git checkout pre-polish-v02 -- tools/file-integrity/ tools/vpn-manager/` |
 | `v0.7.0` | Activity Log core release | Tarball acessível no GitHub release |
+
+**Commits-âncora** (sem tag formal mas referenciados no log):
+- `0258a94` — Add Vigia Dashboard v0.1
+- `e089e2f` — Hash Tools: botões fora dos cards
+- `8198df1` — Padroniza espaçamentos em 26 arquivos
+- `0b72ba8` — Antivirus v0.1.1 UX (3→4 tabs unificada)
+- `2cd8862` — Remove .pill de 27 botões action
 
 ---
 
@@ -1507,11 +1741,12 @@ sudo install -m 0755 target/release/vigia-log /usr/local/bin/vigia-log
 cd tools/<nome>
 pip install --user -e .
 
-# Symlinks sudo-friendly (todos os 17 entrypoints)
+# Symlinks sudo-friendly (todos os 18 entrypoints)
 for tool in vigia-hub vigia-privacy vigia-selinux vigia-firewall vigia-netmon \
             vigia-hardening vigia-reports vigia-integrity vigia-installer \
             vigia-vpn vigia-dns vigia-capabilities vigia-log-gui \
-            vigia-antivirus vigia-netscan vigia-firmware vigia-hash; do
+            vigia-antivirus vigia-netscan vigia-firmware vigia-hash \
+            vigia-dashboard; do
   sudo ln -sf "$HOME/.local/bin/$tool" /usr/local/bin/$tool
 done
 
@@ -1535,4 +1770,5 @@ vigia-antivirus    # ClamAV wrapper
 vigia-netscan      # nmap GUI
 vigia-firmware     # binwalk wrapper
 vigia-hash         # hash + baseline
+vigia-dashboard    # sistema em tempo real (CPU/RAM/disco/rede/procs)
 ```
