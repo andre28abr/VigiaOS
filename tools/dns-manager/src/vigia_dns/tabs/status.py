@@ -201,11 +201,27 @@ class StatusTab(Adw.Bin):
         GLib.idle_add(self._apply, st, dc_st, mode)
 
     def _apply(self, st: backend.ResolvedStatus, dc_st=None, mode: str = "unknown") -> bool:
-        # Hero
+        # Hero (v0.2.2: mode-aware)
         for cls in ("success", "warning", "error", "dim-label"):
             self._state_label.remove_css_class(cls)
 
-        if not st.available:
+        # Se modo avancado esta ativo, hero reflete dnscrypt-proxy
+        # (nao reclama de systemd-resolved estar parado — esse e' o design!)
+        if mode == "advanced" and dc_st is not None and dc_st.active:
+            self._state_label.set_label("Modo avancado ativo")
+            self._state_label.add_css_class("success")
+            features = []
+            if dc_st.server_names:
+                features.append(f"{len(dc_st.server_names)} server(s)")
+            if dc_st.blocklist_size > 0:
+                features.append(f"{dc_st.blocklist_size} dominios bloqueados")
+            else:
+                features.append("blocklist vazia")
+            if dc_st.require_dnssec:
+                features.append("DNSSEC")
+            sub = "dnscrypt-proxy em 127.0.0.1 · " + " · ".join(features)
+            self._state_sub.set_label(sub)
+        elif not st.available:
             self._state_label.set_label("systemd-resolved nao disponivel")
             self._state_label.add_css_class("error")
             self._state_sub.set_label(
@@ -237,18 +253,31 @@ class StatusTab(Adw.Bin):
                 primary = (st.current_dns or st.global_dns)[0]
                 self._state_sub.set_label(f"Usando: {primary}")
 
-        # Sistema
-        for cls in ("success", "error", "warning"):
+        # Sistema — quando modo avancado ativo, systemd-resolved parado e'
+        # esperado (nao e' warning). Mostra como dim-label.
+        for cls in ("success", "error", "warning", "dim-label"):
             self._lbl_resolved.remove_css_class(cls)
         if st.active:
             self._lbl_resolved.set_label("ativo")
             self._lbl_resolved.add_css_class("success")
         elif st.available:
-            self._lbl_resolved.set_label("parado")
-            self._lbl_resolved.add_css_class("warning")
+            if mode == "advanced":
+                # Esperado em modo avancado — dnscrypt-proxy substitui ele
+                self._lbl_resolved.set_label("parado (modo avancado)")
+                self._lbl_resolved.add_css_class("dim-label")
+            else:
+                self._lbl_resolved.set_label("parado")
+                self._lbl_resolved.add_css_class("warning")
         else:
             self._lbl_resolved.set_label("indisponivel")
             self._lbl_resolved.add_css_class("error")
+
+        # v0.2.2: esconde grupos relativos a systemd-resolved quando
+        # modo avancado esta ativo. Esses grupos so fazem sentido quando
+        # o backend e' systemd-resolved.
+        is_advanced = (mode == "advanced")
+        self._global_group.set_visible(not is_advanced)
+        self._ifaces_group.set_visible(not is_advanced)
 
         # Global config
         if st.global_dns:
