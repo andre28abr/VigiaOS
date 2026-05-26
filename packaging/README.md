@@ -11,24 +11,39 @@ Suite via COPR (Cool Other Package Repo, do Fedora).
 
 ## Para o usuário final (instalar)
 
-Quando o COPR estiver publicado, qualquer Fedora Silverblue / Kinoite /
-Bluefin / etc.:
+> ⚠️ **Repo COPR ainda não foi ativado.** Os comandos abaixo só
+> funcionam APÓS o setup manual descrito mais adiante (criar conta,
+> projeto, fazer build). Por enquanto, instale via
+> `pip install --user -e .` — ver [README principal](../README.md).
+
+Quando o COPR estiver publicado, em Silverblue/Kinoite/Bluefin/etc.:
 
 ```bash
-# Habilitar repo
-sudo curl -L -o /etc/yum.repos.d/_copr_andre28abr-vigia.repo \
-    https://copr.fedorainfracloud.org/coprs/andre28abr/vigia/repo/fedora-44/andre28abr-vigia-fedora-44.repo
+# 1. Habilita o repo (substitui $(rpm -E %fedora) pela versao detectada)
+sudo wget -O /etc/yum.repos.d/_copr_andre28abr-vigia.repo \
+    "https://copr.fedorainfracloud.org/coprs/andre28abr/vigia/repo/fedora-$(rpm -E %fedora)/andre28abr-vigia-fedora-$(rpm -E %fedora).repo"
 
-# Instalar a suite completa (metapackage — instala todas as 18 tools)
+# 2. Instala a suite completa (metapackage com as 18 tools)
 sudo rpm-ostree install vigia-suite
 sudo systemctl reboot
 
-# OU instalar tools individuais
+# OU instala tools individuais
 sudo rpm-ostree install vigia-dashboard vigia-antivirus
 sudo systemctl reboot
 ```
 
-Em Fedora não-atomic: `sudo dnf install vigia-suite`.
+Em Fedora não-atomic (Workstation, KDE Plasma, etc.):
+
+```bash
+sudo dnf copr enable andre28abr/vigia
+sudo dnf install vigia-suite
+```
+
+> **Nota sobre rpm-ostree**: ao contrário do `dnf`, o `rpm-ostree`
+> NÃO tem subcomando `copr`. Para habilitar repos COPR em Silverblue
+> você precisa baixar o `.repo` direto (método acima) — ou instalar
+> `dnf` overlay primeiro (`sudo rpm-ostree install dnf && reboot`)
+> e usar `sudo dnf copr enable ...`.
 
 ## Lista de specs
 
