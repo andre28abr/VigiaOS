@@ -1,12 +1,11 @@
-"""Janela principal — 5 tabs (Status, Provedores, Blocklists, Stats, Sobre).
+"""Janela principal — 3 tabs (Status, Provedores, Sobre).
 
-v0.3.0: dnscrypt-only. Removido mode-aware wiring (sem mais switch
-simples/avancado).
+v0.4.0: enxugado. Removido Blocklists e Stats — bloqueio de ads/trackers
+e' feito melhor por extensoes de navegador (uBlock Origin etc.), que
+ficam disponiveis via Vigia Tool Installer.
 
-Sincronia simples entre tabs:
-- StatusTab.on_activation_changed: chamado apos Ativar/Restaurar
-  → refresca outras tabs (Provedores/Blocklists/Stats)
-- notify::visible-child: refresca tab ao ativar (catch-all)
+DNS Manager agora foca em: DNS encriptado (DoH/DoT/DNSCrypt) com
+catalogo de servers no-logs + DNSSEC.
 """
 
 from __future__ import annotations
@@ -19,7 +18,7 @@ gi.require_version("Adw", "1")
 from gi.repository import Adw, Gtk  # noqa: E402
 
 from . import WRAPPED_PACKAGES
-from .tabs import AboutTab, BlocklistsTab, ResolversTab, StatsTab, StatusTab
+from .tabs import AboutTab, ResolversTab, StatusTab
 
 
 def _make_pkg_badges_bar() -> Gtk.Widget:
@@ -44,38 +43,28 @@ def _make_pkg_badges_bar() -> Gtk.Widget:
 def build_content() -> Gtk.Widget:
     status_tab = StatusTab()
     resolvers_tab = ResolversTab()
-    blocklists_tab = BlocklistsTab()
-    stats_tab = StatsTab()
     about_tab = AboutTab()
 
     stack = Adw.ViewStack()
     stack.add_titled_with_icon(status_tab, "status", "Status", "dialog-information-symbolic")
     stack.add_titled_with_icon(resolvers_tab, "resolvers", "Provedores", "view-list-symbolic")
-    stack.add_titled_with_icon(blocklists_tab, "blocklists", "Blocklists", "action-unavailable-symbolic")
-    stack.add_titled_with_icon(stats_tab, "stats", "Stats", "view-statistics-symbolic")
     stack.add_titled_with_icon(about_tab, "about", "Sobre", "help-about-symbolic")
 
-    # ============================================================
-    # Sincronia entre tabs (v0.3.0 simplificada — so 1 callback)
-    # ============================================================
+    # v0.4.0: apos Ativar/Restaurar dnscrypt-proxy, refresca Provedores
     def _on_activation_changed() -> None:
-        """Refresca todas as tabs apos Ativar/Restaurar dnscrypt-proxy."""
-        for tab in (resolvers_tab, blocklists_tab, stats_tab):
-            try:
-                tab.refresh()
-            except Exception:  # pylint: disable=broad-except
-                pass
+        try:
+            resolvers_tab.refresh()
+        except Exception:  # pylint: disable=broad-except
+            pass
 
     status_tab.on_activation_changed = _on_activation_changed
 
-    # Refresh on-activation: trocar pra qualquer tab refresca ela
+    # Refresh on-activation: trocar de tab refresca ela
     def _on_visible_child_changed(stk, _pspec):
         visible_name = stk.get_visible_child_name()
         tab_map = {
             "status": status_tab,
             "resolvers": resolvers_tab,
-            "blocklists": blocklists_tab,
-            "stats": stats_tab,
         }
         tab = tab_map.get(visible_name)
         if tab is not None and hasattr(tab, "refresh"):

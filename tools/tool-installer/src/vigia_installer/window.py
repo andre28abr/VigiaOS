@@ -13,7 +13,7 @@ gi.require_version("Adw", "1")
 from gi.repository import Adw, Gtk  # noqa: E402
 
 from . import WRAPPED_PACKAGES
-from .tabs import AboutTab, BrowseTab, PendingTab
+from .tabs import AboutTab, BrowseTab, ExtensionsTab, PendingTab
 
 
 def _make_pkg_badges_bar() -> Gtk.Widget:
@@ -40,11 +40,13 @@ class _InstallerContent:
     def __init__(self) -> None:
         self.pending = PendingTab(on_changed=lambda: None)
         self.browse = BrowseTab(on_changed=self._on_browse_changed)
+        self.extensions = ExtensionsTab()
         self.about = AboutTab()
 
         stack = Adw.ViewStack()
         stack.add_titled_with_icon(self.browse, "browse", "Catalogo", "package-x-generic-symbolic")
         stack.add_titled_with_icon(self.pending, "pending", "Pendentes", "view-refresh-symbolic")
+        stack.add_titled_with_icon(self.extensions, "extensions", "Extensoes", "web-browser-symbolic")
         stack.add_titled_with_icon(self.about, "about", "Sobre", "help-about-symbolic")
 
         switcher = Adw.ViewSwitcher()

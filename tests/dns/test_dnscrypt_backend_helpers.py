@@ -96,7 +96,7 @@ class TestServerNameValidation:
 
 
 class TestDnsCryptStatusDataclass:
-    """DnsCryptStatus defaults razoaveis."""
+    """DnsCryptStatus defaults razoaveis (v0.4.0)."""
 
     def test_default_values(self):
         st = dc.DnsCryptStatus()
@@ -105,10 +105,8 @@ class TestDnsCryptStatusDataclass:
         assert st.enabled is False
         assert st.version == ""
         assert st.server_names == []
-        assert st.blocklist_size == 0
-        assert st.blocklist_enabled is False
-        assert st.query_log_enabled is False
         assert st.require_dnssec is False
+        assert st.require_nolog is False
         assert st.listen_address == "127.0.0.1:53"
 
     def test_construct_with_values(self):
@@ -122,17 +120,8 @@ class TestDnsCryptStatusDataclass:
         assert len(st.server_names) == 2
 
 
-class TestDnsCryptStatsDataclass:
-    """DnsCryptStats defaults."""
-
-    def test_default_values(self):
-        s = dc.DnsCryptStats()
-        assert s.total_queries == 0
-        assert s.blocked_count == 0
-        assert s.cached_count == 0
-        assert s.top_domains == []
-        assert s.log_available is False
-        assert s.last_24h is True
+# v0.4.0: TestDnsCryptStatsDataclass removida — DnsCryptStats foi
+# deletado quando Stats tab saiu do DNS Manager.
 
 
 class TestSanityChecks:

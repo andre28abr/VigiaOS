@@ -120,13 +120,6 @@ class StatusTab(Adw.Bin):
         self._row_servers.add_suffix(self._lbl_servers)
         self._cfg_group.add(self._row_servers)
 
-        self._row_blocklist = Adw.ActionRow(title="Blocklist")
-        self._row_blocklist.add_css_class("property")
-        self._lbl_blocklist = Gtk.Label(label="—")
-        self._lbl_blocklist.add_css_class("monospace")
-        self._row_blocklist.add_suffix(self._lbl_blocklist)
-        self._cfg_group.add(self._row_blocklist)
-
         self._row_dnssec = Adw.ActionRow(title="Require DNSSEC")
         self._row_dnssec.add_css_class("property")
         self._lbl_dnssec = Gtk.Label(label="—")
@@ -134,12 +127,12 @@ class StatusTab(Adw.Bin):
         self._row_dnssec.add_suffix(self._lbl_dnssec)
         self._cfg_group.add(self._row_dnssec)
 
-        self._row_querylog = Adw.ActionRow(title="Query log")
-        self._row_querylog.add_css_class("property")
-        self._lbl_querylog = Gtk.Label(label="—")
-        self._lbl_querylog.add_css_class("monospace")
-        self._row_querylog.add_suffix(self._lbl_querylog)
-        self._cfg_group.add(self._row_querylog)
+        self._row_nolog = Adw.ActionRow(title="Require no-logs")
+        self._row_nolog.add_css_class("property")
+        self._lbl_nolog = Gtk.Label(label="—")
+        self._lbl_nolog.add_css_class("monospace")
+        self._row_nolog.add_suffix(self._lbl_nolog)
+        self._cfg_group.add(self._row_nolog)
 
         # ===== Layout =====
         outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=20)
@@ -214,14 +207,10 @@ class StatusTab(Adw.Bin):
             features = []
             if st.server_names:
                 features.append(f"{len(st.server_names)} server(s)")
-            if st.blocklist_enabled and st.blocklist_size > 0:
-                features.append(f"{st.blocklist_size} dominios bloqueados")
-            elif st.blocklist_enabled:
-                features.append("blocklist habilitada")
             if st.require_dnssec:
                 features.append("DNSSEC")
-            if st.query_log_enabled:
-                features.append("query log on")
+            if st.require_nolog:
+                features.append("no-logs")
             sub = "dnscrypt-proxy · " + " · ".join(features) if features else \
                   "dnscrypt-proxy rodando"
             self._state_sub.set_label(sub)
@@ -258,11 +247,6 @@ class StatusTab(Adw.Bin):
             self._lbl_servers.set_label("(nenhum — use a aba Provedores)")
             self._lbl_servers.add_css_class("dim-label")
 
-        if st.blocklist_enabled:
-            self._lbl_blocklist.set_label(f"{st.blocklist_size} dominios")
-        else:
-            self._lbl_blocklist.set_label("desabilitada")
-
         for cls in ("success", "warning"):
             self._lbl_dnssec.remove_css_class(cls)
         if st.require_dnssec:
@@ -272,14 +256,14 @@ class StatusTab(Adw.Bin):
             self._lbl_dnssec.set_label("nao")
             self._lbl_dnssec.add_css_class("warning")
 
-        for cls in ("success", "dim-label"):
-            self._lbl_querylog.remove_css_class(cls)
-        if st.query_log_enabled:
-            self._lbl_querylog.set_label("habilitado")
-            self._lbl_querylog.add_css_class("success")
+        for cls in ("success", "warning"):
+            self._lbl_nolog.remove_css_class(cls)
+        if st.require_nolog:
+            self._lbl_nolog.set_label("sim")
+            self._lbl_nolog.add_css_class("success")
         else:
-            self._lbl_querylog.set_label("desabilitado (default LGPD)")
-            self._lbl_querylog.add_css_class("dim-label")
+            self._lbl_nolog.set_label("nao")
+            self._lbl_nolog.add_css_class("warning")
 
         return False
 
