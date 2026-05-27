@@ -142,38 +142,58 @@ class ResolversTab(Adw.Bin):
     # Refresh — detecta modo e atualiza catalogo
     # ============================================================
 
-    def refresh(self) -> None:
-        """Recarrega catalogo baseado no modo ativo."""
-        threading.Thread(target=self._refresh_worker, daemon=True).start()
+    def refresh(
+        self,
+        expected_active_ips: list[str] | None = None,
+        expected_active_servers: list[str] | None = None,
+    ) -> None:
+        """Recarrega catalogo baseado no modo ativo.
 
-    def _refresh_worker(self) -> None:
+        v0.2.6: aceita hints `expected_active_*` que sao usados como
+        seed do estado active. Permite que apos um Apply bem-sucedido a
+        UI ja reflita o novo estado MESMO SE `backend.get_status()`
+        ainda nao retornar dados frescos (race com restart do servico).
+        Sem hints, comporta-se como antes (so consulta o sistema).
+        """
+        threading.Thread(
+            target=self._refresh_worker,
+            args=(expected_active_ips or [], expected_active_servers or []),
+            daemon=True,
+        ).start()
+
+    def _refresh_worker(
+        self,
+        expected_ips: list[str],
+        expected_servers: list[str],
+    ) -> None:
         try:
             mode = migration.get_current_mode()
-        except Exception:  # pylint: disable=broad-except
+        except Exception as e:  # pylint: disable=broad-except
+            print(f"[resolvers] get_current_mode falhou: {e}", flush=True)
             mode = "unknown"
 
-        # Servers atualmente ativos (depende do modo)
-        active_servers: list[str] = []        # ids dnscrypt (modo avancado)
-        active_dns_ips: list[str] = []        # IPs ativos (modo simples)
+        # Seed com os hints (optimistic update). Mesmo se o sistema
+        # retornar vazio (race), a UI marca o resolver aplicado.
+        active_servers: list[str] = list(expected_servers)
+        active_dns_ips: list[str] = list(expected_ips)
 
         if mode == "advanced":
             try:
                 st = dc.get_status()
-                active_servers = list(st.server_names)
-            except Exception:  # pylint: disable=broad-except
-                pass
+                for s in st.server_names:
+                    if s not in active_servers:
+                        active_servers.append(s)
+            except Exception as e:  # pylint: disable=broad-except
+                print(f"[resolvers] dc.get_status falhou: {e}", flush=True)
         else:
             # Modo simples: usa resolvectl status para descobrir DNS atual
             try:
                 st = backend.get_status()
-                # current_dns + global_dns (sem duplicar)
-                seen = set()
                 for ip in (st.current_dns + st.global_dns):
-                    if ip not in seen:
-                        seen.add(ip)
+                    if ip not in active_dns_ips:
                         active_dns_ips.append(ip)
-            except Exception:  # pylint: disable=broad-except
-                pass
+            except Exception as e:  # pylint: disable=broad-except
+                print(f"[resolvers] backend.get_status falhou: {e}", flush=True)
 
         GLib.idle_add(self._apply_mode, mode, active_servers, active_dns_ips)
 
@@ -451,12 +471,18 @@ class ResolversTab(Adw.Bin):
         except Exception as e:  # pylint: disable=broad-except
             ok, err = False, f"Excecao: {e}"
 
-        # v0.2.5: pequena espera apos o restart pra que o systemd-resolved
-        # tenha terminado de bindar d-bus e resolvectl retorne dados corretos.
-        # set_global_dns_elevated ja espera no script ate resolvectl
-        # responder, mas garantimos aqui mais 500ms pra UI ver estado fresh.
+        # v0.2.6: poll ate `global_dns` ficar populado (max 3s, 6 tentativas
+        # de 0.5s). Mesmo se ele NUNCA aparecer (sistema lento, NM nao
+        # propagou), o `expected_active_ips` do refresh ja vai marcar.
         if ok:
-            time.sleep(0.6)
+            for _ in range(6):
+                try:
+                    st = backend.get_status()
+                    if st.global_dns:
+                        break
+                except Exception:  # pylint: disable=broad-except
+                    pass
+                time.sleep(0.5)
         GLib.idle_add(self._on_apply_dot_done, ok, err, resolver)
 
     def _on_apply_dot_done(
@@ -472,8 +498,11 @@ class ResolversTab(Adw.Bin):
                 f"DNS configurado pra usar {' / '.join(resolver.servers_v4)}. "
                 "Va para a aba Status para verificar.",
             )
-            # Refresh para atualizar marcador "Em uso"
-            self.refresh()
+            # v0.2.6: passa os IPs do resolver como expected_active_ips.
+            # Mesmo se resolvectl ainda nao tiver atualizado (race com
+            # restart do systemd-resolved), o botao ja vai mostrar
+            # "Em uso" imediatamente.
+            self.refresh(expected_active_ips=list(resolver.servers_v4))
         return False
 
     # ============================================================
@@ -523,11 +552,18 @@ class ResolversTab(Adw.Bin):
         except Exception as e:  # pylint: disable=broad-except
             ok, err = False, f"Excecao: {e}"
 
-        # v0.2.5: idem set_global_dns — dnscrypt-proxy precisa de tempo
-        # pra restart e voltar a responder. Sem isso a UI ainda mostra
-        # estado stale (server antigo) quando refresh roda.
+        # v0.2.6: poll ate dc.get_status retornar o novo server_names
+        # (max 3s). Como em set_global_dns, se nunca aparecer, o
+        # expected_active_servers do refresh ja vai marcar a row.
         if ok:
-            time.sleep(0.6)
+            for _ in range(6):
+                try:
+                    st = dc.get_status()
+                    if server.id in st.server_names:
+                        break
+                except Exception:  # pylint: disable=broad-except
+                    pass
+                time.sleep(0.5)
         GLib.idle_add(self._on_apply_dnscrypt_done, ok, err, server)
 
     def _on_apply_dnscrypt_done(
@@ -543,6 +579,7 @@ class ResolversTab(Adw.Bin):
                 f"dnscrypt-proxy reconfigurado para usar '{server.id}'. "
                 "Va para a aba Status para verificar.",
             )
-            # Refresh para atualizar marcador ATIVO
-            self.refresh()
+            # v0.2.6: idem — passa o server.id como hint pro UI refletir
+            # imediatamente mesmo se dc.get_status() ainda nao atualizou.
+            self.refresh(expected_active_servers=[server.id])
         return False

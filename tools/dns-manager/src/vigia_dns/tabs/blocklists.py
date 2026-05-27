@@ -304,10 +304,17 @@ class BlocklistsTab(Adw.Bin):
         threading.Thread(target=self._add_worker, args=(domain,), daemon=True).start()
 
     def _add_worker(self, domain: str) -> None:
-        ok, err = dc.add_blocklist_entry(domain)
-        # Se acabou de criar a primeira entry, garante que config aponta
+        try:
+            ok, err = dc.add_blocklist_entry(domain)
+        except Exception as e:  # pylint: disable=broad-except
+            ok, err = False, f"Excecao: {e}"
+        # v0.2.6: wrap em try — antes, exception em enable_blocklist_in_config
+        # matava a thread sem chamar idle_add, deixando UI travada.
         if ok and len(self._domains) == 0:
-            dc.enable_blocklist_in_config()
+            try:
+                dc.enable_blocklist_in_config()
+            except Exception as e:  # pylint: disable=broad-except
+                print(f"[blocklists] enable_blocklist falhou: {e}", flush=True)
         GLib.idle_add(self._on_add_done, ok, err, domain)
 
     def _on_add_done(self, ok: bool, err: str, domain: str) -> bool:
@@ -327,7 +334,10 @@ class BlocklistsTab(Adw.Bin):
         threading.Thread(target=self._remove_worker, args=(domain,), daemon=True).start()
 
     def _remove_worker(self, domain: str) -> None:
-        ok, err = dc.remove_blocklist_entry(domain)
+        try:
+            ok, err = dc.remove_blocklist_entry(domain)
+        except Exception as e:  # pylint: disable=broad-except
+            ok, err = False, f"Excecao: {e}"
         GLib.idle_add(self._on_remove_done, ok, err)
 
     def _on_remove_done(self, ok: bool, err: str) -> bool:
@@ -354,10 +364,16 @@ class BlocklistsTab(Adw.Bin):
         threading.Thread(target=self._import_worker, args=(url,), daemon=True).start()
 
     def _import_worker(self, url: str) -> None:
-        ok, added, err = dc.import_blocklist_from_url(url, append=True)
-        # Garante que config aponta pra blocklist
+        try:
+            ok, added, err = dc.import_blocklist_from_url(url, append=True)
+        except Exception as e:  # pylint: disable=broad-except
+            ok, added, err = False, 0, f"Excecao: {e}"
+        # v0.2.6: wrap em try — idem _add_worker.
         if ok:
-            dc.enable_blocklist_in_config()
+            try:
+                dc.enable_blocklist_in_config()
+            except Exception as e:  # pylint: disable=broad-except
+                print(f"[blocklists] enable_blocklist falhou: {e}", flush=True)
         GLib.idle_add(self._on_import_done, ok, added, err)
 
     def _on_import_done(self, ok: bool, added: int, err: str) -> bool:
