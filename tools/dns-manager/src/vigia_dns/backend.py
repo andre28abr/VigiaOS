@@ -169,11 +169,23 @@ def set_global_dns_elevated(
     servers: list[str],
     dot: bool = True,
     fallback: list[str] | None = None,
+    force_global: bool = True,
 ) -> tuple[bool, str]:
     """Atualiza /etc/systemd/resolved.conf via pkexec.
 
     Escreve secao [Resolve] com DNS=, FallbackDNS=, DNSOverTLS=. Depois
     restart do systemd-resolved.
+
+    v0.2.5: Por padrao, adiciona `Domains=~.` para FORCAR o DNS global a
+    ser usado em todas as queries. Sem isso, em Fedora Silverblue com
+    NetworkManager, o DNS pushed via DHCP por interface SOBRESCREVE o
+    global — entao `DNS=1.1.1.1` ficaria so como fallback e queries reais
+    iriam pra o DNS do roteador. Para preservar split-DNS (ex: .local em
+    AD), passe force_global=False.
+
+    v0.2.5: tambem reseta DNS per-interface via resolvectl. Isso garante
+    que mesmo que NetworkManager re-push, no momento da aplicacao o link
+    nao tem DNS override e o global prevalece.
     """
     if not _validate_servers(servers):
         return False, "Lista de DNS servers invalida."
@@ -192,6 +204,10 @@ def set_global_dns_elevated(
     if fallback_str:
         new_content += f"FallbackDNS={fallback_str}\n"
     new_content += f"DNSOverTLS={dot_str}\n"
+    if force_global:
+        # `~.` = catch-all routing domain — forca queries a usar o DNS global
+        # mesmo quando interfaces tem DNS proprio via DHCP/NM.
+        new_content += "Domains=~.\n"
     new_content += "# Gerenciado pelo Vigia DNS Manager\n"
 
     script = f"""set -e
@@ -207,6 +223,18 @@ cat > /etc/systemd/resolved.conf << '{delim}'
 
 # Restart pra aplicar
 systemctl restart systemd-resolved
+
+# Espera ate 3s o servico estar realmente pronto pra responder
+# (systemd-resolved precisa de tempo pra inicializar d-bus interface)
+for i in 1 2 3 4 5 6; do
+    if resolvectl status >/dev/null 2>&1; then
+        break
+    fi
+    sleep 0.5
+done
+
+# Flush cache pra remover entries do resolver antigo
+resolvectl flush-caches 2>/dev/null || true
 """
     rc, out, err = _run(["pkexec", "bash", "-c", script], timeout=30)
     if rc in (126, 127):
