@@ -69,15 +69,17 @@ def build_content() -> Gtk.Widget:
         """Refresh tabs que dependem do modo (advanced/simple).
 
         v0.2.7: invalida o cache da ResolversTab antes do refresh.
+        v0.2.8: tambem invalida o cache do StatusTab por simetria.
         Apos troca de modo, o estado active anterior nao se aplica mais
         (mudou o backend). Sem invalidate, o cache de IPs do simples
         ficaria visivel ao voltar pro simples mesmo apos uma reset.
         """
-        if hasattr(resolvers_tab, "invalidate_cache"):
-            try:
-                resolvers_tab.invalidate_cache()
-            except Exception:  # pylint: disable=broad-except
-                pass
+        for tab in (resolvers_tab, status_tab):
+            if hasattr(tab, "invalidate_cache"):
+                try:
+                    tab.invalidate_cache()
+                except Exception:  # pylint: disable=broad-except
+                    pass
         for tab in (resolvers_tab, blocklists_tab, stats_tab):
             try:
                 tab.refresh()
@@ -85,6 +87,20 @@ def build_content() -> Gtk.Widget:
                 pass
 
     status_tab.on_mode_changed = _refresh_mode_dependent_tabs
+
+    # v0.2.8: quando o user aplica um provedor em Provedores, refresca
+    # o Status com hint pra que o hero fique verde imediatamente sem
+    # esperar resolvectl propagar (podia demorar 2min em alguns sistemas).
+    def _on_provider_applied(mode: str, ips: list[str], dot: str) -> None:
+        try:
+            if mode == "simple":
+                status_tab.refresh(expected_dns=ips, expected_dot=dot)
+            else:
+                status_tab.refresh()
+        except Exception:  # pylint: disable=broad-except
+            pass
+
+    resolvers_tab.on_provider_applied = _on_provider_applied
 
     def _on_visible_child_changed(stk, _pspec):
         visible_name = stk.get_visible_child_name()

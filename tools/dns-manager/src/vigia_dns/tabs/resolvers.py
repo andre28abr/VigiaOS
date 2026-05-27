@@ -83,6 +83,10 @@ class ResolversTab(Adw.Bin):
         # Atualizado por _apply_mode quando recebe dados nao-vazios.
         self._last_active_dns_ips: list[str] = []
         self._last_active_servers: list[str] = []
+        # v0.2.8: callback opcional acionado quando um provider e' aplicado
+        # com sucesso. Window.py usa pra refrescar StatusTab com hint.
+        # Assinatura: (mode: str, ips: list[str], dot: str) -> None
+        self.on_provider_applied: callable | None = None
 
         # ===== Header (mode-aware via refresh) =====
         self._header_lbl = Gtk.Label(label="Provedores DNS curados")
@@ -547,6 +551,21 @@ class ResolversTab(Adw.Bin):
             # restart do systemd-resolved), o botao ja vai mostrar
             # "Em uso" imediatamente.
             self.refresh(expected_active_ips=list(resolver.servers_v4))
+            # v0.2.8: notifica window.py pra refrescar StatusTab com
+            # hint. Assim o hero do Status fica verde imediatamente
+            # ao inves de esperar resolvectl propagar (podia demorar
+            # 2min em alguns sistemas).
+            if self.on_provider_applied is not None:
+                try:
+                    dot_str = "yes" if (
+                        self._dot_switch.get_active() and resolver.supports_dot
+                    ) else "no"
+                    self.on_provider_applied(
+                        "simple", list(resolver.servers_v4), dot_str,
+                    )
+                except Exception as e:  # pylint: disable=broad-except
+                    print(f"[resolvers] on_provider_applied falhou: {e}",
+                          flush=True)
         return False
 
     # ============================================================
@@ -626,4 +645,13 @@ class ResolversTab(Adw.Bin):
             # v0.2.6: idem — passa o server.id como hint pro UI refletir
             # imediatamente mesmo se dc.get_status() ainda nao atualizou.
             self.refresh(expected_active_servers=[server.id])
+            # v0.2.8: tambem notifica StatusTab. No modo avancado o hero
+            # ja eh verde por outro caminho, mas mantemos a notificacao
+            # pra consistencia.
+            if self.on_provider_applied is not None:
+                try:
+                    self.on_provider_applied("advanced", [], "")
+                except Exception as e:  # pylint: disable=broad-except
+                    print(f"[resolvers] on_provider_applied falhou: {e}",
+                          flush=True)
         return False
