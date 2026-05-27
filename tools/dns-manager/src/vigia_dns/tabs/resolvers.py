@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import re
 import threading
+import time
 
 import gi
 
@@ -416,10 +417,11 @@ class ResolversTab(Adw.Bin):
                 f"Vai escrever /etc/systemd/resolved.conf com:\n"
                 f"  DNS = {' '.join(resolver.servers_v4)}\n"
                 f"  DNSOverTLS = "
-                f"{'yes' if self._dot_switch.get_active() and resolver.supports_dot else 'no'}\n\n"
+                f"{'yes' if self._dot_switch.get_active() and resolver.supports_dot else 'no'}\n"
+                f"  Domains = ~. (forca DNS global em todas as queries)\n\n"
                 "Backup do config atual sera salvo em "
                 "/etc/systemd/resolved.conf.vigia-backup (se nao existir).\n\n"
-                "systemd-resolved sera reiniciado."
+                "systemd-resolved sera reiniciado e o cache limpo."
             ),
         )
         dlg.add_response("cancel", "Cancelar")
@@ -448,6 +450,13 @@ class ResolversTab(Adw.Bin):
             )
         except Exception as e:  # pylint: disable=broad-except
             ok, err = False, f"Excecao: {e}"
+
+        # v0.2.5: pequena espera apos o restart pra que o systemd-resolved
+        # tenha terminado de bindar d-bus e resolvectl retorne dados corretos.
+        # set_global_dns_elevated ja espera no script ate resolvectl
+        # responder, mas garantimos aqui mais 500ms pra UI ver estado fresh.
+        if ok:
+            time.sleep(0.6)
         GLib.idle_add(self._on_apply_dot_done, ok, err, resolver)
 
     def _on_apply_dot_done(
@@ -513,6 +522,12 @@ class ResolversTab(Adw.Bin):
             ok, err = dc.set_servers_blocking([server.id])
         except Exception as e:  # pylint: disable=broad-except
             ok, err = False, f"Excecao: {e}"
+
+        # v0.2.5: idem set_global_dns — dnscrypt-proxy precisa de tempo
+        # pra restart e voltar a responder. Sem isso a UI ainda mostra
+        # estado stale (server antigo) quando refresh roda.
+        if ok:
+            time.sleep(0.6)
         GLib.idle_add(self._on_apply_dnscrypt_done, ok, err, server)
 
     def _on_apply_dnscrypt_done(

@@ -351,6 +351,14 @@ mv "$TMPFILE" {CONFIG_PATH}
 # Restart service se ativo
 if systemctl is-active --quiet {SERVICE_NAME}; then
     systemctl restart {SERVICE_NAME}
+    # v0.2.5: espera ate 3s o servico voltar a responder antes de retornar
+    # (dnscrypt-proxy demora a re-bindar 127.0.0.1:53 depois do restart)
+    for i in 1 2 3 4 5 6; do
+        if systemctl is-active --quiet {SERVICE_NAME}; then
+            break
+        fi
+        sleep 0.5
+    done
 fi
 """
     rc, _, err = _run(["pkexec", "bash", "-c", script], timeout=30)
