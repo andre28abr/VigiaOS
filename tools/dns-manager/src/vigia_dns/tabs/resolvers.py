@@ -151,24 +151,39 @@ class ResolversTab(Adw.Bin):
         except Exception:  # pylint: disable=broad-except
             mode = "unknown"
 
-        # Em modo avancado, tambem precisamos saber quais servers ja
-        # estao configurados (pra eventualmente destacar na lista)
-        active_servers: list[str] = []
+        # Servers atualmente ativos (depende do modo)
+        active_servers: list[str] = []        # ids dnscrypt (modo avancado)
+        active_dns_ips: list[str] = []        # IPs ativos (modo simples)
+
         if mode == "advanced":
             try:
                 st = dc.get_status()
                 active_servers = list(st.server_names)
             except Exception:  # pylint: disable=broad-except
                 pass
+        else:
+            # Modo simples: usa resolvectl status para descobrir DNS atual
+            try:
+                st = backend.get_status()
+                # current_dns + global_dns (sem duplicar)
+                seen = set()
+                for ip in (st.current_dns + st.global_dns):
+                    if ip not in seen:
+                        seen.add(ip)
+                        active_dns_ips.append(ip)
+            except Exception:  # pylint: disable=broad-except
+                pass
 
-        GLib.idle_add(self._apply_mode, mode, active_servers)
+        GLib.idle_add(self._apply_mode, mode, active_servers, active_dns_ips)
 
-    def _apply_mode(self, mode: str, active_servers: list[str]) -> bool:
-        # Mode equal? Re-renderiza so se algo importante mudou
-        if mode == self._current_mode and self._provider_rows:
-            # Mesmo modo e rows ja existem — so atualiza marcacao de active
-            self._update_active_markers(active_servers)
-            return False
+    def _apply_mode(
+        self, mode: str,
+        active_servers: list[str],
+        active_dns_ips: list[str],
+    ) -> bool:
+        # Sempre re-renderiza ao trocar de modo, OU se active state pode
+        # ter mudado (refresh chamado apos Apply ou ao trocar de tab).
+        # Rebuild simples mas garantido — evita estado stale.
 
         self._current_mode = mode
 
@@ -195,39 +210,46 @@ class ResolversTab(Adw.Bin):
         # Popula catalogo apropriado
         if is_advanced:
             for server in dnscrypt_catalog.SERVERS:
-                row = self._build_dnscrypt_row(server, active=server.id in active_servers)
+                row = self._build_dnscrypt_row(
+                    server, active=server.id in active_servers,
+                )
                 self._providers_group.add(row)
                 self._provider_rows.append(row)
         else:
+            active_ip_set = set(active_dns_ips)
             for resolver in CATALOG:
-                row = self._build_dot_row(resolver)
+                # Considera "ativo" se ALGUM IP do resolver bate com active DNS
+                is_active = any(s in active_ip_set for s in resolver.servers_v4)
+                row = self._build_dot_row(resolver, active=is_active)
                 self._providers_group.add(row)
                 self._provider_rows.append(row)
 
         return False
 
-    def _update_active_markers(self, active_servers: list[str]) -> None:
-        """No modo avancado, marca quais servers estao em uso."""
-        if self._current_mode != "advanced":
-            return
-        # Reconstroi rows (mais simples que mexer in-place)
-        self._current_mode = "unknown"  # forca rebuild
-        self._apply_mode("advanced", active_servers)
-
     # ============================================================
     # Build row — Modo simples (systemd-resolved DoT)
     # ============================================================
 
-    def _build_dot_row(self, resolver: DnsResolver) -> Adw.ExpanderRow:
+    def _build_dot_row(
+        self, resolver: DnsResolver, active: bool = False,
+    ) -> Adw.ExpanderRow:
         row = Adw.ExpanderRow()
         row.set_title(resolver.name)
-        row.set_subtitle(resolver.description)
+        sub = resolver.description
+        if active:
+            sub = f"ATIVO · {sub}"
+        row.set_subtitle(sub)
 
-        # Apply button
-        apply_btn = Gtk.Button(label="Aplicar")
+        # Apply button — vira "Em uso" (flat, disabled) se ja ativo
+        if active:
+            apply_btn = Gtk.Button(label="Em uso")
+            apply_btn.add_css_class("flat")
+            apply_btn.set_sensitive(False)
+        else:
+            apply_btn = Gtk.Button(label="Aplicar")
+            apply_btn.add_css_class("suggested-action")
+            apply_btn.connect("clicked", self._on_apply_dot_clicked, resolver)
         apply_btn.set_valign(Gtk.Align.CENTER)
-        apply_btn.add_css_class("suggested-action")
-        apply_btn.connect("clicked", self._on_apply_dot_clicked, resolver)
         row.add_suffix(apply_btn)
 
         # Filter badges as prefix
@@ -441,6 +463,8 @@ class ResolversTab(Adw.Bin):
                 f"DNS configurado pra usar {' / '.join(resolver.servers_v4)}. "
                 "Va para a aba Status para verificar.",
             )
+            # Refresh para atualizar marcador "Em uso"
+            self.refresh()
         return False
 
     # ============================================================
