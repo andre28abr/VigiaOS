@@ -554,6 +554,42 @@ def enable_blocklist_in_config() -> tuple[bool, str]:
     return _atomic_write_config_via_pkexec(new_content)
 
 
+def enable_query_log_in_config() -> tuple[bool, str]:
+    """Adiciona [query_log] file = '/var/log/dnscrypt-proxy/query.log' no .toml.
+
+    v0.2.9: pra Stats funcionar. Antes o user tinha que editar o .toml
+    manualmente. AVISO LGPD: query log registra toda query DNS local
+    (privacy implication). UI deve confirmar com user antes de chamar.
+    """
+    lines = _read_config_lines()
+    if not lines:
+        return False, "Falha ao ler config."
+
+    new_lines = _update_toml_section_key(
+        lines, "query_log", "file", f"'{QUERY_LOG_PATH}'"
+    )
+    new_content = "".join(new_lines)
+    return _atomic_write_config_via_pkexec(new_content)
+
+
+def disable_query_log_in_config() -> tuple[bool, str]:
+    """Remove file = ... do [query_log] no .toml (comenta).
+
+    v0.2.9: contrapartida de enable_query_log_in_config(). Comenta
+    a linha file = ... ao inves de remover pra preservar comentarios.
+    """
+    lines = _read_config_lines()
+    if not lines:
+        return False, "Falha ao ler config."
+
+    # Seta file = '' (empty) — dnscrypt-proxy interpreta como desabilitado
+    new_lines = _update_toml_section_key(
+        lines, "query_log", "file", "''"
+    )
+    new_content = "".join(new_lines)
+    return _atomic_write_config_via_pkexec(new_content)
+
+
 def import_blocklist_from_url(url: str, append: bool = True) -> tuple[bool, int, str]:
     """Baixa lista de dominios de uma URL HTTP/HTTPS via curl.
 
