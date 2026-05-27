@@ -41,13 +41,9 @@ TOOLS = [
     "reports",
     "file-integrity",
     "tool-installer",
-    "vpn-manager",
     "dns-manager",
     "capabilities-inspector",
     "antivirus",
-    "network-scanner",
-    "firmware-analyzer",
-    "hash-tools",
     "dashboard",
     "rootkit-scanner",
 ]

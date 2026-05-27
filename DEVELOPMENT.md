@@ -64,17 +64,19 @@ modo embedded.
 | 7 | **Network Monitor** | v0.1.0 | Python + GTK4 | 🟡 Conexões + modo admin + auto-refresh smart |
 | 8 | **Hardening Checks** | v0.1.2 | Python + GTK4 | 🟢 Lynis wrapper + perfil Silverblue |
 | 9 | **Reports** | v0.1.1 | Python + GTK4 + Jinja2 + WeasyPrint | 🟢 PDF/HTML LGPD via Activity Log JSON |
-| 10 | **File Integrity** | v0.1.3 | Python + GTK4 | 🟢 AIDE wrapper + perfil Silverblue customizado |
-| 11 | **Tool Installer** | v0.1.0 | Python + GTK4 | 🟢 Catálogo curado via `rpm-ostree install` |
-| 12 | **VPN Manager** | v0.1.1 | Python + GTK4 | 🟢 WireGuard wrapper + paste fallback |
-| 13 | **DNS Manager** | v0.1.0 | Python + GTK4 | 🟢 systemd-resolved + 9 providers DoT |
-| 14 | **Capabilities Inspector** | v0.1.0 | Python + GTK4 | 🟢 getcap audit + catálogo pt-BR de 41 caps |
-| 15 | **Antivirus** | v0.1.1 | Python + GTK4 | 🟢 ClamAV wrapper — substitui clamtk + UX refinements |
-| 16 | **Network Scanner** | v0.1.0 | Python + GTK4 | 🟢 nmap GUI com 6 perfis pré-definidos |
-| 17 | **Firmware Analyzer** | v0.1.0 | Python + GTK4 | 🟢 binwalk: signatures + extract + entropia |
-| 18 | **Hash Tools** | v0.1.1 | Python + GTK4 | 🟢 SHA-256/512 + baseline+diff de diretório |
-| 19 | **Dashboard** | v0.2.0 | Python + GTK4 + Cairo | 🟢 Sistema em tempo real + per-process I/O + alertas |
-| 20 | **Rootkit Scanner** | v0.1.0 | Python + GTK4 | 🟢 wrapper chkrootkit + rkhunter — streaming + history |
+| 10 | **File Integrity** | v0.2.0 | Python + GTK4 | 🟢 AIDE (sistema) + Hash ad-hoc (user) — 6 tabs |
+| 11 | **Tool Installer** | v0.2.0 | Python + GTK4 | 🟢 Catálogo rpm-ostree + Extensoes navegador (FOSS) |
+| 12 | **DNS Manager** | v0.4.1 | Python + GTK4 | 🟢 dnscrypt-proxy only — 11 servers curados |
+| 13 | **Capabilities Inspector** | v0.1.0 | Python + GTK4 | 🟢 getcap audit + catálogo pt-BR de 41 caps |
+| 14 | **Antivirus** | v0.1.1 | Python + GTK4 | 🟢 ClamAV wrapper — substitui clamtk |
+| 15 | **Dashboard** | v0.2.0 | Python + GTK4 + Cairo | 🟢 Sistema em tempo real + per-process I/O + alertas |
+| 16 | **Rootkit Scanner** | v0.1.0 | Python + GTK4 | 🟢 wrapper chkrootkit + rkhunter — streaming + history |
+
+**Removidas na limpeza 2026-05-27** (foco LGPD/escritorio):
+- ~~Network Scanner (nmap)~~ — fora do escopo + risco etico
+- ~~Firmware Analyzer (binwalk)~~ — nicho reverse engineering/CTF
+- ~~VPN Manager~~ — NetworkManager nativo do GNOME ja gerencia WireGuard
+- ~~Hash Tools~~ — mergeado em File Integrity v0.2.0 (mesma categoria)
 
 **Lib interna** (não conta como tool):
 - **vigia-common** v0.1.0 — helpers compartilhados (make_clamp, show_error/info, md_to_pango, badges, constantes de layout). Reduz duplicação de ~600 linhas em 16 `_helpers.py`. Tools migradas via re-export retro-compatível.
@@ -1124,18 +1126,16 @@ sudo install -m 0755 target/release/vigia-log /usr/local/bin/vigia-log
 # Tools Python — editable install user-scope
 for d in vigia-hub privacy-controls selinux-gui firewall-gui netmon-gui \
          hardening-checks reports file-integrity tool-installer \
-         vpn-manager dns-manager capabilities-inspector activity-log-gui \
-         antivirus network-scanner firmware-analyzer hash-tools dashboard \
-         rootkit-scanner; do
+         dns-manager capabilities-inspector activity-log-gui \
+         antivirus dashboard rootkit-scanner; do
   (cd ../$d && pip install --user -e .)
 done
 
 # Symlink em /usr/local/bin para acesso via sudo
 for tool in vigia-hub vigia-privacy vigia-selinux vigia-firewall vigia-netmon \
             vigia-hardening vigia-reports vigia-integrity vigia-installer \
-            vigia-vpn vigia-dns vigia-capabilities vigia-log-gui \
-            vigia-antivirus vigia-netscan vigia-firmware vigia-hash \
-            vigia-dashboard vigia-rootkit; do
+            vigia-dns vigia-capabilities vigia-log-gui \
+            vigia-antivirus vigia-dashboard vigia-rootkit; do
   sudo ln -sf "$HOME/.local/bin/$tool" /usr/local/bin/$tool
 done
 

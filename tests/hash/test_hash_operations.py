@@ -1,6 +1,9 @@
-"""Testes para vigia_hash.backend.
+"""Testes para vigia_integrity.hash_backend.
 
 Hash, verify, baseline. Algoritmos. Edge cases.
+
+Hist: era vigia_hash.backend ate 2026-05-27 quando Hash Tools foi
+mergeado em File Integrity (mesma categoria de integridade de arquivos).
 """
 
 from __future__ import annotations
@@ -12,7 +15,7 @@ from pathlib import Path
 
 import pytest
 
-from vigia_hash.backend import (
+from vigia_integrity.hash_backend import (
     ALGORITHMS,
     compare_baseline_blocking,
     create_baseline_blocking,

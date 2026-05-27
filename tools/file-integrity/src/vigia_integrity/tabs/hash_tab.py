@@ -11,7 +11,7 @@ gi.require_version("Adw", "1")
 
 from gi.repository import Adw, GLib, Gtk  # noqa: E402
 
-from .. import backend
+from .. import hash_backend as backend
 from ._helpers import (
     copy_to_clipboard,
     make_clamp,
