@@ -74,38 +74,10 @@ class TestValidateDomain:
         assert "longo" in err.lower() or "long" in err.lower()
 
 
-class TestValidateServers:
-    """Validacao de IPs para systemd-resolved (anti-injection no .conf)."""
-
-    def setup_method(self):
-        # Lazy import
-        from vigia_dns import backend
-        self.backend = backend
-
-    @pytest.mark.parametrize("servers", [
-        ["1.1.1.1"],
-        ["1.1.1.1", "1.0.0.1"],
-        ["9.9.9.9"],
-        ["192.168.1.1"],
-        ["8.8.8.8", "8.8.4.4"],
-        # IPv6 — testa se backend aceita
-        ["2606:4700:4700::1111"],
-    ])
-    def test_accepts_valid_servers(self, servers):
-        assert self.backend._validate_servers(servers), f"Deveria aceitar {servers}"
-
-    @pytest.mark.parametrize("servers", [
-        [],                                  # lista vazia
-        ["1.1.1.1; rm -rf /"],               # injection
-        ["1.1.1.1\n[Manager]"],              # quebra config
-        ["1.1.1.1`cmd`"],                    # backtick
-        ["nao-e-um-ip"],                     # string aleatoria
-        ["1.1.1.1 1.0.0.1"],                 # espaco interno
-        ["http://example.com"],              # URL
-    ])
-    def test_rejects_invalid_servers(self, servers):
-        assert not self.backend._validate_servers(servers), \
-            f"Deveria rejeitar {servers}"
+# v0.3.0: removida TestValidateServers — `backend._validate_servers`
+# era do systemd-resolved (deletado nessa versao). dnscrypt-proxy
+# usa server names (validados em test_dnscrypt_backend_helpers.py),
+# nao IPs.
 
 
 class TestUrlValidationForBlocklistImport:

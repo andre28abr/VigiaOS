@@ -18,7 +18,6 @@ gi.require_version("Adw", "1")
 from gi.repository import Adw, GLib, Gtk  # noqa: E402
 
 from .. import dnscrypt_backend as dc
-from .. import migration
 from ._helpers import make_clamp, show_error, show_info
 
 
@@ -272,11 +271,11 @@ class StatsTab(Adw.Bin):
 
     def _refresh_worker(self) -> None:
         installed = dc.dnscrypt_installed()
-        mode = migration.get_current_mode() if installed else "unknown"
+        active = dc.is_active() if installed else False
         stats = dc.get_stats() if installed else dc.DnsCryptStats()
-        GLib.idle_add(self._apply, installed, mode, stats)
+        GLib.idle_add(self._apply, installed, active, stats)
 
-    def _apply(self, installed: bool, mode: str, stats) -> bool:
+    def _apply(self, installed: bool, active: bool, stats) -> bool:
         # v0.2.6: aborta se a tab ja foi destruida (idle_add pendente)
         if self._destroyed:
             return False
@@ -288,9 +287,9 @@ class StatsTab(Adw.Bin):
                 "dnscrypt-proxy nao instalado."
             )
             self._mode_banner.set_revealed(True)
-        elif mode != "advanced":
+        elif not active:
             self._mode_banner.set_title(
-                "Modo avancado nao esta ativo. Ative em Status para coletar stats."
+                "dnscrypt-proxy nao esta ativo. Ative na aba Status."
             )
             self._mode_banner.set_revealed(True)
         elif not stats.log_available:

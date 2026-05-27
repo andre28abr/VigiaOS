@@ -20,7 +20,6 @@ gi.require_version("Adw", "1")
 from gi.repository import Adw, GLib, Gtk  # noqa: E402
 
 from .. import dnscrypt_backend as dc
-from .. import migration
 from ._helpers import make_clamp, show_error, show_info
 
 
@@ -207,12 +206,12 @@ class BlocklistsTab(Adw.Bin):
 
     def _refresh_worker(self) -> None:
         installed = dc.dnscrypt_installed()
-        mode = migration.get_current_mode() if installed else "unknown"
+        active = dc.is_active() if installed else False
         domains = dc.get_blocklist() if installed else []
-        GLib.idle_add(self._apply, installed, mode, domains)
+        GLib.idle_add(self._apply, installed, active, domains)
 
-    def _apply(self, installed: bool, mode: str, domains: list[str]) -> bool:
-        # Banner se modo avancado nao esta ativo
+    def _apply(self, installed: bool, active: bool, domains: list[str]) -> bool:
+        # v0.3.0: simplificado — sem mode-aware, so checa se dnscrypt ativo
         if not installed:
             self._mode_banner.set_title(
                 "dnscrypt-proxy nao instalado. Instale via Vigia Tool "
@@ -220,10 +219,10 @@ class BlocklistsTab(Adw.Bin):
             )
             self._mode_banner.set_revealed(True)
             self._set_actions_enabled(False)
-        elif mode != "advanced":
+        elif not active:
             self._mode_banner.set_title(
-                "Modo avancado (dnscrypt-proxy) nao esta ativo. Va a aba "
-                "Status e ative o switch para gerenciar blocklists."
+                "dnscrypt-proxy nao esta ativo. Va a aba Status e clique "
+                "em 'Ativar dnscrypt-proxy'."
             )
             self._mode_banner.set_revealed(True)
             self._set_actions_enabled(False)
