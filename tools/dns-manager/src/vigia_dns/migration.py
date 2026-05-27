@@ -123,6 +123,17 @@ fi
 systemctl stop systemd-resolved 2>/dev/null || true
 systemctl disable systemd-resolved 2>/dev/null || true
 
+# v0.4.1: garante /var/cache/dnscrypt-proxy/ existe (elimina warning
+# 'Couldn't write cache file' no journal). Detecta user/group do unit
+# file. Se vazio, default root.
+DCS_USER=$(systemctl show dnscrypt-proxy -p User --value 2>/dev/null)
+DCS_GROUP=$(systemctl show dnscrypt-proxy -p Group --value 2>/dev/null)
+mkdir -p /var/cache/dnscrypt-proxy
+if [ -n "$DCS_USER" ] && id "$DCS_USER" >/dev/null 2>&1; then
+    chown "${{DCS_USER}}:${{DCS_GROUP:-$DCS_USER}}" /var/cache/dnscrypt-proxy 2>/dev/null || true
+fi
+chmod 0750 /var/cache/dnscrypt-proxy
+
 # 4. Aponta /etc/resolv.conf pra 127.0.0.1 (dnscrypt-proxy)
 rm -f {RESOLV_CONF}
 cat > {RESOLV_CONF} << 'EOF_RESOLV'

@@ -248,6 +248,16 @@ chmod 0644 "$TMPFILE"
 chown root:root "$TMPFILE"
 mv "$TMPFILE" {CONFIG_PATH}
 
+# v0.4.1: garante cache dir existe (elimina warning no journal).
+# Detecta user/group do unit file dinamicamente; root como fallback.
+DCS_USER=$(systemctl show {SERVICE_NAME} -p User --value 2>/dev/null)
+DCS_GROUP=$(systemctl show {SERVICE_NAME} -p Group --value 2>/dev/null)
+mkdir -p /var/cache/dnscrypt-proxy
+if [ -n "$DCS_USER" ] && id "$DCS_USER" >/dev/null 2>&1; then
+    chown "${{DCS_USER}}:${{DCS_GROUP:-$DCS_USER}}" /var/cache/dnscrypt-proxy 2>/dev/null || true
+fi
+chmod 0750 /var/cache/dnscrypt-proxy
+
 # Restart service se ativo + wait
 if systemctl is-active --quiet {SERVICE_NAME}; then
     systemctl restart {SERVICE_NAME}
