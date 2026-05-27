@@ -14,7 +14,14 @@ from gi.repository import Adw, Gtk  # noqa: E402
 
 from . import WRAPPED_PACKAGES
 from .backend import CheckResult
-from .tabs import AboutTab, ChangesTab, StatusTab
+from .tabs import (
+    AboutTab,
+    BaselineTab,
+    ChangesTab,
+    HashTab,
+    StatusTab,
+    VerifyTab,
+)
 
 
 def _make_pkg_badges_bar() -> Gtk.Widget:
@@ -45,10 +52,19 @@ class _IntegrityContent:
             on_check_done=self._on_check_done,
             on_profile_changed=self._on_profile_changed,
         )
+        # v0.2.0: tabs vindas do merge com Hash Tools
+        self.hash_tab = HashTab()
+        self.verify = VerifyTab()
+        self.baseline = BaselineTab()
 
         stack = Adw.ViewStack()
-        stack.add_titled_with_icon(self.status, "status", "Status", "dialog-information-symbolic")
-        stack.add_titled_with_icon(self.changes, "changes", "Mudancas", "view-list-symbolic")
+        # AIDE (escala sistema, requer root)
+        stack.add_titled_with_icon(self.status, "status", "Status (AIDE)", "dialog-information-symbolic")
+        stack.add_titled_with_icon(self.changes, "changes", "Mudancas (AIDE)", "view-list-symbolic")
+        # Hash ad-hoc (escala arquivo/diretorio, sem root)
+        stack.add_titled_with_icon(self.hash_tab, "hash", "Hash", "edit-find-symbolic")
+        stack.add_titled_with_icon(self.verify, "verify", "Verificar", "object-select-symbolic")
+        stack.add_titled_with_icon(self.baseline, "baseline", "Baseline", "folder-symbolic")
         stack.add_titled_with_icon(self.about, "about", "Sobre", "help-about-symbolic")
 
         switcher = Adw.ViewSwitcher()

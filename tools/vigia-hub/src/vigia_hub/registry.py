@@ -190,41 +190,8 @@ TOOLS: list[ToolEntry] = [
         category="privacidade",
         wrapped_packages=["dconf", "systemctl"],
     ),
-    ToolEntry(
-        id="vpn-manager",
-        name="VPN Manager",
-        description="Gerenciador WireGuard com UI grafica.",
-        long_description=(
-            "Gerencia conexoes **WireGuard** com UI grafica. Lista perfis "
-            "em `/etc/wireguard/*.conf`, conecta/desconecta com 1 clique e "
-            "mostra status detalhado dos peers (handshake, dados "
-            "transferidos, endpoints).\n\n"
-            "Substitui o passo-a-passo manual no terminal "
-            "(`sudo wg-quick up <perfil>`, `sudo wg show <iface>`). Cada "
-            "operacao usa **1 dialog `pkexec`** — sem precisar abrir terminal.\n\n"
-            "Suporta **importar** novo perfil colando o conteudo do `.conf` "
-            "(recebido do servidor VPN ou provedor como Mullvad, ProtonVPN). "
-            "Vigia instala em `/etc/wireguard/` com permissions corretas "
-            "(`0700` no diretorio, `0600` no arquivo).\n\n"
-            "OpenVPN vira em **v0.2**. Por agora, foco em WireGuard que e' "
-            "o estado-da-arte (kernel module, criptografia moderna, config "
-            "simples)."
-        ),
-        features=[
-            "**3 tabs**: Status (hero card + peers), Perfis (CRUD), Sobre",
-            "Connect/Disconnect via `pkexec wg-quick up/down` (1 dialog cada)",
-            "Importacao de `.conf` via dialog (paste do conteudo)",
-            "Status detalhado: peers, handshake, rx/tx bytes, allowed IPs",
-            "Listing inicial de perfis via `pkexec` (1 dialog cobre todos)",
-        ],
-        icon_path=_TOOLS_DIR / "vpn-manager" / "data" / "br.com.vigia.VpnManager.svg",
-        exec_cmd=["vigia-vpn"],
-        needs_terminal=False,
-        available_fn=lambda: shutil.which("vigia-vpn") is not None,
-        embedded_module="vigia_vpn.window",
-        category="privacidade",
-        wrapped_packages=["wireguard-tools", "wg-quick"],
-    ),
+    # VPN Manager removida na limpeza 2026-05-27: NetworkManager nativo
+    # do GNOME ja gerencia WireGuard out-of-the-box.
     ToolEntry(
         id="dns-manager",
         name="DNS Manager",
@@ -421,29 +388,29 @@ TOOLS: list[ToolEntry] = [
     ToolEntry(
         id="file-integrity",
         name="File Integrity",
-        description="Monitor de integridade de arquivos (wrapper AIDE).",
+        description="Integridade de arquivos: AIDE (sistema) + hash ad-hoc.",
         long_description=(
-            "Wrapper grafico do **AIDE** (Advanced Intrusion Detection "
-            "Environment). Cria um *snapshot* dos arquivos do sistema "
-            "(`hash SHA256`, permissoes, mtime, size, owner) e compara o "
-            "estado atual com esse **baseline** sempre que voce roda "
-            "*Verificar*.\n\n"
-            "Mostra resultado de forma escaneavel: **Integro** (verde) "
-            "quando nada mudou, **Mudancas detectadas** (ambar) quando ha "
-            "diferenca. A aba *Mudancas* lista cada arquivo com badge "
-            "colorido (*adicionado* / *removido* / *modificado*) e as "
-            "propriedades alteradas (mtime, hash, permissoes, etc.).\n\n"
-            "**Re-baseline** explicito apos updates legitimos do sistema "
-            "(`rpm-ostree upgrade`), com dialog de confirmacao para evitar "
-            "aceitar mudancas suspeitas por engano. Cada operacao usa "
-            "**1 dialog `pkexec`** — sem repetir senha."
+            "v0.2.0 unificou duas tools (File Integrity + Hash Tools). "
+            "Cobre integridade em duas escalas:\n\n"
+            "**Sistema (AIDE)**: snapshot completo de `/etc`, `/usr`, `/boot` "
+            "com hash SHA256 + permissoes + mtime + size + owner. Compara "
+            "estado atual contra baseline pra detectar mudancas. Requer "
+            "root via `pkexec`.\n\n"
+            "**Ad-hoc (hash)**: calcula SHA-256/512/SHA-1/MD5 de arquivo "
+            "individual, verifica hash conhecido vs computado, ou cria "
+            "baseline JSON de diretorio do user (Downloads, Documents) e "
+            "faz diff sem root.\n\n"
+            "**Use AIDE** pra audit periodico do sistema (semanal/mensal). "
+            "**Use Hash ad-hoc** pra validar arquivos baixados ou snapshot "
+            "de diretorios de trabalho."
         ),
         features=[
-            "**Hero card** com estado atual: integro / mudancas detectadas / sem baseline",
-            "Lista filtravel de mudancas com badges (*adicionado*, *removido*, *modificado*)",
-            "Cada mudanca mostra **propriedades alteradas** (mtime, hash, perms, etc.)",
-            "Dialog de confirmacao explicito antes de re-baseline (evita aceitar mudancas suspeitas)",
-            "Cache local em `~/.config/vigia/file-integrity.json` (mostra ultimo check apos restart)",
+            "**6 tabs**: Status (AIDE), Mudancas (AIDE), Hash, Verificar, Baseline, Sobre",
+            "**AIDE**: hero card integro/mudancas/sem baseline + lista filtravel de diffs",
+            "**Hash ad-hoc**: 4 algoritmos (SHA-256, SHA-512, SHA-1, MD5)",
+            "**Baseline ad-hoc**: snapshot JSON de diretorio + diff added/modified/removed",
+            "Dialog de confirmacao explicito antes de re-baseline AIDE",
+            "Reports em `~/.config/vigia/file-integrity.json` + `~/.local/share/vigia-hash/`",
         ],
         icon_path=_TOOLS_DIR / "file-integrity" / "data" / "br.com.vigia.FileIntegrity.svg",
         exec_cmd=["vigia-integrity"],
@@ -451,7 +418,7 @@ TOOLS: list[ToolEntry] = [
         available_fn=lambda: shutil.which("vigia-integrity") is not None,
         embedded_module="vigia_integrity.window",
         category="defesa",
-        wrapped_packages=["aide"],
+        wrapped_packages=["aide", "coreutils"],
     ),
     ToolEntry(
         id="capabilities-inspector",
@@ -553,105 +520,14 @@ TOOLS: list[ToolEntry] = [
         category="defesa",
         wrapped_packages=["clamav", "clamav-update"],
     ),
-    ToolEntry(
-        id="network-scanner",
-        name="Network Scanner",
-        description="Discovery e port scan via nmap.",
-        long_description=(
-            "GUI moderna para o **nmap**. Descobre hosts numa rede (ping scan), "
-            "escaneia portas TCP, identifica servicos e versoes. Wrapper para "
-            "evitar decorar flags de CLI e parsear output texto.\n\n"
-            "**Perfis pre-definidos** com trade-off velocidade x ruido: "
-            "Discovery (so ping), Quick (top 100 portas), Standard (top 1000 "
-            "+ versao), Stealth (SYN scan), Aggressive (-A: OS + scripts + "
-            "traceroute), Full (todas as 65535 portas). Perfis com flags "
-            "previlegiadas usam `pkexec`.\n\n"
-            "**Uso etico**: scan de redes sem autorizacao e' crime (Lei "
-            "Carolina Dieckmann, art. 154-A do CP). Use apenas em redes "
-            "proprias, sistemas autorizados, CTFs ou `scanme.nmap.org`."
-        ),
-        features=[
-            "**4 tabs**: Scan, Hosts (historico), Perfis (catalogo), Sobre",
-            "6 perfis pre-definidos com badges de velocidade/intrusividade",
-            "Parse XML do nmap — hosts + portas + servicos + OS guess",
-            "Validacao de target (aceita IP, hostname, CIDR)",
-            "Modo admin via `pkexec` para SYN scan e -A",
-            "Historico em `~/.local/share/vigia-netscan/` (mode 0600)",
-        ],
-        icon_path=_TOOLS_DIR / "network-scanner" / "data" / "br.com.vigia.NetworkScanner.svg",
-        exec_cmd=["vigia-netscan"],
-        needs_terminal=False,
-        available_fn=lambda: shutil.which("vigia-netscan") is not None,
-        embedded_module="vigia_netscan.window",
-        category="defesa",
-        wrapped_packages=["nmap"],
-    ),
-    ToolEntry(
-        id="firmware-analyzer",
-        name="Firmware Analyzer",
-        description="Analise de firmware e binarios via binwalk.",
-        long_description=(
-            "GUI para o **binwalk** — analise de firmware de roteadores, "
-            "cameras IP, dispositivos IoT e outros binarios genericos. Detecta "
-            "arquivos embarcados (imagens, archives, kernels, filesystems "
-            "SquashFS/JFFS2), extrai componentes individuais e calcula "
-            "entropia para identificar regioes compactadas/criptografadas.\n\n"
-            "**Quando usar**: auditar firmware antes de instalar em "
-            "equipamento de escritorio (cameras IP, NAS, roteadores) — "
-            "regulatorio LGPD demanda conhecer o que rodam dispositivos que "
-            "manipulam dados pessoais.\n\n"
-            "**Tab Entropia** identifica edges de mudanca brusca — "
-            "<0.3 (estruturado) vs >0.95 (criptografado/compactado). Util "
-            "para localizar componentes interessantes sem documentacao."
-        ),
-        features=[
-            "**4 tabs**: Analisar (signatures), Extrair, Entropia, Sobre",
-            "Detecta signatures via magic numbers (catalogo do binwalk)",
-            "Extracao automatica com `binwalk -e` para diretorio custom",
-            "Edges de entropia listados com classificacao qualitativa",
-            "100% local — nenhum dado enviado a rede",
-        ],
-        icon_path=_TOOLS_DIR / "firmware-analyzer" / "data" / "br.com.vigia.FirmwareAnalyzer.svg",
-        exec_cmd=["vigia-firmware"],
-        needs_terminal=False,
-        available_fn=lambda: shutil.which("vigia-firmware") is not None,
-        embedded_module="vigia_firmware.window",
-        category="defesa",
-        wrapped_packages=["binwalk"],
-    ),
-    ToolEntry(
-        id="hash-tools",
-        name="Hash Tools",
-        description="Hash, verificacao e baseline de integridade.",
-        long_description=(
-            "Calculo e verificacao de **hashes criptograficos** "
-            "(SHA-256/512, SHA-1, MD5). Wrapper de `hashdeep` + coreutils "
-            "com UI moderna.\n\n"
-            "Tres modos: **Hash** (digest de um arquivo), **Verificar** "
-            "(compara hash esperado vs computado), **Baseline** (snapshot "
-            "de diretorio em JSON, depois detecta added/modified/removed "
-            "contra estado atual).\n\n"
-            "**Caso de uso classico**: voce hashea `/etc/` apos um setup "
-            "limpo do servidor. Apos algum tempo, roda comparativo — "
-            "qualquer arquivo modificado e' suspeito. Tool complementar ao "
-            "**Vigia File Integrity** (AIDE), util pra cenarios mais simples."
-        ),
-        features=[
-            "**4 tabs**: Hash, Verificar, Baseline, Sobre",
-            "4 algoritmos: SHA-256 (default), SHA-512, SHA-1, MD5 (legacy)",
-            "Baseline JSON com hashes de diretorio inteiro",
-            "Diff visual: added (verde), modified (amarelo), removed (vermelho)",
-            "Copia hash com 1 clique para clipboard",
-            "Baselines em `~/.local/share/vigia-hash/` (mode 0600)",
-        ],
-        icon_path=_TOOLS_DIR / "hash-tools" / "data" / "br.com.vigia.HashTools.svg",
-        exec_cmd=["vigia-hash"],
-        needs_terminal=False,
-        available_fn=lambda: shutil.which("vigia-hash") is not None,
-        embedded_module="vigia_hash.window",
-        category="defesa",
-        wrapped_packages=["coreutils"],
-    ),
+    # Network Scanner (nmap GUI) removida na limpeza 2026-05-27: fora do
+    # escopo LGPD/escritorio + risco etico (scan nao-autorizado e' crime).
+    # Firmware Analyzer (binwalk) removida na mesma limpeza: nicho de
+    # reverse engineering/CTF, fora do escopo.
+    # Hash Tools mergeada em 2026-05-27 → Vigia File Integrity v0.2.0.
+    # As 3 tabs (Hash, Verificar, Baseline) viraram tabs do File Integrity
+    # (que ja era escala-sistema com AIDE). Hash ad-hoc + AIDE = mesma
+    # categoria de integridade de arquivos.
     # NOTA: Tool Installer NAO esta mais nesta lista. Foi promovido a
     # entidade de primeiro nivel acessivel via icone 'Instalador' na
     # nav lateral fina do Hub (em vez de virar mais uma tool entre tools).
