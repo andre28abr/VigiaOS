@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Vigia Rootkit Scanner
+GenericName=Rootkit Scanner
+Comment=Rootkit/backdoor scanner com UI GTK4 (chkrootkit + rkhunter)
+Exec=vigia-rootkit
+Icon=br.com.vigia.RootkitScanner
+Categories=System;Security;
+Keywords=rootkit;chkrootkit;rkhunter;security;scan;vigia;
+StartupNotify=true
+Terminal=false

@@ -49,6 +49,7 @@ TOOLS = [
     "firmware-analyzer",
     "hash-tools",
     "dashboard",
+    "rootkit-scanner",
 ]
 
 for tool in TOOLS:

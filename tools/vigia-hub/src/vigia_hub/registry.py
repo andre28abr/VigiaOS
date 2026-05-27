@@ -490,6 +490,39 @@ TOOLS: list[ToolEntry] = [
         wrapped_packages=["libcap", "getcap"],
     ),
     ToolEntry(
+        id="rootkit-scanner",
+        name="Rootkit Scanner",
+        description="Procura rootkits e backdoors (chkrootkit + rkhunter).",
+        long_description=(
+            "Wrappa **chkrootkit** e **Rootkit Hunter (rkhunter)** num so app "
+            "com UI moderna. Os dois sao scanners classicos de Linux para "
+            "detectar rootkits, backdoors e sinais de comprometimento.\n\n"
+            "**chkrootkit**: rapido (~30s), faz checks especificos por "
+            "binario (substituicoes de `ps`, `ls`, `netstat`, etc.). Bom "
+            "como primeiro pente-fino.\n\n"
+            "**rkhunter**: completo (2-5min), 200+ checks (hashes, "
+            "permissoes, configs SSH, processos escondidos). Mais detalhado.\n\n"
+            "Os dois sao complementares — rode periodicamente (ex: semanal) "
+            "e cheque o Historico pra mudancas suspeitas. Roda como root "
+            "via `pkexec` em ambos."
+        ),
+        features=[
+            "**4 tabs**: chkrootkit, Rootkit Hunter, Historico, Sobre",
+            "Streaming de output em tempo real (coloring warnings/infectados)",
+            "KPI cards: testes rodados, warnings, infectados",
+            "Botao Parar para cancelar scan a qualquer momento",
+            "Historico em `~/.local/share/vigia-rootkit/scans/` (mode 0600)",
+            "Output completo salvo em JSON pra audit/LGPD",
+        ],
+        icon_path=_TOOLS_DIR / "rootkit-scanner" / "data" / "br.com.vigia.RootkitScanner.svg",
+        exec_cmd=["vigia-rootkit"],
+        needs_terminal=False,
+        available_fn=lambda: shutil.which("vigia-rootkit") is not None,
+        embedded_module="vigia_rootkit.window",
+        category="defesa",
+        wrapped_packages=["chkrootkit", "rkhunter"],
+    ),
+    ToolEntry(
         id="antivirus",
         name="Antivirus",
         description="Scan on-demand de malware com ClamAV.",
