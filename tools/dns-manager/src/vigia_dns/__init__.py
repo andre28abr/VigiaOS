@@ -14,7 +14,7 @@ v0.2: modo avancado opt-in via dnscrypt-proxy (switch no Status):
 - Migracao com backup de resolved.conf + rollback 1-click
 """
 
-__version__ = "0.2.9"
+__version__ = "0.2.10"
 __app_id__ = "br.com.vigia.DnsManager"
 
 WRAPPED_PACKAGES = ["systemd-resolved", "resolvectl", "dnscrypt-proxy"]

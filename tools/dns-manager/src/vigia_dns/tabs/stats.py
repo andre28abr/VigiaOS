@@ -189,23 +189,54 @@ class StatsTab(Adw.Bin):
             ok, err = dc.enable_query_log_in_config()
         except Exception as e:  # pylint: disable=broad-except
             ok, err = False, f"Excecao: {e}"
-        GLib.idle_add(self._on_enable_query_log_done, ok, err)
 
-    def _on_enable_query_log_done(self, ok: bool, err: str) -> bool:
+        # v0.2.10: apos enable, espera ate 5s pelo daemon criar o file
+        file_created = False
+        if ok:
+            import time as _t
+            for _ in range(10):
+                if dc.QUERY_LOG_PATH.exists():
+                    file_created = True
+                    break
+                _t.sleep(0.5)
+
+        GLib.idle_add(self._on_enable_query_log_done, ok, err, file_created)
+
+    def _on_enable_query_log_done(
+        self, ok: bool, err: str, file_created: bool,
+    ) -> bool:
         if self._destroyed:
             return False
         self._running = False
         if not ok:
             show_error(self, "Falha ao habilitar query log", err)
+        elif not file_created:
+            # v0.2.10: edit foi OK mas daemon nao criou o file
+            # Provavel: permissoes do dir ou SELinux
+            show_error(
+                self,
+                "Config editado mas log nao foi criado",
+                "O dnscrypt-proxy.toml foi atualizado e o servico "
+                "reiniciado, mas o arquivo /var/log/dnscrypt-proxy/"
+                "query.log nao foi criado.\n\n"
+                "Causas possiveis:\n"
+                "• Permissoes do diretorio /var/log/dnscrypt-proxy/\n"
+                "• Politica SELinux bloqueando escrita\n"
+                "• Erro de syntax no dnscrypt-proxy.toml\n\n"
+                "Diagnostico:\n"
+                "  sudo journalctl -u dnscrypt-proxy -n 50\n"
+                "  sudo ls -la /var/log/dnscrypt-proxy/\n"
+                "  sudo audit2why -a 2>/dev/null | head -20",
+            )
         else:
             show_info(
                 self,
                 "Query log habilitado",
-                "dnscrypt-proxy reiniciado. As primeiras queries "
-                "comecarao a aparecer nas estatisticas em segundos. "
-                "Aguarde o proximo refresh automatico (10s).",
+                "dnscrypt-proxy reiniciado e log file criado. As "
+                "primeiras queries comecarao a aparecer em segundos. "
+                "Aguarde o proximo refresh (10s).",
             )
-            self.refresh()
+        self.refresh()
         return False
 
     # ============================================================
