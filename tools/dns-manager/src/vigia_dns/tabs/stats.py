@@ -19,7 +19,7 @@ from gi.repository import Adw, GLib, Gtk  # noqa: E402
 
 from .. import dnscrypt_backend as dc
 from .. import migration
-from ._helpers import make_clamp
+from ._helpers import make_clamp, show_error, show_info
 
 
 REFRESH_MS = 10_000  # 10s (logs nao mudam tao rapido)
@@ -35,6 +35,8 @@ class StatsTab(Adw.Bin):
         # Sem isso, um GLib.idle_add ja pendente apos destroy() crashava
         # ao tentar mexer em self._mode_banner etc.
         self._destroyed = False
+        # v0.2.9: estado do running pra disable do botao
+        self._running = False
 
         # ===== Header =====
         header_lbl = Gtk.Label(label="Estatisticas de queries")
@@ -60,8 +62,13 @@ class StatsTab(Adw.Bin):
         header_desc.set_margin_bottom(24)
 
         # ===== Banner de estado =====
+        # v0.2.9: ganha button-label condicional pra habilitar query log
         self._mode_banner = Adw.Banner()
         self._mode_banner.set_revealed(False)
+        self._mode_banner.connect("button-clicked", self._on_banner_clicked)
+        # Acao do botao do banner: muda conforme o estado
+        # ("enable_query_log" ou "" — vazio nao mostra botao)
+        self._banner_action: str = ""
 
         # ===== KPI cards (3 cards lado-a-lado) =====
         kpis_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
@@ -133,6 +140,75 @@ class StatsTab(Adw.Bin):
         return True
 
     # ============================================================
+    # v0.2.9: habilitar query_log via UI (sem precisar editar .toml)
+    # ============================================================
+
+    def _on_banner_clicked(self, _banner) -> None:
+        """Acao do botao do banner — depende do estado atual."""
+        if self._banner_action == "enable_query_log":
+            self._show_enable_query_log_dialog()
+
+    def _show_enable_query_log_dialog(self) -> None:
+        if self._running:
+            return
+        dlg = Adw.AlertDialog(
+            heading="Habilitar query log?",
+            body=(
+                "Vai editar /etc/dnscrypt-proxy/dnscrypt-proxy.toml para "
+                "adicionar:\n\n"
+                "  [query_log]\n"
+                "  file = '/var/log/dnscrypt-proxy/query.log'\n\n"
+                "<b>Aviso LGPD/privacidade</b>: o query log registra TODA "
+                "query DNS feita pelo sistema (incluindo sites visitados). "
+                "O arquivo fica LOCAL — nenhum dado vai pra rede. Mas "
+                "qualquer um com acesso ao arquivo (root) pode ver seu "
+                "historico de DNS.\n\n"
+                "Pra preservar privacidade, mantenha <tt>require_nolog = true</tt> "
+                "no resolver (configuracao default).\n\n"
+                "dnscrypt-proxy sera reiniciado."
+            ),
+        )
+        dlg.set_body_use_markup(True)
+        dlg.add_response("cancel", "Cancelar")
+        dlg.add_response("enable", "Habilitar")
+        dlg.set_response_appearance("enable", Adw.ResponseAppearance.SUGGESTED)
+        dlg.set_default_response("cancel")
+        dlg.connect("response", self._on_enable_query_log_response)
+        dlg.present(self.get_root())
+
+    def _on_enable_query_log_response(self, _dlg, response: str) -> None:
+        if response != "enable":
+            return
+        self._running = True
+        threading.Thread(
+            target=self._enable_query_log_worker, daemon=True,
+        ).start()
+
+    def _enable_query_log_worker(self) -> None:
+        try:
+            ok, err = dc.enable_query_log_in_config()
+        except Exception as e:  # pylint: disable=broad-except
+            ok, err = False, f"Excecao: {e}"
+        GLib.idle_add(self._on_enable_query_log_done, ok, err)
+
+    def _on_enable_query_log_done(self, ok: bool, err: str) -> bool:
+        if self._destroyed:
+            return False
+        self._running = False
+        if not ok:
+            show_error(self, "Falha ao habilitar query log", err)
+        else:
+            show_info(
+                self,
+                "Query log habilitado",
+                "dnscrypt-proxy reiniciado. As primeiras queries "
+                "comecarao a aparecer nas estatisticas em segundos. "
+                "Aguarde o proximo refresh automatico (10s).",
+            )
+            self.refresh()
+        return False
+
+    # ============================================================
     # KPI builder
     # ============================================================
 
@@ -173,7 +249,9 @@ class StatsTab(Adw.Bin):
         # v0.2.6: aborta se a tab ja foi destruida (idle_add pendente)
         if self._destroyed:
             return False
-        # Banner
+        # Banner — v0.2.9: ganha botao de acao quando query log desabilitado
+        self._banner_action = ""
+        self._mode_banner.set_button_label("")
         if not installed:
             self._mode_banner.set_title(
                 "dnscrypt-proxy nao instalado."
@@ -186,9 +264,10 @@ class StatsTab(Adw.Bin):
             self._mode_banner.set_revealed(True)
         elif not stats.log_available:
             self._mode_banner.set_title(
-                "Query log nao disponivel. Habilite query_log no "
-                "/etc/dnscrypt-proxy/dnscrypt-proxy.toml e reinicie o servico."
+                "Query log esta desabilitado. Habilite pra ver estatisticas."
             )
+            self._mode_banner.set_button_label("Habilitar")
+            self._banner_action = "enable_query_log"
             self._mode_banner.set_revealed(True)
         else:
             self._mode_banner.set_revealed(False)
