@@ -30,6 +30,13 @@ class StatusTab(Adw.Bin):
         # dependem do mode atual.
         self.on_mode_changed: callable | None = None
 
+        # v0.2.8: cache do ultimo estado conhecido + hint. Resolve o
+        # caso: user clica Aplicar em Provedores, vai pra Status, hero
+        # demora ~2min pra ficar verde pq resolvectl status retorna
+        # Global vazio em race. Com cache/hint, hero atualiza imediato.
+        self._last_known_dns: list[str] = []   # cache do current/global
+        self._last_known_dot: str = ""
+
         # Hero
         self._hero = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
         self._hero.set_halign(Gtk.Align.CENTER)
@@ -178,29 +185,78 @@ class StatusTab(Adw.Bin):
         self.refresh()
 
     # ============================================================
+    # API publica
+    # ============================================================
+
+    def invalidate_cache(self) -> None:
+        """Zera o cache do status (v0.2.8).
+
+        Window.py chama em mode switch — apos a migration, o cache de
+        DNS anterior nao se aplica mais.
+        """
+        self._last_known_dns = []
+        self._last_known_dot = ""
+
+    # ============================================================
     # Refresh (async — resolvectl pode ser lento em sistemas estresados)
     # ============================================================
 
-    def refresh(self) -> None:
-        threading.Thread(target=self._refresh_worker, daemon=True).start()
+    def refresh(self, expected_dns: list[str] | None = None,
+                expected_dot: str | None = None) -> None:
+        """Recarrega status.
 
-    def _refresh_worker(self) -> None:
+        v0.2.8: aceita hint `expected_dns` (lista IPs) e `expected_dot`
+        ('yes'/'no'). Caller (window.py) passa apos um Apply bem-sucedido
+        em Provedores, pra que o hero ja fique verde imediatamente
+        sem esperar o sistema reportar.
+        """
+        threading.Thread(
+            target=self._refresh_worker,
+            args=(expected_dns or [], expected_dot or ""),
+            daemon=True,
+        ).start()
+
+    def _refresh_worker(self, expected_dns: list[str], expected_dot: str) -> None:
         try:
             st = backend.get_status()
-        except Exception:  # pylint: disable=broad-except
+        except Exception as e:  # pylint: disable=broad-except
+            print(f"[status] backend.get_status falhou: {e}", flush=True)
             st = backend.ResolvedStatus()
         # v0.2: tambem coleta status do dnscrypt-proxy
         try:
             dc_st = dc.get_status()
-        except Exception:  # pylint: disable=broad-except
+        except Exception as e:  # pylint: disable=broad-except
+            print(f"[status] dc.get_status falhou: {e}", flush=True)
             dc_st = dc.DnsCryptStatus()
         try:
             mode = migration.get_current_mode()
-        except Exception:  # pylint: disable=broad-except
+        except Exception as e:  # pylint: disable=broad-except
+            print(f"[status] get_current_mode falhou: {e}", flush=True)
             mode = "unknown"
+
+        # v0.2.8: optimistic merge — se o sistema retornou DNS vazio mas
+        # temos hint OU cache, usa eles. Assim hero fica verde imediato
+        # mesmo enquanto resolvectl status ainda nao propagou.
+        if not st.current_dns and not st.global_dns:
+            if expected_dns:
+                st.global_dns = list(expected_dns)
+            elif self._last_known_dns:
+                st.global_dns = list(self._last_known_dns)
+        if not st.global_dot and expected_dot:
+            st.global_dot = expected_dot
+        elif not st.global_dot and self._last_known_dot:
+            st.global_dot = self._last_known_dot
+
         GLib.idle_add(self._apply, st, dc_st, mode)
 
     def _apply(self, st: backend.ResolvedStatus, dc_st=None, mode: str = "unknown") -> bool:
+        # v0.2.8: atualiza cache com dados nao-vazios (se vier vazio,
+        # preserva o que tinha — _refresh_worker ja faz fallback)
+        if st.current_dns or st.global_dns:
+            self._last_known_dns = list(st.current_dns or st.global_dns)
+        if st.global_dot:
+            self._last_known_dot = st.global_dot
+
         # Hero (v0.2.2: mode-aware)
         for cls in ("success", "warning", "error", "dim-label"):
             self._state_label.remove_css_class(cls)
