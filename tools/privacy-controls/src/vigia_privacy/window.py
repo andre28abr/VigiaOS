@@ -102,6 +102,14 @@ class VigiaPrivacyWindow(Adw.ApplicationWindow):
 
 
 def _build_page() -> Gtk.Widget:
+    """Constroi a aba Toggles.
+
+    v0.3.1: wrap em Adw.Bin pra garantir alignment correto. Sem o wrap,
+    em janelas grandes (VM em fullscreen ou monitor wide) o PreferencesPage
+    perdia centralizacao e ficava encostado num lado. AboutTab desta mesma
+    tool ja seguia esse pattern (herda de Adw.Bin) — agora a aba Toggles
+    bate.
+    """
     if not ALL_TOGGLES:
         return Adw.StatusPage(
             title="Nenhum toggle disponivel",
@@ -122,7 +130,10 @@ def _build_page() -> Gtk.Widget:
             group.add(_build_toggle_row(tog))
         page.add(group)
 
-    return page
+    # Wrap em Adw.Bin pra alignment consistente (v0.3.1)
+    container = Adw.Bin()
+    container.set_child(page)
+    return container
 
 
 def _build_toggle_row(tog: Toggle) -> Adw.ActionRow:
