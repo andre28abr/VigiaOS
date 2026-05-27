@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vigia-rootkit-scanner"
+version = "0.1.0"
+description = "Rootkit scanner GTK4 — wrapper chkrootkit + rkhunter — parte da Vigia Suite"
+license = { text = "Apache-2.0" }
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{ name = "André Augusto Azarias de Souza" }]
+keywords = ["rootkit", "chkrootkit", "rkhunter", "security", "vigia", "gnome", "gtk4"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: X11 Applications :: GTK",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Security",
+]
+dependencies = ["vigia-common"]
+
+[project.scripts]
+vigia-rootkit = "vigia_rootkit.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

@@ -74,6 +74,7 @@ modo embedded.
 | 17 | **Firmware Analyzer** | v0.1.0 | Python + GTK4 | 🟢 binwalk: signatures + extract + entropia |
 | 18 | **Hash Tools** | v0.1.1 | Python + GTK4 | 🟢 SHA-256/512 + baseline+diff de diretório |
 | 19 | **Dashboard** | v0.2.0 | Python + GTK4 + Cairo | 🟢 Sistema em tempo real + per-process I/O + alertas |
+| 20 | **Rootkit Scanner** | v0.1.0 | Python + GTK4 | 🟢 wrapper chkrootkit + rkhunter — streaming + history |
 
 **Lib interna** (não conta como tool):
 - **vigia-common** v0.1.0 — helpers compartilhados (make_clamp, show_error/info, md_to_pango, badges, constantes de layout). Reduz duplicação de ~600 linhas em 16 `_helpers.py`. Tools migradas via re-export retro-compatível.
@@ -1124,7 +1125,8 @@ sudo install -m 0755 target/release/vigia-log /usr/local/bin/vigia-log
 for d in vigia-hub privacy-controls selinux-gui firewall-gui netmon-gui \
          hardening-checks reports file-integrity tool-installer \
          vpn-manager dns-manager capabilities-inspector activity-log-gui \
-         antivirus network-scanner firmware-analyzer hash-tools dashboard; do
+         antivirus network-scanner firmware-analyzer hash-tools dashboard \
+         rootkit-scanner; do
   (cd ../$d && pip install --user -e .)
 done
 
@@ -1133,7 +1135,7 @@ for tool in vigia-hub vigia-privacy vigia-selinux vigia-firewall vigia-netmon \
             vigia-hardening vigia-reports vigia-integrity vigia-installer \
             vigia-vpn vigia-dns vigia-capabilities vigia-log-gui \
             vigia-antivirus vigia-netscan vigia-firmware vigia-hash \
-            vigia-dashboard; do
+            vigia-dashboard vigia-rootkit; do
   sudo ln -sf "$HOME/.local/bin/$tool" /usr/local/bin/$tool
 done
 
