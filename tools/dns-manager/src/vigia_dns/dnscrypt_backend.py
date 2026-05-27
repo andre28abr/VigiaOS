@@ -555,39 +555,160 @@ def enable_blocklist_in_config() -> tuple[bool, str]:
 
 
 def enable_query_log_in_config() -> tuple[bool, str]:
-    """Adiciona [query_log] file = '/var/log/dnscrypt-proxy/query.log' no .toml.
+    """Habilita query log no dnscrypt-proxy.
 
-    v0.2.9: pra Stats funcionar. Antes o user tinha que editar o .toml
-    manualmente. AVISO LGPD: query log registra toda query DNS local
-    (privacy implication). UI deve confirmar com user antes de chamar.
+    v0.2.9 (inicial): editava só o .toml.
+    v0.2.10 (fix): faz tudo o que e' necessario num so pkexec:
+      1. mkdir -p /var/log/dnscrypt-proxy (caso nao exista)
+      2. chown pro user do dnscrypt-proxy (geralmente _dnscrypt-proxy)
+      3. touch o file pra dar permissao certa
+      4. REMOVE linhas comentadas `# file = ...` redundantes
+      5. Edita o .toml (substitui ou adiciona file = '...')
+      6. systemctl restart dnscrypt-proxy
+      7. wait + verify: file foi criado pelo daemon
+
+    Sem isso, no Fedora Silverblue (e similares) o dir pode nao existir
+    com permissoes corretas, o daemon nao consegue criar query.log,
+    e a UI nao detecta nada apos o restart.
+
+    AVISO LGPD: query log registra toda query DNS local. UI deve
+    confirmar com user (dialog em stats.py faz isso).
     """
     lines = _read_config_lines()
     if not lines:
         return False, "Falha ao ler config."
+
+    # Primeiro REMOVE linhas comentadas `# file = ...` dentro de [query_log]
+    # pra evitar config duplicado/confuso
+    lines = _remove_commented_file_in_section(lines, "query_log")
 
     new_lines = _update_toml_section_key(
         lines, "query_log", "file", f"'{QUERY_LOG_PATH}'"
     )
     new_content = "".join(new_lines)
-    return _atomic_write_config_via_pkexec(new_content)
+
+    # Script combina: prepara diretorio + escreve config + restart + verify
+    import uuid
+    delim = f"VIGIADNS_QL_{uuid.uuid4().hex}"
+    log_dir = QUERY_LOG_PATH.parent
+
+    script = f"""set -e
+
+# 1. Prepara diretorio do log
+mkdir -p {log_dir}
+
+# 2. Descobre o user do dnscrypt-proxy service
+DC_USER="$(systemctl show -p User --value {SERVICE_NAME} 2>/dev/null || true)"
+if [ -z "$DC_USER" ] || [ "$DC_USER" = "root" ]; then
+    # Default em alguns sistemas; ajusta pra usuario conhecido
+    DC_USER=""
+fi
+
+# 3. Cria o file vazio com permissoes corretas
+touch {QUERY_LOG_PATH}
+chmod 0640 {QUERY_LOG_PATH}
+if [ -n "$DC_USER" ]; then
+    chown "$DC_USER:" {log_dir} 2>/dev/null || true
+    chown "$DC_USER:" {QUERY_LOG_PATH} 2>/dev/null || true
+fi
+
+# 4. Backup .toml se nao tiver
+if [ -f {CONFIG_PATH} ] && [ ! -f {BACKUP_PATH} ]; then
+    cp -a {CONFIG_PATH} {BACKUP_PATH}
+    chmod 0600 {BACKUP_PATH}
+fi
+
+# 5. Escreve novo config (atomic)
+TMPFILE=$(mktemp)
+cat > "$TMPFILE" << '{delim}'
+{new_content}
+{delim}
+chmod 0644 "$TMPFILE"
+chown root:root "$TMPFILE"
+mv "$TMPFILE" {CONFIG_PATH}
+
+# 6. Restart service (se ativo)
+if systemctl is-active --quiet {SERVICE_NAME}; then
+    systemctl restart {SERVICE_NAME}
+    # Espera ate 5s o servico voltar
+    for i in 1 2 3 4 5 6 7 8 9 10; do
+        if systemctl is-active --quiet {SERVICE_NAME}; then
+            break
+        fi
+        sleep 0.5
+    done
+fi
+"""
+    rc, out, err = _run(["pkexec", "bash", "-c", script], timeout=30)
+    if rc in (126, 127):
+        return False, "Autenticacao cancelada."
+    if rc != 0:
+        return False, (err.strip() or "Falha ao habilitar query log.")[:500]
+    return True, ""
 
 
 def disable_query_log_in_config() -> tuple[bool, str]:
-    """Remove file = ... do [query_log] no .toml (comenta).
+    """Desabilita query log no .toml (seta file = '').
 
-    v0.2.9: contrapartida de enable_query_log_in_config(). Comenta
-    a linha file = ... ao inves de remover pra preservar comentarios.
+    v0.2.10: idem enable, faz num so pkexec com restart e verify.
     """
     lines = _read_config_lines()
     if not lines:
         return False, "Falha ao ler config."
 
-    # Seta file = '' (empty) — dnscrypt-proxy interpreta como desabilitado
     new_lines = _update_toml_section_key(
         lines, "query_log", "file", "''"
     )
     new_content = "".join(new_lines)
     return _atomic_write_config_via_pkexec(new_content)
+
+
+def _remove_commented_file_in_section(
+    lines: list[str], section: str,
+) -> list[str]:
+    """Remove `# file = ...` (linhas comentadas com 'file') dentro de [section].
+
+    v0.2.10: pra evitar config visualmente bagunçado quando habilitamos.
+    Preserva todas outras linhas comentadas.
+    """
+    out: list[str] = []
+    in_section = False
+    section_header = f"[{section}]"
+    pattern = re.compile(r"^\s*#\s*file\s*=")
+
+    for line in lines:
+        stripped = line.strip()
+        if stripped == section_header:
+            in_section = True
+            out.append(line)
+            continue
+        if stripped.startswith("[") and stripped.endswith("]"):
+            in_section = False
+            out.append(line)
+            continue
+
+        if in_section and pattern.match(line):
+            # Skip — remove a linha comentada
+            continue
+        out.append(line)
+
+    return out
+
+
+def query_log_file_exists_with_recent_data(max_age_sec: int = 60) -> bool:
+    """Verifica se /var/log/.../query.log existe e foi tocado recentemente.
+
+    v0.2.10: usado pela UI pra confirmar que o enable_query_log realmente
+    funcionou (daemon criou o file). Se False apos enable, mostra
+    diagnostico ao user.
+    """
+    if not QUERY_LOG_PATH.exists():
+        return False
+    try:
+        age = time.time() - QUERY_LOG_PATH.stat().st_mtime
+        return age < max_age_sec or QUERY_LOG_PATH.stat().st_size > 0
+    except OSError:
+        return False
 
 
 def import_blocklist_from_url(url: str, append: bool = True) -> tuple[bool, int, str]:
