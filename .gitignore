@@ -27,3 +27,8 @@ build/
 
 # Packaging local builds (gerados pelo Makefile)
 packaging/rpmbuild/
+
+# Notas locais de contexto (so para consulta do Claude — nao publica)
+CONTEXT.md
+NOTES.md
+*.local.md

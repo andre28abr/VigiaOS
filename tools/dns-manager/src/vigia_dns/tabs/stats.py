@@ -31,6 +31,10 @@ class StatsTab(Adw.Bin):
     def __init__(self) -> None:
         super().__init__()
         self._tick_id = 0
+        # v0.2.6: flag pra evitar update de widgets ja destruidos.
+        # Sem isso, um GLib.idle_add ja pendente apos destroy() crashava
+        # ao tentar mexer em self._mode_banner etc.
+        self._destroyed = False
 
         # ===== Header =====
         header_lbl = Gtk.Label(label="Estatisticas de queries")
@@ -116,11 +120,15 @@ class StatsTab(Adw.Bin):
         self.connect("destroy", self._on_destroy)
 
     def _on_destroy(self, *_args) -> None:
+        self._destroyed = True
         if self._tick_id:
             GLib.source_remove(self._tick_id)
             self._tick_id = 0
 
     def _on_tick(self) -> bool:
+        # v0.2.6: defensivo — se destruido mas timer ainda armado
+        if self._destroyed:
+            return False
         self.refresh()
         return True
 
@@ -162,6 +170,9 @@ class StatsTab(Adw.Bin):
         GLib.idle_add(self._apply, installed, mode, stats)
 
     def _apply(self, installed: bool, mode: str, stats) -> bool:
+        # v0.2.6: aborta se a tab ja foi destruida (idle_add pendente)
+        if self._destroyed:
+            return False
         # Banner
         if not installed:
             self._mode_banner.set_title(
