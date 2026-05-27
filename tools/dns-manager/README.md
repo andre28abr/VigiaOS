@@ -1,49 +1,85 @@
 # Vigia DNS Manager
 
-Gerenciador de DNS via **systemd-resolved** com catalogo de provedores curado e DoT (DNS over TLS). Parte da [Vigia Suite](../../README.md).
+Gerenciador de DNS focado em **privacidade**, wrappa o `dnscrypt-proxy`.
+Parte da [Vigia Suite](../../README.md).
 
 ## O que faz
 
-- **Status**: detecta provedor em uso, mostra DNS configurado, DoT habilitado, interfaces, status do systemd-resolved
-- **Provedores**: catalogo de ~9 DNS publicos (Cloudflare, Quad9, AdGuard, Mullvad, Google, etc.) com descricao + filtros + 1-click apply
-- **DoT toggle**: encripta queries entre voce e o resolver
-- **Backup automatico** do `/etc/systemd/resolved.conf` antes de aplicar
-- **Flush cache** + **Restaurar config padrao** quando precisar voltar atras
+- **Status**: estado do dnscrypt-proxy, versao, server ativo, blocklist,
+  DNSSEC, query log. Botao 1-click para Ativar dnscrypt-proxy (apos
+  instalacao via Tool Installer) ou Restaurar systemd-resolved padrao
+- **Provedores**: catalogo de 11 servers dnscrypt-proxy curados
+  (Cloudflare, Quad9, AdGuard, Mullvad, anonymized relay) com descricao
+  + filtros + 1-click apply
+- **Blocklists**: gerencia `/etc/dnscrypt-proxy/blacklist.txt`
+  (Pi-hole-like). Adicionar dominio manual ou importar lista (StevenBlack,
+  EasyList, OISD, etc.)
+- **Stats**: KPIs das ultimas 24h (queries, blocked, cached) + top 10
+  dominios. Botao na UI pra habilitar query log (com aviso LGPD)
+- **Migracao 1-click** entre dnscrypt-proxy e systemd-resolved padrao
 
 ## Pre-requisitos
 
-- `systemd-resolved` (default em Fedora Silverblue desde F32)
-- `resolvectl` (vem com systemd)
-
-Confirma:
-```bash
-systemctl is-active systemd-resolved
-which resolvectl
-```
+- `dnscrypt-proxy` instalado:
+  ```bash
+  sudo rpm-ostree install dnscrypt-proxy
+  systemctl reboot
+  ```
+  Ou via **Vigia Tool Installer** (recomendado).
 
 ## Como rodar
 
+Normalmente embedded no **Vigia Hub**:
+```bash
+vigia-hub
+# clique em "DNS Manager" na sidebar
+```
+
+Standalone (debugging):
 ```bash
 cd tools/dns-manager
 pip install --user -e .
 vigia-dns
 ```
 
-Ou via Vigia Hub.
+## Fluxo do primeiro uso
 
-## Provedores no catalogo
+1. Abre a aba **Status**
+2. Se `dnscrypt-proxy` esta instalado mas parado: clica em
+   **"Ativar dnscrypt-proxy"** → confirma → senha admin
+3. App faz backup do `systemd-resolved` config, para ele, aponta
+   `/etc/resolv.conf` pra 127.0.0.1, sobe `dnscrypt-proxy`
+4. Vai a **Provedores** e aplica um server (recomendado:
+   no-logs + DNSSEC)
+5. Opcional: aba **Blocklists** pra bloquear ads/trackers
+6. Opcional: aba **Stats** — clica **"Habilitar"** no banner pra ligar
+   query log (com aviso LGPD)
 
-| Provedor | IPs | Filtros |
-|----------|-----|---------|
-| **Cloudflare** | 1.1.1.1, 1.0.0.1 | (nenhum) |
-| **Cloudflare Malware** | 1.1.1.2, 1.0.0.2 | malware |
-| **Cloudflare Family** | 1.1.1.3, 1.0.0.3 | malware + adulto |
-| **Quad9** | 9.9.9.9, 149.112.112.112 | malware |
-| **AdGuard DNS** | 94.140.14.14, 94.140.15.15 | ads + trackers |
-| **AdGuard Family** | 94.140.14.15, 94.140.15.16 | ads + trackers + adulto |
-| **Mullvad DNS** | 194.242.2.2, 194.242.2.3 | (nenhum, no-logs) |
-| **Mullvad AdBlock** | 194.242.2.3, 194.242.2.4 | ads + trackers + malware |
-| **Google Public DNS** | 8.8.8.8, 8.8.4.4 | (nenhum) |
+## Como reverter (parar de usar)
+
+Aba Status → **"Restaurar systemd-resolved padrao"**:
+- Para dnscrypt-proxy (mantem o pacote instalado)
+- Restaura `/etc/systemd/resolved.conf` do backup
+- Restaura `/etc/resolv.conf` -> stub-resolv.conf
+- Sobe systemd-resolved
+
+## Catalogo de servers (11)
+
+| Server | Provider | Protocolo | Features |
+|--------|----------|-----------|----------|
+| **Cloudflare** | Cloudflare | DoH | DNSSEC |
+| **Cloudflare Security** | Cloudflare | DoH | DNSSEC + malware |
+| **Cloudflare Family** | Cloudflare | DoH | DNSSEC + malware + adulto |
+| **Quad9** | Quad9 | DoH | DNSSEC + malware + no-logs |
+| **Quad9 (unfiltered)** | Quad9 | DoH | DNSSEC + no-logs |
+| **AdGuard DNS** | AdGuard | DoH | DNSSEC + ads + trackers |
+| **AdGuard Family** | AdGuard | DoH | DNSSEC + ads + trackers + adulto |
+| **Mullvad** | Mullvad VPN | DoH | DNSSEC + no-logs |
+| **Mullvad AdBlock** | Mullvad VPN | DoH | DNSSEC + no-logs + ads |
+| **Quad9 DNSCrypt** | Quad9 | DNSCrypt | DNSSEC + no-logs |
+| **Anonymized Relay** | (varios) | DNSCrypt + relay | no-logs + IP anonimo |
+
+Ver `src/vigia_dns/dnscrypt_catalog.py` pra detalhes (jurisdicao, etc.).
 
 ## Estrutura
 
@@ -55,26 +91,37 @@ tools/dns-manager/
 │   └── br.com.vigia.DnsManager.desktop
 └── src/vigia_dns/
     ├── __init__.py / __main__.py / app.py
-    ├── backend.py          # resolvectl status + /etc/systemd/resolved.conf
-    ├── resolvers.py        # catalogo de provedores
-    ├── window.py           # 3 tabs (Status + Provedores + Sobre)
+    ├── dnscrypt_backend.py   # core: status, config TOML, blocklist, stats
+    ├── dnscrypt_catalog.py   # 11 servers curados
+    ├── migration.py          # setup helpers (ativar/restaurar)
+    ├── window.py             # 5 tabs
     └── tabs/
         ├── _helpers.py
-        ├── status.py       # hero + global + interfaces + flush/restore
-        ├── resolvers.py    # ExpanderRow por provedor + Apply
+        ├── status.py         # hero + info + acoes
+        ├── resolvers.py      # ExpanderRow por server + Apply
+        ├── blocklists.py     # CRUD + import URL
+        ├── stats.py          # KPIs + top dominios
         └── about.py
 ```
 
-## Limitacoes v0.1
+## v0.3.0 — breaking change da v0.2.x
 
-- DoH (DNS over HTTPS) nao suportado (systemd-resolved nao tem DoH nativo). Use Cloudflare Family no Firefox para isso.
-- Blocklists locais tipo Pi-hole nao estao na v0.1. Use AdGuard DNS ou Mullvad AdBlock que ja filtram no servidor.
-- NetworkManager pode sobrescrever o DNS por interface — veja a aba Status pra confirmar.
+A v0.2.x tinha "modo simples" (systemd-resolved) e "modo avancado"
+(dnscrypt-proxy) como switch. A v0.3 **removeu o modo simples**.
+Justificativas:
 
-## Roadmap (v0.2+)
+- Foco em privacidade (no-logs, DNSSEC, anonymized DNS)
+- Blocklist e Stats so funcionam com dnscrypt — agora sempre disponiveis
+- UI simples (1 catalogo, 1 backend, sem mode-aware bugs)
+- 6 versoes consecutivas (v0.2.4 → v0.2.10) corrigindo bugs do mode-aware
 
-- Integracao com dnscrypt-proxy (suporta DoH + blocklists locais)
-- Custom resolver (paste IP manualmente)
-- Blocklists tipo Pi-hole (via dnscrypt-proxy cloaking)
-- Teste de latencia em todos os resolvers do catalogo (botao "Recomendar mais rapido")
-- Indicador na nav lateral do Hub (verde quando DoT ativo)
+Quem estava em "modo simples" ve o botao "Ativar dnscrypt-proxy" no
+Status e faz migration em 1 click.
+
+## LGPD/privacidade
+
+- Query log desabilitado por default (regra `minimum-surface`)
+- Quando habilitado, log fica LOCAL — nenhum dado vai pra rede
+- Backups de config: `chmod 0600` (owner-only)
+- Recomendado: usar servers com `no-logs` no catalogo (Quad9, Mullvad,
+  Anonymized Relay)

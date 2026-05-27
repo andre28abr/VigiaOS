@@ -1,9 +1,12 @@
-"""Janela principal — 5 tabs (v0.2: +Blocklists +Stats).
+"""Janela principal — 5 tabs (Status, Provedores, Blocklists, Stats, Sobre).
 
-Status + Provedores + Blocklists + Stats + Sobre.
+v0.3.0: dnscrypt-only. Removido mode-aware wiring (sem mais switch
+simples/avancado).
 
-Blocklists e Stats so sao funcionais com modo avancado ativo
-(dnscrypt-proxy). Em modo simples, mostram banner explicativo.
+Sincronia simples entre tabs:
+- StatusTab.on_activation_changed: chamado apos Ativar/Restaurar
+  → refresca outras tabs (Provedores/Blocklists/Stats)
+- notify::visible-child: refresca tab ao ativar (catch-all)
 """
 
 from __future__ import annotations
@@ -53,55 +56,19 @@ def build_content() -> Gtk.Widget:
     stack.add_titled_with_icon(about_tab, "about", "Sobre", "help-about-symbolic")
 
     # ============================================================
-    # Sincronia entre tabs (v0.2.1):
-    # Blocklists/Stats dependem do modo (advanced/simple) detectado
-    # pelo StatusTab. Sem propagacao, o banner "modo avancado nao esta
-    # ativo" ficaria stale apos o user ativar o switch.
-    #
-    # 2 mecanismos:
-    # 1. Callback direto: status_tab.on_mode_changed dispara refresh
-    #    imediato em blocklists_tab e stats_tab quando o switch muda
-    # 2. Refresh on-activation: trocar para Blocklists/Stats sempre
-    #    refresca (catch-all caso o callback falhe ou estado mude
-    #    externamente)
+    # Sincronia entre tabs (v0.3.0 simplificada — so 1 callback)
     # ============================================================
-    def _refresh_mode_dependent_tabs() -> None:
-        """Refresh tabs que dependem do modo (advanced/simple).
-
-        v0.2.7: invalida o cache da ResolversTab antes do refresh.
-        v0.2.8: tambem invalida o cache do StatusTab por simetria.
-        Apos troca de modo, o estado active anterior nao se aplica mais
-        (mudou o backend). Sem invalidate, o cache de IPs do simples
-        ficaria visivel ao voltar pro simples mesmo apos uma reset.
-        """
-        for tab in (resolvers_tab, status_tab):
-            if hasattr(tab, "invalidate_cache"):
-                try:
-                    tab.invalidate_cache()
-                except Exception:  # pylint: disable=broad-except
-                    pass
+    def _on_activation_changed() -> None:
+        """Refresca todas as tabs apos Ativar/Restaurar dnscrypt-proxy."""
         for tab in (resolvers_tab, blocklists_tab, stats_tab):
             try:
                 tab.refresh()
             except Exception:  # pylint: disable=broad-except
                 pass
 
-    status_tab.on_mode_changed = _refresh_mode_dependent_tabs
+    status_tab.on_activation_changed = _on_activation_changed
 
-    # v0.2.8: quando o user aplica um provedor em Provedores, refresca
-    # o Status com hint pra que o hero fique verde imediatamente sem
-    # esperar resolvectl propagar (podia demorar 2min em alguns sistemas).
-    def _on_provider_applied(mode: str, ips: list[str], dot: str) -> None:
-        try:
-            if mode == "simple":
-                status_tab.refresh(expected_dns=ips, expected_dot=dot)
-            else:
-                status_tab.refresh()
-        except Exception:  # pylint: disable=broad-except
-            pass
-
-    resolvers_tab.on_provider_applied = _on_provider_applied
-
+    # Refresh on-activation: trocar pra qualquer tab refresca ela
     def _on_visible_child_changed(stk, _pspec):
         visible_name = stk.get_visible_child_name()
         tab_map = {
