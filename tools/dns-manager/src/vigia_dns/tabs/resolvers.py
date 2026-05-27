@@ -76,6 +76,13 @@ class ResolversTab(Adw.Bin):
         self._running = False
         self._current_mode = "unknown"
         self._provider_rows: list = []
+        # v0.2.7: cache in-memory do ultimo estado active conhecido.
+        # Sobrevive entre refreshes mesmo sem hint explicito. Resolve o
+        # cenario: Apply -> troca tab -> volta tab -> refresh sem hint ->
+        # sistema reporta vazio -> botao volta para "Aplicar".
+        # Atualizado por _apply_mode quando recebe dados nao-vazios.
+        self._last_active_dns_ips: list[str] = []
+        self._last_active_servers: list[str] = []
 
         # ===== Header (mode-aware via refresh) =====
         self._header_lbl = Gtk.Label(label="Provedores DNS curados")
@@ -139,6 +146,21 @@ class ResolversTab(Adw.Bin):
         self.refresh()
 
     # ============================================================
+    # API publica
+    # ============================================================
+
+    def invalidate_cache(self) -> None:
+        """Zera o cache de active state.
+
+        Window.py chama isso quando o modo eh trocado (callback do
+        StatusTab on_mode_changed) — apos uma migration, o estado active
+        anterior nao se aplica mais. Tambem deve ser chamado em
+        "Restaurar padrao".
+        """
+        self._last_active_dns_ips = []
+        self._last_active_servers = []
+
+    # ============================================================
     # Refresh — detecta modo e atualiza catalogo
     # ============================================================
 
@@ -149,15 +171,29 @@ class ResolversTab(Adw.Bin):
     ) -> None:
         """Recarrega catalogo baseado no modo ativo.
 
-        v0.2.6: aceita hints `expected_active_*` que sao usados como
-        seed do estado active. Permite que apos um Apply bem-sucedido a
-        UI ja reflita o novo estado MESMO SE `backend.get_status()`
-        ainda nao retornar dados frescos (race com restart do servico).
-        Sem hints, comporta-se como antes (so consulta o sistema).
+        Sequencia de prioridade do seed do active state:
+        1. `expected_active_*` explicit (passado por _on_apply_*_done)
+        2. Cache `_last_active_*` (preserva entre trocas de tab)
+        3. Consulta ao sistema (resolvectl/dnscrypt status)
+
+        v0.2.6: introduzido os hints (priority 1).
+        v0.2.7: introduzido o cache (priority 2) — sem isso, ao trocar
+        de tab e voltar, refresh sem hint pedia ao sistema, que podia
+        responder com global_dns vazio (race ou estado pos-NM-rebound),
+        e o marker "Em uso" sumia.
         """
+        # Hint explicit > cache > nada. O cache so entra em jogo se nao
+        # ha hint (caso de troca de tab, refresh manual, etc.).
+        seed_ips = expected_active_ips
+        if seed_ips is None:
+            seed_ips = list(self._last_active_dns_ips)
+        seed_servers = expected_active_servers
+        if seed_servers is None:
+            seed_servers = list(self._last_active_servers)
+
         threading.Thread(
             target=self._refresh_worker,
-            args=(expected_active_ips or [], expected_active_servers or []),
+            args=(seed_ips, seed_servers),
             daemon=True,
         ).start()
 
@@ -205,6 +241,14 @@ class ResolversTab(Adw.Bin):
         # Sempre re-renderiza ao trocar de modo, OU se active state pode
         # ter mudado (refresh chamado apos Apply ou ao trocar de tab).
         # Rebuild simples mas garantido — evita estado stale.
+
+        # v0.2.7: atualiza cache APENAS quando recebemos dados nao-vazios.
+        # Se vier vazio (sistema falhou, sem hint), preserva o que tinha.
+        # Isso e' essencial pra sobreviver a `refresh()` apos troca de tab.
+        if active_dns_ips:
+            self._last_active_dns_ips = list(active_dns_ips)
+        if active_servers:
+            self._last_active_servers = list(active_servers)
 
         self._current_mode = mode
 

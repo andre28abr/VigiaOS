@@ -66,7 +66,18 @@ def build_content() -> Gtk.Widget:
     #    externamente)
     # ============================================================
     def _refresh_mode_dependent_tabs() -> None:
-        """Refresh tabs que dependem do modo (advanced/simple)."""
+        """Refresh tabs que dependem do modo (advanced/simple).
+
+        v0.2.7: invalida o cache da ResolversTab antes do refresh.
+        Apos troca de modo, o estado active anterior nao se aplica mais
+        (mudou o backend). Sem invalidate, o cache de IPs do simples
+        ficaria visivel ao voltar pro simples mesmo apos uma reset.
+        """
+        if hasattr(resolvers_tab, "invalidate_cache"):
+            try:
+                resolvers_tab.invalidate_cache()
+            except Exception:  # pylint: disable=broad-except
+                pass
         for tab in (resolvers_tab, blocklists_tab, stats_tab):
             try:
                 tab.refresh()
