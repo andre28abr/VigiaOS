@@ -5,18 +5,23 @@ Parte da [Vigia Suite](../../README.md).
 
 ## O que faz
 
-- **Status**: estado do dnscrypt-proxy, versao, server ativo, blocklist,
-  DNSSEC, query log. Botao 1-click para Ativar dnscrypt-proxy (apos
-  instalacao via Tool Installer) ou Restaurar systemd-resolved padrao
+- **Status**: estado do dnscrypt-proxy, versao, server ativo, DNSSEC,
+  no-logs. Botao 1-click para Ativar dnscrypt-proxy (apos instalacao
+  via Tool Installer) ou Restaurar systemd-resolved padrao
 - **Provedores**: catalogo de 11 servers dnscrypt-proxy curados
   (Cloudflare, Quad9, AdGuard, Mullvad, anonymized relay) com descricao
   + filtros + 1-click apply
-- **Blocklists**: gerencia `/etc/dnscrypt-proxy/blacklist.txt`
-  (Pi-hole-like). Adicionar dominio manual ou importar lista (StevenBlack,
-  EasyList, OISD, etc.)
-- **Stats**: KPIs das ultimas 24h (queries, blocked, cached) + top 10
-  dominios. Botao na UI pra habilitar query log (com aviso LGPD)
 - **Migracao 1-click** entre dnscrypt-proxy e systemd-resolved padrao
+
+## Para bloqueio de ads/trackers
+
+**Nao use DNS pra isso.** Use extensoes de navegador (uBlock Origin
+e similares) que sao a ferramenta certa: escondem o elemento, anti-
+anti-adblock, whitelist por site. DNS blocking deixa buraco no layout.
+
+O **Vigia Tool Installer** tem aba **Extensoes de Navegador** com
+recomendacoes open source (uBlock Origin, Privacy Badger, ClearURLs,
+LibRedirect, etc.) — abre direto na AMO/Web Store do seu navegador.
 
 ## Pre-requisitos
 
@@ -50,10 +55,9 @@ vigia-dns
 3. App faz backup do `systemd-resolved` config, para ele, aponta
    `/etc/resolv.conf` pra 127.0.0.1, sobe `dnscrypt-proxy`
 4. Vai a **Provedores** e aplica um server (recomendado:
-   no-logs + DNSSEC)
-5. Opcional: aba **Blocklists** pra bloquear ads/trackers
-6. Opcional: aba **Stats** — clica **"Habilitar"** no banner pra ligar
-   query log (com aviso LGPD)
+   **no-logs + DNSSEC** — Quad9 unfiltered ou Mullvad)
+5. Para bloqueio de ads: instale **uBlock Origin** via aba "Extensoes
+   de Navegador" do **Vigia Tool Installer**
 
 ## Como reverter (parar de usar)
 
@@ -91,10 +95,10 @@ tools/dns-manager/
 │   └── br.com.vigia.DnsManager.desktop
 └── src/vigia_dns/
     ├── __init__.py / __main__.py / app.py
-    ├── dnscrypt_backend.py   # core: status, config TOML, blocklist, stats
+    ├── dnscrypt_backend.py   # core: status, config TOML
     ├── dnscrypt_catalog.py   # 11 servers curados
     ├── migration.py          # setup helpers (ativar/restaurar)
-    ├── window.py             # 5 tabs
+    ├── window.py             # 3 tabs (Status, Provedores, Sobre)
     └── tabs/
         ├── _helpers.py
         ├── status.py         # hero + info + acoes

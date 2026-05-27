@@ -1,34 +1,27 @@
-"""Backend dnscrypt-proxy (modo avancado do DNS Manager v0.2+).
+"""Backend dnscrypt-proxy — v0.4.0 (enxugado).
 
-Operacoes:
+Removido na v0.4.0: get_blocklist, add/remove_blocklist_entry,
+import_blocklist_from_url, enable_blocklist_in_config,
+enable/disable_query_log_in_config, get_stats, _validate_domain.
+
+Motivacao: ad-blocking e telemetria de queries sao feitos melhor por
+extensoes de navegador (uBlock Origin, Privacy Badger) que ficam no
+Vigia Tool Installer. DNS Manager foca no que faz bem: DNS encriptado.
+
+Operacoes mantidas:
 - dnscrypt_installed() -> bool
-- is_active() -> bool (systemctl is-active dnscrypt-proxy)
+- is_active() / is_enabled() -> bool
 - get_status() -> DnsCryptStatus
-- enable_blocking() -> (ok, err)  [pkexec systemctl enable --now]
-- disable_blocking() -> (ok, err) [pkexec systemctl disable --now]
-- list_active_servers() -> list[str]
-- set_servers(server_names) -> (ok, err) [edita .toml e restart]
-- get_blocklist() -> list[str]
-- add_blocklist_entry(domain) -> (ok, err)
-- remove_blocklist_entry(domain) -> (ok, err)
-- get_stats() -> DnsCryptStats
-
-Configuracao em /etc/dnscrypt-proxy/dnscrypt-proxy.toml.
-Blocklist em /etc/dnscrypt-proxy/blacklist.txt (formato: 1 dominio/linha).
-Backup atomico: .vigia-backup do .toml antes de cada write.
-
-TOML parsing: Python 3.11+ tem `tomllib` no stdlib (read-only). Para
-write, regravamos preservando estrutura via approach line-based
-(detecta key, substitui valor, mantem comments).
+- get_version() -> str
+- set_servers_blocking(server_names) -> (ok, err) [edita .toml + restart]
+- enable_blocking() / disable_blocking() -> (ok, err) [pkexec systemctl]
 """
 
 from __future__ import annotations
 
-import os
 import re
 import shutil
 import subprocess
-import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -40,8 +33,6 @@ except ImportError:
 
 CONFIG_PATH = Path("/etc/dnscrypt-proxy/dnscrypt-proxy.toml")
 BACKUP_PATH = Path("/etc/dnscrypt-proxy/dnscrypt-proxy.toml.vigia-backup")
-BLOCKLIST_PATH = Path("/etc/dnscrypt-proxy/blacklist.txt")
-QUERY_LOG_PATH = Path("/var/log/dnscrypt-proxy/query.log")
 
 SERVICE_NAME = "dnscrypt-proxy"
 
@@ -58,27 +49,11 @@ class DnsCryptStatus:
     enabled: bool = False              # systemctl enabled (boot)
     version: str = ""
     config_exists: bool = False
-    config_writable_via_pkexec: bool = True
     listen_address: str = "127.0.0.1:53"
     server_names: list[str] = field(default_factory=list)
     require_dnssec: bool = False
     require_nofilter: bool = False
     require_nolog: bool = False
-    blocklist_size: int = 0
-    blocklist_enabled: bool = False
-    query_log_enabled: bool = False
-
-
-@dataclass
-class DnsCryptStats:
-    """Estatisticas extraidas de query.log (se habilitado)."""
-    total_queries: int = 0
-    blocked_count: int = 0
-    cached_count: int = 0
-    top_domains: list[tuple[str, int]] = field(default_factory=list)
-    log_available: bool = False
-    log_path: str = ""
-    last_24h: bool = True               # janela analisada
 
 
 # ============================================================
@@ -128,7 +103,6 @@ def get_version() -> str:
             ["dnscrypt-proxy", "-version"],
             capture_output=True, text=True, timeout=5,
         )
-        # Output: "2.1.5" ou multi-line — pega primeira linha que parece versao
         for line in (result.stdout or "").splitlines():
             line = line.strip()
             if re.match(r"^\d+\.\d+(\.\d+)?", line):
@@ -149,7 +123,7 @@ def _run(cmd: list[str], timeout: int = 30) -> tuple[int, str, str]:
 
 
 # ============================================================
-# Config parsing (TOML read-only via tomllib + line-based write)
+# Config parsing
 # ============================================================
 
 
@@ -163,7 +137,6 @@ def _read_config_parsed() -> dict:
         with open(CONFIG_PATH, "rb") as f:
             return tomllib.load(f)
     except (OSError, PermissionError, Exception):
-        # tomllib.TOMLDecodeError so existe em 3.11+, usa Exception generico
         return {}
 
 
@@ -181,7 +154,6 @@ def get_status() -> DnsCryptStatus:
 
     if st.config_exists:
         data = _read_config_parsed()
-        # listen_addresses pode ser ["127.0.0.1:53"] ou similar
         listen = data.get("listen_addresses", [])
         if listen:
             st.listen_address = listen[0]
@@ -193,28 +165,6 @@ def get_status() -> DnsCryptStatus:
         st.require_dnssec = bool(data.get("require_dnssec", False))
         st.require_nofilter = bool(data.get("require_nofilter", False))
         st.require_nolog = bool(data.get("require_nolog", False))
-
-        # Blocklist config: [blocked_names] block_file = "..."
-        blocked = data.get("blocked_names", {})
-        block_file = blocked.get("block_file") if isinstance(blocked, dict) else None
-        st.blocklist_enabled = bool(block_file)
-
-        # Query log: [query_log] file = "..."
-        qlog = data.get("query_log", {})
-        qlog_file = qlog.get("file") if isinstance(qlog, dict) else None
-        st.query_log_enabled = bool(qlog_file)
-
-    # Conta entradas da blocklist (mesmo se nao configurada na .toml,
-    # o user pode ter o arquivo do Vigia)
-    if BLOCKLIST_PATH.exists():
-        try:
-            with open(BLOCKLIST_PATH, "r", encoding="utf-8") as f:
-                st.blocklist_size = sum(
-                    1 for line in f
-                    if line.strip() and not line.strip().startswith("#")
-                )
-        except (OSError, PermissionError):
-            pass
 
     return st
 
@@ -244,7 +194,7 @@ def _update_toml_key(lines: list[str], key: str, new_value: str) -> list[str]:
     pattern = re.compile(rf"^(\s*){re.escape(key)}\s*=", re.MULTILINE)
     out: list[str] = []
     replaced = False
-    in_section = False  # detecta se entrou numa section [xyz]
+    in_section = False
 
     for line in lines:
         stripped = line.strip()
@@ -260,7 +210,6 @@ def _update_toml_key(lines: list[str], key: str, new_value: str) -> list[str]:
             out.append(line)
 
     if not replaced:
-        # Adiciona ao topo (antes de qualquer [section])
         insert_idx = 0
         for i, line in enumerate(out):
             if line.strip().startswith("["):
@@ -272,63 +221,14 @@ def _update_toml_key(lines: list[str], key: str, new_value: str) -> list[str]:
     return out
 
 
-def _update_toml_section_key(
-    lines: list[str], section: str, key: str, new_value: str
-) -> list[str]:
-    """Substitui 'key = ...' dentro de [section]. Adiciona se nao existir."""
-    out: list[str] = []
-    in_section = False
-    section_found = False
-    key_replaced = False
-    pattern = re.compile(rf"^(\s*){re.escape(key)}\s*=")
-    section_header = f"[{section}]"
-
-    for line in lines:
-        stripped = line.strip()
-        if stripped == section_header:
-            in_section = True
-            section_found = True
-            out.append(line)
-            continue
-        if stripped.startswith("[") and stripped.endswith("]"):
-            if in_section and not key_replaced:
-                # Saindo da section sem encontrar a key — adiciona antes
-                out.append(f"{key} = {new_value}\n")
-                key_replaced = True
-            in_section = False
-            out.append(line)
-            continue
-
-        if in_section and pattern.match(line):
-            indent_match = pattern.match(line)
-            indent = indent_match.group(1) if indent_match else ""
-            out.append(f"{indent}{key} = {new_value}\n")
-            key_replaced = True
-        else:
-            out.append(line)
-
-    if in_section and not key_replaced:
-        out.append(f"{key} = {new_value}\n")
-        key_replaced = True
-
-    if not section_found:
-        # Cria section no fim
-        out.append(f"\n[{section}]\n")
-        out.append(f"{key} = {new_value}\n")
-
-    return out
-
-
 def _atomic_write_config_via_pkexec(new_content: str) -> tuple[bool, str]:
     """Escreve novo config.toml via pkexec.
 
-    Faz backup (.vigia-backup) primeiro se nao existe. Escreve atomico
-    via temp file + mv.
+    Backup (.vigia-backup) primeiro se nao existe. Atomico via temp + mv.
     """
     if shutil.which("pkexec") is None:
         return False, "pkexec nao encontrado."
 
-    # Heredoc UUID-delimited para evitar colisao
     import uuid
     delim = f"VIGIADNS_{uuid.uuid4().hex}"
 
@@ -348,11 +248,9 @@ chmod 0644 "$TMPFILE"
 chown root:root "$TMPFILE"
 mv "$TMPFILE" {CONFIG_PATH}
 
-# Restart service se ativo
+# Restart service se ativo + wait
 if systemctl is-active --quiet {SERVICE_NAME}; then
     systemctl restart {SERVICE_NAME}
-    # v0.2.5: espera ate 3s o servico voltar a responder antes de retornar
-    # (dnscrypt-proxy demora a re-bindar 127.0.0.1:53 depois do restart)
     for i in 1 2 3 4 5 6; do
         if systemctl is-active --quiet {SERVICE_NAME}; then
             break
@@ -375,11 +273,7 @@ fi
 
 
 def enable_blocking() -> tuple[bool, str]:
-    """`pkexec systemctl enable --now dnscrypt-proxy`.
-
-    Antes de ativar, sugere parar systemd-resolved (mas nao para —
-    deixa user decidir explicitamente via migration.py).
-    """
+    """`pkexec systemctl enable --now dnscrypt-proxy`."""
     if not dnscrypt_installed():
         return False, "dnscrypt-proxy nao instalado."
     if shutil.which("pkexec") is None:
@@ -424,7 +318,7 @@ def set_servers_blocking(server_names: list[str]) -> tuple[bool, str]:
     if not CONFIG_PATH.exists():
         return False, f"Config nao existe: {CONFIG_PATH}"
 
-    # Validacao: server names apenas chars seguros
+    # Validacao: apenas chars seguros (anti-injection)
     safe = []
     for name in server_names:
         if not re.match(r"^[a-zA-Z0-9._\-]+$", name):
@@ -435,437 +329,8 @@ def set_servers_blocking(server_names: list[str]) -> tuple[bool, str]:
     if not lines:
         return False, "Falha ao ler config (sem permissao?)"
 
-    # Formato TOML array: ["server1", "server2"]
     array_repr = "[" + ", ".join(f"'{s}'" for s in safe) + "]"
     new_lines = _update_toml_key(lines, "server_names", array_repr)
     new_content = "".join(new_lines)
 
     return _atomic_write_config_via_pkexec(new_content)
-
-
-# ============================================================
-# Blocklist management
-# ============================================================
-
-
-def get_blocklist() -> list[str]:
-    """Le blocklist atual (deduplica + skip lines vazias/comentadas)."""
-    if not BLOCKLIST_PATH.exists():
-        return []
-    try:
-        domains: list[str] = []
-        seen: set[str] = set()
-        with open(BLOCKLIST_PATH, "r", encoding="utf-8") as f:
-            for line in f:
-                d = line.strip()
-                if not d or d.startswith("#"):
-                    continue
-                if d in seen:
-                    continue
-                seen.add(d)
-                domains.append(d)
-        return domains
-    except (OSError, PermissionError):
-        return []
-
-
-def _validate_domain(domain: str) -> tuple[bool, str]:
-    """Valida que `domain` parece dominio razoavel.
-
-    Aceita: example.com, sub.example.com, *.example.com (wildcard).
-    Rejeita: chars de shell, espacos, paths.
-    """
-    if not domain or len(domain) > 253:
-        return False, "Dominio vazio ou muito longo."
-    if not re.match(r"^[a-zA-Z0-9.\-*]+$", domain):
-        return False, "Dominio contem caracteres invalidos."
-    if domain.startswith(".") or domain.endswith("."):
-        return False, "Dominio nao pode comecar ou terminar com '.'"
-    if ".." in domain:
-        return False, "'.' duplicado no dominio."
-    return True, ""
-
-
-def add_blocklist_entry(domain: str) -> tuple[bool, str]:
-    """Adiciona dominio a blocklist (idempotente — nao duplica)."""
-    ok, err = _validate_domain(domain)
-    if not ok:
-        return False, err
-
-    existing = get_blocklist()
-    if domain in existing:
-        return True, "ja presente"
-
-    new_list = existing + [domain]
-    return _write_blocklist_via_pkexec(new_list)
-
-
-def remove_blocklist_entry(domain: str) -> tuple[bool, str]:
-    """Remove dominio da blocklist."""
-    existing = get_blocklist()
-    if domain not in existing:
-        return True, "nao presente"
-
-    new_list = [d for d in existing if d != domain]
-    return _write_blocklist_via_pkexec(new_list)
-
-
-def _write_blocklist_via_pkexec(domains: list[str]) -> tuple[bool, str]:
-    """Escreve nova blocklist via pkexec."""
-    if shutil.which("pkexec") is None:
-        return False, "pkexec nao encontrado."
-
-    import uuid
-    delim = f"VIGIABL_{uuid.uuid4().hex}"
-    content = "\n".join(sorted(set(domains))) + "\n"
-
-    script = f"""set -e
-mkdir -p {BLOCKLIST_PATH.parent}
-TMPFILE=$(mktemp)
-cat > "$TMPFILE" << '{delim}'
-{content}{delim}
-chmod 0644 "$TMPFILE"
-chown root:root "$TMPFILE"
-mv "$TMPFILE" {BLOCKLIST_PATH}
-
-# Garante que config aponta pra blocklist (idempotente)
-# Se ja apontava, nao mexe; se nao apontava, adiciona section.
-# Por simplicidade, assumimos que set_blocklist_in_config sera chamado
-# separadamente — aqui so escreve o arquivo.
-"""
-    rc, _, err = _run(["pkexec", "bash", "-c", script], timeout=15)
-    if rc in (126, 127):
-        return False, "Autenticacao cancelada."
-    if rc != 0:
-        return False, (err.strip() or "Falha ao escrever blocklist.")[:500]
-    return True, ""
-
-
-def enable_blocklist_in_config() -> tuple[bool, str]:
-    """Adiciona [blocked_names] block_file = ... no .toml + restart."""
-    lines = _read_config_lines()
-    if not lines:
-        return False, "Falha ao ler config."
-
-    new_lines = _update_toml_section_key(
-        lines, "blocked_names", "block_file", f"'{BLOCKLIST_PATH}'"
-    )
-    new_content = "".join(new_lines)
-    return _atomic_write_config_via_pkexec(new_content)
-
-
-def enable_query_log_in_config() -> tuple[bool, str]:
-    """Habilita query log no dnscrypt-proxy.
-
-    v0.2.9 (inicial): editava só o .toml.
-    v0.2.10 (fix): faz tudo o que e' necessario num so pkexec:
-      1. mkdir -p /var/log/dnscrypt-proxy (caso nao exista)
-      2. chown pro user do dnscrypt-proxy (geralmente _dnscrypt-proxy)
-      3. touch o file pra dar permissao certa
-      4. REMOVE linhas comentadas `# file = ...` redundantes
-      5. Edita o .toml (substitui ou adiciona file = '...')
-      6. systemctl restart dnscrypt-proxy
-      7. wait + verify: file foi criado pelo daemon
-
-    Sem isso, no Fedora Silverblue (e similares) o dir pode nao existir
-    com permissoes corretas, o daemon nao consegue criar query.log,
-    e a UI nao detecta nada apos o restart.
-
-    AVISO LGPD: query log registra toda query DNS local. UI deve
-    confirmar com user (dialog em stats.py faz isso).
-    """
-    lines = _read_config_lines()
-    if not lines:
-        return False, "Falha ao ler config."
-
-    # Primeiro REMOVE linhas comentadas `# file = ...` dentro de [query_log]
-    # pra evitar config duplicado/confuso
-    lines = _remove_commented_file_in_section(lines, "query_log")
-
-    new_lines = _update_toml_section_key(
-        lines, "query_log", "file", f"'{QUERY_LOG_PATH}'"
-    )
-    new_content = "".join(new_lines)
-
-    # Script combina: prepara diretorio + escreve config + restart + verify
-    import uuid
-    delim = f"VIGIADNS_QL_{uuid.uuid4().hex}"
-    log_dir = QUERY_LOG_PATH.parent
-
-    script = f"""set -e
-
-# 1. Prepara diretorio do log
-mkdir -p {log_dir}
-
-# 2. Descobre o user do dnscrypt-proxy service
-DC_USER="$(systemctl show -p User --value {SERVICE_NAME} 2>/dev/null || true)"
-if [ -z "$DC_USER" ] || [ "$DC_USER" = "root" ]; then
-    # Default em alguns sistemas; ajusta pra usuario conhecido
-    DC_USER=""
-fi
-
-# 3. Cria o file vazio com permissoes corretas
-touch {QUERY_LOG_PATH}
-chmod 0640 {QUERY_LOG_PATH}
-if [ -n "$DC_USER" ]; then
-    chown "$DC_USER:" {log_dir} 2>/dev/null || true
-    chown "$DC_USER:" {QUERY_LOG_PATH} 2>/dev/null || true
-fi
-
-# 4. Backup .toml se nao tiver
-if [ -f {CONFIG_PATH} ] && [ ! -f {BACKUP_PATH} ]; then
-    cp -a {CONFIG_PATH} {BACKUP_PATH}
-    chmod 0600 {BACKUP_PATH}
-fi
-
-# 5. Escreve novo config (atomic)
-TMPFILE=$(mktemp)
-cat > "$TMPFILE" << '{delim}'
-{new_content}
-{delim}
-chmod 0644 "$TMPFILE"
-chown root:root "$TMPFILE"
-mv "$TMPFILE" {CONFIG_PATH}
-
-# 6. Restart service (se ativo)
-if systemctl is-active --quiet {SERVICE_NAME}; then
-    systemctl restart {SERVICE_NAME}
-    # Espera ate 5s o servico voltar
-    for i in 1 2 3 4 5 6 7 8 9 10; do
-        if systemctl is-active --quiet {SERVICE_NAME}; then
-            break
-        fi
-        sleep 0.5
-    done
-fi
-"""
-    rc, out, err = _run(["pkexec", "bash", "-c", script], timeout=30)
-    if rc in (126, 127):
-        return False, "Autenticacao cancelada."
-    if rc != 0:
-        return False, (err.strip() or "Falha ao habilitar query log.")[:500]
-    return True, ""
-
-
-def disable_query_log_in_config() -> tuple[bool, str]:
-    """Desabilita query log no .toml (seta file = '').
-
-    v0.2.10: idem enable, faz num so pkexec com restart e verify.
-    """
-    lines = _read_config_lines()
-    if not lines:
-        return False, "Falha ao ler config."
-
-    new_lines = _update_toml_section_key(
-        lines, "query_log", "file", "''"
-    )
-    new_content = "".join(new_lines)
-    return _atomic_write_config_via_pkexec(new_content)
-
-
-def _remove_commented_file_in_section(
-    lines: list[str], section: str,
-) -> list[str]:
-    """Remove `# file = ...` (linhas comentadas com 'file') dentro de [section].
-
-    v0.2.10: pra evitar config visualmente bagunçado quando habilitamos.
-    Preserva todas outras linhas comentadas.
-    """
-    out: list[str] = []
-    in_section = False
-    section_header = f"[{section}]"
-    pattern = re.compile(r"^\s*#\s*file\s*=")
-
-    for line in lines:
-        stripped = line.strip()
-        if stripped == section_header:
-            in_section = True
-            out.append(line)
-            continue
-        if stripped.startswith("[") and stripped.endswith("]"):
-            in_section = False
-            out.append(line)
-            continue
-
-        if in_section and pattern.match(line):
-            # Skip — remove a linha comentada
-            continue
-        out.append(line)
-
-    return out
-
-
-def query_log_file_exists_with_recent_data(max_age_sec: int = 60) -> bool:
-    """Verifica se /var/log/.../query.log existe e foi tocado recentemente.
-
-    v0.2.10: usado pela UI pra confirmar que o enable_query_log realmente
-    funcionou (daemon criou o file). Se False apos enable, mostra
-    diagnostico ao user.
-    """
-    if not QUERY_LOG_PATH.exists():
-        return False
-    try:
-        age = time.time() - QUERY_LOG_PATH.stat().st_mtime
-        return age < max_age_sec or QUERY_LOG_PATH.stat().st_size > 0
-    except OSError:
-        return False
-
-
-def import_blocklist_from_url(url: str, append: bool = True) -> tuple[bool, int, str]:
-    """Baixa lista de dominios de uma URL HTTP/HTTPS via curl.
-
-    Formato esperado: 1 dominio por linha (comentarios com # OK).
-    """
-    if not re.match(r"^https?://[a-zA-Z0-9._\-/?=&#:%]+$", url):
-        return False, 0, "URL invalida."
-
-    if shutil.which("curl") is None:
-        return False, 0, "curl nao encontrado."
-
-    rc, out, err = _run(
-        ["curl", "-fsSL", "--max-time", "30", url],
-        timeout=35,
-    )
-    if rc != 0 or not out:
-        return False, 0, (err.strip() or "Falha no download.")[:300]
-
-    # Parseia: 1 dominio por linha, ignora comentarios
-    new_domains: list[str] = []
-    seen: set[str] = set()
-    for raw in out.splitlines():
-        # Suporta formato hosts (0.0.0.0 domain.com) e formato simples
-        line = raw.strip()
-        if not line or line.startswith("#"):
-            continue
-        parts = line.split()
-        domain = parts[-1] if len(parts) >= 2 else parts[0]
-        if not domain or domain in seen:
-            continue
-        ok, _ = _validate_domain(domain)
-        if not ok:
-            continue
-        seen.add(domain)
-        new_domains.append(domain)
-
-    if not new_domains:
-        return False, 0, "Nenhum dominio valido na URL."
-
-    if append:
-        existing = set(get_blocklist())
-        final = existing | set(new_domains)
-        ok_w, err_w = _write_blocklist_via_pkexec(sorted(final))
-        added = len(set(new_domains) - existing)
-    else:
-        ok_w, err_w = _write_blocklist_via_pkexec(new_domains)
-        added = len(new_domains)
-
-    if not ok_w:
-        return False, 0, err_w
-
-    return True, added, ""
-
-
-# ============================================================
-# Stats (parsing query.log)
-# ============================================================
-
-
-def get_stats() -> DnsCryptStats:
-    """Le query.log e agrega stats das ultimas 24h."""
-    stats = DnsCryptStats(log_path=str(QUERY_LOG_PATH))
-
-    if not QUERY_LOG_PATH.exists():
-        return stats
-
-    stats.log_available = True
-
-    # Janela: ultimas 24h
-    cutoff = time.time() - 86400
-
-    # Counters
-    domain_counts: dict[str, int] = {}
-    try:
-        with open(QUERY_LOG_PATH, "r", encoding="utf-8", errors="replace") as f:
-            for line in f:
-                # Formato dnscrypt-proxy query.log:
-                # [timestamp] client_ip qname qtype status server
-                # status: PASS, FORWARD, REJECT, etc.
-                parts = line.split()
-                if len(parts) < 5:
-                    continue
-
-                # Timestamp pode estar entre [] no inicio
-                ts_str = parts[0].lstrip("[").rstrip("]")
-                try:
-                    # dnscrypt-proxy default timestamp: ltsv ou texto YYYY-MM-DDTHH:MM:SS
-                    if "T" in ts_str:
-                        # ISO format
-                        import datetime
-                        dt = datetime.datetime.fromisoformat(ts_str)
-                        ts = dt.timestamp()
-                    else:
-                        # Epoch
-                        ts = float(ts_str)
-                    if ts < cutoff:
-                        continue
-                except (ValueError, IndexError):
-                    pass  # ignora linhas mal formadas
-
-                stats.total_queries += 1
-
-                # Status no penultimo ou ultimo field tipicamente
-                status = ""
-                for p in parts:
-                    if p.upper() in ("PASS", "FORWARD", "REJECT", "DROP", "SYNTH"):
-                        status = p.upper()
-                        break
-
-                if status in ("REJECT", "DROP"):
-                    stats.blocked_count += 1
-                elif status == "SYNTH":
-                    stats.cached_count += 1
-
-                # Conta dominio (qname tipicamente parts[2])
-                if len(parts) >= 3:
-                    domain = parts[2].lower()
-                    if domain and len(domain) < 100:  # sanity
-                        domain_counts[domain] = domain_counts.get(domain, 0) + 1
-    except (OSError, PermissionError):
-        return stats
-
-    # Top 10 dominios
-    sorted_domains = sorted(domain_counts.items(), key=lambda x: x[1], reverse=True)
-    stats.top_domains = sorted_domains[:10]
-
-    return stats
-
-
-# ============================================================
-# Helpers de migracao (chamados pelo migration.py)
-# ============================================================
-
-
-def has_backup() -> bool:
-    """Existe backup do .toml original?"""
-    return BACKUP_PATH.exists()
-
-
-def restore_from_backup_blocking() -> tuple[bool, str]:
-    """Restaura .toml original a partir do .vigia-backup."""
-    if not BACKUP_PATH.exists():
-        return False, "Sem backup disponivel."
-    if shutil.which("pkexec") is None:
-        return False, "pkexec nao encontrado."
-
-    script = f"""set -e
-cp -a {BACKUP_PATH} {CONFIG_PATH}
-if systemctl is-active --quiet {SERVICE_NAME}; then
-    systemctl restart {SERVICE_NAME}
-fi
-"""
-    rc, _, err = _run(["pkexec", "bash", "-c", script], timeout=15)
-    if rc in (126, 127):
-        return False, "Autenticacao cancelada."
-    if rc != 0:
-        return False, (err.strip() or "Falha ao restaurar backup.")[:500]
-    return True, ""

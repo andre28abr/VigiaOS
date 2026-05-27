@@ -9,10 +9,7 @@ from __future__ import annotations
 
 import pytest
 
-from vigia_dns.dnscrypt_backend import (
-    _update_toml_key,
-    _update_toml_section_key,
-)
+from vigia_dns.dnscrypt_backend import _update_toml_key
 
 
 # ============================================================
@@ -82,83 +79,9 @@ class TestUpdateTomlKey:
         assert "# server_names = ['exemplo']" in text
 
 
-# ============================================================
-# _update_toml_section_key — substitui key dentro de [section]
-# ============================================================
-
-
-class TestUpdateTomlSectionKey:
-    def test_replace_existing_key_in_section(self):
-        lines = [
-            "global_key = 1\n",
-            "[blocked_names]\n",
-            "block_file = '/old/path'\n",
-            "\n",
-            "[other]\n",
-            "stuff = true\n",
-        ]
-        result = _update_toml_section_key(
-            lines, "blocked_names", "block_file", "'/new/path'"
-        )
-        text = "".join(result)
-        assert "block_file = '/new/path'" in text
-        # Outros nao mexeram
-        assert "global_key = 1" in text
-        assert "stuff = true" in text
-
-    def test_add_key_to_existing_empty_section(self):
-        lines = [
-            "[blocked_names]\n",
-            "\n",
-            "[other]\n",
-            "stuff = true\n",
-        ]
-        result = _update_toml_section_key(
-            lines, "blocked_names", "block_file", "'/path'"
-        )
-        text = "".join(result)
-        assert "block_file = '/path'" in text
-
-    def test_create_section_if_missing(self):
-        lines = [
-            "global_key = 1\n",
-        ]
-        result = _update_toml_section_key(
-            lines, "new_section", "new_key", "42"
-        )
-        text = "".join(result)
-        assert "[new_section]" in text
-        assert "new_key = 42" in text
-        # Original preservado
-        assert "global_key = 1" in text
-
-    def test_does_not_touch_same_key_in_other_section(self):
-        lines = [
-            "[section_a]\n",
-            "shared_key = 'A'\n",
-            "\n",
-            "[section_b]\n",
-            "shared_key = 'B'\n",
-        ]
-        result = _update_toml_section_key(
-            lines, "section_a", "shared_key", "'CHANGED'"
-        )
-        text = "".join(result)
-        assert "shared_key = 'CHANGED'" in text  # A mudou
-        assert "shared_key = 'B'" in text          # B intacto
-
-    def test_preserves_comments_in_section(self):
-        lines = [
-            "[blocked_names]\n",
-            "# comentario importante\n",
-            "block_file = '/path'\n",
-        ]
-        result = _update_toml_section_key(
-            lines, "blocked_names", "block_file", "'/new'"
-        )
-        text = "".join(result)
-        assert "# comentario importante" in text
-        assert "block_file = '/new'" in text
+# v0.4.0: TestUpdateTomlSectionKey removida — _update_toml_section_key
+# era usado por enable_blocklist_in_config / enable_query_log_in_config
+# (deletados na v0.4 quando blocklist/stats sairam do DNS Manager).
 
 
 # ============================================================
@@ -173,12 +96,4 @@ class TestIdempotence:
         twice = _update_toml_key(once, "server_names", "['cloudflare']")
         assert once == twice
 
-    def test_update_section_key_idempotent(self):
-        lines = ["[blocked_names]\n", "block_file = '/old'\n"]
-        once = _update_toml_section_key(
-            lines, "blocked_names", "block_file", "'/new'"
-        )
-        twice = _update_toml_section_key(
-            once, "blocked_names", "block_file", "'/new'"
-        )
-        assert once == twice
+    # v0.4.0: test_update_section_key_idempotent removido junto com a funcao.
