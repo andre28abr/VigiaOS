@@ -82,6 +82,14 @@ class VigiaHubApp(Adw.Application):
             action.connect("activate", handler)
             self.add_action(action)
 
+        # show-tool recebe um parametro string (tool id) — usado pelas
+        # acoes rapidas do tray ("Abrir modulo > Antivirus" etc.)
+        tool_action = Gio.SimpleAction.new(
+            "show-tool", GLib.VariantType.new("s")
+        )
+        tool_action.connect("activate", self._on_action_show_tool)
+        self.add_action(tool_action)
+
     def _on_action_show_window(self, *_args) -> None:
         """Tray pediu pra mostrar a janela. Pode precisar de auth primeiro."""
         self._auth_then(self._present_window)
@@ -93,6 +101,22 @@ class VigiaHubApp(Adw.Application):
             win = self.get_active_window()
             if win is not None and hasattr(win, "show_settings_view"):
                 win.show_settings_view()  # type: ignore[union-attr]
+        self._auth_then(after_auth)
+
+    def _on_action_show_tool(self, _action, parameter) -> None:
+        """Tray pediu pra abrir uma tool especifica (acao rapida)."""
+        tool_id = ""
+        if parameter is not None:
+            try:
+                tool_id = parameter.get_string()
+            except (AttributeError, TypeError):
+                tool_id = ""
+
+        def after_auth():
+            self._present_window()
+            win = self.get_active_window()
+            if win is not None and tool_id and hasattr(win, "show_tool"):
+                win.show_tool(tool_id)  # type: ignore[union-attr]
         self._auth_then(after_auth)
 
     def _on_action_quit_hub(self, *_args) -> None:

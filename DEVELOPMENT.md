@@ -1686,6 +1686,56 @@ linha-resumo no mesmo padrao. Suite segue **431 passed, 4 skipped**.
 
 ---
 
+### 2026-05-28 — Etapa D (parte 2): tray quick actions + status + backup + CLI (Hub v0.7.0)
+
+Fecha a Etapa D (parte 1 foi notificacoes desktop). Quatro entregas, todas
+com backend **puro Python testavel** (sem GTK) reaproveitado entre GUI, tray
+e terminal.
+
+**1. CLI `vigia` (`cli.py`)** — novo entry point no `pyproject.toml`
+(`vigia = vigia_hub.cli:main`). Subcomandos:
+- `vigia status [--json]` — versao do Hub, flags de inicializacao
+  (autostart/bandeja/bloqueio), quais dos 14 modulos estao instalados
+  (`shutil.which`), binarios externos core (clamscan/freshclam/chkrootkit/
+  rkhunter/aide/lynis), ultimo scan antivirus + rootkit, e backups.
+- `vigia backup [ARQUIVO.zip]` / `vigia restore ARQUIVO.zip [--dry-run]`.
+- `vigia version`. Sem subcomando → status resumido.
+
+**2. `status.py` — fonte unica de verdade.** Puro Python, importavel tanto no
+Hub GTK4 quanto no subprocess GTK3 do tray. `gather()` monta um `SuiteStatus`;
+`format_text()` (terminal), `to_dict()` (JSON) e `tray_tooltip()` (linha curta)
+renderizam. Le os relatorios de `~/.local/share/vigia-antivirus` e
+`vigia-rootkit/scans` direto (sem cross-import de tools). `humanize_age()`
+pt-BR ("ha 2 dias").
+
+**3. `backup.py` — backup/restore `.zip` (0600, LGPD).** Empacota config
+(`~/.config/vigia-hub|vigia|vigia-deployments|vigia-installer`) + dados
+(`~/.local/share/vigia-antivirus|vigia-hash|vigia-reports|vigia-rootkit`) num
+zip com `MANIFEST.json`. **Nao** inclui `data/vigia-hub` (cache de manuais +
+a propria pasta de backups → evita backup recursivo). Zip criado 0600 via
+tmp+replace; restauracao reaplica 0600 (arquivos) / 0700 (dirs). **Anti
+Zip-Slip**: rejeita entradas com `..`, path absoluto, ou fora de
+`config/vigia*` / `data/vigia*` — aborta sem extrair nada de zip suspeito.
+Exposto na GUI em **Config. → Aplicacao → "Backup e restauracao"** (botoes
+com `Gtk.FileDialog` + worker thread + `GLib.idle_add`).
+
+**4. Tray — acoes rapidas + status vivo (`tray/indicator.py`).**
+- Submenu **"Abrir modulo"** com atalhos diretos (Dashboard, Antivirus,
+  Rootkit Scanner, File Integrity, Hardening) → nova action D-Bus
+  `show-tool` (parametro string). `app.py` registra
+  `Gio.SimpleAction.new("show-tool", GLib.VariantType.new("s"))`;
+  `window.show_tool(tool_id)` troca pro modo tools + seleciona a row da
+  sidebar.
+- **Status no tooltip + item de info** do menu, atualizado a cada 120s via
+  `GLib.timeout_add_seconds` chamando `status.tray_tooltip()`
+  ("Vigia Hub 0.7.0 · 13/14 modulos · antivirus ha 2d (limpo)").
+
+Testes novos: `tests/hub/test_backup.py` (24), `test_status.py` (24),
+`test_cli.py` (8) — incluindo roundtrip, perms 0600 e os 5 cenarios de
+Zip-Slip. Suite: **487 passed, 4 skipped**.
+
+---
+
 ## 10. Roadmap
 
 ### 10.1 Próximas iterações por ferramenta
