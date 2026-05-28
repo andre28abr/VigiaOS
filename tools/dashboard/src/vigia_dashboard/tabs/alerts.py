@@ -10,7 +10,9 @@ import gi
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 
-from gi.repository import Adw, Gio, GLib, Gtk  # noqa: E402
+from gi.repository import Adw, GLib, Gtk  # noqa: E402
+
+from vigia_common.notifications import PRIORITY_HIGH, notify
 
 from .. import alerts as alerts_mod
 from .. import backend
@@ -29,7 +31,6 @@ class AlertsTab(Adw.Bin):
         self._manager = alerts_mod.AlertManager()
         self._manager.set_rules(alerts_mod.load_rules())
         self._history: list[alerts_mod.AlertEvent] = []
-        self._app: Adw.Application | None = None
 
         # Para snapshot de metricas (compartilha com Overview/Recursos)
         self._prev_cpu: backend.CpuTimes | None = None
@@ -167,29 +168,17 @@ class AlertsTab(Adw.Bin):
         return True
 
     def _on_alert_fired(self, event: alerts_mod.AlertEvent) -> None:
-        """Dispara notificacao desktop + adiciona ao historico."""
-        # Notificacao desktop via Gio.Notification
-        if self._app is None:
-            # Tenta pegar app do root window
-            root = self.get_root()
-            if root is not None:
-                try:
-                    self._app = root.get_application()
-                except Exception:  # pylint: disable=broad-except
-                    pass
-
-        if self._app is not None:
-            n = Gio.Notification.new(f"Vigia: {event.rule_label}")
-            op_label = ">" if event.op == "gt" else "<"
-            n.set_body(
-                f"{event.metric_label} {op_label} {event.threshold:.1f}\n"
-                f"Valor atual: {event.current_value:.1f}"
-            )
-            n.set_priority(Gio.NotificationPriority.HIGH)
-            try:
-                self._app.send_notification(f"vigia-alert-{event.rule_id}", n)
-            except Exception:  # pylint: disable=broad-except
-                pass
+        """Dispara notificacao desktop nativa + adiciona ao historico."""
+        op_label = ">" if event.op == "gt" else "<"
+        # notif_id por regra: um novo disparo da mesma regra substitui o
+        # banner anterior em vez de empilhar (evita spam no Shell).
+        notify(
+            f"Vigia: {event.rule_label}",
+            f"{event.metric_label} {op_label} {event.threshold:.1f}\n"
+            f"Valor atual: {event.current_value:.1f}",
+            notif_id=f"vigia-alert-{event.rule_id}",
+            priority=PRIORITY_HIGH,
+        )
 
         # Historico (mantem ultimos 20)
         self._history.insert(0, event)

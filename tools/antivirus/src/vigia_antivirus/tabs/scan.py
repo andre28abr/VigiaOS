@@ -16,6 +16,8 @@ gi.require_version("Adw", "1")
 
 from gi.repository import Adw, Gio, GLib, Gtk  # noqa: E402
 
+from vigia_common.notifications import PRIORITY_HIGH, notify_if_unfocused
+
 from .. import backend
 from ._helpers import make_clamp, show_error
 
@@ -363,10 +365,23 @@ class ScanTab(Adw.Bin):
                 f"{result.scanned_files} arquivos escaneados, "
                 f"{result.infected_files} INFECTADO(S). Veja findings abaixo."
             )
+            notify_if_unfocused(
+                f"Antivirus: {result.infected_files} infectado(s)",
+                f"{result.scanned_files} arquivos escaneados. "
+                "Abra o Vigia pra ver os findings.",
+                notif_id="vigia-antivirus-scan",
+                priority=PRIORITY_HIGH,
+            )
         else:
             self._status_label.set_label(
                 f"Scan concluido em {result.elapsed_sec}s. "
                 f"{result.scanned_files} arquivos escaneados, nada suspeito."
+            )
+            notify_if_unfocused(
+                "Antivirus: nada suspeito",
+                f"{result.scanned_files} arquivos escaneados em "
+                f"{result.elapsed_sec}s.",
+                notif_id="vigia-antivirus-scan",
             )
 
         return False
