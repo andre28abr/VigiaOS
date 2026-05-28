@@ -1,4 +1,4 @@
 """Vigia Hub — launcher mestre da Vigia Suite."""
 
-__version__ = "0.6.3"
+__version__ = "0.6.4"
 __app_id__ = "br.com.vigia.Hub"

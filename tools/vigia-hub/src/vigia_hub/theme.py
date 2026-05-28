@@ -1,42 +1,60 @@
-"""Gerenciamento de tema (dark/light/system) via Adw.StyleManager.
+"""Integracao com o tema do GNOME (Adw.StyleManager).
 
-Adwaita 1+ tem 3 modos:
-- DEFAULT: segue preferencia do sistema (light/dark conforme GNOME)
-- FORCE_LIGHT: forca light theme
-- FORCE_DARK: forca dark theme
+v0.6.4: REMOVIDA opcao de tema customizado (light/dark forcado). Hub
+sempre segue o tema escolhido pelo usuario nas Configuracoes do GNOME.
 
-Aplica no app inteiro (Hub + tools embedded).
+Helpers:
+- follow_system_theme(): garante que Adw esta em ColorScheme.DEFAULT
+  (segue sistema)
+- is_dark_mode(): True se Adw esta renderizando em dark agora
+
+Mudanca de tema em tempo real e' suportada via signal 'notify::dark'
+da Adw.StyleManager (conectar do lado do consumer — ex: window.py
+re-renderiza WebKit quando tema muda).
 """
 
 from __future__ import annotations
 
-from typing import Literal
 
-ThemeMode = Literal["system", "light", "dark"]
+def follow_system_theme() -> None:
+    """Configura Adw pra sempre seguir o tema do GNOME (DEFAULT).
 
-VALID_MODES: tuple[ThemeMode, ...] = ("system", "light", "dark")
-
-
-def apply_theme(mode: ThemeMode) -> None:
-    """Aplica modo de tema. Falha silenciosamente se Adw nao disponivel."""
+    Idempotente; pode ser chamado em todo do_activate.
+    """
     try:
         import gi
         gi.require_version("Adw", "1")
         from gi.repository import Adw
+        Adw.StyleManager.get_default().set_color_scheme(
+            Adw.ColorScheme.DEFAULT
+        )
     except (ValueError, ImportError):
-        return
-
-    sm = Adw.StyleManager.get_default()
-    if mode == "dark":
-        sm.set_color_scheme(Adw.ColorScheme.FORCE_DARK)
-    elif mode == "light":
-        sm.set_color_scheme(Adw.ColorScheme.FORCE_LIGHT)
-    else:  # system
-        sm.set_color_scheme(Adw.ColorScheme.DEFAULT)
+        pass
 
 
-def normalize_mode(raw: str) -> ThemeMode:
-    """Normaliza string pra ThemeMode valido. Default = system."""
-    if raw in VALID_MODES:
-        return raw  # type: ignore[return-value]
+def is_dark_mode() -> bool:
+    """True se Adw esta renderizando em dark agora.
+
+    Reflete a preferencia atual do GNOME (Configuracoes > Aparencia).
+    """
+    try:
+        import gi
+        gi.require_version("Adw", "1")
+        from gi.repository import Adw
+        return bool(Adw.StyleManager.get_default().get_dark())
+    except (ValueError, ImportError):
+        return False
+
+
+# Mantido por backwards compat (window.py / app.py podem importar).
+# normalize_mode aceita qualquer string; sempre retorna "system" agora.
+def normalize_mode(_raw: str) -> str:
     return "system"
+
+
+def apply_theme(_mode: str = "system") -> None:
+    """Backwards-compat shim: agora sempre segue sistema."""
+    follow_system_theme()
+
+
+VALID_MODES: tuple[str, ...] = ("system",)

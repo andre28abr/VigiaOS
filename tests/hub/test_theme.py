@@ -1,34 +1,37 @@
-"""Tests pro modulo theme.py do Vigia Hub."""
+"""Tests pro theme.py do Vigia Hub (v0.6.4 — sempre segue GNOME)."""
 
 from __future__ import annotations
 
 from vigia_hub import theme
 
 
-class TestNormalizeMode:
-    def test_valid_modes_pass(self):
-        assert theme.normalize_mode("system") == "system"
-        assert theme.normalize_mode("light") == "light"
-        assert theme.normalize_mode("dark") == "dark"
-
-    def test_invalid_returns_system(self):
-        assert theme.normalize_mode("") == "system"
-        assert theme.normalize_mode("foo") == "system"
-        assert theme.normalize_mode("Dark") == "system"  # case sensitive
-        assert theme.normalize_mode("auto") == "system"
-
-
-class TestApplyTheme:
+class TestFollowSystemTheme:
     def test_does_not_crash_without_adw(self):
-        """Em mac dev (sem GTK), nao deve crashar."""
+        """Em mac dev (sem GTK/Adw), nao deve crashar."""
+        theme.follow_system_theme()
+
+
+class TestIsDarkMode:
+    def test_returns_bool(self):
+        """Em qualquer ambiente, retorna bool sem crashar."""
+        result = theme.is_dark_mode()
+        assert isinstance(result, bool)
+
+
+class TestBackwardsCompat:
+    def test_normalize_mode_always_returns_system(self):
+        """v0.6.4: tema customizado removido — sempre 'system'."""
+        assert theme.normalize_mode("system") == "system"
+        assert theme.normalize_mode("light") == "system"
+        assert theme.normalize_mode("dark") == "system"
+        assert theme.normalize_mode("anything") == "system"
+        assert theme.normalize_mode("") == "system"
+
+    def test_apply_theme_does_not_crash(self):
+        """Shim de backwards compat — apenas chama follow_system_theme."""
         theme.apply_theme("system")
         theme.apply_theme("light")
         theme.apply_theme("dark")
 
-
-class TestConstants:
-    def test_valid_modes_list(self):
-        assert "system" in theme.VALID_MODES
-        assert "light" in theme.VALID_MODES
-        assert "dark" in theme.VALID_MODES
-        assert len(theme.VALID_MODES) == 3
+    def test_valid_modes_is_system_only(self):
+        assert theme.VALID_MODES == ("system",)

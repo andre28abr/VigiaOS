@@ -52,7 +52,7 @@ from .manuals import (
     load_manual,
     webkit_available,
 )
-from .theme import VALID_MODES, apply_theme, normalize_mode
+from .theme import is_dark_mode as _theme_is_dark
 
 
 _log = get_logger("vigia_hub.window")
@@ -145,6 +145,14 @@ class VigiaHubWindow(Adw.ApplicationWindow):
 
         # Inicializa idle monitor se config diz pra ativar (lock + minutes>0)
         self._reconfigure_idle_monitor()
+
+        # Listener pra mudancas de tema do GNOME (light <-> dark) —
+        # re-renderiza manuais em tempo real sem precisar reabrir o Hub
+        try:
+            sm = Adw.StyleManager.get_default()
+            sm.connect("notify::dark", self._on_system_theme_changed)
+        except Exception as e:  # pylint: disable=broad-except
+            _log.debug("nao conseguiu conectar listener de tema: %s", e)
 
         # Seleciona primeira tool dentro do modo tools
         if TOOLS:
@@ -500,12 +508,16 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         instantaneo — so o primeiro click numa aba paga o custo de
         criar o widget.
         """
-        # Cache do WebView ativo pra aba
+        # Cache do WebView ativo pra aba + tracking do tool atual
+        # pra re-renderizar quando o tema GNOME mudar
         if not hasattr(self, "_manual_webviews"):
             self._manual_webviews = {}  # kind -> WebKit.WebView
         if not hasattr(self, "_manual_fallbacks"):
             self._manual_fallbacks = {}  # kind -> Gtk.ScrolledWindow
+        if not hasattr(self, "_manual_current"):
+            self._manual_current = {}  # kind -> tool_id ativo
 
+        self._manual_current[kind] = tool_id
         markdown_text = load_manual(tool_id, kind)  # type: ignore[arg-type]
 
         # Tenta WebKit primeiro (reusa instancia por aba)
@@ -536,13 +548,29 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         scrolled._buffer.set_text(markdown_text)  # type: ignore[attr-defined]
         container.set_visible_child(scrolled)
 
+    def _on_system_theme_changed(self, *_args) -> None:
+        """User mudou tema do GNOME — re-renderiza manuais ativos."""
+        _log.info("tema GNOME mudou (dark=%s) — re-renderiza manuais",
+                  self._is_dark_mode())
+        if not hasattr(self, "_manual_webviews"):
+            return
+        dark = self._is_dark_mode()
+        for kind, view in self._manual_webviews.items():
+            tool_id = self._manual_current.get(kind)
+            if tool_id is None:
+                continue
+            try:
+                markdown_text = load_manual(tool_id, kind)  # type: ignore[arg-type]
+                html = build_html(markdown_text, dark_mode=dark)
+                view.load_html(html, None)
+            except Exception as e:  # pylint: disable=broad-except
+                _log.warning("re-render manual falhou (%s/%s): %s",
+                             kind, tool_id, e)
+
     @staticmethod
     def _is_dark_mode() -> bool:
-        try:
-            sm = Adw.StyleManager.get_default()
-            return bool(sm.get_dark())
-        except Exception:  # pylint: disable=broad-except
-            return False
+        """True se Adw esta renderizando em dark (segue tema GNOME)."""
+        return _theme_is_dark()
 
     def _create_webview(self):
         """Cria UM WebKit.WebView novo. Retorna None se falhar."""
@@ -708,29 +736,12 @@ class VigiaHubWindow(Adw.ApplicationWindow):
 
         page.add(init_group)
 
-        # ============= Grupo Aparencia ============= #
-        appearance_group = Adw.PreferencesGroup()
-        appearance_group.set_title("Aparencia")
-        appearance_group.set_description(
-            "Tema visual aplicado ao Hub e as ferramentas embarcadas."
-        )
+        # NOTA v0.6.4: removido grupo "Aparencia" (tema light/dark
+        # customizado). Hub agora sempre segue o tema do GNOME — se
+        # o usuario quer escuro, configura em Configuracoes > Aparencia
+        # do proprio GNOME. Reduz superficie de configuracao e mantem
+        # consistencia visual com o resto do desktop.
 
-        self._theme_row = Adw.ComboRow()
-        self._theme_row.set_title("Tema")
-        self._theme_row.set_subtitle(
-            "Seguir o sistema, ou forcar light/dark mode."
-        )
-        theme_model = Gtk.StringList.new(["Sistema", "Claro", "Escuro"])
-        self._theme_row.set_model(theme_model)
-        # Seleciona o valor atual
-        theme_idx = {"system": 0, "light": 1, "dark": 2}.get(
-            self._settings.theme, 0
-        )
-        self._theme_row.set_selected(theme_idx)
-        self._theme_row.connect("notify::selected", self._on_theme_changed)
-        appearance_group.add(self._theme_row)
-
-        page.add(appearance_group)
         return page
 
     def _build_settings_security_tab(self) -> Gtk.Widget:
@@ -1094,17 +1105,6 @@ class VigiaHubWindow(Adw.ApplicationWindow):
             "Pede senha admin (mesma do sudo) ao iniciar o Hub. Usa Polkit "
             "do sistema — nenhuma senha e' armazenada pelo Vigia."
         )
-
-    # ------------- Theme handler -------------
-
-    def _on_theme_changed(self, combo: Adw.ComboRow, *_args) -> None:
-        """User mudou o tema."""
-        idx = combo.get_selected()
-        mode = {0: "system", 1: "light", 2: "dark"}.get(idx, "system")
-        self._settings.theme = mode
-        save_settings(self._settings)
-        apply_theme(normalize_mode(mode))
-        _log.info("theme set to %s", mode)
 
     # ------------- Auto-lock handler -------------
 
