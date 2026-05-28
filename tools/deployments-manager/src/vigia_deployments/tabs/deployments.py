@@ -209,7 +209,7 @@ class DeploymentsTab(Adw.Bin):
 
         label_save = Gtk.Button(label="Salvar")
         label_save.set_valign(Gtk.Align.CENTER)
-        label_save.add_css_class("flat")
+        label_save.add_css_class("suggested-action")
         label_save.connect("clicked", lambda _b: self._on_label_changed(None, d.checksum, label_entry))
 
         label_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
@@ -250,7 +250,7 @@ class DeploymentsTab(Adw.Bin):
         notes_box.append(notes_scrolled)
 
         notes_save = Gtk.Button(label="Salvar notas")
-        notes_save.add_css_class("flat")
+        notes_save.add_css_class("suggested-action")
         notes_save.set_halign(Gtk.Align.END)
         notes_save.connect("clicked", lambda _b: self._on_notes_save(d.checksum, notes_view))
         notes_box.append(notes_save)
