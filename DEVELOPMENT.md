@@ -1594,13 +1594,52 @@ no ciclo 2026-05-25 (security toolkit). Roadmap delas em §10.1 acima.
 ### 10.4 Refatorações técnicas pendentes
 
 - **`vigia_common` shared package**: extrair `_helpers.py` duplicado entre
-  9 tools (~600 linhas duplicadas) + `markdown.py` do Hub
+  9 tools (~600 linhas duplicadas) + `markdown.py` do Hub ✅ feito
 - **D-Bus service compartilhado** com polkit policy `auth_admin_keep` para
   evitar polkit dialog repetitivo em ops batch
 - **Padrão de pkexec + tratamento de "Request dismissed"** abstrair em
   helper único
-- **Testes**: adicionar `pytest` para backends Python (atualmente só
-  Activity Log Rust tem tests)
+- **Testes**: adicionar `pytest` para backends Python ✅ feito (262 tests)
+
+### 10.5 Ecossistema Vigia — produtos futuros (longo prazo)
+
+Definido em 2026-05-27. Em vez de inflar VigiaOS com features fora do
+escopo (multi-host, pentest), separar em **4 produtos distintos**
+compartilhando UI + `vigia-common` lib.
+
+| Produto | Audiência | Escopo | Status |
+|---------|-----------|--------|--------|
+| **VigiaOS** | Advogado, escritório LGPD | Single-host audit/privacy/hardening | ✅ Atual (16 tools) |
+| **VigiaOps** | Sysadmin, MSP, gestor TI | SSH multi-host orchestration | 📌 Próximo após v1.0 |
+| **VigiaRed** | Pentester, red team | Ferramentas ofensivas com GUI | 🔮 Futuro |
+| **VigiaBlue** | Blue team, SOC analyst | SIEM-lite, detection, response | 🔮 Futuro |
+
+**VigiaOps** absorve a ideia inicial de "SSH multi-host management via
+Hub". Separado pra não conflitar com posicionamento atual LGPD/desktop.
+Features-alvo: inventory de hosts, SSH connection pool, command runner
+remoto com streaming, multi-host fan-out, integration com tools VigiaOS
+rodando remoto, audit log assinado.
+
+**VigiaRed** poderia trazer de volta **Network Scanner (nmap)** e
+**Firmware Analyzer (binwalk)** que removemos do VigiaOS — naquela
+audiência fazem sentido. Mais possíveis: vuln scanner (nuclei),
+web scanner (zap), exploitation (metasploit lite), OSINT.
+
+**VigiaBlue** estende **Activity Log core (Rust)** com correlation
+distribuída, log aggregation, threat intel feeds (MISP, OTX), YARA,
+memory forensics.
+
+**Estratégia compartilhada entre os 4**:
+
+1. `vigia-common` Python package (helpers GTK4)
+2. Identidade visual (zinc-950 + emerald)
+3. Padrão de tabs (Adw.ViewStack + ToolbarView)
+4. Estrutura monorepo (`tools/<nome>/`)
+5. RPM packaging via COPR
+6. Privacy/LGPD baseline (chmod 0600, dialogs claros)
+
+**Quando revisitar**: após VigiaOS estar em v1.0 (estável, COPR ativo,
+~6 meses de uso). Começar por **VigiaOps** — interesse imediato.
 
 ---
 
