@@ -15,6 +15,21 @@ Comportamento de tray icon + background mode (v0.5.3):
   - show-window  -> traz janela ao foco
   - show-settings -> mostra a aba Configuracoes
   - quit-hub      -> mata o app de vez (e o tray subprocess)
+
+Comportamento de password_lock + autostart + minimized (v0.5.10):
+
+  Combinacao | Quando pede senha
+  -----------|------------------
+  Lock=ON, sem autostart, sem minimized -> startup (sync, antes de mostrar janela)
+  Lock=ON, autostart+minimized          -> quando user clicar 'Abrir Hub' no tray
+  Lock=ON, autostart sem minimized      -> startup (janela vai ser mostrada)
+
+  Logica: se vai iniciar SEM janela visivel (minimized), nao tem porque
+  pedir senha agora — a sessao 'real' so comeca quando user expandir
+  pelo tray. Adia o prompt pra esse momento.
+
+  Apos primeira autenticacao na sessao (self._authed=True), futuras
+  expansoes do tray NAO pedem senha de novo.
 """
 
 from __future__ import annotations
@@ -27,7 +42,7 @@ gi.require_version("Adw", "1")
 from gi.repository import Adw, Gio, GLib  # noqa: E402
 
 from . import __app_id__
-from .auth import check_auth  # versao sync, usada APENAS no do_activate startup
+from .auth import check_auth, check_auth_async
 from .settings import load_settings
 from .tray import TrayManager
 from .window import VigiaHubWindow
@@ -63,17 +78,17 @@ class VigiaHubApp(Adw.Application):
             self.add_action(action)
 
     def _on_action_show_window(self, *_args) -> None:
-        """Tray pediu pra mostrar a janela."""
-        win = self._ensure_window()
-        win.set_visible(True)
-        win.present()
+        """Tray pediu pra mostrar a janela. Pode precisar de auth primeiro."""
+        self._auth_then(self._present_window)
 
     def _on_action_show_settings(self, *_args) -> None:
         """Tray pediu pra mostrar Configuracoes."""
-        win = self._ensure_window()
-        win.set_visible(True)
-        win.present()
-        win.show_settings_view()
+        def after_auth():
+            self._present_window()
+            win = self.get_active_window()
+            if win is not None and hasattr(win, "show_settings_view"):
+                win.show_settings_view()  # type: ignore[union-attr]
+        self._auth_then(after_auth)
 
     def _on_action_quit_hub(self, *_args) -> None:
         """Tray pediu pra sair de vez (mata processo + tray)."""
@@ -83,6 +98,34 @@ class VigiaHubApp(Adw.Application):
             self._hold_active = False
         self.quit()
 
+    def _present_window(self) -> None:
+        """Mostra a janela (cria se nao existe)."""
+        win = self._ensure_window()
+        win.set_visible(True)
+        win.present()
+
+    def _auth_then(self, callback) -> None:
+        """Se precisa auth, pede async e chama callback() apos sucesso.
+
+        Se nao precisa (lock OFF ou ja' autenticado), chama callback direto.
+        Se auth falhar, NAO chama callback — mantem o tray, ignora a acao.
+        """
+        settings = load_settings()
+        if not settings.password_lock or self._authed:
+            callback()
+            return
+
+        def on_auth(ok: bool, err: str) -> None:
+            if not ok:
+                print(f"[vigia-hub] auth recusada no tray click: {err}",
+                      flush=True)
+                # Mantem tray rodando; nao mostra janela
+                return
+            self._authed = True
+            callback()
+
+        check_auth_async(on_auth)
+
     # ============================================================
     # Lifecycle
     # ============================================================
@@ -90,26 +133,43 @@ class VigiaHubApp(Adw.Application):
     def do_activate(self) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         settings = load_settings()
 
-        # Lock por senha (Polkit) — so na primeira ativacao da sessao
-        if settings.password_lock and not self._authed:
-            ok, err = check_auth()
-            if not ok:
-                # Falhou autenticacao: encerra o app (e tray subprocess)
-                print(f"[vigia-hub] Autenticacao falhou: {err}", flush=True)
-                self.quit()
-                return
-            self._authed = True
+        # Determina se vai iniciar minimizado (sem janela visivel)
+        will_start_minimized = (
+            self._start_minimized and settings.show_tray
+        )
 
-        # Tray + hold (se habilitado)
+        # Tray + hold (se habilitado) — antes do auth pra ja' estar
+        # spawnado caso o user CANCELE o prompt de senha (cenario nao
+        # minimizado)
         if settings.show_tray:
             self._enable_tray()
 
+        # Lock por senha — politicas:
+        # 1. NAO vai iniciar minimizado (janela vai aparecer): pede agora
+        #    (sync OK porque janela ainda nao apresentada)
+        # 2. VAI iniciar minimizado: pula. Auth acontecera quando user
+        #    clicar 'Abrir Hub' no tray (via _auth_then -> check_auth_async)
+        if (
+            settings.password_lock
+            and not self._authed
+            and not will_start_minimized
+        ):
+            ok, err = check_auth()
+            if not ok:
+                print(f"[vigia-hub] Autenticacao falhou no startup: {err}",
+                      flush=True)
+                # Se tray ON, mantem o tray rodando — user pode tentar
+                # de novo clicando em 'Abrir Hub'. Janela nao aparece.
+                if not settings.show_tray:
+                    self.quit()
+                return
+            self._authed = True
+
+        # Garantir window object existe (pra Gio actions terem alvo)
         win = self._ensure_window()
 
-        # Iniciar minimizado: so faz sentido se tray esta ON (senao
-        # nao tem como o user trazer a janela de volta facil)
-        if self._start_minimized and settings.show_tray:
-            # Nao apresenta a janela. Tray ja' foi spawnado.
+        if will_start_minimized:
+            # Nao apresenta janela. Auth virá no tray click.
             return
 
         win.set_visible(True)
