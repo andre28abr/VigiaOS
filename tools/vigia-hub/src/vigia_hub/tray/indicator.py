@@ -96,7 +96,7 @@ def main() -> int:
     # D-Bus: invoca actions do Hub via Gio.DBusActionGroup
     # ============================================================
 
-    def call_action(action_name: str) -> None:
+    def call_action(action_name: str, params: list | None = None) -> None:
         try:
             bus = Gio.bus_get_sync(Gio.BusType.SESSION, None)
             bus.call_sync(
@@ -106,7 +106,7 @@ def main() -> int:
                 "Activate",
                 GLib.Variant(
                     "(sava{sv})",
-                    (action_name, [], {}),
+                    (action_name, params or [], {}),
                 ),
                 None,
                 Gio.DBusCallFlags.NONE,
@@ -117,6 +117,10 @@ def main() -> int:
             sys.stderr.write(
                 f"[vigia-hub-tray] D-Bus call '{action_name}' falhou: {e}\n"
             )
+
+    def call_action_str(action_name: str, value: str) -> None:
+        """Invoca uma action que recebe um parametro string (ex: show-tool)."""
+        call_action(action_name, [GLib.Variant("s", value)])
 
     # ============================================================
     # Indicator + menu
@@ -150,6 +154,26 @@ def main() -> int:
     open_item.connect("activate", lambda _: call_action("show-window"))
     menu.append(open_item)
 
+    # Submenu: Abrir modulo (acoes rapidas — abre o Hub ja' na tool)
+    QUICK_TOOLS = [
+        ("Dashboard", "dashboard"),
+        ("Antivirus", "antivirus"),
+        ("Rootkit Scanner", "rootkit-scanner"),
+        ("File Integrity", "file-integrity"),
+        ("Hardening Checks", "hardening-checks"),
+    ]
+    modules_item = Gtk.MenuItem(label="Abrir modulo")
+    modules_menu = Gtk.Menu()
+    for label, tool_id in QUICK_TOOLS:
+        mi = Gtk.MenuItem(label=label)
+        mi.connect(
+            "activate",
+            lambda _w, tid=tool_id: call_action_str("show-tool", tid),
+        )
+        modules_menu.append(mi)
+    modules_item.set_submenu(modules_menu)
+    menu.append(modules_item)
+
     # Item: Configuracoes
     settings_item = Gtk.MenuItem(label="Configuracoes")
     settings_item.connect("activate", lambda _: call_action("show-settings"))
@@ -167,6 +191,26 @@ def main() -> int:
 
     # Clique simples (botao esquerdo): abrir Hub
     indicator.set_secondary_activate_target(open_item)
+
+    # ============================================================
+    # Status vivo: tooltip (title) + item de info no topo do menu.
+    # Reaproveita vigia_hub.status (puro Python — sem GTK4). Refresh
+    # a cada 2 min: barato (so shutil.which + leitura de relatorios).
+    # ============================================================
+
+    def refresh_status() -> bool:
+        line = "Vigia Hub"
+        try:
+            from .. import status as status_mod
+            line = status_mod.tray_tooltip()
+        except Exception as e:  # best-effort; nunca derruba o tray
+            sys.stderr.write(f"[vigia-hub-tray] status falhou: {e}\n")
+        indicator.set_title(line)
+        info_item.set_label(line)
+        return True  # mantem o timer GLib ativo
+
+    refresh_status()
+    GLib.timeout_add_seconds(120, refresh_status)
 
     # ============================================================
     # Sinais POSIX: SIGTERM/SIGINT pra sair limpo

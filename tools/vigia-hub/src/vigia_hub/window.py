@@ -23,14 +23,18 @@ from __future__ import annotations
 import importlib
 import shutil
 import subprocess
+import threading
 import traceback
+from pathlib import Path
 
 import gi
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 
-from gi.repository import Adw, Gtk  # noqa: E402
+from gi.repository import Adw, Gio, GLib, Gtk  # noqa: E402
+
+from vigia_common.helpers import show_error, show_info
 
 from .markdown import md_to_pango
 from .registry import (
@@ -736,6 +740,39 @@ class VigiaHubWindow(Adw.ApplicationWindow):
 
         page.add(init_group)
 
+        # Grupo: backup e restauracao (Etapa D)
+        backup_group = Adw.PreferencesGroup()
+        backup_group.set_title("Backup e restauração")
+        backup_group.set_description(
+            "Salva configurações e relatórios num arquivo .zip protegido "
+            "(permissão 0600 — LGPD)."
+        )
+
+        backup_row = Adw.ActionRow()
+        backup_row.set_title("Criar backup")
+        backup_row.set_subtitle(
+            "Gera um .zip com configurações + relatórios de scan."
+        )
+        self._backup_btn = Gtk.Button(label="Criar backup")
+        self._backup_btn.add_css_class("suggested-action")
+        self._backup_btn.set_valign(Gtk.Align.CENTER)
+        self._backup_btn.connect("clicked", self._on_create_backup)
+        backup_row.add_suffix(self._backup_btn)
+        backup_group.add(backup_row)
+
+        restore_row = Adw.ActionRow()
+        restore_row.set_title("Restaurar backup")
+        restore_row.set_subtitle(
+            "Recupera config + relatórios de um .zip criado pela Vigia."
+        )
+        self._restore_btn = Gtk.Button(label="Restaurar…")
+        self._restore_btn.set_valign(Gtk.Align.CENTER)
+        self._restore_btn.connect("clicked", self._on_restore_backup)
+        restore_row.add_suffix(self._restore_btn)
+        backup_group.add(restore_row)
+
+        page.add(backup_group)
+
         # NOTA v0.6.4: removido grupo "Aparencia" (tema light/dark
         # customizado). Hub agora sempre segue o tema do GNOME — se
         # o usuario quer escuro, configura em Configuracoes > Aparencia
@@ -859,6 +896,130 @@ class VigiaHubWindow(Adw.ApplicationWindow):
 
         page.add(ver_group)
         return page
+
+    # ------------------------------------------------------------------
+    # Backup / restauracao (Etapa D) — backend em backup.py (testavel)
+    # ------------------------------------------------------------------
+
+    def _on_create_backup(self, _btn: Gtk.Button) -> None:
+        from .backup import BACKUP_DIR, default_backup_name
+
+        dlg = Gtk.FileDialog()
+        dlg.set_title("Salvar backup da Vigia")
+        dlg.set_initial_name(default_backup_name())
+        try:
+            BACKUP_DIR.mkdir(parents=True, exist_ok=True)
+            dlg.set_initial_folder(Gio.File.new_for_path(str(BACKUP_DIR)))
+        except OSError:
+            pass
+        dlg.save(self, None, self._on_backup_dest_chosen)
+
+    def _on_backup_dest_chosen(
+        self, dlg: Gtk.FileDialog, result: Gio.AsyncResult
+    ) -> None:
+        try:
+            gfile = dlg.save_finish(result)
+        except GLib.Error:
+            return  # usuario cancelou
+        if gfile is None:
+            return
+        dest = gfile.get_path()
+        if not dest:
+            return
+
+        self._backup_btn.set_sensitive(False)
+
+        def worker() -> None:
+            from .backup import create_backup
+            ok, msg, path = create_backup(Path(dest))
+            GLib.idle_add(
+                self._on_backup_done, ok, msg, str(path) if path else ""
+            )
+
+        threading.Thread(target=worker, daemon=True).start()
+
+    def _on_backup_done(self, ok: bool, msg: str, path: str) -> bool:
+        self._backup_btn.set_sensitive(True)
+        if ok:
+            body = msg
+            if path:
+                body += f"\n\n{path}"
+            show_info(self, "Backup criado", body)
+        else:
+            show_error(self, "Falha no backup", msg)
+        return False  # remove do idle
+
+    def _on_restore_backup(self, _btn: Gtk.Button) -> None:
+        from .backup import BACKUP_DIR
+
+        dlg = Gtk.FileDialog()
+        dlg.set_title("Escolher backup para restaurar")
+        filt = Gtk.FileFilter()
+        filt.set_name("Backup Vigia (*.zip)")
+        filt.add_pattern("*.zip")
+        filters = Gio.ListStore.new(Gtk.FileFilter)
+        filters.append(filt)
+        dlg.set_filters(filters)
+        if BACKUP_DIR.is_dir():
+            dlg.set_initial_folder(Gio.File.new_for_path(str(BACKUP_DIR)))
+        dlg.open(self, None, self._on_restore_src_chosen)
+
+    def _on_restore_src_chosen(
+        self, dlg: Gtk.FileDialog, result: Gio.AsyncResult
+    ) -> None:
+        try:
+            gfile = dlg.open_finish(result)
+        except GLib.Error:
+            return
+        if gfile is None:
+            return
+        src = gfile.get_path()
+        if not src:
+            return
+
+        confirm = Adw.AlertDialog(
+            heading="Restaurar este backup?",
+            body=(
+                "As configurações e relatórios atuais serão substituídos "
+                "pelos do backup. Esta ação não pode ser desfeita."
+            ),
+        )
+        confirm.add_response("cancel", "Cancelar")
+        confirm.add_response("restore", "Restaurar")
+        confirm.set_response_appearance(
+            "restore", Adw.ResponseAppearance.DESTRUCTIVE
+        )
+        confirm.set_default_response("cancel")
+        confirm.connect("response", self._on_restore_confirmed, src)
+        confirm.present(self)
+
+    def _on_restore_confirmed(
+        self, _dlg: Adw.AlertDialog, response: str, src: str
+    ) -> None:
+        if response != "restore":
+            return
+        self._restore_btn.set_sensitive(False)
+
+        def worker() -> None:
+            from .backup import restore_backup
+            ok, msg, labels = restore_backup(Path(src))
+            GLib.idle_add(self._on_restore_done, ok, msg, labels)
+
+        threading.Thread(target=worker, daemon=True).start()
+
+    def _on_restore_done(
+        self, ok: bool, msg: str, labels: list[str]
+    ) -> bool:
+        self._restore_btn.set_sensitive(True)
+        if ok:
+            body = msg
+            if labels:
+                body += "\n\n" + "\n".join(f"• {label}" for label in labels)
+            body += "\n\nReinicie o Hub para aplicar todas as mudanças."
+            show_info(self, "Backup restaurado", body)
+        else:
+            show_error(self, "Falha ao restaurar", msg)
+        return False
 
     def _on_autostart_toggled(self, switch: Adw.SwitchRow, *_args) -> None:
         """User toggleou autostart — atualiza .desktop file + state.json."""
@@ -1173,6 +1334,35 @@ class VigiaHubWindow(Adw.ApplicationWindow):
                 break
             if getattr(row, "_mode_id", None) == "settings":
                 self._nav_list.select_row(row)
+                return
+            idx += 1
+
+    def show_tool(self, tool_id: str) -> None:
+        """Navega pro modo 'tools' e seleciona a tool dada.
+
+        Chamado por app.show-tool (acoes rapidas do tray). Selecionar a
+        row da sidebar dispara _on_sidebar_selected -> _show_tool.
+        """
+        # 1. Garante modo 'tools' na nav fina (esquerda)
+        idx = 0
+        while True:
+            row = self._nav_list.get_row_at_index(idx)
+            if row is None:
+                break
+            if getattr(row, "_mode_id", None) == "tools":
+                self._nav_list.select_row(row)
+                break
+            idx += 1
+        self._main_stack.set_visible_child_name("tools")
+
+        # 2. Seleciona a row da tool na sidebar central
+        idx = 0
+        while True:
+            row = self._sidebar_list.get_row_at_index(idx)
+            if row is None:
+                break
+            if getattr(row, "_tool_id", None) == tool_id:
+                self._sidebar_list.select_row(row)
                 return
             idx += 1
 

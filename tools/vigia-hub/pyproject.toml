@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "vigia-hub"
-version = "0.6.4"
+version = "0.7.0"
 description = "Launcher mestre da Vigia Suite — abre todos os modulos a partir de uma interface central"
 license = { text = "Apache-2.0" }
 readme = "README.md"
@@ -30,6 +30,7 @@ manuals = ["markdown>=3.4"]
 [project.scripts]
 vigia-hub = "vigia_hub.__main__:main"
 vigia-hub-tray = "vigia_hub.tray.indicator:main"
+vigia = "vigia_hub.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
