@@ -1,13 +1,14 @@
-"""Tab Scan: escolhe alvo, roda clamscan com progress streaming.
+"""Tab Scan: roda clamscan com streaming colorido num terminal.
 
-Em v0.1.1 absorveu o que era a aba Status — banner no topo mostra
-estado essencial do ClamAV (idade da base de dados, daemon ativo).
+Sem pasta escolhida faz varredura do sistema todo ("/"); o botao de
+pasta restringe a um diretorio. Banner no topo mostra estado essencial
+do ClamAV (idade da base de dados). Estatisticas (escaneados/infectados/
+tempo) atualizam ao vivo, espelhando o Rootkit Scanner.
 """
 
 from __future__ import annotations
 
 import threading
-from pathlib import Path
 
 import gi
 
@@ -23,22 +24,28 @@ from .. import backend
 from ._helpers import make_clamp, show_error
 
 
-# Presets de alvo comum (path + label)
-TARGET_PRESETS: list[tuple[str, str, str]] = [
-    ("home", "Home (~/)", str(Path.home())),
-    ("downloads", "Downloads", str(Path.home() / "Downloads")),
-    ("documents", "Documents", str(Path.home() / "Documents")),
-    ("tmp", "/tmp", "/tmp"),
-]
+HEADER_DESC = (
+    "<b>ClamAV</b> e' um antivirus open-source que detecta virus, trojans, "
+    "malware e ransomware por assinatura. O scan roda em background e o "
+    "progresso aparece em tempo real na <i>Saida do scan</i> — arquivos "
+    "limpos em verde, ameacas em vermelho.\n\n"
+    "Sem pasta selecionada faz uma <b>varredura completa do sistema</b>. "
+    "Use o botao de pasta pra escanear so um diretorio. Mantenha a base de "
+    "assinaturas atualizada na aba <i>Base de dados</i> (recomendado "
+    "1x/semana)."
+)
 
 
 class ScanTab(Adw.Bin):
-    """Escolhe alvo + roda clamscan + mostra findings em tempo real."""
+    """Roda clamscan (pasta escolhida ou sistema todo) com terminal colorido."""
 
     def __init__(self) -> None:
         super().__init__()
         self._running = False
         self._stop_requested = False
+        self._scan_path: str | None = None  # None = varredura do sistema todo ("/")
+        self._scanned_live = 0
+        self._infected_live = 0
 
         # ------------------------------------------------------------
         # Banner de estado (idade da base + ClamAV instalado?)
@@ -51,22 +58,13 @@ class ScanTab(Adw.Bin):
         # ------------------------------------------------------------
         # Header
         # ------------------------------------------------------------
-        header_lbl = Gtk.Label(label="Scan on-demand")
+        header_lbl = Gtk.Label(label="ClamAV")
         header_lbl.add_css_class("title-2")
         header_lbl.set_halign(Gtk.Align.START)
         header_lbl.set_margin_bottom(6)
 
-        header_desc = Gtk.Label(
-            label=(
-                "Escolha um alvo e clique <i>Iniciar scan</i>. O scan roda em "
-                "background e o progresso aparece em tempo real na "
-                "<i>Saida do scan</i> — arquivos limpos em verde, "
-                "ameacas em vermelho.\n\n"
-                "Verifique periodicamente a aba <i>Base de dados</i> para "
-                "manter as assinaturas atualizadas (recomendado 1x/semana)."
-            )
-        )
-        header_desc.set_use_markup(True)
+        header_desc = Gtk.Label()
+        header_desc.set_markup(HEADER_DESC)
         header_desc.add_css_class("dim-label")
         header_desc.set_halign(Gtk.Align.START)
         header_desc.set_wrap(True)
@@ -74,47 +72,7 @@ class ScanTab(Adw.Bin):
         header_desc.set_margin_bottom(20)
 
         # ------------------------------------------------------------
-        # Target selector
-        # ------------------------------------------------------------
-        target_group = Adw.PreferencesGroup()
-        target_group.set_title("Alvo do scan")
-
-        self._target_entry = Gtk.Entry()
-        self._target_entry.set_text(str(Path.home()))
-        self._target_entry.set_placeholder_text("Caminho a escanear")
-        self._target_entry.set_hexpand(True)
-
-        choose_btn = Gtk.Button.new_from_icon_name("folder-open-symbolic")
-        choose_btn.set_tooltip_text("Escolher pasta")
-        choose_btn.set_valign(Gtk.Align.CENTER)
-        choose_btn.connect("clicked", lambda _b: self._open_chooser())
-
-        target_row_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-        target_row_box.append(self._target_entry)
-        target_row_box.append(choose_btn)
-
-        target_action_row = Adw.ActionRow(title="Caminho")
-        target_action_row.add_suffix(target_row_box)
-        target_group.add(target_action_row)
-
-        # Preset chips
-        chip_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-        chip_box.set_halign(Gtk.Align.START)
-        chip_box.append(Gtk.Label(label="Atalhos:"))
-        for _key, label, path in TARGET_PRESETS:
-            btn = Gtk.Button(label=label)
-            btn.add_css_class("pill")
-            btn.add_css_class("flat")
-            btn.connect("clicked", lambda _b, p=path: self._target_entry.set_text(p))
-            chip_box.append(btn)
-
-        preset_row = Adw.ActionRow()
-        preset_row.set_child(chip_box)
-        preset_row.set_activatable(False)
-        target_group.add(preset_row)
-
-        # ------------------------------------------------------------
-        # Run / Stop
+        # Run / Stop / escolher pasta
         # ------------------------------------------------------------
         action_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
         action_box.set_margin_top(16)
@@ -131,14 +89,50 @@ class ScanTab(Adw.Bin):
         self._stop_btn.connect("clicked", lambda _b: self._request_stop())
         action_box.append(self._stop_btn)
 
+        self._folder_btn = Gtk.Button.new_from_icon_name("folder-open-symbolic")
+        self._folder_btn.set_tooltip_text(
+            "Escolher pasta para escanear (vazio = sistema todo)"
+        )
+        self._folder_btn.connect("clicked", lambda _b: self._open_chooser())
+        action_box.append(self._folder_btn)
+
         # Status / progress line
-        self._status_label = Gtk.Label(label="Pronto.")
+        self._status_label = Gtk.Label()
         self._status_label.add_css_class("dim-label")
         self._status_label.set_halign(Gtk.Align.START)
         self._status_label.set_margin_top(4)
         self._status_label.set_margin_bottom(16)
         self._status_label.set_wrap(True)
         self._status_label.set_xalign(0)
+        self._status_label.set_label(f"Pronto — alvo: {self._target_desc()}")
+
+        # ------------------------------------------------------------
+        # Estatisticas (mesmo pattern do Rootkit Scanner)
+        # ------------------------------------------------------------
+        kpis_group = Adw.PreferencesGroup()
+        kpis_group.set_margin_top(8)
+        kpis_group.set_title("Estatisticas")
+
+        self._row_scanned = Adw.ActionRow(title="Arquivos escaneados")
+        self._row_scanned.add_css_class("property")
+        self._lbl_scanned = Gtk.Label(label="—")
+        self._lbl_scanned.add_css_class("monospace")
+        self._row_scanned.add_suffix(self._lbl_scanned)
+        kpis_group.add(self._row_scanned)
+
+        self._row_infected = Adw.ActionRow(title="Infectados")
+        self._row_infected.add_css_class("property")
+        self._lbl_infected = Gtk.Label(label="—")
+        self._lbl_infected.add_css_class("monospace")
+        self._row_infected.add_suffix(self._lbl_infected)
+        kpis_group.add(self._row_infected)
+
+        self._row_elapsed = Adw.ActionRow(title="Tempo decorrido")
+        self._row_elapsed.add_css_class("property")
+        self._lbl_elapsed = Gtk.Label(label="—")
+        self._lbl_elapsed.add_css_class("monospace")
+        self._row_elapsed.add_suffix(self._lbl_elapsed)
+        kpis_group.add(self._row_elapsed)
 
         # ------------------------------------------------------------
         # Saida do scan (terminal — streaming colorido + auto-scroll)
@@ -193,9 +187,9 @@ class ScanTab(Adw.Bin):
         inner.set_margin_end(28)
         inner.append(header_lbl)
         inner.append(header_desc)
-        inner.append(target_group)
         inner.append(action_box)
         inner.append(self._status_label)
+        inner.append(kpis_group)
         inner.append(log_group)
 
         scrolled = Gtk.ScrolledWindow()
@@ -224,10 +218,15 @@ class ScanTab(Adw.Bin):
     def _on_folder_selected(self, dialog: Gtk.FileDialog, result: Gio.AsyncResult) -> None:
         try:
             folder = dialog.select_folder_finish(result)
-            if folder:
-                self._target_entry.set_text(folder.get_path() or "")
+            if folder and folder.get_path():
+                self._scan_path = folder.get_path()
+                self._status_label.set_label(f"Pronto — alvo: {self._target_desc()}")
         except GLib.Error:
             pass  # user cancelou
+
+    def _target_desc(self) -> str:
+        """Texto human-readable do alvo atual (pasta escolhida ou sistema todo)."""
+        return self._scan_path if self._scan_path else "sistema completo (/)"
 
     # ============================================================
     # Status banner (idade da base + sanity checks)
@@ -284,14 +283,6 @@ class ScanTab(Adw.Bin):
     def _start_scan(self) -> None:
         if self._running:
             return
-
-        target = self._target_entry.get_text().strip()
-        if not target:
-            show_error(self, "Sem alvo", "Informe um caminho.")
-            return
-        if not Path(target).exists():
-            show_error(self, "Caminho nao existe", f"Nao encontrei: {target}")
-            return
         if not backend.clamav_installed():
             show_error(
                 self,
@@ -300,11 +291,24 @@ class ScanTab(Adw.Bin):
             )
             return
 
+        target = self._scan_path or "/"
+
         self._running = True
         self._stop_requested = False
+        self._scanned_live = 0
+        self._infected_live = 0
         self._log_buf.set_text("")
+        self._lbl_scanned.set_label("0")
+        self._lbl_infected.set_label("0")
+        self._lbl_elapsed.set_label("—")
+        self._set_label_color(self._lbl_infected, "")
         self._set_running_ui(True)
-        self._status_label.set_label(f"Escaneando {target}...")
+        if self._scan_path:
+            self._status_label.set_label(f"Escaneando {target}...")
+        else:
+            self._status_label.set_label(
+                "Escaneando o sistema completo (/) — pode demorar bastante..."
+            )
 
         backend.scan_async(
             path=target,
@@ -322,7 +326,7 @@ class ScanTab(Adw.Bin):
     def _set_running_ui(self, running: bool) -> None:
         self._run_btn.set_sensitive(not running)
         self._stop_btn.set_sensitive(running)
-        self._target_entry.set_sensitive(not running)
+        self._folder_btn.set_sensitive(not running)
 
     # ============================================================
     # Worker callbacks (chamados na thread do backend — usar GLib.idle_add)
@@ -341,8 +345,8 @@ class ScanTab(Adw.Bin):
     def _append_log_line(self, line: str) -> None:
         """Insere uma linha no terminal com coloracao + auto-scroll.
 
-        - Linha com ' FOUND' (ameaca) → vermelho inteiro.
-        - Arquivo limpo (': OK') → caminho neutro + 'OK' verde.
+        - Linha com ' FOUND' (ameaca) → vermelho inteiro + conta infectado.
+        - Arquivo limpo (': OK') → caminho neutro + 'OK' verde + conta scan.
         - 'Infected files: N' do sumario → verde se 0, vermelho se >0.
         - Cabecalho 'SCAN SUMMARY' → amber.
         """
@@ -351,12 +355,19 @@ class ScanTab(Adw.Bin):
 
         if " FOUND" in line:
             self._log_buf.insert_with_tags(end, line + "\n", self._tag_infected)
+            self._infected_live += 1
+            self._scanned_live += 1
+            self._lbl_infected.set_label(str(self._infected_live))
+            self._set_label_color(self._lbl_infected, "error")
+            self._lbl_scanned.set_label(str(self._scanned_live))
         elif stripped.endswith(": OK"):
             head = line[: line.rfind("OK")]
             self._log_buf.insert(end, head)
             self._log_buf.insert_with_tags(
                 self._log_buf.get_end_iter(), "OK\n", self._tag_ok
             )
+            self._scanned_live += 1
+            self._lbl_scanned.set_label(str(self._scanned_live))
         elif stripped.startswith("Infected files:"):
             tag = self._tag_ok if stripped.endswith(": 0") else self._tag_infected
             self._log_buf.insert_with_tags(end, line + "\n", tag)
@@ -377,40 +388,49 @@ class ScanTab(Adw.Bin):
         self._running = False
         self._set_running_ui(False)
 
+        # Stats finais: usa o summary do clamscan quando disponivel, senao
+        # mantem a contagem ao vivo (ex: scan cancelado no meio).
+        scanned = result.scanned_files or self._scanned_live
+        infected = max(result.infected_files, self._infected_live)
+        self._lbl_scanned.set_label(str(scanned))
+        self._lbl_infected.set_label(str(infected))
+        self._lbl_elapsed.set_label(f"{result.elapsed_sec}s")
+        self._set_label_color(self._lbl_infected, "error" if infected > 0 else "")
+
         if result.error:
-            self._status_label.set_label(f"Erro: {result.error}")
-            self._append_summary_line(
-                f"\n══ Erro: {result.error[:120]} ══", self._tag_infected
-            )
+            if "cancelad" in result.error.lower():
+                self._status_label.set_label("Scan cancelado pelo usuario.")
+                self._append_summary_line("\n══ Scan cancelado ══", self._tag_summary)
+            else:
+                self._status_label.set_label(f"Erro: {result.error}")
+                self._append_summary_line(
+                    f"\n══ Erro: {result.error[:120]} ══", self._tag_infected
+                )
             return False
 
-        if result.infected_files > 0:
+        if infected > 0:
             self._status_label.set_label(
                 f"Scan concluido em {result.elapsed_sec}s. "
-                f"{result.scanned_files} arquivos escaneados, "
-                f"{result.infected_files} INFECTADO(S)."
+                f"{scanned} arquivos escaneados, {infected} INFECTADO(S)."
             )
             self._append_summary_line(
-                f"\n══ {result.infected_files} INFECTADO(S) ══",
-                self._tag_infected,
+                f"\n══ {infected} INFECTADO(S) ══", self._tag_infected,
             )
             notify_if_unfocused(
-                f"Antivirus: {result.infected_files} infectado(s)",
-                f"{result.scanned_files} arquivos escaneados. "
-                "Abra o Vigia pra ver os detalhes.",
+                f"Antivirus: {infected} infectado(s)",
+                f"{scanned} arquivos escaneados. Abra o Vigia pra ver os detalhes.",
                 notif_id="vigia-antivirus-scan",
                 priority=PRIORITY_HIGH,
             )
         else:
             self._status_label.set_label(
                 f"Scan concluido em {result.elapsed_sec}s. "
-                f"{result.scanned_files} arquivos escaneados, nada suspeito."
+                f"{scanned} arquivos escaneados, nada suspeito."
             )
             self._append_summary_line("\n══ Nada suspeito ══", self._tag_ok)
             notify_if_unfocused(
                 "Antivirus: nada suspeito",
-                f"{result.scanned_files} arquivos escaneados em "
-                f"{result.elapsed_sec}s.",
+                f"{scanned} arquivos escaneados em {result.elapsed_sec}s.",
                 notif_id="vigia-antivirus-scan",
             )
 
@@ -421,3 +441,10 @@ class ScanTab(Adw.Bin):
         end = self._log_buf.get_end_iter()
         self._log_buf.insert_with_tags(end, text + "\n", tag)
         self._scroll_to_end()
+
+    @staticmethod
+    def _set_label_color(label: Gtk.Label, level: str) -> None:
+        for cls in ("success", "warning", "error"):
+            label.remove_css_class(cls)
+        if level:
+            label.add_css_class(level)

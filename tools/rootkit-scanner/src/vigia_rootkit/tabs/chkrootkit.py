@@ -144,6 +144,9 @@ class ChkrootkitTab(Adw.Bin):
         self._tag_infected = self._log_buf.create_tag(
             "infected", foreground="#f87171", weight=Pango.Weight.BOLD,
         )
+        self._tag_ok = self._log_buf.create_tag(
+            "ok", foreground="#4ade80", weight=Pango.Weight.BOLD,
+        )
 
         log_scrolled = Gtk.ScrolledWindow()
         log_scrolled.set_min_content_height(240)
@@ -276,6 +279,8 @@ class ChkrootkitTab(Adw.Bin):
             tag = self._tag_infected
         elif "warning" in l or "vulnerable" in l or "you have" in l:
             tag = self._tag_warning
+        elif "not infected" in l or "nothing found" in l or "nothing detected" in l:
+            tag = self._tag_ok
 
         if tag is not None:
             self._log_buf.insert_with_tags(end_iter, line + "\n", tag)
@@ -315,13 +320,20 @@ class ChkrootkitTab(Adw.Bin):
 
         if result.cancelled:
             self._status_label.set_label("Scan cancelado pelo usuario.")
+            self._append_summary_line("\n══ Scan cancelado ══", self._tag_warning)
             show_info(self, "Scan cancelado", "Scan interrompido pelo usuario.")
         elif result.error:
             self._status_label.set_label(f"Erro: {result.error[:120]}")
+            self._append_summary_line(
+                f"\n══ Erro: {result.error[:120]} ══", self._tag_infected
+            )
             show_error(self, "Erro no scan", result.error)
         elif result.infected_count > 0:
             self._status_label.set_label(
                 f"Scan completo: {result.infected_count} infectado(s)."
+            )
+            self._append_summary_line(
+                f"\n══ {result.infected_count} infectado(s) ══", self._tag_infected
             )
             show_error(
                 self,
@@ -339,6 +351,9 @@ class ChkrootkitTab(Adw.Bin):
             self._status_label.set_label(
                 f"Scan completo: {result.warnings_count} warning(s)."
             )
+            self._append_summary_line(
+                f"\n══ {result.warnings_count} warning(s) ══", self._tag_warning
+            )
             show_info(
                 self,
                 f"chkrootkit: {result.warnings_count} warning(s)",
@@ -351,6 +366,7 @@ class ChkrootkitTab(Adw.Bin):
             )
         else:
             self._status_label.set_label("Scan completo: nenhum sinal detectado.")
+            self._append_summary_line("\n══ Nada suspeito ══", self._tag_ok)
             show_info(
                 self,
                 "chkrootkit: limpo",
@@ -362,6 +378,16 @@ class ChkrootkitTab(Adw.Bin):
                 notif_id="vigia-rootkit-chkrootkit",
             )
         return False
+
+    def _append_summary_line(self, text: str, tag) -> None:
+        """Linha-resumo colorida garantida no final do terminal."""
+        if self._destroyed:
+            return
+        end_iter = self._log_buf.get_end_iter()
+        self._log_buf.insert_with_tags(end_iter, text + "\n", tag)
+        mark = self._log_buf.create_mark(None, self._log_buf.get_end_iter(), False)
+        self._log_view.scroll_to_mark(mark, 0, False, 0, 0)
+        self._log_buf.delete_mark(mark)
 
     @staticmethod
     def _set_label_color(label: Gtk.Label, level: str) -> None:

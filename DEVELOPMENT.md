@@ -1643,6 +1643,49 @@ salvo no JSON do Historico independente da UI. Menos superficie, mesma info.
 
 ---
 
+### 2026-05-28 — Padronizacao Antivirus ⇄ Rootkit Scanner
+
+Alinhamento visual/funcional entre o **Antivirus (ClamAV)** e o **Rootkit
+Scanner (chkrootkit + rkhunter)** pra os tres scanners se comportarem igual.
+
+**Antivirus — aba Scan:**
+- **Caixa de Estatisticas** (`Adw.PreferencesGroup` "Estatisticas"), mesmo
+  pattern do Rootkit: *Arquivos escaneados*, *Infectados* (vermelho se >0),
+  *Tempo decorrido*. Contadores ao vivo: `: OK` incrementa escaneados,
+  ` FOUND` incrementa infectados — feedback durante scans longos. No fim, o
+  summary do clamscan e' autoritativo (`scanned or live`, `max(result, live)`
+  pra sobreviver a cancelamento no meio).
+- **Seletor de alvo removido.** Em vez do `Gtk.Entry` + chips de preset, agora
+  so ha' `[Iniciar scan] [Parar] [botao de pasta]`. Pasta vazia = **varredura
+  do sistema todo** (`/`). O `_target_desc()` mostra o alvo no status label.
+- **Header** renomeado de "Scan on-demand" → **"ClamAV"** com `HEADER_DESC`
+  estilo Rootkit (markup explicando assinaturas + cores + full-scan default).
+- Botao *Parar* fica sempre visivel mas desabilitado ate' o scan rodar
+  (preserva o espaco), e o *Iniciar* desabilita enquanto roda.
+
+**Backend (`scan_async`):**
+- Varredura de `/` agora pula pseudo-filesystems via `--exclude-dir`
+  (`^/proc ^/sys ^/dev ^/run`) — evita travar/poluir.
+- `rc=2` so e' tratado como erro fatal se `scanned_files == 0`. Num scan de
+  sistema inteiro como usuario comum, "Permission denied" em arquivos de
+  outros donos gera `rc=2` mas nao e' fatal se o scan rodou de fato.
+  *(Nota: full-scan roda como o usuario, sem pkexec — cobre tudo que e'
+  world-readable; /root e afins ficam de fora. Root completo via pkexec
+  fica como follow-up se necessario.)*
+
+**Rootkit Scanner — chkrootkit + rkhunter:**
+- Ganharam o `_tag_ok` (verde `#4ade80`) e coloracao de linhas "limpas":
+  chkrootkit colore `not infected` / `nothing found`; rkhunter colore
+  `[ OK ]` / `[ Not found ]` / `[ None found ]`.
+- **Linha-resumo colorida** no fim do terminal (`_append_summary_line`),
+  igual ao Antivirus: `══ Nada suspeito ══` (verde) / `══ N infectado(s) ══`
+  (vermelho) / `══ N warning(s) ══` (amber) / cancelado / erro.
+
+Resultado: os tres scanners tem header + estatisticas + terminal colorido +
+linha-resumo no mesmo padrao. Suite segue **431 passed, 4 skipped**.
+
+---
+
 ## 10. Roadmap
 
 ### 10.1 Próximas iterações por ferramenta
