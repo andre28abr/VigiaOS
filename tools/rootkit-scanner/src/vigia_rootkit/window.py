@@ -1,4 +1,17 @@
-"""Janela principal — 4 tabs (chkrootkit, rkhunter, Historico, Sobre)."""
+"""Janela principal — 4 tabs (chkrootkit, rkhunter, Historico, Sobre).
+
+v0.1.5: removida sub-bar 'Wrapper de:' (pkg badges). Em VM fullscreen
+com Rootkit Scanner embedded no Hub, essa barra estava esticando a
+janela lateralmente. User identificou no screenshot.
+
+Por que so no Rootkit e nao em outras tools? Investigacao pendente —
+provavelmente combinacao de fatores (talvez ordem de inicializacao do
+ToolbarView, ou interacao com o ViewStack do Hub). Pra eliminar a
+duvida, remover.
+
+Nome dos pacotes wrapped (chkrootkit + rkhunter) ja eh evidente
+no titulo da tool e na aba Sobre.
+"""
 
 from __future__ import annotations
 
@@ -9,27 +22,7 @@ gi.require_version("Adw", "1")
 
 from gi.repository import Adw, Gtk  # noqa: E402
 
-from . import WRAPPED_PACKAGES
 from .tabs import AboutTab, ChkrootkitTab, HistoryTab, RkhunterTab
-
-
-def _make_pkg_badges_bar() -> Gtk.Widget:
-    bar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-    bar.set_margin_start(12)
-    bar.set_margin_end(12)
-    bar.set_margin_top(4)
-    bar.set_margin_bottom(4)
-    intro = Gtk.Label(label="Wrapper de:")
-    intro.add_css_class("caption")
-    intro.add_css_class("dim-label")
-    bar.append(intro)
-    for pkg in WRAPPED_PACKAGES:
-        pill = Gtk.Label(label=pkg)
-        pill.add_css_class("monospace")
-        pill.add_css_class("caption")
-        pill.add_css_class("dim-label")
-        bar.append(pill)
-    return bar
 
 
 def build_content() -> Gtk.Widget:
@@ -70,8 +63,7 @@ def build_content() -> Gtk.Widget:
 
     toolbar = Adw.ToolbarView()
     toolbar.add_top_bar(header)
-    if WRAPPED_PACKAGES:
-        toolbar.add_top_bar(_make_pkg_badges_bar())
+    # v0.1.5: removida sub-bar 'Wrapper de:' (causa de expansao lateral)
     toolbar.set_content(stack)
     return toolbar
 
