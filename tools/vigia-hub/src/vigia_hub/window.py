@@ -649,29 +649,6 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         thread = threading.Thread(target=runner, daemon=True)
         thread.start()
 
-    def _show_progress(self, title: str) -> Adw.AlertDialog:
-        """Dialog modal com spinner enquanto operacao async roda."""
-        dlg = Adw.AlertDialog(heading=title)
-        dlg.set_body("Aguarde — esta operacao pode pedir senha admin.")
-        spinner = Gtk.Spinner()
-        spinner.set_spinning(True)
-        spinner.set_size_request(48, 48)
-        spinner.set_halign(Gtk.Align.CENTER)
-        dlg.set_extra_child(spinner)
-        # Sem botoes — dialog fecha sozinho via _close_progress
-        dlg.present(self)
-        return dlg
-
-    def _close_progress(self, dlg: Adw.AlertDialog) -> None:
-        """Fecha o progress dialog programaticamente."""
-        try:
-            dlg.force_close()
-        except Exception:  # pylint: disable=broad-except
-            try:
-                dlg.close()
-            except Exception:  # pylint: disable=broad-except
-                pass
-
     def _on_lock_toggled(self, switch: Adw.SwitchRow, *_args) -> None:
         """User toggleou 'Exigir senha para abrir o Hub'."""
         print(f"[lock] toggled -> {switch.get_active()}", flush=True)
@@ -724,13 +701,17 @@ class VigiaHubWindow(Adw.ApplicationWindow):
             return
         # ASYNC: install_policy() chama subprocess pkexec
         print("[lock] starting install_policy in thread", flush=True)
-        progress = self._show_progress("Instalando regra Polkit")
+        # Desabilita switch enquanto thread roda (feedback visual minimo,
+        # sem dialog modal que pode bloquear erro subsequente)
+        switch.set_sensitive(False)
+        switch.set_subtitle("Instalando regra Polkit... (pode pedir senha)")
 
         def worker():
             return install_policy()
 
         def done(result):
-            self._close_progress(progress)
+            switch.set_sensitive(True)
+            switch.set_subtitle(self._lock_default_subtitle())
             ok, err = result
             print(f"[lock] install_policy result: ok={ok} err={err!r}", flush=True)
             if not ok:
@@ -749,13 +730,16 @@ class VigiaHubWindow(Adw.ApplicationWindow):
     def _test_auth_async(self, switch: Adw.SwitchRow, target_value: bool) -> None:
         """Roda check_auth() em thread. Salva switch no JSON se passou."""
         print(f"[lock] starting test_auth (target={target_value})", flush=True)
-        progress = self._show_progress("Aguardando autenticacao")
+        # Desabilita switch enquanto thread roda
+        switch.set_sensitive(False)
+        switch.set_subtitle("Aguardando autenticacao... (digite senha admin)")
 
         def worker():
             return check_auth()
 
         def done(result):
-            self._close_progress(progress)
+            switch.set_sensitive(True)
+            switch.set_subtitle(self._lock_default_subtitle())
             ok, err = result
             print(f"[lock] test_auth result: ok={ok} err={err!r}", flush=True)
             if not ok:
@@ -776,6 +760,13 @@ class VigiaHubWindow(Adw.ApplicationWindow):
             return False
 
         self._run_in_thread(worker, done)
+
+    @staticmethod
+    def _lock_default_subtitle() -> str:
+        return (
+            "Pede senha admin (mesma do sudo) ao iniciar o Hub. Usa Polkit "
+            "do sistema — nenhuma senha e' armazenada pelo Vigia."
+        )
 
     # ------------- Navigation API (chamada pelo tray via app actions) -------------
 
