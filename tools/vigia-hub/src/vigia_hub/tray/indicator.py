@@ -14,8 +14,59 @@ Entry point: `vigia-hub-tray` (registrado no pyproject.toml).
 
 from __future__ import annotations
 
+import os
+import shutil
 import signal
 import sys
+from pathlib import Path
+
+
+ICON_NAME = "br.com.vigia.Hub-symbolic"
+ICON_USER_DIR = (
+    Path.home() / ".local" / "share" / "icons" / "hicolor" / "scalable" / "apps"
+)
+
+
+def _ensure_user_icon_installed() -> None:
+    """Copia o icone do pacote pra ~/.local/share/icons/ se ainda nao esta.
+
+    Permite que o tray use icone proprio mesmo sem instalacao system-wide
+    (pip install --user nao copia data files pro /usr/share).
+    """
+    target = ICON_USER_DIR / f"{ICON_NAME}.svg"
+    if target.exists():
+        return
+
+    # Procura na pasta data do pacote (pip install --user -e .)
+    # vigia_hub/ -> ../../data/icons/...
+    module_dir = Path(__file__).resolve().parent.parent
+    candidate_paths = [
+        module_dir.parent.parent
+        / "data" / "icons" / "hicolor" / "scalable" / "apps"
+        / f"{ICON_NAME}.svg",
+        # Sistema (RPM/COPR no futuro)
+        Path("/usr/share/icons/hicolor/scalable/apps") / f"{ICON_NAME}.svg",
+    ]
+    src = next((p for p in candidate_paths if p.is_file()), None)
+    if src is None:
+        return
+
+    try:
+        ICON_USER_DIR.mkdir(parents=True, exist_ok=True)
+        shutil.copy(src, target)
+        # Refresh GTK icon cache (best effort)
+        cache_dir = Path.home() / ".local" / "share" / "icons" / "hicolor"
+        try:
+            import subprocess
+            subprocess.run(
+                ["gtk-update-icon-cache", "-f", "-t", str(cache_dir)],
+                capture_output=True,
+                timeout=5,
+            )
+        except (OSError, subprocess.SubprocessError):
+            pass
+    except OSError:
+        pass  # fallback pro security-high-symbolic
 
 
 def main() -> int:
@@ -63,24 +114,27 @@ def main() -> int:
                 None,
             )
         except GLib.Error as e:
-            print(
-                f"[vigia-hub-tray] D-Bus call '{action_name}' falhou: {e}",
-                file=sys.stderr,
+            sys.stderr.write(
+                f"[vigia-hub-tray] D-Bus call '{action_name}' falhou: {e}\n"
             )
 
     # ============================================================
     # Indicator + menu
     # ============================================================
 
+    # Garante que o icone customizado esta em ~/.local/share/icons/
+    _ensure_user_icon_installed()
+
     indicator = AppIndicator.Indicator.new(
         "vigia-hub",
-        "br.com.vigia.Hub",  # icon name (precisa de .desktop + icon)
+        ICON_NAME,
         AppIndicator.IndicatorCategory.APPLICATION_STATUS,
     )
-    # Fallback icon caso o icone customizado nao seja encontrado
-    indicator.set_icon_full("security-high-symbolic", "Vigia Hub")
+    # Fallback se icone customizado nao foi encontrado pelo tema
+    indicator.set_icon_full(ICON_NAME, "Vigia Hub")
     indicator.set_status(AppIndicator.IndicatorStatus.ACTIVE)
-    indicator.set_title("Vigia Hub")
+    # Title tambem aparece como tooltip ao passar mouse no icone
+    indicator.set_title("Vigia Hub — Suite de seguranca LGPD")
 
     menu = Gtk.Menu()
 

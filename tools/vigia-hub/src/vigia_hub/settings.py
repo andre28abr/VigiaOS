@@ -35,6 +35,10 @@ class Settings:
     show_tray: bool = False
     start_minimized: bool = False
     password_lock: bool = False
+    # v0.6.0 (Etapa B):
+    theme: str = "system"  # "system" | "light" | "dark"
+    # 0 = desabilitado; min 1 quando ativo (auto_lock so faz sentido com lock ON)
+    auto_lock_minutes: int = 0
 
 
 # ============================================================
@@ -49,14 +53,25 @@ def load_settings() -> Settings:
     try:
         with open(STATE_PATH, "r", encoding="utf-8") as f:
             data = json.load(f)
+        theme_raw = str(data.get("theme", "system"))
+        if theme_raw not in ("system", "light", "dark"):
+            theme_raw = "system"
+        try:
+            auto_lock = int(data.get("auto_lock_minutes", 0))
+        except (TypeError, ValueError):
+            auto_lock = 0
+        auto_lock = max(0, min(120, auto_lock))  # clamp [0, 120]
         return Settings(
             autostart=bool(data.get("autostart", False)),
             show_tray=bool(data.get("show_tray", False)),
             start_minimized=bool(data.get("start_minimized", False)),
             password_lock=bool(data.get("password_lock", False)),
+            theme=theme_raw,
+            auto_lock_minutes=auto_lock,
         )
     except (OSError, json.JSONDecodeError) as e:
-        print(f"[settings] load falhou: {e}", flush=True)
+        import logging
+        logging.getLogger("vigia_hub.settings").warning("load falhou: %s", e)
         return Settings()
 
 
@@ -72,7 +87,8 @@ def save_settings(s: Settings) -> bool:
         tmp.replace(STATE_PATH)
         return True
     except OSError as e:
-        print(f"[settings] save falhou: {e}", flush=True)
+        import logging
+        logging.getLogger("vigia_hub.settings").warning("save falhou: %s", e)
         return False
 
 
@@ -118,7 +134,10 @@ def autostart_install(minimized: bool = False) -> bool:
         os.chmod(AUTOSTART_PATH, 0o644)
         return True
     except OSError as e:
-        print(f"[settings] autostart_install falhou: {e}", flush=True)
+        import logging
+        logging.getLogger("vigia_hub.settings").warning(
+            "autostart_install falhou: %s", e
+        )
         return False
 
 
@@ -129,7 +148,10 @@ def autostart_remove() -> bool:
             AUTOSTART_PATH.unlink()
         return True
     except OSError as e:
-        print(f"[settings] autostart_remove falhou: {e}", flush=True)
+        import logging
+        logging.getLogger("vigia_hub.settings").warning(
+            "autostart_remove falhou: %s", e
+        )
         return False
 
 
