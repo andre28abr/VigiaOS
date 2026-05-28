@@ -108,9 +108,11 @@ class TestInstalledPolicyPath:
 
 
 class TestInstallPolicy:
+    @patch("vigia_hub.auth.wait_for_polkit_recognition")
     @patch("vigia_hub.auth.subprocess.run")
-    def test_calls_pkexec_install(self, mock_run):
+    def test_calls_pkexec_install(self, mock_run, mock_wait):
         mock_run.return_value = MagicMock(returncode=0, stderr="")
+        mock_wait.return_value = True
         ok, err = auth.install_policy()
         assert ok is True
         assert err == ""
@@ -122,6 +124,16 @@ class TestInstallPolicy:
         assert "0644" in args
         assert "-o" in args
         assert "root" in args
+
+    @patch("vigia_hub.auth.wait_for_polkit_recognition")
+    @patch("vigia_hub.auth.subprocess.run")
+    def test_fails_when_polkit_does_not_recognize(self, mock_run, mock_wait):
+        """install OK mas polkit nao reconheceu action -> erro."""
+        mock_run.return_value = MagicMock(returncode=0, stderr="")
+        mock_wait.return_value = False
+        ok, err = auth.install_policy()
+        assert ok is False
+        assert "polkitd" in err.lower() or "polkit" in err.lower()
 
     @patch("vigia_hub.auth.subprocess.run")
     def test_returns_error_on_pkexec_failure(self, mock_run):
@@ -144,6 +156,29 @@ class TestInstallPolicy:
 # ============================================================
 # uninstall_policy
 # ============================================================
+
+
+class TestWaitForPolkitRecognition:
+    @patch("vigia_hub.auth.shutil.which")
+    def test_returns_true_when_pkaction_missing(self, mock_which):
+        """Sem pkaction nao da pra verificar — assume sucesso."""
+        mock_which.return_value = None
+        assert auth.wait_for_polkit_recognition("foo", timeout=0.1) is True
+
+    @patch("vigia_hub.auth.subprocess.run")
+    @patch("vigia_hub.auth.shutil.which")
+    def test_returns_true_on_first_try(self, mock_which, mock_run):
+        mock_which.return_value = "/usr/bin/pkaction"
+        mock_run.return_value = MagicMock(returncode=0)
+        assert auth.wait_for_polkit_recognition("foo", timeout=2.0) is True
+
+    @patch("vigia_hub.auth.subprocess.run")
+    @patch("vigia_hub.auth.shutil.which")
+    def test_returns_false_on_timeout(self, mock_which, mock_run):
+        mock_which.return_value = "/usr/bin/pkaction"
+        mock_run.return_value = MagicMock(returncode=1)  # nao reconhecido
+        # Timeout curto pra teste rapido
+        assert auth.wait_for_polkit_recognition("foo", timeout=0.3) is False
 
 
 class TestUninstallPolicy:
