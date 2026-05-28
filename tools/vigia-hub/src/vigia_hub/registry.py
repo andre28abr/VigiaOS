@@ -30,6 +30,7 @@ CATEGORIES_ORDER = [
     "monitoramento",
     "privacidade",
     "defesa",
+    "sistema",
     "relatorios",
 ]
 
@@ -37,6 +38,7 @@ CATEGORY_LABELS = {
     "monitoramento": "Monitoramento",
     "privacidade": "Privacidade",
     "defesa": "Defesa & Hardening",
+    "sistema": "Sistema",
     "relatorios": "Relatorios",
 }
 
@@ -528,6 +530,41 @@ TOOLS: list[ToolEntry] = [
     # As 3 tabs (Hash, Verificar, Baseline) viraram tabs do File Integrity
     # (que ja era escala-sistema com AIDE). Hash ad-hoc + AIDE = mesma
     # categoria de integridade de arquivos.
+    ToolEntry(
+        id="deployments-manager",
+        name="Deployments Manager",
+        description="Gerenciador de deployments rpm-ostree (boot snapshots).",
+        long_description=(
+            "GUI pra gerenciar os **deployments do rpm-ostree** — os "
+            "'snapshots' que aparecem no menu do GRUB ao bootar.\n\n"
+            "Cada deployment eh um estado imutavel do sistema, criado "
+            "automaticamente em cada `rpm-ostree install/upgrade/rebase`. "
+            "Voce pode reverter pro anterior, pinnar pra preservar de "
+            "cleanups automaticos, ou adicionar label/notas customizados "
+            "pra documentar (LGPD/audit).\n\n"
+            "**Cleanup integrado**: botao 'Limpar tudo' executa `rpm-ostree "
+            "cleanup -p -r -m` num so pkexec — libera espaco em `/boot` "
+            "(particao pequena: 600MB-1GB). Tool alerta quando `/boot` "
+            "passa de 70% (amarelo) ou 85% (vermelho)."
+        ),
+        features=[
+            "**3 tabs**: Deployments, Cleanup, Sobre",
+            "Lista deployments com badges: ATIVO/STAGED/PIN/ROLLBACK",
+            "Rollback pro deployment anterior via pkexec",
+            "Pin/Unpin pra preservar contra cleanup automatico",
+            "Label customizado + notas multilinha por deployment",
+            "Cleanup all em 1 click (`-p -r -m` num pkexec)",
+            "Alerta visual de `/boot` cheio (>70% amarelo, >85% vermelho)",
+            "State local em `~/.config/vigia-deployments/state.json` (mode 0600)",
+        ],
+        icon_path=_TOOLS_DIR / "deployments-manager" / "data" / "br.com.vigia.DeploymentsManager.svg",
+        exec_cmd=["vigia-deployments"],
+        needs_terminal=False,
+        available_fn=lambda: shutil.which("vigia-deployments") is not None,
+        embedded_module="vigia_deployments.window",
+        category="sistema",
+        wrapped_packages=["rpm-ostree"],
+    ),
     # NOTA: Tool Installer NAO esta mais nesta lista. Foi promovido a
     # entidade de primeiro nivel acessivel via icone 'Instalador' na
     # nav lateral fina do Hub (em vez de virar mais uma tool entre tools).
