@@ -20,7 +20,7 @@ do sistema-base sem complicação.
 | # | Componente | Stack | Status |
 |---|---|---|---|
 | 1 | `bootstrap.sh` | bash | 🟡 Em desenvolvimento |
-| 2 | **[Vigia Hub](tools/vigia-hub/)** v0.5 | Python + GTK4 | 🟢 3 painéis (nav fina + sidebar categorizada + content), embedded mode |
+| 2 | **[Vigia Hub](tools/vigia-hub/)** v0.5.10 | Python + GTK4 | 🟢 3 painéis + autostart XDG + tray icon (subprocess GTK3) + lock Polkit |
 | 3 | **[Vigia Dashboard](tools/dashboard/)** v0.2 | Python + GTK4 + Cairo | 🟢 Sistema em tempo real + per-process I/O + alertas |
 | 4 | **[Vigia Activity Log](tools/activity-log/)** v0.7 (core) + [GUI](tools/activity-log-gui/) v0.1 | Rust + Python | 🟢 audit + journald + fail2ban + correlations |
 | 5 | **[Vigia Privacy Controls](tools/privacy-controls/)** v0.3.1 | Python + GTK4 | 🟢 13 toggles user+system scope |
@@ -43,6 +43,19 @@ do sistema-base sem complicação.
 - ~~Firmware Analyzer (binwalk)~~ — nicho RE/CTF
 - ~~VPN Manager~~ — NetworkManager nativo do GNOME já gerencia WireGuard
 - ~~Hash Tools~~ — mergeado em File Integrity v0.2.0 (mesma categoria)
+
+### Novidades do Hub v0.5.10 (2026-05-28)
+
+A aba **Configurações** do Hub virou um centro real de preferências, com 3 sub-abas:
+
+- **Aplicação**
+  - ✅ **Autostart XDG** — switch "Iniciar junto com o sistema" cria `~/.config/autostart/vigia-hub.desktop`
+  - ✅ **Tray icon** — switch "Mostrar ícone na bandeja" spawna subprocess GTK3 (`vigia-hub-tray`) que cria ícone no menu de status do GNOME via `AyatanaAppIndicator3`. Menu minimalista: Abrir Hub / Configurações / Sair
+  - ✅ **Iniciar minimizado** — flag `--minimized` no autostart; Hub sobe só com tray, janela escondida
+  - **Background mode** automático: fechar a janela (X) com tray ativo esconde em vez de matar o processo (`app.hold()`)
+- **Segurança**
+  - ✅ **Bloqueio por senha (Polkit)** — switch "Exigir senha para abrir o Hub". Usa `pkexec /usr/bin/true` via `Gio.Subprocess` async. Zero armazenamento de credencial (LGPD friendly). **Lazy auth**: se Hub iniciar minimizado, senha só é pedida quando user clicar "Abrir Hub" no tray (não interrompe o login)
+- **Sobre** — caminhos de configuração + versão
 
 ## Instalação
 
