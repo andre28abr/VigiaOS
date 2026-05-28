@@ -220,7 +220,7 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         if mode_id == "settings":
             return self._build_settings_page()
         if mode_id == "help":
-            return Adw.StatusPage(
+            inner = Adw.StatusPage(
                 title="Manuais",
                 description=(
                     "Manuais detalhados de cada tool. Cada tool tambem tem aba "
@@ -229,18 +229,42 @@ class VigiaHubWindow(Adw.ApplicationWindow):
                 ),
                 icon_name="help-browser-symbolic",
             )
+            return self._wrap_with_header(inner, "Ajuda")
         raise ValueError(f"Modo desconhecido: {mode_id}")
+
+    def _wrap_with_header(
+        self,
+        content: Gtk.Widget,
+        title: str,
+        title_widget: Gtk.Widget | None = None,
+    ) -> Gtk.Widget:
+        """Envolve content num ToolbarView + HeaderBar (com X de fechar)."""
+        header = Adw.HeaderBar()
+        if title_widget is not None:
+            header.set_title_widget(title_widget)
+        else:
+            header.set_title_widget(Adw.WindowTitle(title=title, subtitle=""))
+        toolbar = Adw.ToolbarView()
+        toolbar.add_top_bar(header)
+        toolbar.set_content(content)
+        return toolbar
 
     # ========================================================================
     # Settings page (Configuracoes)
     # ========================================================================
 
     def _build_settings_page(self) -> Gtk.Widget:
-        """Pagina Configuracoes — autostart, tray, bloqueio, etc."""
-        page = Adw.PreferencesPage()
-        page.set_title("Configuracoes")
-        page.set_icon_name("preferences-system-symbolic")
+        """Pagina Configuracoes com abas (ViewSwitcher).
 
+        Estrutura:
+          ToolbarView
+            HeaderBar (com X de fechar) + ViewSwitcher no titulo
+            ViewStack
+              [Aplicacao] [Seguranca] [Sobre]
+
+        Cada aba e um Adw.PreferencesPage isolado, pra facilitar
+        adicionar futuras abas (ex: Tema, Notificacoes).
+        """
         # Carrega state atual (sincroniza com .desktop file caso user tenha
         # editado manualmente)
         self._settings = load_settings()
@@ -249,14 +273,51 @@ class VigiaHubWindow(Adw.ApplicationWindow):
             self._settings.autostart = disk_autostart
             save_settings(self._settings)
 
-        # ============= Grupo 1: Inicializacao ============= #
+        # ============= ViewStack (uma page por aba) ============= #
+        stack = Adw.ViewStack()
+        stack.add_titled_with_icon(
+            self._build_settings_app_tab(),
+            "app",
+            "Aplicacao",
+            "system-run-symbolic",
+        )
+        stack.add_titled_with_icon(
+            self._build_settings_security_tab(),
+            "security",
+            "Seguranca",
+            "channel-secure-symbolic",
+        )
+        stack.add_titled_with_icon(
+            self._build_settings_about_tab(),
+            "about",
+            "Sobre",
+            "help-about-symbolic",
+        )
+
+        # ============= HeaderBar com ViewSwitcher ============= #
+        switcher = Adw.ViewSwitcher()
+        switcher.set_stack(stack)
+        switcher.set_policy(Adw.ViewSwitcherPolicy.WIDE)
+
+        header = Adw.HeaderBar()
+        header.set_title_widget(switcher)
+
+        toolbar = Adw.ToolbarView()
+        toolbar.add_top_bar(header)
+        toolbar.set_content(stack)
+        return toolbar
+
+    def _build_settings_app_tab(self) -> Gtk.Widget:
+        """Aba 'Aplicacao' — comportamento de inicializacao."""
+        page = Adw.PreferencesPage()
+
         init_group = Adw.PreferencesGroup()
         init_group.set_title("Inicializacao")
         init_group.set_description(
             "Como o Hub inicia junto com o sistema."
         )
 
-        # Switch: autostart
+        # Switch: autostart (FUNCIONAL)
         self._sw_autostart = Adw.SwitchRow()
         self._sw_autostart.set_title("Iniciar junto com o sistema")
         self._sw_autostart.set_subtitle(
@@ -287,12 +348,16 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         init_group.add(self._sw_minimized)
 
         page.add(init_group)
+        return page
 
-        # ============= Grupo 2: Seguranca ============= #
+    def _build_settings_security_tab(self) -> Gtk.Widget:
+        """Aba 'Seguranca' — protecao do Hub e tools."""
+        page = Adw.PreferencesPage()
+
         sec_group = Adw.PreferencesGroup()
-        sec_group.set_title("Seguranca")
+        sec_group.set_title("Acesso ao Hub")
         sec_group.set_description(
-            "Protecao do Hub e das ferramentas administrativas."
+            "Protecao adicional para o launcher e suas configuracoes."
         )
 
         # Switch: password lock (placeholder Fase 2)
@@ -306,12 +371,20 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         sec_group.add(self._sw_lock)
 
         page.add(sec_group)
+        return page
 
-        # ============= Grupo 3: Sobre as configuracoes ============= #
+    def _build_settings_about_tab(self) -> Gtk.Widget:
+        """Aba 'Sobre' — caminhos dos arquivos de configuracao."""
+        page = Adw.PreferencesPage()
+
         info_group = Adw.PreferencesGroup()
-        info_group.set_title("Sobre as configuracoes")
+        info_group.set_title("Arquivos de configuracao")
+        info_group.set_description(
+            "Onde o Hub armazena as preferencias do usuario."
+        )
+
         info_row = Adw.ActionRow()
-        info_row.set_title("Arquivo de configuracao")
+        info_row.set_title("Settings")
         info_row.set_subtitle(
             "~/.config/vigia-hub/settings.json (permissao 0600)"
         )
@@ -332,6 +405,20 @@ class VigiaHubWindow(Adw.ApplicationWindow):
 
         page.add(info_group)
 
+        # Grupo Versao
+        ver_group = Adw.PreferencesGroup()
+        ver_group.set_title("Hub")
+        from . import __version__ as _ver
+
+        ver_row = Adw.ActionRow()
+        ver_row.set_title("Vigia Hub")
+        ver_row.set_subtitle(f"Versao {_ver}")
+        ver_row.add_prefix(
+            Gtk.Image.new_from_icon_name("preferences-system-symbolic")
+        )
+        ver_group.add(ver_row)
+
+        page.add(ver_group)
         return page
 
     def _on_autostart_toggled(self, switch: Adw.SwitchRow, *_args) -> None:
