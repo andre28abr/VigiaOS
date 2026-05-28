@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "vigia-rootkit-scanner"
-version = "0.1.0"
-description = "Rootkit scanner GTK4 — wrapper chkrootkit + rkhunter — parte da Vigia Suite"
+version = "0.2.0"
+description = "Rootkit scanner GTK4 (chkrootkit + rkhunter) — parte da Vigia Suite"
 license = { text = "Apache-2.0" }
 readme = "README.md"
 requires-python = ">=3.11"
