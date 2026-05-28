@@ -27,6 +27,7 @@ gi.require_version("Adw", "1")
 from gi.repository import Adw, Gio, GLib  # noqa: E402
 
 from . import __app_id__
+from .auth import check_auth
 from .settings import load_settings
 from .tray import TrayManager
 from .window import VigiaHubWindow
@@ -41,6 +42,7 @@ class VigiaHubApp(Adw.Application):
         self._start_minimized = start_minimized
         self._tray = TrayManager()
         self._hold_active = False
+        self._authed = False  # True apos passar o check_auth da sessao
 
         self._setup_actions()
         self.connect("shutdown", self._on_shutdown)
@@ -87,6 +89,16 @@ class VigiaHubApp(Adw.Application):
 
     def do_activate(self) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         settings = load_settings()
+
+        # Lock por senha (Polkit) — so na primeira ativacao da sessao
+        if settings.password_lock and not self._authed:
+            ok, err = check_auth()
+            if not ok:
+                # Falhou autenticacao: encerra o app (e tray subprocess)
+                print(f"[vigia-hub] Autenticacao falhou: {err}", flush=True)
+                self.quit()
+                return
+            self._authed = True
 
         # Tray + hold (se habilitado)
         if settings.show_tray:

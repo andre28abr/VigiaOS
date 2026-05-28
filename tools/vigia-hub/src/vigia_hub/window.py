@@ -39,6 +39,13 @@ from .registry import (
     ToolEntry,
     tools_by_category,
 )
+from .auth import (
+    check_auth,
+    install_policy,
+    is_policy_installed,
+    polkit_available,
+    uninstall_policy,
+)
 from .settings import (
     Settings,
     autostart_is_enabled,
@@ -370,17 +377,46 @@ class VigiaHubWindow(Adw.ApplicationWindow):
             "Protecao adicional para o launcher e suas configuracoes."
         )
 
-        # Switch: password lock (placeholder Fase 2)
+        # Switch: password lock (FUNCIONAL — Polkit)
         self._sw_lock = Adw.SwitchRow()
         self._sw_lock.set_title("Exigir senha para abrir o Hub")
         self._sw_lock.set_subtitle(
-            "Em breve (Fase 2): bloqueia o Hub atras da senha admin (Polkit)."
+            "Pede senha admin (mesma do sudo) ao iniciar o Hub. Usa Polkit "
+            "do sistema — nenhuma senha e' armazenada pelo Vigia."
         )
-        self._sw_lock.set_active(False)
-        self._sw_lock.set_sensitive(False)
+        self._sw_lock.set_active(self._settings.password_lock)
+        self._sw_lock.connect("notify::active", self._on_lock_toggled)
         sec_group.add(self._sw_lock)
 
         page.add(sec_group)
+
+        # Grupo info: explica o Polkit
+        info_group = Adw.PreferencesGroup()
+        info_group.set_title("Como funciona")
+        info_group.set_description(
+            "Bloqueio reutiliza a infraestrutura nativa do Linux."
+        )
+
+        polkit_row = Adw.ActionRow()
+        polkit_row.set_title("Polkit")
+        polkit_row.set_subtitle(
+            "Framework de autorizacao padrao do Linux. Reutiliza PAM e a "
+            "senha do sudo. Sem armazenamento local (LGPD compliant)."
+        )
+        polkit_row.add_prefix(
+            Gtk.Image.new_from_icon_name("channel-secure-symbolic")
+        )
+        info_group.add(polkit_row)
+
+        action_row = Adw.ActionRow()
+        action_row.set_title("Action ID")
+        action_row.set_subtitle("br.com.vigia.Hub.unlock")
+        action_row.add_prefix(
+            Gtk.Image.new_from_icon_name("text-x-generic-symbolic")
+        )
+        info_group.add(action_row)
+
+        page.add(info_group)
         return page
 
     def _build_settings_about_tab(self) -> Gtk.Widget:
@@ -588,6 +624,89 @@ class VigiaHubWindow(Adw.ApplicationWindow):
                 self._show_settings_error("Falha ao ativar extensao", err)
         except (subprocess.SubprocessError, OSError) as e:
             self._show_settings_error("Falha ao executar gnome-extensions", str(e))
+
+    # ------------- Password lock switch (Polkit) -------------
+
+    def _on_lock_toggled(self, switch: Adw.SwitchRow, *_args) -> None:
+        """User toggleou 'Exigir senha para abrir o Hub'."""
+        enabled = switch.get_active()
+
+        if enabled:
+            # 1. Polkit lib disponivel?
+            if not polkit_available():
+                switch.set_active(False)
+                self._show_settings_error(
+                    "Polkit nao disponivel",
+                    "A biblioteca PyGObject Polkit nao esta instalada. "
+                    "Pacote: python3-gobject (geralmente ja' vem no Fedora).",
+                )
+                return
+
+            # 2. .policy instalado?
+            if not is_policy_installed():
+                self._prompt_install_policy(switch)
+                return  # continua no callback do dialog
+
+            # 3. Test prompt — confirma que vai funcionar na proxima vez
+            self._test_auth_and_save(switch, target_value=True)
+            return
+
+        # Desligar: exige autenticacao pra confirmar (seguranca)
+        self._test_auth_and_save(switch, target_value=False)
+
+    def _prompt_install_policy(self, switch: Adw.SwitchRow) -> None:
+        """Dialog pedindo permissao pra instalar o .policy via pkexec."""
+        dlg = Adw.AlertDialog(
+            heading="Instalar regra de autenticacao",
+            body=(
+                "Pra ativar o bloqueio por senha, preciso instalar um "
+                "arquivo de regra em /etc/polkit-1/actions/ (requer "
+                "senha admin).\n\nEsse arquivo define a action "
+                "'br.com.vigia.Hub.unlock' usada pelo Polkit."
+            ),
+        )
+        dlg.add_response("cancel", "Cancelar")
+        dlg.add_response("install", "Instalar")
+        dlg.set_response_appearance("install", Adw.ResponseAppearance.SUGGESTED)
+        dlg.set_default_response("cancel")
+        dlg.connect("response", lambda _d, r: self._on_install_policy_response(r, switch))
+        dlg.present(self)
+
+    def _on_install_policy_response(self, response: str, switch: Adw.SwitchRow) -> None:
+        if response != "install":
+            switch.set_active(False)
+            return
+        ok, err = install_policy()
+        if not ok:
+            switch.set_active(False)
+            self._show_settings_error(
+                "Falha ao instalar regra Polkit",
+                err or "Erro desconhecido.",
+            )
+            return
+        # Instalado — agora faz test prompt
+        self._test_auth_and_save(switch, target_value=True)
+
+    def _test_auth_and_save(self, switch: Adw.SwitchRow, target_value: bool) -> None:
+        """Roda check_auth como teste. Se passou, salva o switch no JSON."""
+        ok, err = check_auth()
+        if not ok:
+            # Reverte switch
+            switch.set_active(not target_value)
+            self._show_settings_error(
+                "Autenticacao falhou",
+                err or "Senha incorreta ou prompt cancelado. O bloqueio "
+                       "nao foi alterado.",
+            )
+            return
+        # Autenticou — salva no JSON
+        self._settings.password_lock = target_value
+        save_settings(self._settings)
+        # Marca app como ja' autenticado nesta sessao (pra nao pedir
+        # senha de novo no proximo activate)
+        app = self.get_application()
+        if hasattr(app, "_authed"):
+            app._authed = True  # type: ignore[attr-defined]
 
     # ------------- Navigation API (chamada pelo tray via app actions) -------------
 
