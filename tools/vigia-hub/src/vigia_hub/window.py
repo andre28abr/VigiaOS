@@ -626,13 +626,59 @@ class VigiaHubWindow(Adw.ApplicationWindow):
             self._show_settings_error("Falha ao executar gnome-extensions", str(e))
 
     # ------------- Password lock switch (Polkit) -------------
+    #
+    # IMPORTANTE: install_policy() chama pkexec (subprocess sync) e
+    # check_auth() chama Polkit.check_authorization_sync (que mostra
+    # dialog modal). AMBOS bloqueiam a main thread do GTK -> UI trava
+    # ate user responder. Solucao: rodar em thread + callback via
+    # GLib.idle_add. Helper _run_in_thread abaixo.
+
+    def _run_in_thread(self, worker, callback) -> None:
+        """Roda worker() em thread; chama callback(result) na UI thread."""
+        import threading
+        from gi.repository import GLib
+
+        def runner():
+            try:
+                result = worker()
+            except Exception as e:  # pylint: disable=broad-except
+                print(f"[lock] worker crashed: {e}", flush=True)
+                result = (False, f"Erro interno: {e}")
+            GLib.idle_add(callback, result)
+
+        thread = threading.Thread(target=runner, daemon=True)
+        thread.start()
+
+    def _show_progress(self, title: str) -> Adw.AlertDialog:
+        """Dialog modal com spinner enquanto operacao async roda."""
+        dlg = Adw.AlertDialog(heading=title)
+        dlg.set_body("Aguarde — esta operacao pode pedir senha admin.")
+        spinner = Gtk.Spinner()
+        spinner.set_spinning(True)
+        spinner.set_size_request(48, 48)
+        spinner.set_halign(Gtk.Align.CENTER)
+        dlg.set_extra_child(spinner)
+        # Sem botoes — dialog fecha sozinho via _close_progress
+        dlg.present(self)
+        return dlg
+
+    def _close_progress(self, dlg: Adw.AlertDialog) -> None:
+        """Fecha o progress dialog programaticamente."""
+        try:
+            dlg.force_close()
+        except Exception:  # pylint: disable=broad-except
+            try:
+                dlg.close()
+            except Exception:  # pylint: disable=broad-except
+                pass
 
     def _on_lock_toggled(self, switch: Adw.SwitchRow, *_args) -> None:
         """User toggleou 'Exigir senha para abrir o Hub'."""
+        print(f"[lock] toggled -> {switch.get_active()}", flush=True)
         enabled = switch.get_active()
 
         if enabled:
-            # 1. Polkit lib disponivel?
+            # 1. Polkit lib disponivel? (rapido, sem subprocess — OK sync)
             if not polkit_available():
                 switch.set_active(False)
                 self._show_settings_error(
@@ -642,17 +688,17 @@ class VigiaHubWindow(Adw.ApplicationWindow):
                 )
                 return
 
-            # 2. .policy instalado?
+            # 2. .policy instalado? (rapido, so checa Path.is_file)
             if not is_policy_installed():
                 self._prompt_install_policy(switch)
                 return  # continua no callback do dialog
 
-            # 3. Test prompt — confirma que vai funcionar na proxima vez
-            self._test_auth_and_save(switch, target_value=True)
+            # 3. Test prompt — ASYNC (Polkit dialog modal)
+            self._test_auth_async(switch, target_value=True)
             return
 
         # Desligar: exige autenticacao pra confirmar (seguranca)
-        self._test_auth_and_save(switch, target_value=False)
+        self._test_auth_async(switch, target_value=False)
 
     def _prompt_install_policy(self, switch: Adw.SwitchRow) -> None:
         """Dialog pedindo permissao pra instalar o .policy via pkexec."""
@@ -676,37 +722,60 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         if response != "install":
             switch.set_active(False)
             return
-        ok, err = install_policy()
-        if not ok:
-            switch.set_active(False)
-            self._show_settings_error(
-                "Falha ao instalar regra Polkit",
-                err or "Erro desconhecido.",
-            )
-            return
-        # Instalado — agora faz test prompt
-        self._test_auth_and_save(switch, target_value=True)
+        # ASYNC: install_policy() chama subprocess pkexec
+        print("[lock] starting install_policy in thread", flush=True)
+        progress = self._show_progress("Instalando regra Polkit")
 
-    def _test_auth_and_save(self, switch: Adw.SwitchRow, target_value: bool) -> None:
-        """Roda check_auth como teste. Se passou, salva o switch no JSON."""
-        ok, err = check_auth()
-        if not ok:
-            # Reverte switch
-            switch.set_active(not target_value)
-            self._show_settings_error(
-                "Autenticacao falhou",
-                err or "Senha incorreta ou prompt cancelado. O bloqueio "
-                       "nao foi alterado.",
-            )
-            return
-        # Autenticou — salva no JSON
-        self._settings.password_lock = target_value
-        save_settings(self._settings)
-        # Marca app como ja' autenticado nesta sessao (pra nao pedir
-        # senha de novo no proximo activate)
-        app = self.get_application()
-        if hasattr(app, "_authed"):
-            app._authed = True  # type: ignore[attr-defined]
+        def worker():
+            return install_policy()
+
+        def done(result):
+            self._close_progress(progress)
+            ok, err = result
+            print(f"[lock] install_policy result: ok={ok} err={err!r}", flush=True)
+            if not ok:
+                switch.set_active(False)
+                self._show_settings_error(
+                    "Falha ao instalar regra Polkit",
+                    err or "Erro desconhecido.",
+                )
+                return False  # idle_add: nao re-agendar
+            # Instalado — agora test prompt (tambem async)
+            self._test_auth_async(switch, target_value=True)
+            return False
+
+        self._run_in_thread(worker, done)
+
+    def _test_auth_async(self, switch: Adw.SwitchRow, target_value: bool) -> None:
+        """Roda check_auth() em thread. Salva switch no JSON se passou."""
+        print(f"[lock] starting test_auth (target={target_value})", flush=True)
+        progress = self._show_progress("Aguardando autenticacao")
+
+        def worker():
+            return check_auth()
+
+        def done(result):
+            self._close_progress(progress)
+            ok, err = result
+            print(f"[lock] test_auth result: ok={ok} err={err!r}", flush=True)
+            if not ok:
+                switch.set_active(not target_value)
+                self._show_settings_error(
+                    "Autenticacao falhou",
+                    err or "Senha incorreta ou prompt cancelado. O bloqueio "
+                           "nao foi alterado.",
+                )
+                return False
+            # Autenticou — salva no JSON
+            self._settings.password_lock = target_value
+            save_settings(self._settings)
+            # Marca app como ja' autenticado nesta sessao
+            app = self.get_application()
+            if hasattr(app, "_authed"):
+                app._authed = True  # type: ignore[attr-defined]
+            return False
+
+        self._run_in_thread(worker, done)
 
     # ------------- Navigation API (chamada pelo tray via app actions) -------------
 
