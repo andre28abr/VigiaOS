@@ -13,8 +13,9 @@ import gi
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
+gi.require_version("Pango", "1.0")
 
-from gi.repository import Adw, Gio, GLib, Gtk  # noqa: E402
+from gi.repository import Adw, Gio, GLib, Gtk, Pango  # noqa: E402
 
 from vigia_common.notifications import PRIORITY_HIGH, notify_if_unfocused
 
@@ -38,7 +39,6 @@ class ScanTab(Adw.Bin):
         super().__init__()
         self._running = False
         self._stop_requested = False
-        self._current_findings: list[backend.Finding] = []
 
         # ------------------------------------------------------------
         # Banner de estado (idade da base + ClamAV instalado?)
@@ -58,9 +58,10 @@ class ScanTab(Adw.Bin):
 
         header_desc = Gtk.Label(
             label=(
-                "Escolha um alvo e clique <i>Iniciar scan</i>. Scan roda em "
-                "background; findings aparecem na lista abaixo conforme "
-                "detectados.\n\n"
+                "Escolha um alvo e clique <i>Iniciar scan</i>. O scan roda em "
+                "background e o progresso aparece em tempo real na "
+                "<i>Saida do scan</i> — arquivos limpos em verde, "
+                "ameacas em vermelho.\n\n"
                 "Verifique periodicamente a aba <i>Base de dados</i> para "
                 "manter as assinaturas atualizadas (recomendado 1x/semana)."
             )
@@ -140,26 +141,16 @@ class ScanTab(Adw.Bin):
         self._status_label.set_xalign(0)
 
         # ------------------------------------------------------------
-        # Findings group
-        # ------------------------------------------------------------
-        self._findings_group = Adw.PreferencesGroup()
-        self._findings_group.set_margin_top(24)
-        self._findings_group.set_title("Findings")
-        self._findings_group.set_description(
-            "Arquivos suspeitos detectados durante o scan"
-        )
-        self._findings_rows: list = []
-        self._render_findings()
-
-        # ------------------------------------------------------------
-        # Log group (linhas brutas — collapsable via expander)
+        # Saida do scan (terminal — streaming colorido + auto-scroll)
         # ------------------------------------------------------------
         log_expander = Adw.ExpanderRow()
-        log_expander.set_title("Log do scan")
-        log_expander.set_subtitle("Output bruto do clamscan")
+        log_expander.set_title("Saida do scan")
+        log_expander.set_subtitle("Output do clamscan em tempo real")
+        log_expander.set_expanded(True)
 
         self._log_view = Gtk.TextView()
         self._log_view.set_editable(False)
+        self._log_view.set_cursor_visible(False)
         self._log_view.set_monospace(True)
         self._log_view.set_wrap_mode(Gtk.WrapMode.WORD_CHAR)
         self._log_view.set_top_margin(8)
@@ -168,9 +159,19 @@ class ScanTab(Adw.Bin):
         self._log_view.set_right_margin(8)
         self._log_buf = self._log_view.get_buffer()
 
+        self._tag_ok = self._log_buf.create_tag(
+            "ok", foreground="#4ade80", weight=Pango.Weight.BOLD,
+        )
+        self._tag_infected = self._log_buf.create_tag(
+            "infected", foreground="#f87171", weight=Pango.Weight.BOLD,
+        )
+        self._tag_summary = self._log_buf.create_tag(
+            "summary", foreground="#fbbf24", weight=Pango.Weight.BOLD,
+        )
+
         log_scrolled = Gtk.ScrolledWindow()
-        log_scrolled.set_min_content_height(200)
-        log_scrolled.set_max_content_height(280)
+        log_scrolled.set_min_content_height(240)
+        log_scrolled.set_max_content_height(380)
         log_scrolled.set_child(self._log_view)
 
         log_row = Adw.ActionRow()
@@ -195,7 +196,6 @@ class ScanTab(Adw.Bin):
         inner.append(target_group)
         inner.append(action_box)
         inner.append(self._status_label)
-        inner.append(self._findings_group)
         inner.append(log_group)
 
         scrolled = Gtk.ScrolledWindow()
@@ -302,8 +302,6 @@ class ScanTab(Adw.Bin):
 
         self._running = True
         self._stop_requested = False
-        self._current_findings = []
-        self._render_findings()
         self._log_buf.set_text("")
         self._set_running_ui(True)
         self._status_label.set_label(f"Escaneando {target}...")
@@ -337,16 +335,43 @@ class ScanTab(Adw.Bin):
         GLib.idle_add(self._on_done, result)
 
     def _on_line(self, line: str) -> bool:
-        end = self._log_buf.get_end_iter()
-        self._log_buf.insert(end, line + "\n")
-
-        if " FOUND" in line and ":" in line:
-            path, _, rest = line.rpartition(":")
-            signature = rest.replace("FOUND", "").strip()
-            self._current_findings.append(backend.Finding(path=path.strip(), signature=signature))
-            self._render_findings()
-
+        self._append_log_line(line)
         return False
+
+    def _append_log_line(self, line: str) -> None:
+        """Insere uma linha no terminal com coloracao + auto-scroll.
+
+        - Linha com ' FOUND' (ameaca) → vermelho inteiro.
+        - Arquivo limpo (': OK') → caminho neutro + 'OK' verde.
+        - 'Infected files: N' do sumario → verde se 0, vermelho se >0.
+        - Cabecalho 'SCAN SUMMARY' → amber.
+        """
+        end = self._log_buf.get_end_iter()
+        stripped = line.strip()
+
+        if " FOUND" in line:
+            self._log_buf.insert_with_tags(end, line + "\n", self._tag_infected)
+        elif stripped.endswith(": OK"):
+            head = line[: line.rfind("OK")]
+            self._log_buf.insert(end, head)
+            self._log_buf.insert_with_tags(
+                self._log_buf.get_end_iter(), "OK\n", self._tag_ok
+            )
+        elif stripped.startswith("Infected files:"):
+            tag = self._tag_ok if stripped.endswith(": 0") else self._tag_infected
+            self._log_buf.insert_with_tags(end, line + "\n", tag)
+        elif "SCAN SUMMARY" in line:
+            self._log_buf.insert_with_tags(end, line + "\n", self._tag_summary)
+        else:
+            self._log_buf.insert(end, line + "\n")
+
+        self._scroll_to_end()
+
+    def _scroll_to_end(self) -> None:
+        """Empurra a barra de rolagem pro final (auto-scroll do terminal)."""
+        mark = self._log_buf.create_mark(None, self._log_buf.get_end_iter(), False)
+        self._log_view.scroll_to_mark(mark, 0, False, 0, 0)
+        self._log_buf.delete_mark(mark)
 
     def _on_done(self, result: backend.ScanResult) -> bool:
         self._running = False
@@ -354,21 +379,25 @@ class ScanTab(Adw.Bin):
 
         if result.error:
             self._status_label.set_label(f"Erro: {result.error}")
+            self._append_summary_line(
+                f"\n══ Erro: {result.error[:120]} ══", self._tag_infected
+            )
             return False
-
-        self._current_findings = result.findings
-        self._render_findings()
 
         if result.infected_files > 0:
             self._status_label.set_label(
                 f"Scan concluido em {result.elapsed_sec}s. "
                 f"{result.scanned_files} arquivos escaneados, "
-                f"{result.infected_files} INFECTADO(S). Veja findings abaixo."
+                f"{result.infected_files} INFECTADO(S)."
+            )
+            self._append_summary_line(
+                f"\n══ {result.infected_files} INFECTADO(S) ══",
+                self._tag_infected,
             )
             notify_if_unfocused(
                 f"Antivirus: {result.infected_files} infectado(s)",
                 f"{result.scanned_files} arquivos escaneados. "
-                "Abra o Vigia pra ver os findings.",
+                "Abra o Vigia pra ver os detalhes.",
                 notif_id="vigia-antivirus-scan",
                 priority=PRIORITY_HIGH,
             )
@@ -377,6 +406,7 @@ class ScanTab(Adw.Bin):
                 f"Scan concluido em {result.elapsed_sec}s. "
                 f"{result.scanned_files} arquivos escaneados, nada suspeito."
             )
+            self._append_summary_line("\n══ Nada suspeito ══", self._tag_ok)
             notify_if_unfocused(
                 "Antivirus: nada suspeito",
                 f"{result.scanned_files} arquivos escaneados em "
@@ -386,35 +416,8 @@ class ScanTab(Adw.Bin):
 
         return False
 
-    # ============================================================
-    # Findings render
-    # ============================================================
-
-    def _render_findings(self) -> None:
-        for r in self._findings_rows:
-            self._findings_group.remove(r)
-        self._findings_rows = []
-
-        if not self._current_findings:
-            row = Adw.ActionRow(title="Nenhum finding")
-            row.set_subtitle("Lista vazia significa que nada suspeito foi detectado.")
-            row.add_css_class("dim-label")
-            self._findings_group.add(row)
-            self._findings_rows.append(row)
-            return
-
-        for f in self._current_findings:
-            row = Adw.ActionRow(title=f.signature)
-            row.set_subtitle(f.path)
-            row.set_subtitle_lines(2)
-            row.add_css_class("property")
-
-            badge = Gtk.Label(label="!")
-            badge.add_css_class("monospace")
-            badge.add_css_class("caption-heading")
-            badge.add_css_class("error")
-            badge.set_valign(Gtk.Align.CENTER)
-            row.add_prefix(badge)
-
-            self._findings_group.add(row)
-            self._findings_rows.append(row)
+    def _append_summary_line(self, text: str, tag) -> None:
+        """Linha-resumo colorida garantida no final do terminal."""
+        end = self._log_buf.get_end_iter()
+        self._log_buf.insert_with_tags(end, text + "\n", tag)
+        self._scroll_to_end()
