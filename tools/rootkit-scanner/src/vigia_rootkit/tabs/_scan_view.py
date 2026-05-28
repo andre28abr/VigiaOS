@@ -86,6 +86,7 @@ class ScanView(Adw.Bin):
         # ===== Action =====
         self._action_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
         self._action_box.set_halign(Gtk.Align.CENTER)
+        self._action_box.set_hexpand(False)  # v0.1.3
         self._action_box.set_margin_bottom(20)
 
         self._scan_btn = Gtk.Button(label="Iniciar scan")
@@ -100,8 +101,13 @@ class ScanView(Adw.Bin):
         self._action_box.append(self._stop_btn)
 
         # ===== KPIs (3 cards) =====
+        # v0.1.3: set_hexpand(False) explicito. Sem isso, o Box com 3 cards
+        # de 150x80 + spacing 12 pedia natural width de 486px que propagava
+        # ate o ViewStack do Hub, esticando a janela. set_halign(CENTER)
+        # nao era suficiente — o widget ainda pedia o natural size.
         kpis_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
         kpis_box.set_halign(Gtk.Align.CENTER)
+        kpis_box.set_hexpand(False)
         kpis_box.set_margin_bottom(20)
 
         self._kpi_tests = self._build_kpi("Testes", "—")
@@ -183,15 +189,17 @@ class ScanView(Adw.Bin):
         inner.append(self._summary_group)
 
         outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-        # v0.1.1: hexpand True faz o Box preencher a area disponivel ao
-        # inves de pedir mais largura — previne janela do Hub esticar.
-        outer.set_hexpand(True)
         outer.append(self._banner)
 
+        # v0.1.3: REVERTI set_hexpand(True) que adicionei em v0.1.1.
+        # Em GTK4, hexpand=True propaga 'requesting space' pra cima da
+        # arvore — em Adw.ViewStack do Hub, isso pode fazer a janela
+        # esticar. Pattern correto: hexpand=False (ou default), e deixar
+        # o Adw.Clamp interno limitar a largura visualmente. Mesmo
+        # pattern do Antivirus scan tab (que nao estica).
         scrolled = Gtk.ScrolledWindow()
         scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         scrolled.set_vexpand(True)
-        scrolled.set_hexpand(True)
         scrolled.set_child(make_clamp(inner))
         outer.append(scrolled)
         self.set_child(outer)
