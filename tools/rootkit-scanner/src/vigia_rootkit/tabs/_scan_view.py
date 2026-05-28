@@ -123,11 +123,17 @@ class ScanView(Adw.Bin):
         self._output_view.set_margin_top(0)
 
         output_scrolled = Gtk.ScrolledWindow()
-        output_scrolled.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
+        # v0.1.1: hscrollbar NEVER pra forcar wrap horizontal do TextView.
+        # Era AUTOMATIC, mas linhas longas do chkrootkit (paths /usr/lib/...)
+        # esticavam o widget pedindo natural size grande, fazendo a janela
+        # do Hub expandir lateralmente.
+        output_scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         output_scrolled.set_min_content_height(280)
         output_scrolled.set_max_content_height(420)
         output_scrolled.set_child(self._output_view)
         output_scrolled.set_margin_bottom(16)
+        # Garante que nao pede largura excessiva
+        output_scrolled.set_hexpand(False)
 
         # Tag pra coloring linhas relevantes
         self._tag_warning = self._output_buffer.create_tag(
@@ -171,11 +177,15 @@ class ScanView(Adw.Bin):
         inner.append(self._summary_group)
 
         outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+        # v0.1.1: hexpand True faz o Box preencher a area disponivel ao
+        # inves de pedir mais largura — previne janela do Hub esticar.
+        outer.set_hexpand(True)
         outer.append(self._banner)
 
         scrolled = Gtk.ScrolledWindow()
         scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         scrolled.set_vexpand(True)
+        scrolled.set_hexpand(True)
         scrolled.set_child(make_clamp(inner))
         outer.append(scrolled)
         self.set_child(outer)
