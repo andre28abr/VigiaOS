@@ -12,6 +12,8 @@ gi.require_version("Adw", "1")
 
 from gi.repository import Adw, Gtk  # noqa: E402
 
+from vigia_common.notifications import PRIORITY_HIGH, notify_if_unfocused
+
 from . import WRAPPED_PACKAGES
 from .backend import LynisReport, parse_report
 from .tabs import AboutTab, CategoriesTab, OverviewTab, SuggestionsTab, WarningsTab
@@ -78,6 +80,31 @@ class _HardeningContent:
     def _reload_and_refresh(self) -> None:
         self._report = parse_report()
         self._refresh_all()
+        self._notify_audit()
+
+    def _notify_audit(self) -> None:
+        """Banner desktop quando a auditoria Lynis termina e o user nao
+        esta olhando a janela (minimizado/tray ou em outro app)."""
+        report = self._report
+        if not report.has_data():
+            return
+        n_warn = len(report.warnings)
+        n_sug = len(report.suggestions)
+        idx = report.hardening_index
+        idx_txt = f"Hardening index {idx}/100. " if idx is not None else ""
+        if n_warn > 0:
+            notify_if_unfocused(
+                f"Hardening: {n_warn} warning(s)",
+                f"{idx_txt}{n_sug} sugestao(oes). Abra o Vigia pra revisar.",
+                notif_id="vigia-hardening-audit",
+                priority=PRIORITY_HIGH,
+            )
+        else:
+            notify_if_unfocused(
+                "Hardening: nenhum warning",
+                f"{idx_txt}{n_sug} sugestao(oes) de melhoria.",
+                notif_id="vigia-hardening-audit",
+            )
 
     def _refresh_all(self) -> None:
         for tab in self._tabs:

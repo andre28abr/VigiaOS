@@ -1736,6 +1736,40 @@ Zip-Slip. Suite: **487 passed, 4 skipped**.
 
 ---
 
+### 2026-05-28 — Etapa D (opcional): notificacoes AIDE + Lynis
+
+Fecha a parte *opcional* da Etapa D. Na parte 1, so' 3 tools notificavam
+(Dashboard, Antivirus, Rootkit). Agora os **scanners restantes** tambem
+avisam pelo banner nativo do GNOME quando terminam com a janela fora de
+foco (minimizado/tray ou em outro app) — experiencia consistente em
+todos os modulos de varredura.
+
+Mesmo padrao da parte 1 (`notify_if_unfocused` do `vigia_common`,
+`notif_id` estavel por tool, HIGH quando ha achado / NORMAL quando
+limpo). Wiring feito no **`window.py`** de cada tool (ponto onde o
+relatorio ja' foi reparseado e distribuido pras abas), nao na aba:
+
+- **File Integrity (AIDE)** — `v0.2.1`. `_IntegrityContent._on_check_done`
+  chama `_notify_check(result)`: HIGH com `N mudanca(s)` (added · changed ·
+  removed) se `summary.has_changes`, senao NORMAL "nenhuma mudanca"
+  citando `total_entries`. `notif_id="vigia-integrity-check"`. Nao notifica
+  em `not result.success` (erro ja' tratado in-app).
+- **Hardening (Lynis)** — `v0.1.3`. `_HardeningContent._reload_and_refresh`
+  chama `_notify_audit()`: HIGH com `N warning(s)` se houver, senao NORMAL,
+  sempre citando o `hardening_index/100`. `notif_id="vigia-hardening-audit"`.
+  No-op se `report.has_data()` for falso.
+
+Bonus: alinhada a versao do File Integrity — `pyproject.toml` estava em
+`0.1.3` mas `__init__.py` ja' declarava `0.2.0` (bump esquecido no merge do
+Hash Tools, task #68); agora ambos em `0.2.1`.
+
+Sem testes novos: a logica vive no `window.py` (acoplado a GTK, skipado no
+dev sem GI) e `notify_if_unfocused` ja' e' no-op gracioso sem app. Suite
+inalterada: **487 passed, 4 skipped**. So' `git pull` + reabrir o Hub na
+VM (editable install — codigo reflete sem reinstalar; nao mudou entrypoint).
+
+---
+
 ## 10. Roadmap
 
 ### 10.1 Próximas iterações por ferramenta

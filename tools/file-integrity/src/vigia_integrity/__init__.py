@@ -15,7 +15,7 @@ arquivos do usuario (downloads, documentos). Mesma logica de
 'baseline + diff', escalas diferentes.
 """
 
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 __app_id__ = "br.com.vigia.FileIntegrity"
 
 WRAPPED_PACKAGES = ["aide", "coreutils"]

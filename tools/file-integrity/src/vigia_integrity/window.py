@@ -12,6 +12,8 @@ gi.require_version("Adw", "1")
 
 from gi.repository import Adw, Gtk  # noqa: E402
 
+from vigia_common.notifications import PRIORITY_HIGH, notify_if_unfocused
+
 from . import WRAPPED_PACKAGES
 from .backend import CheckResult
 from .tabs import (
@@ -82,6 +84,29 @@ class _IntegrityContent:
 
     def _on_check_done(self, result: CheckResult) -> None:
         self.changes.refresh(result.changes)
+        self._notify_check(result)
+
+    def _notify_check(self, result: CheckResult) -> None:
+        """Banner desktop quando o check AIDE termina e o user nao esta
+        olhando a janela (minimizado/tray ou em outro app)."""
+        if not result.success:
+            return  # erro ja' tratado in-app; nao vira banner
+        s = result.summary
+        if s.has_changes:
+            total = s.added + s.changed + s.removed
+            notify_if_unfocused(
+                f"Integridade: {total} mudanca(s) detectada(s)",
+                f"{s.added} novo(s) · {s.changed} alterado(s) · "
+                f"{s.removed} removido(s). Abra o Vigia pra revisar.",
+                notif_id="vigia-integrity-check",
+                priority=PRIORITY_HIGH,
+            )
+        else:
+            notify_if_unfocused(
+                "Integridade: nenhuma mudanca",
+                f"AIDE verificou {s.total_entries} entradas — sistema intacto.",
+                notif_id="vigia-integrity-check",
+            )
 
     def _on_profile_changed(self) -> None:
         """Quando o perfil AIDE muda (aplica/remove), atualiza tabs que
