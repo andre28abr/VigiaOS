@@ -69,7 +69,7 @@ class HistoryTab(Adw.Bin):
         scrolled = Gtk.ScrolledWindow()
         scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         scrolled.set_vexpand(True)
-        scrolled.set_hexpand(True)  # v0.1.1: preenche area, nao pede mais
+        # v0.1.3: REVERTI set_hexpand(True) — causava expansao no Hub.
         scrolled.set_child(make_clamp(inner))
         self.set_child(scrolled)
 
