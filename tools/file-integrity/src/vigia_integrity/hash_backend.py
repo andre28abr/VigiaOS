@@ -256,10 +256,20 @@ def compare_baseline_blocking(
     except (OSError, json.JSONDecodeError) as e:
         result.error = f"Falha ao ler baseline JSON: {e}"
         return result
+    # HARDENING: baseline editavel/corrompivel — valida shape antes de usar.
+    if not isinstance(data, dict):
+        result.error = "Baseline invalido (formato inesperado)."
+        return result
 
     expected_hashes = data.get("hashes", {})
+    if not isinstance(expected_hashes, dict):
+        expected_hashes = {}
     base_dir = directory or data.get("directory", "")
+    if not isinstance(base_dir, str):
+        base_dir = ""
     algo = algorithm or data.get("algorithm", "sha256")
+    if not isinstance(algo, str):
+        algo = "sha256"
 
     result.directory = base_dir
     result.algorithm = algo
@@ -312,13 +322,16 @@ def list_baselines() -> list[dict]:
         try:
             with open(f, "r", encoding="utf-8") as fh:
                 data = json.load(fh)
-            out.append({
-                "_file": str(f),
-                "directory": data.get("directory", "?"),
-                "algorithm": data.get("algorithm", "?"),
-                "created_at": data.get("created_at", "?"),
-                "file_count": data.get("file_count", 0),
-            })
         except (OSError, json.JSONDecodeError):
             continue
+        # HARDENING: pula arquivos com formato inesperado (nao-dict).
+        if not isinstance(data, dict):
+            continue
+        out.append({
+            "_file": str(f),
+            "directory": data.get("directory", "?"),
+            "algorithm": data.get("algorithm", "?"),
+            "created_at": data.get("created_at", "?"),
+            "file_count": data.get("file_count", 0),
+        })
     return out

@@ -87,29 +87,41 @@ def get_deployments() -> list[Deployment]:
         data = json.loads(out)
     except json.JSONDecodeError:
         return []
+    # HARDENING: JSON pode ser valido mas ter formato inesperado
+    # (ex: lista no topo, ou deployments nao-lista). Nunca crashar.
+    if not isinstance(data, dict):
+        return []
 
     deployments_raw = data.get("deployments", [])
+    if not isinstance(deployments_raw, list):
+        return []
     out_list: list[Deployment] = []
 
     for i, d in enumerate(deployments_raw):
-        checksum = d.get("checksum", "") or d.get("base-checksum", "")
-        d_obj = Deployment(
-            index=i,
-            checksum=checksum,
-            base_commit=checksum[:8] if checksum else "",
-            timestamp=int(d.get("timestamp", 0)),
-            timestamp_str=_format_ts(d.get("timestamp", 0)),
-            osname=d.get("osname", ""),
-            origin=d.get("origin", "") or d.get("container-image-reference", ""),
-            version=d.get("version", ""),
-            booted=bool(d.get("booted", False)),
-            pinned=bool(d.get("pinned", False)),
-            staged=bool(d.get("staged", False)),
-            layered_packages=list(d.get("requested-packages", []) or
-                                  d.get("packages", []) or []),
-            removed_base_packages=list(d.get("requested-base-removals", []) or []),
-            unlocked=d.get("unlocked", "none"),
-        )
+        if not isinstance(d, dict):
+            continue
+        try:
+            checksum = d.get("checksum", "") or d.get("base-checksum", "")
+            d_obj = Deployment(
+                index=i,
+                checksum=checksum,
+                base_commit=checksum[:8] if checksum else "",
+                timestamp=int(d.get("timestamp", 0)),
+                timestamp_str=_format_ts(d.get("timestamp", 0)),
+                osname=d.get("osname", ""),
+                origin=d.get("origin", "") or d.get("container-image-reference", ""),
+                version=d.get("version", ""),
+                booted=bool(d.get("booted", False)),
+                pinned=bool(d.get("pinned", False)),
+                staged=bool(d.get("staged", False)),
+                layered_packages=list(d.get("requested-packages", []) or
+                                      d.get("packages", []) or []),
+                removed_base_packages=list(d.get("requested-base-removals", []) or []),
+                unlocked=d.get("unlocked", "none"),
+            )
+        except (ValueError, TypeError):
+            # Campo com tipo inesperado (ex: timestamp nao-numerico). Pula.
+            continue
         out_list.append(d_obj)
 
     return out_list

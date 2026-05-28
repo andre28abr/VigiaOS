@@ -140,30 +140,51 @@ def run_bundle(
     return _parse_bundle(data)
 
 
+def _safe_int(value: object, default: int = 0) -> int:
+    """Converte pra int sem crashar (JSON pode trazer tipo inesperado)."""
+    try:
+        return int(value)  # type: ignore[arg-type]
+    except (ValueError, TypeError):
+        return default
+
+
 def _parse_bundle(data: dict) -> ActivityBundle:
     bundle = ActivityBundle()
-    bundle.version = int(data.get("version", 0))
+    # HARDENING: vigia-log pode emitir JSON de formato inesperado. Nunca crashar.
+    if not isinstance(data, dict):
+        return bundle
+    bundle.version = _safe_int(data.get("version", 0))
     bundle.generated_at = str(data.get("generated_at", ""))
-    bundle.sources = list(data.get("sources", []) or [])
+    sources = data.get("sources", [])
+    bundle.sources = list(sources) if isinstance(sources, list) else []
 
-    for raw in data.get("events", []) or []:
-        bundle.events.append(ActivityEvent(
-            timestamp=str(raw.get("timestamp", "")),
-            source=str(raw.get("source", "")),
-            severity=str(raw.get("severity", "routine")),
-            narrative=str(raw.get("narrative", "")),
-            payload=raw.get("payload", {}) or {},
-        ))
+    events = data.get("events", [])
+    if isinstance(events, list):
+        for raw in events:
+            if not isinstance(raw, dict):
+                continue
+            payload = raw.get("payload", {})
+            bundle.events.append(ActivityEvent(
+                timestamp=str(raw.get("timestamp", "")),
+                source=str(raw.get("source", "")),
+                severity=str(raw.get("severity", "routine")),
+                narrative=str(raw.get("narrative", "")),
+                payload=payload if isinstance(payload, dict) else {},
+            ))
 
-    for raw in data.get("correlations", []) or []:
-        bundle.correlations.append(ActivityCorrelation(
-            kind=str(raw.get("kind", "")),
-            severity=str(raw.get("severity", "routine")),
-            timestamp=str(raw.get("timestamp", "")),
-            end=str(raw.get("end", "")),
-            summary=str(raw.get("summary", "")),
-            contributing_count=int(raw.get("contributing_count", 0)),
-        ))
+    correlations = data.get("correlations", [])
+    if isinstance(correlations, list):
+        for raw in correlations:
+            if not isinstance(raw, dict):
+                continue
+            bundle.correlations.append(ActivityCorrelation(
+                kind=str(raw.get("kind", "")),
+                severity=str(raw.get("severity", "routine")),
+                timestamp=str(raw.get("timestamp", "")),
+                end=str(raw.get("end", "")),
+                summary=str(raw.get("summary", "")),
+                contributing_count=_safe_int(raw.get("contributing_count", 0)),
+            ))
 
     return bundle
 

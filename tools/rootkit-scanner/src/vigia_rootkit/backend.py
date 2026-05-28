@@ -156,19 +156,24 @@ def list_recent_reports(limit: int = 20) -> list[dict]:
         try:
             with open(f, "r", encoding="utf-8") as fh:
                 data = json.load(fh)
-            data["_file"] = str(f)
-            out.append(data)
         except (OSError, json.JSONDecodeError):
             continue
+        # HARDENING: report corrompido pode nao ser dict — pula.
+        if not isinstance(data, dict):
+            continue
+        data["_file"] = str(f)
+        out.append(data)
     return out
 
 
 def load_report(path: str) -> dict | None:
     try:
         with open(path, "r", encoding="utf-8") as f:
-            return json.load(f)
+            data = json.load(f)
     except (OSError, json.JSONDecodeError):
         return None
+    # HARDENING: garante dict (ou None) pro caller.
+    return data if isinstance(data, dict) else None
 
 
 # ============================================================

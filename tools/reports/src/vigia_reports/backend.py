@@ -113,16 +113,23 @@ def _run(cmd: list[str], timeout: int = 30) -> str:
 
 
 def _parse_json_lines(text: str) -> list[dict]:
-    """Cada linha do texto e' um JSON; ignora linhas vazias/invalidas."""
+    """Cada linha do texto e' um JSON; ignora linhas vazias/invalidas.
+
+    HARDENING: so mantem objetos (dict); descarta linhas que sejam JSON
+    valido mas de outro tipo (numero, lista, string) — assim os parsers
+    abaixo nunca recebem algo que nao seja dict.
+    """
     out: list[dict] = []
     for line in text.splitlines():
         line = line.strip()
         if not line:
             continue
         try:
-            out.append(json.loads(line))
+            obj = json.loads(line)
         except json.JSONDecodeError:
             continue
+        if isinstance(obj, dict):
+            out.append(obj)
     return out
 
 
@@ -156,7 +163,9 @@ def _extract_user_ip(msg: str, prefix: str) -> tuple[str, str]:
 def _parse_ssh_journal(raw: list[dict]) -> list[dict]:
     events = []
     for e in raw:
-        msg = e.get("MESSAGE", "")
+        if not isinstance(e, dict):
+            continue
+        msg = str(e.get("MESSAGE", ""))  # HARDENING: MESSAGE pode vir nao-string
         ts = _parse_journal_ts(e.get("__REALTIME_TIMESTAMP", ""))
         if "Accepted" in msg:
             user, ip = _extract_user_ip(msg, "Accepted")
@@ -170,7 +179,9 @@ def _parse_ssh_journal(raw: list[dict]) -> list[dict]:
 def _parse_sudo_journal(raw: list[dict]) -> list[dict]:
     events = []
     for e in raw:
-        msg = e.get("MESSAGE", "")
+        if not isinstance(e, dict):
+            continue
+        msg = str(e.get("MESSAGE", ""))  # HARDENING: MESSAGE pode vir nao-string
         ts = _parse_journal_ts(e.get("__REALTIME_TIMESTAMP", ""))
         m = re.match(
             r"\s*(\S+)\s*:\s*TTY=(\S+)\s*;\s*PWD=(\S+)\s*;\s*USER=(\S+)\s*;\s*COMMAND=(.+?)\s*$",
@@ -193,7 +204,9 @@ def _parse_sudo_journal(raw: list[dict]) -> list[dict]:
 def _parse_fail2ban_journal(raw: list[dict]) -> list[dict]:
     events = []
     for e in raw:
-        msg = e.get("MESSAGE", "")
+        if not isinstance(e, dict):
+            continue
+        msg = str(e.get("MESSAGE", ""))  # HARDENING: MESSAGE pode vir nao-string
         ts = _parse_journal_ts(e.get("__REALTIME_TIMESTAMP", ""))
         m = re.search(r"\[(\S+)\]\s+Ban\s+(\S+)", msg)
         if m:
@@ -215,7 +228,9 @@ def _parse_pkexec_journal(raw: list[dict]) -> list[dict]:
     """
     events = []
     for e in raw:
-        msg = e.get("MESSAGE", "")
+        if not isinstance(e, dict):
+            continue
+        msg = str(e.get("MESSAGE", ""))  # HARDENING: MESSAGE pode vir nao-string
         ts = _parse_journal_ts(e.get("__REALTIME_TIMESTAMP", ""))
         if "Executing command" not in msg:
             continue

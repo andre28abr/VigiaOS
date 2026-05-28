@@ -42,8 +42,12 @@ def _load() -> State:
     try:
         with open(STATE_PATH, "r", encoding="utf-8") as f:
             data = json.load(f)
-        st.labels = dict(data.get("labels", {}))
-        st.notes = dict(data.get("notes", {}))
+        # HARDENING: arquivo editavel pelo user / corrompivel. Garante shape.
+        if isinstance(data, dict):
+            labels = data.get("labels", {})
+            notes = data.get("notes", {})
+            st.labels = dict(labels) if isinstance(labels, dict) else {}
+            st.notes = dict(notes) if isinstance(notes, dict) else {}
     except (OSError, json.JSONDecodeError) as e:
         print(f"[state] load falhou: {e}", flush=True)
     return st

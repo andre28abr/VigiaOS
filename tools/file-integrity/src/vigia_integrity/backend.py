@@ -191,9 +191,11 @@ def load_state() -> dict:
     if not STATE_FILE.is_file():
         return {}
     try:
-        return json.loads(STATE_FILE.read_text(encoding="utf-8"))
+        data = json.loads(STATE_FILE.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
         return {}
+    # HARDENING: arquivo editavel/corrompivel — garante dict.
+    return data if isinstance(data, dict) else {}
 
 
 def save_state(state: dict) -> None:
