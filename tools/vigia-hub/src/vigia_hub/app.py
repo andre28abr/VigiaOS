@@ -27,7 +27,7 @@ gi.require_version("Adw", "1")
 from gi.repository import Adw, Gio, GLib  # noqa: E402
 
 from . import __app_id__
-from .auth import check_auth
+from .auth import check_auth  # versao sync, usada APENAS no do_activate startup
 from .settings import load_settings
 from .tray import TrayManager
 from .window import VigiaHubWindow

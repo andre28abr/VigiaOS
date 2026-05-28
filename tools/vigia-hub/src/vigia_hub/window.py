@@ -40,11 +40,8 @@ from .registry import (
     tools_by_category,
 )
 from .auth import (
-    check_auth,
-    install_policy,
-    is_policy_installed,
-    polkit_available,
-    uninstall_policy,
+    check_auth_async,
+    pkexec_available,
 )
 from .settings import (
     Settings,
@@ -377,20 +374,21 @@ class VigiaHubWindow(Adw.ApplicationWindow):
             "Protecao adicional para o launcher e suas configuracoes."
         )
 
-        # Switch: password lock (FUNCIONAL — Polkit)
+        # Switch: password lock (FUNCIONAL — pkexec via Gio.Subprocess async)
         self._sw_lock = Adw.SwitchRow()
         self._sw_lock.set_title("Exigir senha para abrir o Hub")
-        self._sw_lock.set_subtitle(
-            "Pede senha admin (mesma do sudo) ao iniciar o Hub. Usa Polkit "
-            "do sistema — nenhuma senha e' armazenada pelo Vigia."
-        )
+        self._sw_lock.set_subtitle(self._lock_default_subtitle())
         self._sw_lock.set_active(self._settings.password_lock)
-        self._sw_lock.connect("notify::active", self._on_lock_toggled)
+        # IMPORTANTE: armazena handler_id pra poder block/unblock e evitar
+        # recursao quando re-setar active programaticamente
+        self._sw_lock_handler_id = self._sw_lock.connect(
+            "notify::active", self._on_lock_toggled
+        )
         sec_group.add(self._sw_lock)
 
         page.add(sec_group)
 
-        # Grupo info: explica o Polkit
+        # Grupo info
         info_group = Adw.PreferencesGroup()
         info_group.set_title("Como funciona")
         info_group.set_description(
@@ -398,7 +396,7 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         )
 
         polkit_row = Adw.ActionRow()
-        polkit_row.set_title("Polkit")
+        polkit_row.set_title("pkexec / Polkit")
         polkit_row.set_subtitle(
             "Framework de autorizacao padrao do Linux. Reutiliza PAM e a "
             "senha do sudo. Sem armazenamento local (LGPD compliant)."
@@ -407,14 +405,6 @@ class VigiaHubWindow(Adw.ApplicationWindow):
             Gtk.Image.new_from_icon_name("channel-secure-symbolic")
         )
         info_group.add(polkit_row)
-
-        action_row = Adw.ActionRow()
-        action_row.set_title("Action ID")
-        action_row.set_subtitle("br.com.vigia.Hub.unlock")
-        action_row.add_prefix(
-            Gtk.Image.new_from_icon_name("text-x-generic-symbolic")
-        )
-        info_group.add(action_row)
 
         page.add(info_group)
         return page
@@ -625,141 +615,81 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         except (subprocess.SubprocessError, OSError) as e:
             self._show_settings_error("Falha ao executar gnome-extensions", str(e))
 
-    # ------------- Password lock switch (Polkit) -------------
+    # ------------- Password lock switch (pkexec async) -------------
     #
-    # IMPORTANTE: install_policy() chama pkexec (subprocess sync) e
-    # check_auth() chama Polkit.check_authorization_sync (que mostra
-    # dialog modal). AMBOS bloqueiam a main thread do GTK -> UI trava
-    # ate user responder. Solucao: rodar em thread + callback via
-    # GLib.idle_add. Helper _run_in_thread abaixo.
+    # v0.5.9 — Reescrito: usa Gio.Subprocess (async no GMainLoop) ao
+    # inves de threading.Thread + Polkit lib. Motivos:
+    #
+    # 1. Polkit lib do PyGObject NAO e' thread-safe (deadlock D-Bus).
+    # 2. Threads bagunca o D-Bus do Adw.Application.
+    # 3. Gio.Subprocess e' native async — sem threads, sem deadlock.
+    # 4. pkexec /usr/bin/true ja' dispara o prompt do Polkit nativo.
+    # 5. Sem necessidade de .policy custom — usa action default.
+    #
+    # Bonus: handler_block_by_func evita recursao quando setamos
+    # active=False programaticamente apos falha.
 
-    def _run_in_thread(self, worker, callback) -> None:
-        """Roda worker() em thread; chama callback(result) na UI thread."""
-        import threading
-        from gi.repository import GLib
+    def _set_lock_switch_quietly(self, value: bool) -> None:
+        """Muda valor do switch SEM disparar o handler de notify::active.
 
-        def runner():
-            try:
-                result = worker()
-            except Exception as e:  # pylint: disable=broad-except
-                print(f"[lock] worker crashed: {e}", flush=True)
-                result = (False, f"Erro interno: {e}")
-            GLib.idle_add(callback, result)
-
-        thread = threading.Thread(target=runner, daemon=True)
-        thread.start()
+        Evita recursao infinita quando revertemos o switch apos erro.
+        """
+        if self._sw_lock_handler_id:
+            self._sw_lock.handler_block(self._sw_lock_handler_id)
+        self._sw_lock.set_active(value)
+        if self._sw_lock_handler_id:
+            self._sw_lock.handler_unblock(self._sw_lock_handler_id)
 
     def _on_lock_toggled(self, switch: Adw.SwitchRow, *_args) -> None:
-        """User toggleou 'Exigir senha para abrir o Hub'."""
-        print(f"[lock] toggled -> {switch.get_active()}", flush=True)
-        enabled = switch.get_active()
+        """User toggleou 'Exigir senha para abrir o Hub'.
 
-        if enabled:
-            # 1. Polkit lib disponivel? (rapido, sem subprocess — OK sync)
-            if not polkit_available():
-                switch.set_active(False)
+        Fluxo unico (ligar ou desligar): dispara pkexec via Gio.Subprocess
+        async. O dialog de senha aparece nativo do GNOME. Quando user
+        responde, callback ajusta switch + salva.
+        """
+        target = switch.get_active()
+        print(f"[lock] toggled target={target}", flush=True)
+
+        if not pkexec_available():
+            self._set_lock_switch_quietly(not target)
+            self._show_settings_error(
+                "pkexec nao disponivel",
+                "O comando 'pkexec' nao foi encontrado no sistema. "
+                "Pacote: polkit (geralmente ja' vem instalado).",
+            )
+            return
+
+        # Feedback visual sutil enquanto async roda — sem dialog modal
+        switch.set_sensitive(False)
+        switch.set_subtitle(
+            "Aguardando autenticacao... (digite a senha admin no prompt)"
+        )
+
+        def on_result(ok: bool, err: str) -> None:
+            print(f"[lock] auth result: ok={ok} err={err!r}", flush=True)
+            switch.set_sensitive(True)
+            switch.set_subtitle(self._lock_default_subtitle())
+
+            if not ok:
+                # Reverte switch SEM disparar handler (anti-recursao)
+                self._set_lock_switch_quietly(not target)
                 self._show_settings_error(
-                    "Polkit nao disponivel",
-                    "A biblioteca PyGObject Polkit nao esta instalada. "
-                    "Pacote: python3-gobject (geralmente ja' vem no Fedora).",
+                    "Autenticacao falhou",
+                    err or "Senha incorreta ou prompt cancelado. "
+                           "O bloqueio nao foi alterado.",
                 )
                 return
 
-            # 2. .policy instalado? (rapido, so checa Path.is_file)
-            if not is_policy_installed():
-                self._prompt_install_policy(switch)
-                return  # continua no callback do dialog
-
-            # 3. Test prompt — ASYNC (Polkit dialog modal)
-            self._test_auth_async(switch, target_value=True)
-            return
-
-        # Desligar: exige autenticacao pra confirmar (seguranca)
-        self._test_auth_async(switch, target_value=False)
-
-    def _prompt_install_policy(self, switch: Adw.SwitchRow) -> None:
-        """Dialog pedindo permissao pra instalar o .policy via pkexec."""
-        dlg = Adw.AlertDialog(
-            heading="Instalar regra de autenticacao",
-            body=(
-                "Pra ativar o bloqueio por senha, preciso instalar um "
-                "arquivo de regra em /etc/polkit-1/actions/ (requer "
-                "senha admin).\n\nEsse arquivo define a action "
-                "'br.com.vigia.Hub.unlock' usada pelo Polkit."
-            ),
-        )
-        dlg.add_response("cancel", "Cancelar")
-        dlg.add_response("install", "Instalar")
-        dlg.set_response_appearance("install", Adw.ResponseAppearance.SUGGESTED)
-        dlg.set_default_response("cancel")
-        dlg.connect("response", lambda _d, r: self._on_install_policy_response(r, switch))
-        dlg.present(self)
-
-    def _on_install_policy_response(self, response: str, switch: Adw.SwitchRow) -> None:
-        if response != "install":
-            switch.set_active(False)
-            return
-        # ASYNC: install_policy() chama subprocess pkexec
-        print("[lock] starting install_policy in thread", flush=True)
-        # Desabilita switch enquanto thread roda (feedback visual minimo,
-        # sem dialog modal que pode bloquear erro subsequente)
-        switch.set_sensitive(False)
-        switch.set_subtitle("Instalando regra Polkit... (pode pedir senha)")
-
-        def worker():
-            return install_policy()
-
-        def done(result):
-            switch.set_sensitive(True)
-            switch.set_subtitle(self._lock_default_subtitle())
-            ok, err = result
-            print(f"[lock] install_policy result: ok={ok} err={err!r}", flush=True)
-            if not ok:
-                switch.set_active(False)
-                self._show_settings_error(
-                    "Falha ao instalar regra Polkit",
-                    err or "Erro desconhecido.",
-                )
-                return False  # idle_add: nao re-agendar
-            # Instalado — agora test prompt (tambem async)
-            self._test_auth_async(switch, target_value=True)
-            return False
-
-        self._run_in_thread(worker, done)
-
-    def _test_auth_async(self, switch: Adw.SwitchRow, target_value: bool) -> None:
-        """Roda check_auth() em thread. Salva switch no JSON se passou."""
-        print(f"[lock] starting test_auth (target={target_value})", flush=True)
-        # Desabilita switch enquanto thread roda
-        switch.set_sensitive(False)
-        switch.set_subtitle("Aguardando autenticacao... (digite senha admin)")
-
-        def worker():
-            return check_auth()
-
-        def done(result):
-            switch.set_sensitive(True)
-            switch.set_subtitle(self._lock_default_subtitle())
-            ok, err = result
-            print(f"[lock] test_auth result: ok={ok} err={err!r}", flush=True)
-            if not ok:
-                switch.set_active(not target_value)
-                self._show_settings_error(
-                    "Autenticacao falhou",
-                    err or "Senha incorreta ou prompt cancelado. O bloqueio "
-                           "nao foi alterado.",
-                )
-                return False
             # Autenticou — salva no JSON
-            self._settings.password_lock = target_value
+            self._settings.password_lock = target
             save_settings(self._settings)
-            # Marca app como ja' autenticado nesta sessao
             app = self.get_application()
             if hasattr(app, "_authed"):
                 app._authed = True  # type: ignore[attr-defined]
-            return False
+            print(f"[lock] saved password_lock={target}", flush=True)
 
-        self._run_in_thread(worker, done)
+        # Dispara pkexec via Gio.Subprocess async (sem threads)
+        check_auth_async(on_result)
 
     @staticmethod
     def _lock_default_subtitle() -> str:
