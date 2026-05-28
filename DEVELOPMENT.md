@@ -4,7 +4,7 @@
 > contexto completo para retomar o desenvolvimento (humano ou IA) sem
 > precisar reler histórico de PRs ou conversas anteriores.
 >
-> Última atualização: 2026-05-26 (revisão 4: +Dashboard v0.2, vigia_common, COPR specs)
+> Última atualização: 2026-05-28 (revisão 5: +Hub v0.5.10 autostart/tray/lock, +Deployments Manager v0.1)
 
 ---
 
@@ -57,7 +57,7 @@ Em 2026-05-28 adicionada **Deployments Manager** (rpm-ostree GUI).
 
 | # | Ferramenta | Versão | Stack | Status |
 |---|---|---|---|---|
-| 1 | **Vigia Hub** | v0.5.0 | Python + GTK4 + libadwaita | 🟢 3 painéis (nav + categorias + content), embedded |
+| 1 | **Vigia Hub** | v0.5.10 | Python + GTK4 + libadwaita | 🟢 3 painéis + autostart XDG + tray (subprocess GTK3) + lock Polkit |
 | 2 | **Activity Log (core)** | v0.7.1 (Rust) | Rust + Ratatui + Crossterm | 🟢 3 sources + correlations + JsonBundle |
 | 3 | **Activity Log (GUI)** | v0.1.0 | Python + GTK4 | 🟢 Frontend do core Rust via JSON |
 | 4 | **Privacy Controls** | v0.3.1 | Python + GTK4 | 🟢 13 toggles user+system scope |
@@ -1405,6 +1405,124 @@ em htop/iotop indicando que Dashboard cobre o mesmo escopo.
 
 Total da sessão: 12 commits, ~3500 linhas adicionadas, 18 tools
 afetadas por algum refator.
+
+### 2026-05-27 — Enxuga & Polish (commits `5e34e9d`..`c835642`)
+
+Limpeza de escopo (fase LGPD/escritório):
+
+- **Removidas 3 tools**: Network Scanner, Firmware Analyzer, VPN Manager
+- **Merge**: Hash Tools → File Integrity v0.2.0 (mesma categoria conceitual)
+- **Privacy Controls v0.3.1**: fix alignment bug com `Adw.Bin` wrapper em `PreferencesPage`
+- **Rootkit Scanner v0.2.0**: rewrite do zero seguindo pattern Antivirus (sem expansão de janela no Hub embedded)
+- Suite passou de 20 → 16 → 17 tools (depois adicionou Rootkit + Deployments)
+
+### 2026-05-28 — Deployments Manager v0.1 (commits `3a89deb`, `032d366`)
+
+Nova tool de gerenciamento de deployments rpm-ostree (substitui o GRUB
+de boot pra usuário não-técnico):
+
+- **backend.py**: parser de `rpm-ostree status --json`, dataclass `Deployment`
+- **state.py**: labels customizados + notas multilinha por checksum, em
+  `~/.config/vigia-deployments/state.json` (chmod 0600)
+- **3 tabs**: Deployments (rollback/pin/unpin), Cleanup (limpar pending/rollback/cached), Sobre
+- Botões `Salvar` com `suggested-action` (azul) por feedback do user
+- 37 testes (backend + state)
+
+### 2026-05-28 — Hub v0.5.1→0.5.10 (Configurações completa)
+
+Aba **Configurações** do Hub virou centro real de preferências em 3 fases:
+
+**Fase 1a — Autostart XDG (v0.5.1):**
+- Novo módulo `settings.py`: `Settings` dataclass + persistência em
+  `~/.config/vigia-hub/settings.json` (chmod 0600, atomic write)
+- Helpers `autostart_install/remove/sync/is_enabled` — gera/remove
+  `~/.config/autostart/vigia-hub.desktop` (XDG padrão, com
+  `X-GNOME-Autostart-Delay=10` pra dar tempo do DE carregar)
+- **Sync com disco**: ao abrir aba, lê `.desktop` real e atualiza
+  state.json caso user tenha editado manualmente
+- 21 testes em `tests/hub/test_settings.py`
+
+**Fase 1b — Tray icon + background mode + minimized (v0.5.3-0.5.4):**
+
+Limitação técnica resolvida: GTK4 (Adw) e GTK3 (AppIndicator) **não
+coexistem num mesmo processo PyGObject**. Solução: subprocess separado.
+
+- Novo pacote `vigia_hub.tray/` com:
+  - `checks.py` — detecta lib `libayatana-appindicator-gtk3` (via
+    subprocess Python test) + extensão GNOME `appindicatorsupport@rgcjonas`
+    (via `gnome-extensions list` / `list --enabled` — locale-agnostic)
+  - `manager.py` — `TrayManager` que faz spawn/kill do subprocess via
+    `subprocess.Popen` + `prctl(PR_SET_PDEATHSIG)` (Linux) pra child
+    morrer se Hub crashar
+  - `indicator.py` — script GTK3 standalone (entry point
+    `vigia-hub-tray`) que cria `AyatanaAppIndicator3` com menu
+    minimalista (Abrir Hub / Configurações / Sair)
+- Comunicação tray ↔ Hub via D-Bus: Hub registra `Gio.SimpleAction`
+  (show-window, show-settings, quit-hub) que o subprocess invoca via
+  `org.gtk.Actions` interface
+- **Background mode**: `app.hold()` quando tray ON; close-request da
+  janela esconde em vez de matar processo
+- **--minimized flag** em `__main__.py`: spawna tray, não apresenta
+  janela na inicialização
+- Auto-detect lib+ext faltando → dialog "Instalar agora" via
+  `pkexec rpm-ostree install`
+- 25 testes em `tests/hub/test_tray.py`
+
+**Fase 2 — Bloqueio por senha Polkit (v0.5.5-0.5.10):**
+
+5 iterações até chegar na implementação correta:
+
+- v0.5.5: implementação síncrona usando `Polkit.Authority.check_authorization_sync` — **travou UI**
+- v0.5.6: movi pra `threading.Thread` + `GLib.idle_add` — **ainda travou** (Polkit lib não é thread-safe)
+- v0.5.7: tentei `wait_for_polkit_recognition` (race do polkitd inotify) — erro mudou pra "Action not registered"
+- v0.5.8: removi progress dialog (modal sem botões capturava foco) — ainda travou (3 problemas combinados)
+- **v0.5.9: REWRITE completo** — abandonei lib `PyGObject Polkit` e `.policy` custom:
+  - Uso `pkexec /usr/bin/true` via `Gio.Subprocess.communicate_utf8_async`
+  - Action default `org.freedesktop.policykit.exec` já existe em qualquer Polkit
+  - Zero threads, zero deadlock D-Bus, zero `.policy` install
+  - `handler_block_by_func` evita recursão do signal `notify::active`
+- v0.5.10: **lazy auth** quando autostart+minimized — pop-up de senha não interrompe o login do GNOME, espera user clicar "Abrir Hub" no tray
+- 24 testes em `tests/hub/test_auth.py`
+
+**Lições aprendidas (consolidadas em §11):**
+- PyGObject Polkit lib **não é thread-safe** — usar `Gio.Subprocess`
+  com pkexec é mais robusto que API Polkit direta
+- `gnome-extensions info` retorna stdout localizado (pt-BR/en) —
+  usar `gnome-extensions list [--enabled]` que retorna só UUIDs
+- Adw modal dialogs sem botões podem capturar foco indevidamente —
+  preferir `set_sensitive(False)` + mudança de subtitle pra feedback
+- GTK3 + GTK4 num mesmo processo Python = impossível (PyGObject só
+  carrega uma versão) — split em subprocess + D-Bus
+
+### Arquitetura do Hub embedded (atualizada v0.5.10)
+
+```
+┌────────────────────────────────────────────────────────────┐
+│ vigia-hub (GTK4 + Adw)        application_id = br.com...   │
+│                                                            │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │ Adw.Application                                      │  │
+│  │  ├─ Gio.SimpleAction: show-window/show-settings/quit │  │
+│  │  ├─ TrayManager (spawn vigia-hub-tray)               │  │
+│  │  ├─ do_activate:                                     │  │
+│  │  │   ├─ if password_lock and NOT will_minimize:      │  │
+│  │  │   │   check_auth() sync (antes da janela)         │  │
+│  │  │   └─ if password_lock and will_minimize: lazy     │  │
+│  │  └─ close-request: esconde se tray on                │  │
+│  └──────────────────────────────────────────────────────┘  │
+│         │  spawn (Popen)              ▲                    │
+│         ▼                              │ D-Bus session bus │
+└─────────┼─────────────────────────────┼────────────────────┘
+          │                              │
+          ▼                              │ org.gtk.Actions/Activate
+┌─────────────────────────────────────┐ │
+│ vigia-hub-tray (GTK3, subprocess)   │ │
+│   AyatanaAppIndicator3              │ │
+│   ├─ Abrir Hub      ──────────────────┘
+│   ├─ Configurações  ─────────────────► show-settings
+│   └─ Sair do Vigia  ─────────────────► quit-hub
+└─────────────────────────────────────┘
+```
 
 ---
 
