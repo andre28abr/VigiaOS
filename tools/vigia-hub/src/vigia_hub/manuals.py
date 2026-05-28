@@ -144,119 +144,181 @@ def markdown_lib_available() -> bool:
 
 CSS_TEMPLATE = """
 :root {
-    --bg: #fafafa;
-    --fg: #2e3436;
-    --fg-dim: #57606a;
-    --accent: #1c71d8;
-    --code-bg: #f6f8fa;
+    /* Light mode — alto contraste, fundo branco puro pra legibilidade
+       em VMs com resolucao reduzida (UTM/QEMU) */
+    --bg: #ffffff;
+    --fg: #1d1d1f;
+    --fg-dim: #4a4a52;
+    --accent: #1a8c4c;       /* Adwaita green 6 — identidade visual Vigia */
+    --accent-dim: #26a269;   /* Adwaita green 5 */
+    --code-bg: #f3f4f6;
+    --code-fg: #b04a00;      /* marrom-laranja: nao compete com accent */
     --pre-bg: #f6f8fa;
     --border: #d0d7de;
-    --table-stripe: #f6f8fa;
-    --link: #1c71d8;
+    --table-stripe: #f3f4f6;
+    --link: #1a8c4c;
+    --quote-bg: #e8f5ee;     /* verde palido pra blockquote */
 }
 .dark {
-    --bg: #1e1e1e;
-    --fg: #e3e3e3;
-    --fg-dim: #99a1a8;
-    --accent: #62a0ea;
-    --code-bg: #2d2d2d;
-    --pre-bg: #2d2d2d;
-    --border: #3d3d3d;
+    /* Dark mode — Adwaita 1.5+ tones */
+    --bg: #242424;
+    --fg: #ffffff;
+    --fg-dim: #beb6b6;
+    --accent: #57e389;       /* Adwaita green 4 — vivo no dark */
+    --accent-dim: #33d17a;
+    --code-bg: #303030;
+    --code-fg: #ff9050;
+    --pre-bg: #1e1e1e;
+    --border: #454545;
     --table-stripe: #2a2a2a;
-    --link: #62a0ea;
+    --link: #57e389;
+    --quote-bg: #1d3527;
 }
+
+/* Anti-aliasing forte — corrige texto "lavado" em VM */
+html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    font-feature-settings: "kern" 1, "liga" 1;
+}
+
 * { box-sizing: border-box; }
+
 html, body {
     margin: 0; padding: 0;
     background: var(--bg);
     color: var(--fg);
-    font-family: -gtk-system, "Cantarell", "Segoe UI", system-ui, sans-serif;
-    font-size: 14px;
-    line-height: 1.55;
+    font-family: "Cantarell", "Inter", -apple-system, BlinkMacSystemFont,
+                 "Segoe UI", "Helvetica Neue", system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    font-weight: 400;
 }
 .container {
-    max-width: 760px;
+    max-width: 780px;
     margin: 0 auto;
-    padding: 28px 40px 60px;
+    padding: 32px 44px 80px;
 }
+
+/* Headings */
 h1, h2, h3, h4 {
     color: var(--fg);
     margin-top: 1.6em;
-    margin-bottom: 0.6em;
-    font-weight: 600;
+    margin-bottom: 0.5em;
+    font-weight: 700;
+    letter-spacing: -0.01em;
 }
 h1 {
-    font-size: 1.9em;
+    font-size: 2em;
     margin-top: 0;
-    padding-bottom: 0.3em;
-    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.35em;
+    border-bottom: 2px solid var(--accent);
+    color: var(--accent);
 }
 h2 {
-    font-size: 1.4em;
+    font-size: 1.45em;
     color: var(--accent);
-    padding-bottom: 0.2em;
+    padding-bottom: 0.25em;
     border-bottom: 1px solid var(--border);
+    margin-top: 2em;
 }
-h3 { font-size: 1.15em; }
-h4 { font-size: 1.0em; color: var(--fg-dim); }
-p { margin: 0.8em 0; }
-a { color: var(--link); text-decoration: none; }
+h3 {
+    font-size: 1.2em;
+    color: var(--fg);
+    font-weight: 600;
+}
+h4 {
+    font-size: 1.0em;
+    color: var(--fg-dim);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+/* Paragraphs / lists / links */
+p { margin: 0.9em 0; }
+a {
+    color: var(--link);
+    text-decoration: none;
+    font-weight: 500;
+}
 a:hover { text-decoration: underline; }
-ul, ol { padding-left: 1.6em; margin: 0.6em 0; }
-li { margin: 0.3em 0; }
+
+ul, ol { padding-left: 1.7em; margin: 0.7em 0; }
+li { margin: 0.35em 0; }
+
+strong, b { font-weight: 700; color: var(--fg); }
+em, i { font-style: italic; }
+
+/* Inline code — marrom/laranja pra nao competir com accent verde */
 code {
     background: var(--code-bg);
-    padding: 2px 5px;
+    padding: 2px 6px;
     border-radius: 4px;
-    font-family: "Source Code Pro", "JetBrains Mono", monospace;
-    font-size: 0.92em;
-    color: var(--accent);
+    font-family: "JetBrains Mono", "Source Code Pro", "Cascadia Code",
+                 "DejaVu Sans Mono", monospace;
+    font-size: 0.88em;
+    color: var(--code-fg);
+    font-weight: 500;
 }
+
+/* Block code */
 pre {
     background: var(--pre-bg);
-    padding: 14px 18px;
+    padding: 16px 20px;
     border-radius: 8px;
     border: 1px solid var(--border);
     overflow-x: auto;
-    font-size: 0.9em;
-    line-height: 1.45;
-    margin: 1em 0;
+    font-size: 0.88em;
+    line-height: 1.5;
+    margin: 1.2em 0;
 }
 pre code {
     background: transparent;
     padding: 0;
     color: var(--fg);
     font-size: inherit;
+    font-weight: 400;
 }
+
+/* Tables */
 table {
     border-collapse: collapse;
     width: 100%;
-    margin: 1em 0;
+    margin: 1.2em 0;
+    font-size: 0.95em;
 }
 th, td {
     border: 1px solid var(--border);
-    padding: 8px 12px;
+    padding: 9px 14px;
     text-align: left;
 }
 th {
     background: var(--table-stripe);
-    font-weight: 600;
+    font-weight: 700;
+    color: var(--fg);
 }
 tr:nth-child(even) td { background: var(--table-stripe); }
+
+/* Blockquote — verde palido coerente com accent */
 blockquote {
     border-left: 4px solid var(--accent);
-    background: var(--code-bg);
-    padding: 0.6em 1em;
-    margin: 1em 0;
-    color: var(--fg-dim);
+    background: var(--quote-bg);
+    padding: 0.8em 1.2em;
+    margin: 1.2em 0;
+    color: var(--fg);
     border-radius: 0 6px 6px 0;
 }
+blockquote p { margin: 0.4em 0; }
+
 hr {
     border: none;
     border-top: 1px solid var(--border);
-    margin: 2em 0;
+    margin: 2.2em 0;
 }
-.kbd, kbd {
+
+kbd {
     background: var(--code-bg);
     border: 1px solid var(--border);
     border-bottom-width: 2px;
@@ -264,7 +326,18 @@ hr {
     padding: 1px 6px;
     font-family: monospace;
     font-size: 0.85em;
+    color: var(--fg);
 }
+
+/* Scrollbar styling pra integrar visualmente */
+::-webkit-scrollbar { width: 12px; height: 12px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 6px;
+    border: 2px solid var(--bg);
+}
+::-webkit-scrollbar-thumb:hover { background: var(--fg-dim); }
 """
 
 
@@ -331,7 +404,7 @@ MANUAL_ENTRIES: list[ManualEntry] = [
     ManualEntry("selinux-gui", "SELinux Manager", "security-high-symbolic"),
     ManualEntry("firewall-gui", "Firewall Manager", "network-wired-symbolic"),
     ManualEntry("netmon-gui", "Network Monitor", "network-transmit-receive-symbolic"),
-    ManualEntry("hardening-checks", "Hardening Checks", "emblem-default-symbolic"),
+    ManualEntry("hardening-checks", "Hardening Checks", "applications-system-symbolic"),
     ManualEntry("reports", "Reports", "document-edit-symbolic"),
     ManualEntry("file-integrity", "File Integrity", "drive-harddisk-symbolic"),
     ManualEntry("tool-installer", "Tool Installer", "package-x-generic-symbolic"),

@@ -492,50 +492,84 @@ class VigiaHubWindow(Adw.ApplicationWindow):
     ) -> None:
         """Renderiza o manual da tool no container Stack.
 
-        Estrategia:
-          1. Carrega .md (ou placeholder)
-          2. Se WebKit disponivel: renderiza via WebView
-          3. Senao: mostra texto raw em ScrolledWindow + Label
+        OTIMIZACAO v0.6.3: reusa 1 unico WebView por aba (tecnico/leigo)
+        em vez de criar 1 por tool. WebView e' caro de criar em VM
+        (UTM/QEMU); reuso reduz drasticamente latencia de click.
+
+        load_html() em WebView ja' renderizado e' praticamente
+        instantaneo — so o primeiro click numa aba paga o custo de
+        criar o widget.
         """
-        # Reusa widget se ja existe (evita recriar webview toda vez)
-        name = f"{kind}::{tool_id}"
-        existing = container.get_child_by_name(name)
-        if existing is not None:
-            container.set_visible_child(existing)
-            return
+        # Cache do WebView ativo pra aba
+        if not hasattr(self, "_manual_webviews"):
+            self._manual_webviews = {}  # kind -> WebKit.WebView
+        if not hasattr(self, "_manual_fallbacks"):
+            self._manual_fallbacks = {}  # kind -> Gtk.ScrolledWindow
 
         markdown_text = load_manual(tool_id, kind)  # type: ignore[arg-type]
 
-        widget = self._build_manual_widget(markdown_text)
-        container.add_named(widget, name)
-        container.set_visible_child(widget)
-
-    def _build_manual_widget(self, markdown_text: str) -> Gtk.Widget:
-        """Cria widget pra mostrar 1 manual. Tenta WebKit, cai pra Label."""
+        # Tenta WebKit primeiro (reusa instancia por aba)
         if webkit_available():
-            try:
-                import gi
-                gi.require_version("WebKit", "6.0")
-                from gi.repository import WebKit
-                view = WebKit.WebView()
-                view.set_vexpand(True)
-                view.set_hexpand(True)
+            view = self._manual_webviews.get(kind)
+            if view is None:
+                view = self._create_webview()
+                if view is not None:
+                    self._manual_webviews[kind] = view
+                    container.add_named(view, f"{kind}::webview")
+
+            if view is not None:
                 # Detecta tema atual pra CSS dark/light
-                dark = False
-                try:
-                    sm = Adw.StyleManager.get_default()
-                    dark = bool(sm.get_dark())
-                except Exception:  # pylint: disable=broad-except
-                    pass
+                dark = self._is_dark_mode()
                 html = build_html(markdown_text, dark_mode=dark)
                 view.load_html(html, None)
-                return view
-            except Exception as e:  # pylint: disable=broad-except
-                _log.warning("WebKit falhou, usando fallback: %s", e)
+                container.set_visible_child(view)
+                return
 
-        # Fallback: TextView com markdown raw
+        # Fallback: TextView reusado
+        scrolled = self._manual_fallbacks.get(kind)
+        if scrolled is None:
+            scrolled, buf = self._create_text_fallback()
+            self._manual_fallbacks[kind] = scrolled
+            scrolled._buffer = buf  # type: ignore[attr-defined]
+            container.add_named(scrolled, f"{kind}::fallback")
+
+        scrolled._buffer.set_text(markdown_text)  # type: ignore[attr-defined]
+        container.set_visible_child(scrolled)
+
+    @staticmethod
+    def _is_dark_mode() -> bool:
+        try:
+            sm = Adw.StyleManager.get_default()
+            return bool(sm.get_dark())
+        except Exception:  # pylint: disable=broad-except
+            return False
+
+    def _create_webview(self):
+        """Cria UM WebKit.WebView novo. Retorna None se falhar."""
+        try:
+            import gi
+            gi.require_version("WebKit", "6.0")
+            from gi.repository import WebKit
+            view = WebKit.WebView()
+            view.set_vexpand(True)
+            view.set_hexpand(True)
+            # Settings: desabilita JS pra reduzir overhead (manuais sao
+            # estaticos), mantem zoom default
+            try:
+                settings = view.get_settings()
+                settings.set_enable_javascript(False)
+                settings.set_enable_smooth_scrolling(True)
+            except Exception:  # pylint: disable=broad-except
+                pass
+            return view
+        except Exception as e:  # pylint: disable=broad-except
+            _log.warning("WebKit init falhou: %s", e)
+            return None
+
+    @staticmethod
+    def _create_text_fallback():
+        """Cria TextView dentro de ScrolledWindow. Retorna (scrolled, buffer)."""
         buf = Gtk.TextBuffer()
-        buf.set_text(markdown_text)
         text_view = Gtk.TextView(buffer=buf)
         text_view.set_editable(False)
         text_view.set_wrap_mode(Gtk.WrapMode.WORD_CHAR)
@@ -552,7 +586,7 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         scrolled.set_child(text_view)
         scrolled.set_vexpand(True)
         scrolled.set_hexpand(True)
-        return scrolled
+        return scrolled, buf
 
     def _wrap_with_header(
         self,
