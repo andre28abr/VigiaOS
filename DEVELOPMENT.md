@@ -1524,6 +1524,54 @@ coexistem num mesmo processo PyGObject**. Solução: subprocess separado.
 └─────────────────────────────────────┘
 ```
 
+### 2026-05-28 — Etapa E: Hardening das tools (robustez invisível)
+
+Endurecimento defensivo de toda a suite, **sem mudança de UI** — o
+objetivo é que entrada inesperada (arquivo de estado corrompido, JSON
+válido mas com formato errado, saída de subprocess truncada) nunca
+derrube uma tool.
+
+**Auditoria de timeouts (resultado: 0 gaps):**
+- Script AST custom varreu todas as chamadas `subprocess.run/
+  check_output/check_call/call` procurando ausência de `timeout=`
+- Confirmado **0 chamadas bloqueantes sem timeout** (já estava completo
+  desde a Auditoria 3/4)
+- `Popen` sinalizado e verificado caso a caso: `xdg-open` fire-and-forget
+  (reports), clamscan/pkexec com `proc.wait(timeout=10)` (antivirus,
+  rootkit), tray subprocess (intencionalmente long-lived), launch de
+  tool (window.py) — todos corretos
+
+**Gap real fechado — JSON válido com formato errado:**
+
+Duas classes de falha de parsing: (1) JSON malformado → `JSONDecodeError`
+(já tratado em todo lugar); (2) **JSON válido com shape errado** (lista/
+string/int/null onde se espera dict, chaves faltando, tipos de campo
+errados) → `AttributeError`/`TypeError`/`KeyError`, muitas vezes **fora**
+do `except` existente. Essa segunda classe era o buraco.
+
+Padrão aplicado em **12 funções de parsing** (9 tools + Hub):
+- `if not isinstance(data, dict): return <default>` nos loaders
+- `if not isinstance(d, dict): continue` por elemento de lista
+- `try/except (ValueError, TypeError): continue` na coerção de campos
+- `str(...)` em campos usados com `in`/regex
+- helper `_safe_int(value, default=0)` (activity-log-gui)
+
+Funções endurecidas: deployments `get_deployments`+`state._load`;
+installer `rpm_ostree_status_raw`+`pending_changes`+`browser_extensions`;
+file-integrity `load_state`+`compare_baseline_blocking`+`list_baselines`;
+antivirus `list_recent_reports`; dashboard `load_rules`; activity-log-gui
+`_parse_bundle`; rootkit `list_recent_reports`+`load_report`; reports
+`_parse_json_lines`+4 journal parsers; Hub `load_settings`.
+
+**Testes fuzz (rede de segurança, +30 testes):**
+- 9 arquivos `tests/*/test_fuzz_*.py` jogam baterias de payloads
+  malformados e de shape errado em cada parser
+- Asseguram: nunca crasha + retorna o tipo de default seguro
+- **Pegaram 1 bug real**: `[{"MESSAGE": 123}]` fazia `if "Accepted" in
+  msg` levantar `TypeError` (int não é iterável) — fix: `str(...)` nos
+  4 journal parsers do reports
+- Suite total: **401 → 431 testes** (todos passando)
+
 ---
 
 ## 10. Roadmap

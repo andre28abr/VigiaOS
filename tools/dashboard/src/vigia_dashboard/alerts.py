@@ -154,24 +154,30 @@ def load_rules() -> list[AlertRule]:
     try:
         with open(CONFIG_PATH, "r", encoding="utf-8") as f:
             data = json.load(f)
-        rules = []
-        for r in data.get("rules", []):
-            try:
-                rules.append(AlertRule(
-                    id=r["id"],
-                    metric=r["metric"],
-                    threshold=float(r["threshold"]),
-                    op=r.get("op", "gt"),
-                    duration_sec=int(r.get("duration_sec", 30)),
-                    cooldown_sec=int(r.get("cooldown_sec", 300)),
-                    label=r.get("label", ""),
-                    enabled=bool(r.get("enabled", True)),
-                ))
-            except (KeyError, ValueError, TypeError):
-                continue
-        return rules if rules else _default_rules()
     except (OSError, json.JSONDecodeError):
         return _default_rules()
+    # HARDENING: config editavel/corrompivel — valida shape antes de iterar.
+    raw_rules = data.get("rules", []) if isinstance(data, dict) else []
+    if not isinstance(raw_rules, list):
+        raw_rules = []
+    rules = []
+    for r in raw_rules:
+        if not isinstance(r, dict):
+            continue
+        try:
+            rules.append(AlertRule(
+                id=r["id"],
+                metric=r["metric"],
+                threshold=float(r["threshold"]),
+                op=r.get("op", "gt"),
+                duration_sec=int(r.get("duration_sec", 30)),
+                cooldown_sec=int(r.get("cooldown_sec", 300)),
+                label=r.get("label", ""),
+                enabled=bool(r.get("enabled", True)),
+            ))
+        except (KeyError, ValueError, TypeError):
+            continue
+    return rules if rules else _default_rules()
 
 
 def save_rules(rules: list[AlertRule]) -> tuple[bool, str]:

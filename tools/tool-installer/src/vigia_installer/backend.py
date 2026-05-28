@@ -80,7 +80,9 @@ def rpm_ostree_status_raw() -> dict:
         )
         if result.returncode != 0:
             return {}
-        return json.loads(result.stdout)
+        data = json.loads(result.stdout)
+        # HARDENING: garante dict no topo (rpm-ostree corrompido/inesperado).
+        return data if isinstance(data, dict) else {}
     except (subprocess.TimeoutExpired, FileNotFoundError, json.JSONDecodeError):
         return {}
 
@@ -96,17 +98,26 @@ def pending_changes() -> PendingChanges:
     """
     data = rpm_ostree_status_raw()
     result = PendingChanges()
+    # HARDENING: robusto mesmo se a fonte mudar de contrato.
+    if not isinstance(data, dict):
+        return result
 
-    deployments = data.get("deployments", []) or []
-    booted = next((d for d in deployments if d.get("booted")), None)
-    staged = next((d for d in deployments if d.get("staged")), None)
+    deployments = data.get("deployments", [])
+    if not isinstance(deployments, list):
+        deployments = []
+    booted = next((d for d in deployments
+                   if isinstance(d, dict) and d.get("booted")), None)
+    staged = next((d for d in deployments
+                   if isinstance(d, dict) and d.get("staged")), None)
 
     if booted:
-        result.current_layered = list(booted.get("requested-packages", []) or [])
+        layered = booted.get("requested-packages", [])
+        result.current_layered = list(layered) if isinstance(layered, list) else []
 
     if staged:
         result.has_pending = True
-        staged_pkgs = set(staged.get("requested-packages", []) or [])
+        staged_layered = staged.get("requested-packages", [])
+        staged_pkgs = set(staged_layered) if isinstance(staged_layered, list) else set()
         booted_pkgs = set(result.current_layered)
         result.pending_added = sorted(staged_pkgs - booted_pkgs)
         result.pending_removed = sorted(booted_pkgs - staged_pkgs)

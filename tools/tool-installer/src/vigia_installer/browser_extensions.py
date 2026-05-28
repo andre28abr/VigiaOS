@@ -250,9 +250,11 @@ def _load_state() -> dict:
     if not STATE_PATH.exists():
         return {"installed": {}}
     try:
-        return json.loads(STATE_PATH.read_text(encoding="utf-8"))
+        data = json.loads(STATE_PATH.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
         return {"installed": {}}
+    # HARDENING: arquivo editavel/corrompivel — garante dict.
+    return data if isinstance(data, dict) else {"installed": {}}
 
 
 def _save_state(state: dict) -> None:
@@ -266,7 +268,11 @@ def _save_state(state: dict) -> None:
 
 def get_installed(ext_id: str) -> list[str]:
     """Retorna lista de browser ids onde a extensao foi marcada."""
-    return _load_state().get("installed", {}).get(ext_id, [])
+    installed = _load_state().get("installed", {})
+    if not isinstance(installed, dict):
+        return []
+    val = installed.get(ext_id, [])
+    return val if isinstance(val, list) else []
 
 
 def is_marked_installed(ext_id: str, browser_id: str) -> bool:

@@ -53,6 +53,9 @@ def load_settings() -> Settings:
     try:
         with open(STATE_PATH, "r", encoding="utf-8") as f:
             data = json.load(f)
+        # HARDENING: settings editavel/corrompivel — garante dict.
+        if not isinstance(data, dict):
+            return Settings()
         theme_raw = str(data.get("theme", "system"))
         if theme_raw not in ("system", "light", "dark"):
             theme_raw = "system"

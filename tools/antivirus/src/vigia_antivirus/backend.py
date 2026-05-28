@@ -233,10 +233,13 @@ def list_recent_reports(limit: int = 10) -> list[dict]:
         try:
             with open(f, "r", encoding="utf-8") as fh:
                 data = json.load(fh)
-            data["_file"] = str(f)
-            out.append(data)
         except (OSError, json.JSONDecodeError):
             continue
+        # HARDENING: report corrompido pode nao ser dict — pula.
+        if not isinstance(data, dict):
+            continue
+        data["_file"] = str(f)
+        out.append(data)
     return out
 
 
