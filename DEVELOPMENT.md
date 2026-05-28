@@ -49,16 +49,17 @@ software por cima (layered + flatpak).
 advocacia** — ambiente onde clientes confiam dados sensíveis e o
 profissional precisa demonstrar diligência.
 
-**Estado atual** (2026-05-26): **18 ferramentas funcionais** integradas
-via Hub com layout master-detail-content (3 painéis) + categorias +
-modo embedded.
+**Estado atual** (2026-05-27): **16 ferramentas focadas em LGPD/escritório**
+integradas via Hub com layout master-detail-content (3 painéis) + categorias +
+modo embedded. Limpeza 2026-05-27 removeu 3 tools fora do escopo (Network
+Scanner, Firmware Analyzer, VPN Manager) e mergeou Hash Tools no File Integrity.
 
 | # | Ferramenta | Versão | Stack | Status |
 |---|---|---|---|---|
 | 1 | **Vigia Hub** | v0.5.0 | Python + GTK4 + libadwaita | 🟢 3 painéis (nav + categorias + content), embedded |
 | 2 | **Activity Log (core)** | v0.7.1 (Rust) | Rust + Ratatui + Crossterm | 🟢 3 sources + correlations + JsonBundle |
 | 3 | **Activity Log (GUI)** | v0.1.0 | Python + GTK4 | 🟢 Frontend do core Rust via JSON |
-| 4 | **Privacy Controls** | v0.3.0 | Python + GTK4 | 🟢 13 toggles user+system scope |
+| 4 | **Privacy Controls** | v0.3.1 | Python + GTK4 | 🟢 13 toggles user+system scope |
 | 5 | **SELinux Manager** | v0.2.0 | Python + GTK4 | 🟢 6 tabs + pt-BR + audit2allow + lazy tabs |
 | 6 | **Firewall Manager** | v0.1.0 | Python + GTK4 | 🟡 Status + zones CRUD |
 | 7 | **Network Monitor** | v0.1.0 | Python + GTK4 | 🟡 Conexões + modo admin + auto-refresh smart |
@@ -70,7 +71,7 @@ modo embedded.
 | 13 | **Capabilities Inspector** | v0.1.0 | Python + GTK4 | 🟢 getcap audit + catálogo pt-BR de 41 caps |
 | 14 | **Antivirus** | v0.1.1 | Python + GTK4 | 🟢 ClamAV wrapper — substitui clamtk |
 | 15 | **Dashboard** | v0.2.0 | Python + GTK4 + Cairo | 🟢 Sistema em tempo real + per-process I/O + alertas |
-| 16 | **Rootkit Scanner** | v0.1.0 | Python + GTK4 | 🟢 wrapper chkrootkit + rkhunter — streaming + history |
+| 16 | **Rootkit Scanner** | v0.2.0 | Python + GTK4 | 🟢 chkrootkit + rkhunter — pattern PreferencesGroup |
 
 **Removidas na limpeza 2026-05-27** (foco LGPD/escritorio):
 - ~~Network Scanner (nmap)~~ — fora do escopo + risco etico
@@ -101,7 +102,8 @@ para consulta.
 ### 2.2 Expansão do toolkit (2026-05-22 a 2026-05-25)
 
 Iniciou com 6 ferramentas (Hub, Activity Log, Privacy, SELinux, Firewall,
-NetMon). Expandiu para **18 ferramentas** em 5 ciclos:
+NetMon). Expandiu para 19 ferramentas; depois enxugou para **16** (limpeza
+2026-05-27 com foco LGPD). Ciclos principais:
 
 | Ciclo | Adições | Foco |
 |---|---|---|
@@ -199,15 +201,12 @@ VigiaOS/
     ├── hardening-checks/        # Python — wrapper Lynis
     ├── reports/                 # Python — PDF LGPD via Activity Log JSON
     ├── file-integrity/          # Python — wrapper AIDE
-    ├── tool-installer/          # Python — catálogo via rpm-ostree
-    ├── vpn-manager/             # Python — wrapper WireGuard
-    ├── dns-manager/             # Python — wrapper systemd-resolved
+    ├── tool-installer/          # Python — catálogo rpm-ostree + extensões navegador
+    ├── dns-manager/             # Python — wrapper dnscrypt-proxy (DoH/DoT)
     ├── capabilities-inspector/  # Python — getcap audit
     ├── antivirus/               # Python — wrapper ClamAV
-    ├── network-scanner/         # Python — GUI nmap
-    ├── firmware-analyzer/       # Python — wrapper binwalk
-    ├── hash-tools/              # Python — hash + baseline diff
-    └── dashboard/               # Python — sistema em tempo real (Cairo)
+    ├── dashboard/               # Python — sistema em tempo real (Cairo)
+    └── rootkit-scanner/         # Python — chkrootkit + rkhunter
 ```
 
 Cada ferramenta em `tools/` é um **projeto independente** com seu próprio
