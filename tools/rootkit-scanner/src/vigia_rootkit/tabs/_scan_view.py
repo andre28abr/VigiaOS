@@ -1,12 +1,15 @@
 """Widget de scan compartilhado entre chkrootkit e rkhunter tabs.
 
-Estrutura:
-- Header: nome do scanner + descricao
-- Banner: status (nao instalado / pronto / rodando / concluido)
-- Action row: botao Iniciar Scan / Parar Scan
-- KPI cards (3): testes, warnings, infected
-- Output (TextView read-only, monospace, streaming)
-- Summary card (mostrado apos scan termina)
+v0.1.4 — REESCRITO seguindo EXATAMENTE o pattern do Antivirus scan tab
+(que funciona sem esticar a janela do Hub). Versoes anteriores (0.1.0
+a 0.1.3) tinham widgets que pediam natural size grande, propagando pra
+cima da arvore Adw.ViewStack e esticando a janela.
+
+Pattern correto observado no Antivirus:
+- KPIs em Adw.PreferencesGroup com 3 Adw.ActionRow (title + valor suffix)
+- TextView dentro de Adw.PreferencesGroup > Adw.ExpanderRow > Adw.ActionRow
+- Boxes horizontais SEM halign forcado (deixa default = FILL pequeno)
+- Banner FORA do clamp (set_revealed(False) padrao)
 """
 
 from __future__ import annotations
@@ -27,7 +30,7 @@ from ._helpers import make_clamp, show_error, show_info
 
 
 class ScanView(Adw.Bin):
-    """Widget generico de scan.
+    """Widget generico de scan — pattern Antivirus.
 
     Args:
         scanner_name: 'chkrootkit' ou 'rkhunter'
@@ -59,95 +62,107 @@ class ScanView(Adw.Bin):
         self._stop_requested = False
         self._destroyed = False
 
-        # ===== Header =====
-        header_lbl = Gtk.Label(label=scanner_label)
-        header_lbl.add_css_class("title-2")
-        header_lbl.set_halign(Gtk.Align.START)
-        header_lbl.set_margin_bottom(8)
-
-        desc_lbl = Gtk.Label()
-        desc_lbl.set_markup(description)
-        desc_lbl.add_css_class("dim-label")
-        desc_lbl.set_halign(Gtk.Align.START)
-        desc_lbl.set_wrap(True)
-        desc_lbl.set_xalign(0)
-        desc_lbl.set_margin_bottom(20)
-        # v0.1.2: max_width_chars FORCA o Label a calcular natural size
-        # baseado em 60 chars (nao no texto inteiro). Sem isso, Label com
-        # wrap=True ainda pedia natural size do texto TODO (~280 chars
-        # = ~3000px), fazendo a janela do Hub esticar.
-        desc_lbl.set_max_width_chars(60)
-        desc_lbl.set_width_chars(40)  # min hint
-
-        # ===== Banner =====
+        # ------------------------------------------------------------
+        # Banner de estado (nao instalado, etc.)
+        # ------------------------------------------------------------
         self._banner = Adw.Banner()
         self._banner.set_revealed(False)
 
-        # ===== Action =====
-        self._action_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        self._action_box.set_halign(Gtk.Align.CENTER)
-        self._action_box.set_hexpand(False)  # v0.1.3
-        self._action_box.set_margin_bottom(20)
+        # ------------------------------------------------------------
+        # Header
+        # ------------------------------------------------------------
+        header_lbl = Gtk.Label(label=scanner_label)
+        header_lbl.add_css_class("title-2")
+        header_lbl.set_halign(Gtk.Align.START)
+        header_lbl.set_margin_bottom(6)
+
+        header_desc = Gtk.Label()
+        header_desc.set_markup(description)
+        header_desc.add_css_class("dim-label")
+        header_desc.set_halign(Gtk.Align.START)
+        header_desc.set_wrap(True)
+        header_desc.set_xalign(0)
+        header_desc.set_margin_bottom(20)
+
+        # ------------------------------------------------------------
+        # Run / Stop
+        # ------------------------------------------------------------
+        action_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        action_box.set_margin_top(16)
+        action_box.set_margin_bottom(12)
 
         self._scan_btn = Gtk.Button(label="Iniciar scan")
         self._scan_btn.add_css_class("suggested-action")
         self._scan_btn.connect("clicked", self._on_scan_clicked)
-        self._action_box.append(self._scan_btn)
+        action_box.append(self._scan_btn)
 
         self._stop_btn = Gtk.Button(label="Parar")
         self._stop_btn.add_css_class("destructive-action")
-        self._stop_btn.set_visible(False)
+        self._stop_btn.set_sensitive(False)
         self._stop_btn.connect("clicked", self._on_stop_clicked)
-        self._action_box.append(self._stop_btn)
+        action_box.append(self._stop_btn)
 
-        # ===== KPIs (3 cards) =====
-        # v0.1.3: set_hexpand(False) explicito. Sem isso, o Box com 3 cards
-        # de 150x80 + spacing 12 pedia natural width de 486px que propagava
-        # ate o ViewStack do Hub, esticando a janela. set_halign(CENTER)
-        # nao era suficiente — o widget ainda pedia o natural size.
-        kpis_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
-        kpis_box.set_halign(Gtk.Align.CENTER)
-        kpis_box.set_hexpand(False)
-        kpis_box.set_margin_bottom(20)
+        # Status line
+        self._status_label = Gtk.Label(label="Pronto.")
+        self._status_label.add_css_class("dim-label")
+        self._status_label.set_halign(Gtk.Align.START)
+        self._status_label.set_margin_top(4)
+        self._status_label.set_margin_bottom(16)
+        self._status_label.set_wrap(True)
+        self._status_label.set_xalign(0)
 
-        self._kpi_tests = self._build_kpi("Testes", "—")
-        kpis_box.append(self._kpi_tests["widget"])
+        # ------------------------------------------------------------
+        # KPIs como PreferencesGroup com 3 ActionRows
+        # (substituiu Box horizontal com cards 150x80 que pediam 486px
+        # de natural width e esticavam a janela do Hub)
+        # ------------------------------------------------------------
+        self._kpis_group = Adw.PreferencesGroup()
+        self._kpis_group.set_margin_top(8)
+        self._kpis_group.set_title("Estatisticas")
 
-        self._kpi_warn = self._build_kpi("Warnings", "—")
-        kpis_box.append(self._kpi_warn["widget"])
+        self._row_tests = Adw.ActionRow(title="Testes rodados")
+        self._row_tests.add_css_class("property")
+        self._lbl_tests = Gtk.Label(label="—")
+        self._lbl_tests.add_css_class("monospace")
+        self._row_tests.add_suffix(self._lbl_tests)
+        self._kpis_group.add(self._row_tests)
 
-        self._kpi_inf = self._build_kpi("Infectados", "—")
-        kpis_box.append(self._kpi_inf["widget"])
+        self._row_warn = Adw.ActionRow(title="Warnings")
+        self._row_warn.add_css_class("property")
+        self._lbl_warn = Gtk.Label(label="—")
+        self._lbl_warn.add_css_class("monospace")
+        self._row_warn.add_suffix(self._lbl_warn)
+        self._kpis_group.add(self._row_warn)
 
-        # ===== Output (TextView read-only, monospace) =====
-        output_lbl = Gtk.Label(label="Saida")
-        output_lbl.add_css_class("heading")
-        output_lbl.set_halign(Gtk.Align.START)
-        output_lbl.set_margin_bottom(4)
+        self._row_inf = Adw.ActionRow(title="Infectados")
+        self._row_inf.add_css_class("property")
+        self._lbl_inf = Gtk.Label(label="—")
+        self._lbl_inf.add_css_class("monospace")
+        self._row_inf.add_suffix(self._lbl_inf)
+        self._kpis_group.add(self._row_inf)
 
-        self._output_buffer = Gtk.TextBuffer()
-        self._output_view = Gtk.TextView(buffer=self._output_buffer)
+        # ------------------------------------------------------------
+        # Output como PreferencesGroup > ExpanderRow > ActionRow > TextView
+        # (substituiu TextView direto num Box, que pedia natural width
+        # baseado no conteudo)
+        # ------------------------------------------------------------
+        log_expander = Adw.ExpanderRow()
+        log_expander.set_title("Saida do scan")
+        log_expander.set_subtitle("Output bruto (streaming em tempo real)")
+        log_expander.set_expanded(True)
+
+        self._output_view = Gtk.TextView()
         self._output_view.set_editable(False)
         self._output_view.set_cursor_visible(False)
         self._output_view.set_monospace(True)
         self._output_view.set_wrap_mode(Gtk.WrapMode.WORD_CHAR)
-        self._output_view.add_css_class("card")
-        self._output_view.set_margin_top(0)
+        self._output_view.set_top_margin(8)
+        self._output_view.set_bottom_margin(8)
+        self._output_view.set_left_margin(8)
+        self._output_view.set_right_margin(8)
+        self._output_buffer = self._output_view.get_buffer()
 
-        output_scrolled = Gtk.ScrolledWindow()
-        # v0.1.1: hscrollbar NEVER pra forcar wrap horizontal do TextView.
-        # Era AUTOMATIC, mas linhas longas do chkrootkit (paths /usr/lib/...)
-        # esticavam o widget pedindo natural size grande, fazendo a janela
-        # do Hub expandir lateralmente.
-        output_scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
-        output_scrolled.set_min_content_height(280)
-        output_scrolled.set_max_content_height(420)
-        output_scrolled.set_child(self._output_view)
-        output_scrolled.set_margin_bottom(16)
-        # Garante que nao pede largura excessiva
-        output_scrolled.set_hexpand(False)
-
-        # Tag pra coloring linhas relevantes
+        # Tags pra coloring
         self._tag_warning = self._output_buffer.create_tag(
             "warning", foreground="#fbbf24", weight=Pango.Weight.BOLD,
         )
@@ -155,10 +170,27 @@ class ScanView(Adw.Bin):
             "infected", foreground="#f87171", weight=Pango.Weight.BOLD,
         )
 
-        # ===== Summary card (escondido ate scan terminar) =====
+        log_scrolled = Gtk.ScrolledWindow()
+        log_scrolled.set_min_content_height(240)
+        log_scrolled.set_max_content_height(380)
+        log_scrolled.set_child(self._output_view)
+
+        log_row = Adw.ActionRow()
+        log_row.set_child(log_scrolled)
+        log_row.set_activatable(False)
+        log_expander.add_row(log_row)
+
+        log_group = Adw.PreferencesGroup()
+        log_group.set_margin_top(16)
+        log_group.add(log_expander)
+
+        # ------------------------------------------------------------
+        # Summary card (escondido ate scan terminar)
+        # ------------------------------------------------------------
         self._summary_group = Adw.PreferencesGroup()
-        self._summary_group.set_visible(False)
+        self._summary_group.set_margin_top(16)
         self._summary_group.set_title("Resumo")
+        self._summary_group.set_visible(False)
 
         self._row_status = Adw.ActionRow(title="Status")
         self._row_status.add_css_class("property")
@@ -174,33 +206,30 @@ class ScanView(Adw.Bin):
         self._row_elapsed.add_suffix(self._lbl_elapsed)
         self._summary_group.add(self._row_elapsed)
 
-        # ===== Layout =====
+        # ------------------------------------------------------------
+        # Layout (pattern identico ao Antivirus scan tab)
+        # ------------------------------------------------------------
         inner = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
         inner.set_margin_top(24)
-        inner.set_margin_bottom(32)
+        inner.set_margin_bottom(28)
         inner.set_margin_start(28)
         inner.set_margin_end(28)
         inner.append(header_lbl)
-        inner.append(desc_lbl)
-        inner.append(self._action_box)
-        inner.append(kpis_box)
-        inner.append(output_lbl)
-        inner.append(output_scrolled)
+        inner.append(header_desc)
+        inner.append(action_box)
+        inner.append(self._status_label)
+        inner.append(self._kpis_group)
+        inner.append(log_group)
         inner.append(self._summary_group)
 
-        outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-        outer.append(self._banner)
-
-        # v0.1.3: REVERTI set_hexpand(True) que adicionei em v0.1.1.
-        # Em GTK4, hexpand=True propaga 'requesting space' pra cima da
-        # arvore — em Adw.ViewStack do Hub, isso pode fazer a janela
-        # esticar. Pattern correto: hexpand=False (ou default), e deixar
-        # o Adw.Clamp interno limitar a largura visualmente. Mesmo
-        # pattern do Antivirus scan tab (que nao estica).
         scrolled = Gtk.ScrolledWindow()
         scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         scrolled.set_vexpand(True)
         scrolled.set_child(make_clamp(inner))
+
+        # Banner fica fora do clamp para usar largura total
+        outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+        outer.append(self._banner)
         outer.append(scrolled)
         self.set_child(outer)
 
@@ -209,26 +238,6 @@ class ScanView(Adw.Bin):
 
     def _on_destroy(self, *_a) -> None:
         self._destroyed = True
-
-    def _build_kpi(self, label: str, default: str) -> dict:
-        card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
-        card.add_css_class("card")
-        card.set_size_request(150, 80)
-
-        val_lbl = Gtk.Label(label=default)
-        val_lbl.add_css_class("title-1")
-        val_lbl.set_halign(Gtk.Align.CENTER)
-        val_lbl.set_margin_top(10)
-        card.append(val_lbl)
-
-        lbl = Gtk.Label(label=label)
-        lbl.add_css_class("caption")
-        lbl.add_css_class("dim-label")
-        lbl.set_halign(Gtk.Align.CENTER)
-        lbl.set_margin_bottom(10)
-        card.append(lbl)
-
-        return {"widget": card, "val": val_lbl}
 
     # ============================================================
     # Refresh estado de instalacao
@@ -256,7 +265,6 @@ class ScanView(Adw.Bin):
         if self._running:
             return
 
-        # Confirmacao com aviso de tempo
         dlg = Adw.AlertDialog(
             heading=f"Iniciar scan {self._scanner_label}?",
             body=(
@@ -282,15 +290,16 @@ class ScanView(Adw.Bin):
     def _start_scan(self) -> None:
         self._running = True
         self._stop_requested = False
-        self._scan_btn.set_visible(False)
-        self._stop_btn.set_visible(True)
+        self._scan_btn.set_sensitive(False)
+        self._stop_btn.set_sensitive(True)
         self._summary_group.set_visible(False)
         self._output_buffer.set_text("")
-        self._kpi_tests["val"].set_label("0")
-        self._kpi_warn["val"].set_label("0")
-        self._kpi_inf["val"].set_label("0")
-        self._set_kpi_color(self._kpi_warn["val"], "")
-        self._set_kpi_color(self._kpi_inf["val"], "")
+        self._lbl_tests.set_label("0")
+        self._lbl_warn.set_label("0")
+        self._lbl_inf.set_label("0")
+        self._set_label_color(self._lbl_warn, "")
+        self._set_label_color(self._lbl_inf, "")
+        self._status_label.set_label("Iniciando scan...")
 
         self._scan_starter(
             on_line=self._on_scan_line,
@@ -300,6 +309,7 @@ class ScanView(Adw.Bin):
 
     def _on_stop_clicked(self, _btn) -> None:
         self._stop_requested = True
+        self._status_label.set_label("Cancelando scan...")
         self._append_line("\n[Vigia] Cancelando scan...")
 
     # ============================================================
@@ -335,8 +345,8 @@ class ScanView(Adw.Bin):
         # Atualiza KPIs em tempo real (counting linhas "Checking")
         if line.strip().startswith("Checking"):
             try:
-                current = int(self._kpi_tests["val"].get_label() or "0")
-                self._kpi_tests["val"].set_label(str(current + 1))
+                current = int(self._lbl_tests.get_label() or "0")
+                self._lbl_tests.set_label(str(current + 1))
             except (ValueError, TypeError):
                 pass
 
@@ -349,38 +359,47 @@ class ScanView(Adw.Bin):
         if self._destroyed:
             return False
         self._running = False
-        self._scan_btn.set_visible(True)
-        self._stop_btn.set_visible(False)
+        self._scan_btn.set_sensitive(True)
+        self._stop_btn.set_sensitive(False)
 
         # KPIs finais
-        self._kpi_tests["val"].set_label(str(result.tests_run))
-        self._kpi_warn["val"].set_label(str(result.warnings_count))
-        self._kpi_inf["val"].set_label(str(result.infected_count))
+        self._lbl_tests.set_label(str(result.tests_run))
+        self._lbl_warn.set_label(str(result.warnings_count))
+        self._lbl_inf.set_label(str(result.infected_count))
 
         if result.warnings_count > 0:
-            self._set_kpi_color(self._kpi_warn["val"], "warning")
+            self._set_label_color(self._lbl_warn, "warning")
         if result.infected_count > 0:
-            self._set_kpi_color(self._kpi_inf["val"], "error")
+            self._set_label_color(self._lbl_inf, "error")
 
-        # Summary
+        # Status line + Summary
         self._summary_group.set_visible(True)
         for cls in ("success", "warning", "error", "dim-label"):
             self._lbl_status.remove_css_class(cls)
         if result.cancelled:
             self._lbl_status.set_label("cancelado")
             self._lbl_status.add_css_class("warning")
+            self._status_label.set_label("Scan cancelado pelo usuario.")
         elif result.error:
             self._lbl_status.set_label("erro")
             self._lbl_status.add_css_class("error")
+            self._status_label.set_label(f"Erro: {result.error[:120]}")
         elif result.infected_count > 0:
             self._lbl_status.set_label(f"{result.infected_count} infectado(s)")
             self._lbl_status.add_css_class("error")
+            self._status_label.set_label(
+                f"Scan completo: {result.infected_count} infectado(s) detectado(s)."
+            )
         elif result.warnings_count > 0:
             self._lbl_status.set_label(f"{result.warnings_count} warning(s)")
             self._lbl_status.add_css_class("warning")
+            self._status_label.set_label(
+                f"Scan completo: {result.warnings_count} warning(s)."
+            )
         else:
             self._lbl_status.set_label("limpo")
             self._lbl_status.add_css_class("success")
+            self._status_label.set_label("Scan completo: nenhum sinal detectado.")
         self._lbl_elapsed.set_label(f"{result.elapsed_sec:.1f}s")
 
         # Dialog feedback
@@ -413,7 +432,7 @@ class ScanView(Adw.Bin):
         return False
 
     @staticmethod
-    def _set_kpi_color(label: Gtk.Label, level: str) -> None:
+    def _set_label_color(label: Gtk.Label, level: str) -> None:
         for cls in ("success", "warning", "error"):
             label.remove_css_class(cls)
         if level:
