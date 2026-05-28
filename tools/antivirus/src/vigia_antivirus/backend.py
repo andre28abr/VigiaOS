@@ -276,7 +276,13 @@ def scan_async(
         # Escolha: clamdscan se daemon ativo (mais rapido), senao clamscan.
         # clamdscan tem flags ligeiramente diferentes; uso clamscan por
         # consistencia + suporte universal nesta v0.1.
-        cmd = ["clamscan", "-r", "--no-summary=no", "--bell=no", path]
+        cmd = ["clamscan", "-r", "--no-summary=no", "--bell=no"]
+        # Varredura de sistema inteiro ("/"): pula pseudo-filesystems que
+        # nao contem arquivos reais (e que poderiam travar/poluir o scan).
+        if os.path.abspath(path) == "/":
+            for pat in ("^/proc", "^/sys", "^/dev", "^/run"):
+                cmd.append(f"--exclude-dir={pat}")
+        cmd.append(path)
 
         start = time.time()
         try:
@@ -332,8 +338,15 @@ def scan_async(
         result.elapsed_sec = round(time.time() - start, 2)
 
         # ClamAV exit codes: 0 (clean), 1 (infected found), 2 (error).
-        # Tratamos 0 e 1 como sucesso de execucao.
-        if proc.returncode == 2 and not result.error:
+        # Tratamos 0 e 1 como sucesso de execucao. Num scan de sistema
+        # inteiro como usuario comum, "Permission denied" em arquivos de
+        # outros donos tambem gera rc=2 — nao e' fatal se o scan rodou de
+        # fato (algum arquivo foi lido).
+        if (
+            proc.returncode == 2
+            and not result.error
+            and result.scanned_files == 0
+        ):
             result.error = "ClamAV reportou erro de execucao (rc=2)."
 
         if not result.error:
