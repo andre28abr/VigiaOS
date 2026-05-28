@@ -61,8 +61,13 @@ class TestAppIndicatorExtensionEnabled:
     @patch("vigia_hub.tray.checks.subprocess.run")
     @patch("vigia_hub.tray.checks.shutil.which")
     def test_extension_not_installed(self, mock_which, mock_run):
+        """`gnome-extensions list` nao retorna o UUID -> nao instalada."""
         mock_which.return_value = "/usr/bin/gnome-extensions"
-        mock_run.return_value = MagicMock(returncode=2, stdout="")
+        # primeira chamada: list (sem o UUID)
+        mock_run.return_value = MagicMock(
+            returncode=0,
+            stdout="other-extension@example.com\n",
+        )
         installed, enabled = checks.appindicator_extension_enabled()
         assert installed is False
         assert enabled is False
@@ -70,11 +75,18 @@ class TestAppIndicatorExtensionEnabled:
     @patch("vigia_hub.tray.checks.subprocess.run")
     @patch("vigia_hub.tray.checks.shutil.which")
     def test_extension_installed_but_disabled(self, mock_which, mock_run):
+        """UUID em `list` mas nao em `list --enabled`."""
         mock_which.return_value = "/usr/bin/gnome-extensions"
-        mock_run.return_value = MagicMock(
-            returncode=0,
-            stdout="Name: AppIndicator\nState: DISABLED\n",
-        )
+        mock_run.side_effect = [
+            MagicMock(
+                returncode=0,
+                stdout="appindicatorsupport@rgcjonas.gmail.com\nother@x.com\n",
+            ),
+            MagicMock(
+                returncode=0,
+                stdout="other@x.com\n",  # nao habilitada
+            ),
+        ]
         installed, enabled = checks.appindicator_extension_enabled()
         assert installed is True
         assert enabled is False
@@ -82,26 +94,54 @@ class TestAppIndicatorExtensionEnabled:
     @patch("vigia_hub.tray.checks.subprocess.run")
     @patch("vigia_hub.tray.checks.shutil.which")
     def test_extension_enabled(self, mock_which, mock_run):
+        """UUID em `list` E em `list --enabled` -> habilitada."""
         mock_which.return_value = "/usr/bin/gnome-extensions"
-        mock_run.return_value = MagicMock(
-            returncode=0,
-            stdout="Name: AppIndicator\nState: ENABLED\n",
-        )
+        mock_run.side_effect = [
+            MagicMock(
+                returncode=0,
+                stdout="appindicatorsupport@rgcjonas.gmail.com\n",
+            ),
+            MagicMock(
+                returncode=0,
+                stdout="appindicatorsupport@rgcjonas.gmail.com\n",
+            ),
+        ]
         installed, enabled = checks.appindicator_extension_enabled()
         assert installed is True
         assert enabled is True
 
     @patch("vigia_hub.tray.checks.subprocess.run")
     @patch("vigia_hub.tray.checks.shutil.which")
-    def test_extension_active_synonym(self, mock_which, mock_run):
-        """Alguns sistemas usam 'ACTIVE' em vez de 'ENABLED'."""
+    def test_locale_agnostic(self, mock_which, mock_run):
+        """Bug fix: anterior usava `gnome-extensions info` parseando
+        'State: ACTIVE' em ingles. Em pt-BR vem 'Estado: ACTIVE',
+        nao casava. Agora usa `list` e `list --enabled` que so retornam
+        UUIDs sem texto localizado.
+        """
         mock_which.return_value = "/usr/bin/gnome-extensions"
-        mock_run.return_value = MagicMock(
-            returncode=0,
-            stdout="State: ACTIVE\n",
-        )
+        mock_run.side_effect = [
+            MagicMock(
+                returncode=0,
+                stdout="appindicatorsupport@rgcjonas.gmail.com\n",
+            ),
+            MagicMock(
+                returncode=0,
+                stdout="appindicatorsupport@rgcjonas.gmail.com\n",
+            ),
+        ]
         installed, enabled = checks.appindicator_extension_enabled()
+        assert installed is True
         assert enabled is True
+
+    @patch("vigia_hub.tray.checks.subprocess.run")
+    @patch("vigia_hub.tray.checks.shutil.which")
+    def test_list_command_fails(self, mock_which, mock_run):
+        """Se `gnome-extensions list` retornar erro, retorna False."""
+        mock_which.return_value = "/usr/bin/gnome-extensions"
+        mock_run.return_value = MagicMock(returncode=1, stdout="")
+        installed, enabled = checks.appindicator_extension_enabled()
+        assert installed is False
+        assert enabled is False
 
 
 # ============================================================

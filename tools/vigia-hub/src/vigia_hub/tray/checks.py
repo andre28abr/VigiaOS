@@ -68,14 +68,23 @@ def appindicator_lib_available() -> bool:
 def appindicator_extension_enabled() -> tuple[bool, bool]:
     """Retorna (instalada, ativa) da extensao AppIndicator do GNOME.
 
-    Usa `gnome-extensions info <uuid>` que retorna exit 0 e mostra
-    "State: ENABLED" no stdout se ativa.
+    Robustez de locale: 'gnome-extensions info' retorna output
+    LOCALIZADO ('State: ACTIVE' em-EN, 'Estado: ACTIVE' pt-BR), entao
+    parsing de stdout e' fragil. Em vez disso usamos:
+
+      1. `gnome-extensions list` (UUIDs instalados, 1 por linha) — sem
+         texto localizado
+      2. `gnome-extensions list --enabled` (subset dos habilitados)
+
+    Esses comandos sao language-agnostic e estaveis.
     """
     if not shutil.which("gnome-extensions"):
         return (False, False)
+
+    # Lista todas as instaladas
     try:
         result = subprocess.run(
-            ["gnome-extensions", "info", EXT_UUID],
+            ["gnome-extensions", "list"],
             capture_output=True,
             text=True,
             timeout=5,
@@ -84,10 +93,24 @@ def appindicator_extension_enabled() -> tuple[bool, bool]:
         return (False, False)
     if result.returncode != 0:
         return (False, False)
-    out = result.stdout.upper()
-    installed = True
-    enabled = "STATE: ENABLED" in out or "STATE: ACTIVE" in out
-    return (installed, enabled)
+    installed_uuids = {line.strip() for line in result.stdout.splitlines() if line.strip()}
+    if EXT_UUID not in installed_uuids:
+        return (False, False)
+
+    # Lista apenas habilitadas
+    try:
+        result = subprocess.run(
+            ["gnome-extensions", "list", "--enabled"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+    except (subprocess.TimeoutExpired, FileNotFoundError):
+        return (True, False)
+    if result.returncode != 0:
+        return (True, False)
+    enabled_uuids = {line.strip() for line in result.stdout.splitlines() if line.strip()}
+    return (True, EXT_UUID in enabled_uuids)
 
 
 def tray_can_work() -> TrayCheck:
