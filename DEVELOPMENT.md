@@ -1618,6 +1618,31 @@ por-app de Configuracoes → Notificacoes, e mostra o icone do Vigia
 
 ---
 
+### 2026-05-28 — Antivirus: "Saida do scan" estilo terminal
+
+Refinamento de UX no Antivirus pra alinhar com o Rootkit Scanner. Antes a
+aba Scan tinha duas areas: uma lista *Findings* (cards) + um *Log do scan*
+colapsado e sem cor. Agora e' um **unico terminal "Saida do scan"** que se
+comporta igual ao chkrootkit/rkhunter:
+
+- **Aberto por padrao** (`set_expanded(True)`), cursor invisivel, monospace.
+- **Auto-scroll**: cada linha empurra a barra pro fim (`_scroll_to_end` via
+  `create_mark`/`scroll_to_mark`/`delete_mark`), entao o usuario sempre ve
+  o progresso do clamscan em tempo real.
+- **Coloracao** (`insert_with_tags`): arquivo limpo `: OK` → **verde**
+  (`#4ade80`, so o "OK"); linha `... FOUND` (ameaca) → **vermelha inteira**
+  (`#f87171`); `SCAN SUMMARY` → **amber** (`#fbbf24`); `Infected files: N`
+  do sumario → verde se `0`, vermelho se `>0`.
+- **Linha-resumo garantida** no fim (`_append_summary_line`): `══ Nada
+  suspeito ══` (verde), `══ N INFECTADO(S) ══` (vermelho) ou erro (vermelho)
+  — sempre colorida, mesmo que o sumario do clamscan varie.
+
+A lista *Findings* foi **removida**: o output completo do clamscan (linhas
+`FOUND` + sumario) ja' aparece no terminal, e o `result.findings` continua
+salvo no JSON do Historico independente da UI. Menos superficie, mesma info.
+
+---
+
 ## 10. Roadmap
 
 ### 10.1 Próximas iterações por ferramenta
