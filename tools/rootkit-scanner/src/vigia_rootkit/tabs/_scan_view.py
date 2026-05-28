@@ -72,6 +72,12 @@ class ScanView(Adw.Bin):
         desc_lbl.set_wrap(True)
         desc_lbl.set_xalign(0)
         desc_lbl.set_margin_bottom(20)
+        # v0.1.2: max_width_chars FORCA o Label a calcular natural size
+        # baseado em 60 chars (nao no texto inteiro). Sem isso, Label com
+        # wrap=True ainda pedia natural size do texto TODO (~280 chars
+        # = ~3000px), fazendo a janela do Hub esticar.
+        desc_lbl.set_max_width_chars(60)
+        desc_lbl.set_width_chars(40)  # min hint
 
         # ===== Banner =====
         self._banner = Adw.Banner()
