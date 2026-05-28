@@ -45,6 +45,13 @@ from .auth import (
 )
 from .idle import IdleMonitor
 from .logging_setup import get_logger
+from .manuals import (
+    MANUAL_ENTRIES,
+    ManualEntry,
+    build_html,
+    load_manual,
+    webkit_available,
+)
 from .theme import VALID_MODES, apply_theme, normalize_mode
 
 
@@ -251,26 +258,64 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         raise ValueError(f"Modo desconhecido: {mode_id}")
 
     def _build_help_page(self) -> Gtk.Widget:
-        """Aba Ajuda: manual consolidado de cada tool.
+        """Aba Ajuda: 3 sub-abas (ViewSwitcher) com manuais.
 
-        Reusa long_description + features do registry, organizadas por
-        categoria (mesma ordem do master-detail).
+        - Visao geral: ExpanderRows com descricao curta (do registry)
+        - Manual tecnico: WebKit renderiza docs/manuals/tecnico/<tool>.md
+        - Manual simples: WebKit renderiza docs/manuals/leigo/<tool>.md
+
+        Estrutura:
+          ToolbarView
+            HeaderBar (com X) + ViewSwitcher
+            ViewStack
+              ├── overview -> PreferencesPage com ExpanderRows
+              ├── tecnico  -> SplitView (sidebar tools + WebKit content)
+              └── leigo    -> SplitView (sidebar tools + WebKit content)
         """
-        page = Adw.PreferencesPage()
-        page.set_title("Ajuda")
-        page.set_icon_name("help-browser-symbolic")
+        stack = Adw.ViewStack()
+        stack.add_titled_with_icon(
+            self._build_help_overview_tab(),
+            "overview",
+            "Visão geral",
+            "view-list-symbolic",
+        )
+        stack.add_titled_with_icon(
+            self._build_help_manual_tab("tecnico"),
+            "tecnico",
+            "Manual técnico",
+            "utilities-terminal-symbolic",
+        )
+        stack.add_titled_with_icon(
+            self._build_help_manual_tab("leigo"),
+            "leigo",
+            "Manual simples",
+            "user-info-symbolic",
+        )
 
-        # Intro
+        switcher = Adw.ViewSwitcher()
+        switcher.set_stack(stack)
+        switcher.set_policy(Adw.ViewSwitcherPolicy.WIDE)
+
+        header = Adw.HeaderBar()
+        header.set_title_widget(switcher)
+
+        toolbar = Adw.ToolbarView()
+        toolbar.add_top_bar(header)
+        toolbar.set_content(stack)
+        return toolbar
+
+    def _build_help_overview_tab(self) -> Gtk.Widget:
+        """Aba 'Visão geral' — ExpanderRows por categoria (versao antiga)."""
+        page = Adw.PreferencesPage()
+
         intro_group = Adw.PreferencesGroup()
         intro_group.set_title("Manual da Vigia Suite")
         intro_group.set_description(
-            "Cada ferramenta abaixo tem descricao detalhada e features "
-            "principais. Para acoes especificas, abra a ferramenta e veja "
-            "a aba 'Sobre' interna."
+            "Resumo rapido de cada ferramenta. Para detalhes tecnicos ou "
+            "explicacao em linguagem simples, use as outras abas acima."
         )
         page.add(intro_group)
 
-        # Uma section por categoria, com um ExpanderRow por tool
         grouped = tools_by_category(TOOLS)
         for cat, tools_in_cat in grouped.items():
             group = Adw.PreferencesGroup()
@@ -289,7 +334,6 @@ class VigiaHubWindow(Adw.ApplicationWindow):
                 icon.set_pixel_size(36)
                 expander.add_prefix(icon)
 
-                # Body: long_description + features
                 body_box = Gtk.Box(
                     orientation=Gtk.Orientation.VERTICAL, spacing=12
                 )
@@ -328,7 +372,6 @@ class VigiaHubWindow(Adw.ApplicationWindow):
                         row.append(text)
                         body_box.append(row)
 
-                # Wrap em PreferencesRow nao-ativavel pro layout ficar consistente
                 wrapper = Adw.PreferencesRow()
                 wrapper.set_activatable(False)
                 wrapper.set_child(body_box)
@@ -338,7 +381,178 @@ class VigiaHubWindow(Adw.ApplicationWindow):
 
             page.add(group)
 
-        return self._wrap_with_header(page, "Ajuda")
+        return page
+
+    def _build_help_manual_tab(self, kind: str) -> Gtk.Widget:
+        """Aba 'Manual tecnico' ou 'Manual simples'.
+
+        SplitView: sidebar com lista de tools + content com WebKit
+        renderizando o .md selecionado.
+        """
+        # ============= Sidebar (lista de tools) ============= #
+        listbox = Gtk.ListBox()
+        listbox.set_selection_mode(Gtk.SelectionMode.SINGLE)
+        listbox.add_css_class("navigation-sidebar")
+
+        for entry in MANUAL_ENTRIES:
+            row = Adw.ActionRow()
+            row.set_title(entry.name)
+            row.set_use_markup(False)
+            icon = Gtk.Image.new_from_icon_name(entry.icon_name)
+            icon.set_pixel_size(24)
+            row.add_prefix(icon)
+            row._manual_id = entry.tool_id  # type: ignore[attr-defined]
+            listbox.append(row)
+
+        scrolled_side = Gtk.ScrolledWindow()
+        scrolled_side.set_policy(
+            Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC
+        )
+        scrolled_side.set_child(listbox)
+        scrolled_side.set_vexpand(True)
+
+        sidebar_toolbar = Adw.ToolbarView()
+        sidebar_header = Adw.HeaderBar()
+        sidebar_header.set_show_back_button(False)
+        sidebar_header.set_title_widget(Adw.WindowTitle(
+            title="Ferramentas", subtitle=""
+        ))
+        sidebar_toolbar.add_top_bar(sidebar_header)
+        sidebar_toolbar.set_content(scrolled_side)
+        sidebar_page = Adw.NavigationPage.new(sidebar_toolbar, "Ferramentas")
+
+        # ============= Content (WebKit ou fallback) ============= #
+        content_holder = Gtk.Stack()  # vamos trocar children conforme tool
+        content_holder.set_transition_type(Gtk.StackTransitionType.CROSSFADE)
+        content_holder.set_transition_duration(150)
+        content_holder.set_vexpand(True)
+        content_holder.set_hexpand(True)
+
+        # Initial: empty state
+        empty = Adw.StatusPage(
+            title="Selecione uma ferramenta",
+            description=(
+                "Escolha uma ferramenta na lista para ver o manual."
+            ),
+            icon_name="help-browser-symbolic",
+        )
+        content_holder.add_named(empty, "_empty")
+
+        content_toolbar = Adw.ToolbarView()
+        content_header = Adw.HeaderBar()
+        content_header.set_title_widget(Adw.WindowTitle(
+            title=(
+                "Manual técnico" if kind == "tecnico"
+                else "Manual simples"
+            ),
+            subtitle="",
+        ))
+        content_toolbar.add_top_bar(content_header)
+        content_toolbar.set_content(content_holder)
+        content_nav = Adw.NavigationPage.new(content_toolbar, "Manual")
+
+        # Wire listbox selection -> render manual
+        # Use closure pra capturar kind + content_holder + content_header
+        def on_row_selected(_lb, row):
+            if row is None:
+                return
+            tool_id = getattr(row, "_manual_id", None)
+            if not tool_id:
+                return
+            # Atualiza header title pra incluir nome da tool
+            entry = next(
+                (e for e in MANUAL_ENTRIES if e.tool_id == tool_id),
+                None,
+            )
+            if entry is not None:
+                title_widget = content_header.get_title_widget()
+                if hasattr(title_widget, "set_subtitle"):
+                    title_widget.set_subtitle(entry.name)
+            # Renderiza manual na tool
+            self._render_manual_into(content_holder, tool_id, kind)
+
+        listbox.connect("row-selected", on_row_selected)
+
+        # Seleciona _overview por default
+        first_row = listbox.get_row_at_index(0)
+        if first_row is not None:
+            listbox.select_row(first_row)
+
+        # ============= Split layout ============= #
+        split = Adw.NavigationSplitView()
+        split.set_sidebar(sidebar_page)
+        split.set_content(content_nav)
+        split.set_sidebar_width_fraction(0.30)
+        split.set_min_sidebar_width(240)
+        split.set_max_sidebar_width(320)
+        return split
+
+    def _render_manual_into(
+        self, container: Gtk.Stack, tool_id: str, kind: str
+    ) -> None:
+        """Renderiza o manual da tool no container Stack.
+
+        Estrategia:
+          1. Carrega .md (ou placeholder)
+          2. Se WebKit disponivel: renderiza via WebView
+          3. Senao: mostra texto raw em ScrolledWindow + Label
+        """
+        # Reusa widget se ja existe (evita recriar webview toda vez)
+        name = f"{kind}::{tool_id}"
+        existing = container.get_child_by_name(name)
+        if existing is not None:
+            container.set_visible_child(existing)
+            return
+
+        markdown_text = load_manual(tool_id, kind)  # type: ignore[arg-type]
+
+        widget = self._build_manual_widget(markdown_text)
+        container.add_named(widget, name)
+        container.set_visible_child(widget)
+
+    def _build_manual_widget(self, markdown_text: str) -> Gtk.Widget:
+        """Cria widget pra mostrar 1 manual. Tenta WebKit, cai pra Label."""
+        if webkit_available():
+            try:
+                import gi
+                gi.require_version("WebKit", "6.0")
+                from gi.repository import WebKit
+                view = WebKit.WebView()
+                view.set_vexpand(True)
+                view.set_hexpand(True)
+                # Detecta tema atual pra CSS dark/light
+                dark = False
+                try:
+                    sm = Adw.StyleManager.get_default()
+                    dark = bool(sm.get_dark())
+                except Exception:  # pylint: disable=broad-except
+                    pass
+                html = build_html(markdown_text, dark_mode=dark)
+                view.load_html(html, None)
+                return view
+            except Exception as e:  # pylint: disable=broad-except
+                _log.warning("WebKit falhou, usando fallback: %s", e)
+
+        # Fallback: TextView com markdown raw
+        buf = Gtk.TextBuffer()
+        buf.set_text(markdown_text)
+        text_view = Gtk.TextView(buffer=buf)
+        text_view.set_editable(False)
+        text_view.set_wrap_mode(Gtk.WrapMode.WORD_CHAR)
+        text_view.set_left_margin(24)
+        text_view.set_right_margin(24)
+        text_view.set_top_margin(24)
+        text_view.set_bottom_margin(24)
+        text_view.set_monospace(True)
+
+        scrolled = Gtk.ScrolledWindow()
+        scrolled.set_policy(
+            Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC
+        )
+        scrolled.set_child(text_view)
+        scrolled.set_vexpand(True)
+        scrolled.set_hexpand(True)
+        return scrolled
 
     def _wrap_with_header(
         self,
