@@ -40,10 +40,17 @@ from .registry import (
     tools_by_category,
 )
 from .settings import (
+    Settings,
     autostart_is_enabled,
     autostart_sync,
     load_settings,
     save_settings,
+)
+from .tray.checks import (
+    INSTALL_PACKAGES,
+    enable_extension_command,
+    install_command,
+    tray_can_work,
 )
 
 
@@ -327,24 +334,27 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         self._sw_autostart.connect("notify::active", self._on_autostart_toggled)
         init_group.add(self._sw_autostart)
 
-        # Switch: tray (placeholder Fase 1b)
+        # Switch: tray (FUNCIONAL — spawna subprocess GTK3)
         self._sw_tray = Adw.SwitchRow()
         self._sw_tray.set_title("Mostrar icone na bandeja do sistema")
         self._sw_tray.set_subtitle(
-            "Em breve (Fase 1b): icone perto do relogio, com menu rapido."
+            "Icone perto do menu do GNOME, com menu rapido (Abrir / "
+            "Configuracoes / Sair). Requer extensao AppIndicator."
         )
-        self._sw_tray.set_active(False)
-        self._sw_tray.set_sensitive(False)
+        self._sw_tray.set_active(self._settings.show_tray)
+        self._sw_tray.connect("notify::active", self._on_tray_toggled)
         init_group.add(self._sw_tray)
 
-        # Switch: iniciar minimizado (placeholder Fase 1b)
+        # Switch: iniciar minimizado (FUNCIONAL — depende do tray)
         self._sw_minimized = Adw.SwitchRow()
         self._sw_minimized.set_title("Iniciar minimizado na bandeja")
         self._sw_minimized.set_subtitle(
-            "Requer 'Mostrar icone na bandeja' habilitado. Em breve."
+            "Inicia sem mostrar a janela — so o icone na bandeja. "
+            "Requer 'Mostrar icone na bandeja' habilitado."
         )
-        self._sw_minimized.set_active(False)
-        self._sw_minimized.set_sensitive(False)
+        self._sw_minimized.set_active(self._settings.start_minimized)
+        self._sw_minimized.set_sensitive(self._settings.show_tray)
+        self._sw_minimized.connect("notify::active", self._on_minimized_toggled)
         init_group.add(self._sw_minimized)
 
         page.add(init_group)
@@ -444,6 +454,157 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         dlg = Adw.AlertDialog(heading=heading, body=body)
         dlg.add_response("ok", "OK")
         dlg.present(self)
+
+    # ------------- Tray switch handler -------------
+
+    def _on_tray_toggled(self, switch: Adw.SwitchRow, *_args) -> None:
+        """User toggleou o switch do tray icon."""
+        enabled = switch.get_active()
+
+        if enabled:
+            # 1. Checa pre-requisitos (lib + extensao)
+            check = tray_can_work()
+            if not check.ok:
+                # Reverte switch e mostra dialog de instalacao
+                switch.set_active(False)
+                self._show_tray_install_dialog(check)
+                return
+
+            # 2. Pede ao app pra spawnar o subprocess
+            app = self.get_application()
+            ok, err = app.enable_tray() if hasattr(app, "enable_tray") else (False, "App sem suporte")
+            if not ok:
+                switch.set_active(False)
+                self._show_settings_error(
+                    "Falha ao iniciar tray icon",
+                    err or "Erro desconhecido ao spawnar vigia-hub-tray.",
+                )
+                return
+        else:
+            # Desligar tray
+            app = self.get_application()
+            if hasattr(app, "disable_tray"):
+                app.disable_tray()
+            # Se desligou tray, "iniciar minimizado" tambem perde sentido
+            if self._settings.start_minimized:
+                self._sw_minimized.set_active(False)
+
+        # Salva no JSON + atualiza state em memoria
+        self._settings.show_tray = enabled
+        save_settings(self._settings)
+
+        # Re-grava autostart .desktop (--minimized depende do tray)
+        if self._settings.autostart:
+            autostart_sync(
+                enabled=True,
+                minimized=self._settings.start_minimized,
+            )
+
+        # Habilita/desabilita o switch "iniciar minimizado"
+        self._sw_minimized.set_sensitive(enabled)
+
+    def _on_minimized_toggled(self, switch: Adw.SwitchRow, *_args) -> None:
+        """User toggleou 'Iniciar minimizado'."""
+        enabled = switch.get_active()
+        self._settings.start_minimized = enabled
+        save_settings(self._settings)
+
+        # Re-grava .desktop com --minimized se autostart on
+        if self._settings.autostart:
+            autostart_sync(enabled=True, minimized=enabled)
+
+    def _show_tray_install_dialog(self, check) -> None:
+        """Dialog explicando o que falta pro tray funcionar."""
+        body_parts = ["O tray icon precisa de 2 componentes:\n"]
+        if not check.has_lib:
+            body_parts.append("• <b>libayatana-appindicator-gtk3</b> (biblioteca)")
+        if not check.has_extension:
+            body_parts.append(
+                "• <b>gnome-shell-extension-appindicator</b> (extensao GNOME)"
+            )
+        elif not check.ext_enabled:
+            body_parts.append(
+                "• A extensao AppIndicator esta instalada mas <b>desativada</b>."
+            )
+
+        if not check.has_lib or not check.has_extension:
+            body_parts.append("\n\nA instalacao requer <b>reboot</b> (Silverblue overlay).")
+
+        body = "\n".join(body_parts)
+
+        dlg = Adw.AlertDialog(heading="Habilitar icone na bandeja")
+        dlg.set_body(body)
+        dlg.set_body_use_markup(True)
+        dlg.add_response("cancel", "Cancelar")
+
+        if not check.has_lib or not check.has_extension:
+            dlg.add_response("install", "Instalar agora (pkexec)")
+            dlg.set_response_appearance("install", Adw.ResponseAppearance.SUGGESTED)
+        elif check.has_extension and not check.ext_enabled:
+            dlg.add_response("enable", "Ativar extensao")
+            dlg.set_response_appearance("enable", Adw.ResponseAppearance.SUGGESTED)
+
+        dlg.set_default_response("cancel")
+        dlg.connect("response", self._on_tray_install_response)
+        dlg.present(self)
+
+    def _on_tray_install_response(self, _dlg, response: str) -> None:
+        if response == "install":
+            self._run_tray_install()
+        elif response == "enable":
+            self._enable_tray_extension()
+
+    def _run_tray_install(self) -> None:
+        """Lanca pkexec rpm-ostree install em background."""
+        import subprocess
+        cmd = install_command()
+        try:
+            subprocess.Popen(cmd)
+            self._show_settings_error(
+                "Instalacao iniciada",
+                "Acompanhe a senha de admin (pkexec). Ao terminar, "
+                "<b>reinicie o sistema</b> pra a biblioteca ficar disponivel. "
+                "Depois ative a extensao e religue o switch.",
+            )
+        except OSError as e:
+            self._show_settings_error(
+                "Falha ao chamar pkexec",
+                f"{e}\n\nComando: {' '.join(cmd)}",
+            )
+
+    def _enable_tray_extension(self) -> None:
+        """Ativa extensao GNOME AppIndicator via gnome-extensions enable."""
+        import subprocess
+        cmd = enable_extension_command()
+        try:
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=5)
+            if result.returncode == 0:
+                self._show_settings_error(
+                    "Extensao ativada",
+                    "AppIndicator foi ativada. Religue o switch 'Mostrar icone'.",
+                )
+            else:
+                err = result.stderr.strip() or "Erro desconhecido."
+                self._show_settings_error("Falha ao ativar extensao", err)
+        except (subprocess.SubprocessError, OSError) as e:
+            self._show_settings_error("Falha ao executar gnome-extensions", str(e))
+
+    # ------------- Navigation API (chamada pelo tray via app actions) -------------
+
+    def show_settings_view(self) -> None:
+        """Navega pro modo 'settings' (chamado por app.show-settings action)."""
+        # Acha a row do nav que tem mode_id='settings'
+        n = self._nav_list.get_n_items() if hasattr(self._nav_list, "get_n_items") else None
+        # Itera rows e seleciona a 'settings'
+        idx = 0
+        while True:
+            row = self._nav_list.get_row_at_index(idx)
+            if row is None:
+                break
+            if getattr(row, "_mode_id", None) == "settings":
+                self._nav_list.select_row(row)
+                return
+            idx += 1
 
     # ========================================================================
     # Tools view (master-detail com categorias)
