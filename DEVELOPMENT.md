@@ -1572,6 +1572,50 @@ antivirus `list_recent_reports`; dashboard `load_rules`; activity-log-gui
   4 journal parsers do reports
 - Suite total: **401 → 431 testes** (todos passando)
 
+### 2026-05-28 — Etapa D (parte 1): Notificacoes desktop nativas
+
+Primeira feature *visivel* da Etapa D. As tools agora avisam o usuario
+via **notificacao nativa do GNOME Shell** (banner no topo + lista do
+relogio), nao um popup proprio. Caso de uso central: rodar um scan
+longo (rootkit 2-5min) e ir fazer outra coisa — quando termina, chega
+o aviso mesmo com o Hub minimizado no tray.
+
+**Helper compartilhado — `vigia_common/notifications.py`:**
+
+Como as tools rodam *embedded* no Hub (mesmo processo), o helper pega a
+`Adw.Application` em execucao via `Gio.Application.get_default()` e
+dispara um `Gio.Notification` — protocolo padrao freedesktop, que no
+GNOME e' o proprio Shell. Por isso aparece igual a qualquer app nativo.
+
+- `notify(title, body, *, notif_id, priority, icon_name, default_action)`
+  — primitiva. **No-op gracioso** (retorna False, nunca levanta) se nao
+  ha app rodando (tool standalone, testes headless).
+- `notify_if_unfocused(...)` — so notifica se **nenhuma janela do Vigia
+  esta focada**. Se o user ainda olha a tool, o dialog in-app ja' avisa;
+  o banner do sistema seria ruido. Usado pelos scanners.
+- `notif_id` estavel por evento → reenviar **substitui** o banner
+  anterior em vez de empilhar (anti-spam).
+- `default_action='app.show-window'` (guardado por `lookup_action`):
+  clicar a notif traz o Hub ao foco. Reusa a `Gio.SimpleAction` que o
+  tray ja' registrava.
+
+**Wiring (3 tools):**
+- **Dashboard / Alertas**: refatorado pra usar o helper (antes tinha
+  `Gio.Notification` inline + danca de `root.get_application()`).
+  Mantem prioridade HIGH e `notif_id` por regra.
+- **Rootkit Scanner**: chkrootkit + rkhunter notificam no fim do scan
+  (infectado HIGH / warnings / limpo), via `notify_if_unfocused`.
+- **Antivirus**: notifica no fim do scan (infectado HIGH / limpo).
+
+**Por que GNOME-nativo importa:** persiste com a janela escondida
+(modo tray/background, v0.5.3), respeita "Nao perturbe" e o toggle
+por-app de Configuracoes → Notificacoes, e mostra o icone do Vigia
+(vem do `.desktop` do Hub). Sem atrito de portal porque a suite e' RPM
+(layered), nao Flatpak.
+
+- 4 testes em `tests/common/test_notifications.py` (`@pytest.mark.gtk` —
+  rodam na VM, skipados no dev sem GI). Suite: **431 → 435** (4 skip no Mac).
+
 ---
 
 ## 10. Roadmap

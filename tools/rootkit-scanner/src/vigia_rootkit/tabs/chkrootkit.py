@@ -17,6 +17,8 @@ gi.require_version("Pango", "1.0")
 
 from gi.repository import Adw, GLib, Gtk, Pango  # noqa: E402
 
+from vigia_common.notifications import PRIORITY_HIGH, notify_if_unfocused
+
 from .. import backend
 from ._helpers import make_clamp, show_error, show_info
 
@@ -327,6 +329,12 @@ class ChkrootkitTab(Adw.Bin):
                 "Revise a saida do scan e tome acoes apropriadas. "
                 "Resultado salvo no Historico.",
             )
+            notify_if_unfocused(
+                f"chkrootkit: {result.infected_count} infectado(s)",
+                "Possivel rootkit detectado. Abra o Vigia pra revisar.",
+                notif_id="vigia-rootkit-chkrootkit",
+                priority=PRIORITY_HIGH,
+            )
         elif result.warnings_count > 0:
             self._status_label.set_label(
                 f"Scan completo: {result.warnings_count} warning(s)."
@@ -336,12 +344,22 @@ class ChkrootkitTab(Adw.Bin):
                 f"chkrootkit: {result.warnings_count} warning(s)",
                 "Sistema parece OK mas vale revisar. Resultado salvo no Historico.",
             )
+            notify_if_unfocused(
+                f"chkrootkit: {result.warnings_count} warning(s)",
+                "Scan concluido — vale revisar os avisos no Vigia.",
+                notif_id="vigia-rootkit-chkrootkit",
+            )
         else:
             self._status_label.set_label("Scan completo: nenhum sinal detectado.")
             show_info(
                 self,
                 "chkrootkit: limpo",
                 "Nenhum sinal de rootkit detectado. Resultado salvo no Historico.",
+            )
+            notify_if_unfocused(
+                "chkrootkit: limpo",
+                "Nenhum sinal de rootkit detectado.",
+                notif_id="vigia-rootkit-chkrootkit",
             )
         return False
 
