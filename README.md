@@ -15,7 +15,7 @@ Resultado: as ferramentas funcionam em qualquer Fedora Atomic (Silverblue,
 Kinoite, Bluefin, Bazzite, Aurora), aproveitando atualizações automáticas
 do sistema-base sem complicação.
 
-## O que está incluído (v2 — 16 ferramentas focadas em LGPD/escritório)
+## O que está incluído (v2 — 17 ferramentas focadas em LGPD/escritório)
 
 | # | Componente | Stack | Status |
 |---|---|---|---|
@@ -35,6 +35,7 @@ do sistema-base sem complicação.
 | 14 | **[Vigia Capabilities Inspector](tools/capabilities-inspector/)** v0.1 | Python + GTK4 | 🟢 getcap audit + 41 caps pt-BR |
 | 15 | **[Vigia Antivirus](tools/antivirus/)** v0.1.1 | Python + GTK4 | 🟢 ClamAV wrapper (substitui clamtk) |
 | 16 | **[Vigia Rootkit Scanner](tools/rootkit-scanner/)** v0.2.0 | Python + GTK4 | 🟢 **chkrootkit + rkhunter** unificados |
+| 17 | **[Vigia Deployments Manager](tools/deployments-manager/)** v0.1.0 | Python + GTK4 | 🟢 **rpm-ostree** GUI — rollback, pin, cleanup, labels LGPD |
 
 ### Removidas na limpeza 2026-05-27 (foco LGPD)
 
@@ -59,7 +60,7 @@ cd ~/dev/VigiaOS
 for d in vigia-hub privacy-controls selinux-gui firewall-gui netmon-gui \
          hardening-checks reports file-integrity tool-installer \
          dns-manager capabilities-inspector activity-log-gui \
-         antivirus dashboard rootkit-scanner; do
+         antivirus dashboard rootkit-scanner deployments-manager; do
   (cd tools/$d && pip install --user -e .)
 done
 vigia-hub   # abre o launcher
@@ -79,7 +80,7 @@ Quando ativo, em Silverblue/Kinoite/Bluefin/Bazzite/Aurora:
 sudo wget -O /etc/yum.repos.d/_copr_andre28abr-vigia.repo \
   https://copr.fedorainfracloud.org/coprs/andre28abr/vigia/repo/fedora-$(rpm -E %fedora)/andre28abr-vigia-fedora-$(rpm -E %fedora).repo
 
-# Instala a suite completa (metapackage com as 16 tools)
+# Instala a suite completa (metapackage com as 17 tools)
 sudo rpm-ostree install vigia-suite
 sudo systemctl reboot
 ```

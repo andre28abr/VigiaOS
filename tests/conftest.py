@@ -46,6 +46,7 @@ TOOLS = [
     "antivirus",
     "dashboard",
     "rootkit-scanner",
+    "deployments-manager",
 ]
 
 for tool in TOOLS:

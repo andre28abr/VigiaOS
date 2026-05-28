@@ -49,10 +49,11 @@ software por cima (layered + flatpak).
 advocacia** — ambiente onde clientes confiam dados sensíveis e o
 profissional precisa demonstrar diligência.
 
-**Estado atual** (2026-05-27): **16 ferramentas focadas em LGPD/escritório**
+**Estado atual** (2026-05-28): **17 ferramentas focadas em LGPD/escritório**
 integradas via Hub com layout master-detail-content (3 painéis) + categorias +
 modo embedded. Limpeza 2026-05-27 removeu 3 tools fora do escopo (Network
 Scanner, Firmware Analyzer, VPN Manager) e mergeou Hash Tools no File Integrity.
+Em 2026-05-28 adicionada **Deployments Manager** (rpm-ostree GUI).
 
 | # | Ferramenta | Versão | Stack | Status |
 |---|---|---|---|---|
@@ -72,6 +73,7 @@ Scanner, Firmware Analyzer, VPN Manager) e mergeou Hash Tools no File Integrity.
 | 14 | **Antivirus** | v0.1.1 | Python + GTK4 | 🟢 ClamAV wrapper — substitui clamtk |
 | 15 | **Dashboard** | v0.2.0 | Python + GTK4 + Cairo | 🟢 Sistema em tempo real + per-process I/O + alertas |
 | 16 | **Rootkit Scanner** | v0.2.0 | Python + GTK4 | 🟢 chkrootkit + rkhunter — pattern PreferencesGroup |
+| 17 | **Deployments Manager** | v0.1.0 | Python + GTK4 | 🟢 rpm-ostree deployments (rollback/pin/cleanup) + labels/notas LGPD |
 
 **Removidas na limpeza 2026-05-27** (foco LGPD/escritorio):
 - ~~Network Scanner (nmap)~~ — fora do escopo + risco etico
@@ -1126,7 +1128,7 @@ sudo install -m 0755 target/release/vigia-log /usr/local/bin/vigia-log
 for d in vigia-hub privacy-controls selinux-gui firewall-gui netmon-gui \
          hardening-checks reports file-integrity tool-installer \
          dns-manager capabilities-inspector activity-log-gui \
-         antivirus dashboard rootkit-scanner; do
+         antivirus dashboard rootkit-scanner deployments-manager; do
   (cd ../$d && pip install --user -e .)
 done
 
@@ -1134,7 +1136,8 @@ done
 for tool in vigia-hub vigia-privacy vigia-selinux vigia-firewall vigia-netmon \
             vigia-hardening vigia-reports vigia-integrity vigia-installer \
             vigia-dns vigia-capabilities vigia-log-gui \
-            vigia-antivirus vigia-dashboard vigia-rootkit; do
+            vigia-antivirus vigia-dashboard vigia-rootkit \
+            vigia-deployments; do
   sudo ln -sf "$HOME/.local/bin/$tool" /usr/local/bin/$tool
 done
 

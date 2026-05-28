@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Vigia Deployments Manager
+GenericName=Deployments Manager
+Comment=Gerenciador de deployments rpm-ostree (boot snapshots)
+Exec=vigia-deployments
+Icon=br.com.vigia.DeploymentsManager
+Categories=System;Security;
+Keywords=rpm-ostree;deployment;snapshot;rollback;silverblue;vigia;
+StartupNotify=true
+Terminal=false
