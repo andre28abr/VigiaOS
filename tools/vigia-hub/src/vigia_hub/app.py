@@ -43,9 +43,14 @@ from gi.repository import Adw, Gio, GLib  # noqa: E402
 
 from . import __app_id__
 from .auth import check_auth, check_auth_async
+from .logging_setup import get_logger
 from .settings import load_settings
+from .theme import apply_theme, normalize_mode
 from .tray import TrayManager
 from .window import VigiaHubWindow
+
+
+_log = get_logger("vigia_hub.app")
 
 
 class VigiaHubApp(Adw.Application):
@@ -117,8 +122,7 @@ class VigiaHubApp(Adw.Application):
 
         def on_auth(ok: bool, err: str) -> None:
             if not ok:
-                print(f"[vigia-hub] auth recusada no tray click: {err}",
-                      flush=True)
+                _log.info("auth recusada no tray click: %s", err)
                 # Mantem tray rodando; nao mostra janela
                 return
             self._authed = True
@@ -132,6 +136,9 @@ class VigiaHubApp(Adw.Application):
 
     def do_activate(self) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         settings = load_settings()
+
+        # Aplica tema escolhido (sistema/light/dark)
+        apply_theme(normalize_mode(settings.theme))
 
         # Determina se vai iniciar minimizado (sem janela visivel)
         will_start_minimized = (
@@ -156,8 +163,7 @@ class VigiaHubApp(Adw.Application):
         ):
             ok, err = check_auth()
             if not ok:
-                print(f"[vigia-hub] Autenticacao falhou no startup: {err}",
-                      flush=True)
+                _log.warning("Autenticacao falhou no startup: %s", err)
                 # Se tray ON, mantem o tray rodando — user pode tentar
                 # de novo clicando em 'Abrir Hub'. Janela nao aparece.
                 if not settings.show_tray:

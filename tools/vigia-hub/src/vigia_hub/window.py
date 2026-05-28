@@ -43,6 +43,12 @@ from .auth import (
     check_auth_async,
     pkexec_available,
 )
+from .idle import IdleMonitor
+from .logging_setup import get_logger
+from .theme import VALID_MODES, apply_theme, normalize_mode
+
+
+_log = get_logger("vigia_hub.window")
 from .settings import (
     Settings,
     autostart_is_enabled,
@@ -95,6 +101,13 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         self._embedded_widgets: dict[str, Gtk.Widget] = {}
         # Caches de paginas de modo (installer, settings, help)
         self._mode_pages: dict[str, Gtk.Widget] = {}
+        # Idle monitor (auto-lock) — None ate ser configurado
+        self._idle_monitor = None
+        # Handler ID do switch de lock (pra block/unblock anti-recursao)
+        self._sw_lock_handler_id = 0
+        # Settings — carregado lazy quando aba Config abre. Pre-carrega aqui
+        # pra _reconfigure_idle_monitor() funcionar caso lock ja' estivesse on
+        self._settings = load_settings()
 
         # ============= Nav fina (esquerda) ============= #
         nav_box = self._build_nav_bar()
@@ -122,6 +135,9 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         first_row = self._nav_list.get_row_at_index(0)
         if first_row is not None:
             self._nav_list.select_row(first_row)
+
+        # Inicializa idle monitor se config diz pra ativar (lock + minutes>0)
+        self._reconfigure_idle_monitor()
 
         # Seleciona primeira tool dentro do modo tools
         if TOOLS:
@@ -231,17 +247,98 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         if mode_id == "settings":
             return self._build_settings_page()
         if mode_id == "help":
-            inner = Adw.StatusPage(
-                title="Manuais",
-                description=(
-                    "Manuais detalhados de cada tool. Cada tool tambem tem aba "
-                    "'Sobre' interna com informacoes especificas. Esta pagina "
-                    "consolida tudo num so lugar — em construcao."
-                ),
-                icon_name="help-browser-symbolic",
-            )
-            return self._wrap_with_header(inner, "Ajuda")
+            return self._build_help_page()
         raise ValueError(f"Modo desconhecido: {mode_id}")
+
+    def _build_help_page(self) -> Gtk.Widget:
+        """Aba Ajuda: manual consolidado de cada tool.
+
+        Reusa long_description + features do registry, organizadas por
+        categoria (mesma ordem do master-detail).
+        """
+        page = Adw.PreferencesPage()
+        page.set_title("Ajuda")
+        page.set_icon_name("help-browser-symbolic")
+
+        # Intro
+        intro_group = Adw.PreferencesGroup()
+        intro_group.set_title("Manual da Vigia Suite")
+        intro_group.set_description(
+            "Cada ferramenta abaixo tem descricao detalhada e features "
+            "principais. Para acoes especificas, abra a ferramenta e veja "
+            "a aba 'Sobre' interna."
+        )
+        page.add(intro_group)
+
+        # Uma section por categoria, com um ExpanderRow por tool
+        grouped = tools_by_category(TOOLS)
+        for cat, tools_in_cat in grouped.items():
+            group = Adw.PreferencesGroup()
+            group.set_title(CATEGORY_LABELS.get(cat, cat))
+
+            for tool in tools_in_cat:
+                expander = Adw.ExpanderRow()
+                expander.set_title(tool.name)
+                expander.set_subtitle(tool.description)
+                if tool.icon_path.is_file():
+                    icon = Gtk.Image.new_from_file(str(tool.icon_path))
+                else:
+                    icon = Gtk.Image.new_from_icon_name(
+                        "application-x-executable-symbolic"
+                    )
+                icon.set_pixel_size(36)
+                expander.add_prefix(icon)
+
+                # Body: long_description + features
+                body_box = Gtk.Box(
+                    orientation=Gtk.Orientation.VERTICAL, spacing=12
+                )
+                body_box.set_margin_top(12)
+                body_box.set_margin_bottom(12)
+                body_box.set_margin_start(16)
+                body_box.set_margin_end(16)
+
+                if tool.long_description:
+                    desc_lbl = Gtk.Label()
+                    desc_lbl.set_markup(md_to_pango(tool.long_description))
+                    desc_lbl.set_wrap(True)
+                    desc_lbl.set_xalign(0)
+                    desc_lbl.set_selectable(True)
+                    body_box.append(desc_lbl)
+
+                if tool.features:
+                    feat_header = Gtk.Label(label="Principais features:")
+                    feat_header.add_css_class("caption-heading")
+                    feat_header.set_xalign(0)
+                    feat_header.set_margin_top(6)
+                    body_box.append(feat_header)
+                    for feature in tool.features:
+                        row = Gtk.Box(
+                            orientation=Gtk.Orientation.HORIZONTAL, spacing=8
+                        )
+                        bullet = Gtk.Label(label="•")
+                        bullet.add_css_class("accent")
+                        bullet.set_valign(Gtk.Align.START)
+                        row.append(bullet)
+                        text = Gtk.Label()
+                        text.set_markup(md_to_pango(feature))
+                        text.set_wrap(True)
+                        text.set_xalign(0)
+                        text.set_hexpand(True)
+                        row.append(text)
+                        body_box.append(row)
+
+                # Wrap em PreferencesRow nao-ativavel pro layout ficar consistente
+                wrapper = Adw.PreferencesRow()
+                wrapper.set_activatable(False)
+                wrapper.set_child(body_box)
+                expander.add_row(wrapper)
+
+                group.add(expander)
+
+            page.add(group)
+
+        return self._wrap_with_header(page, "Ajuda")
 
     def _wrap_with_header(
         self,
@@ -276,8 +373,8 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         Cada aba e um Adw.PreferencesPage isolado, pra facilitar
         adicionar futuras abas (ex: Tema, Notificacoes).
         """
-        # Carrega state atual (sincroniza com .desktop file caso user tenha
-        # editado manualmente)
+        # Re-carrega state atual (caso user tenha editado entre aberturas)
+        # e sincroniza com .desktop file
         self._settings = load_settings()
         disk_autostart = autostart_is_enabled()
         if disk_autostart != self._settings.autostart:
@@ -362,6 +459,30 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         init_group.add(self._sw_minimized)
 
         page.add(init_group)
+
+        # ============= Grupo Aparencia ============= #
+        appearance_group = Adw.PreferencesGroup()
+        appearance_group.set_title("Aparencia")
+        appearance_group.set_description(
+            "Tema visual aplicado ao Hub e as ferramentas embarcadas."
+        )
+
+        self._theme_row = Adw.ComboRow()
+        self._theme_row.set_title("Tema")
+        self._theme_row.set_subtitle(
+            "Seguir o sistema, ou forcar light/dark mode."
+        )
+        theme_model = Gtk.StringList.new(["Sistema", "Claro", "Escuro"])
+        self._theme_row.set_model(theme_model)
+        # Seleciona o valor atual
+        theme_idx = {"system": 0, "light": 1, "dark": 2}.get(
+            self._settings.theme, 0
+        )
+        self._theme_row.set_selected(theme_idx)
+        self._theme_row.connect("notify::selected", self._on_theme_changed)
+        appearance_group.add(self._theme_row)
+
+        page.add(appearance_group)
         return page
 
     def _build_settings_security_tab(self) -> Gtk.Widget:
@@ -385,6 +506,29 @@ class VigiaHubWindow(Adw.ApplicationWindow):
             "notify::active", self._on_lock_toggled
         )
         sec_group.add(self._sw_lock)
+
+        # Auto-lock por inatividade — combo de minutos
+        self._autolock_row = Adw.ComboRow()
+        self._autolock_row.set_title("Auto-bloquear apos inatividade")
+        self._autolock_row.set_subtitle(
+            "Esconde a janela e exige senha de novo na proxima abertura. "
+            "Mede inatividade da janela do Hub."
+        )
+        autolock_model = Gtk.StringList.new([
+            "Desativado", "5 minutos", "10 minutos", "15 minutos",
+            "30 minutos", "60 minutos",
+        ])
+        self._autolock_values = [0, 5, 10, 15, 30, 60]
+        self._autolock_row.set_model(autolock_model)
+        try:
+            current_idx = self._autolock_values.index(self._settings.auto_lock_minutes)
+        except ValueError:
+            current_idx = 0
+        self._autolock_row.set_selected(current_idx)
+        # Sensitive: so faz sentido com lock ativo
+        self._autolock_row.set_sensitive(self._settings.password_lock)
+        self._autolock_row.connect("notify::selected", self._on_autolock_changed)
+        sec_group.add(self._autolock_row)
 
         page.add(sec_group)
 
@@ -648,7 +792,7 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         responde, callback ajusta switch + salva.
         """
         target = switch.get_active()
-        print(f"[lock] toggled target={target}", flush=True)
+        _log.debug("lock toggled target=%s", target)
 
         if not pkexec_available():
             self._set_lock_switch_quietly(not target)
@@ -666,7 +810,7 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         )
 
         def on_result(ok: bool, err: str) -> None:
-            print(f"[lock] auth result: ok={ok} err={err!r}", flush=True)
+            _log.debug("lock auth result: ok=%s err=%r", ok, err)
             switch.set_sensitive(True)
             switch.set_subtitle(self._lock_default_subtitle())
 
@@ -686,7 +830,12 @@ class VigiaHubWindow(Adw.ApplicationWindow):
             app = self.get_application()
             if hasattr(app, "_authed"):
                 app._authed = True  # type: ignore[attr-defined]
-            print(f"[lock] saved password_lock={target}", flush=True)
+            _log.info("password_lock saved=%s", target)
+            # Auto-lock so faz sentido com lock on
+            if hasattr(self, "_autolock_row"):
+                self._autolock_row.set_sensitive(target)
+            # Reconfigura monitor de idle se foi habilitado
+            self._reconfigure_idle_monitor()
 
         # Dispara pkexec via Gio.Subprocess async (sem threads)
         check_auth_async(on_result)
@@ -697,6 +846,70 @@ class VigiaHubWindow(Adw.ApplicationWindow):
             "Pede senha admin (mesma do sudo) ao iniciar o Hub. Usa Polkit "
             "do sistema — nenhuma senha e' armazenada pelo Vigia."
         )
+
+    # ------------- Theme handler -------------
+
+    def _on_theme_changed(self, combo: Adw.ComboRow, *_args) -> None:
+        """User mudou o tema."""
+        idx = combo.get_selected()
+        mode = {0: "system", 1: "light", 2: "dark"}.get(idx, "system")
+        self._settings.theme = mode
+        save_settings(self._settings)
+        apply_theme(normalize_mode(mode))
+        _log.info("theme set to %s", mode)
+
+    # ------------- Auto-lock handler -------------
+
+    def _on_autolock_changed(self, combo: Adw.ComboRow, *_args) -> None:
+        idx = combo.get_selected()
+        if 0 <= idx < len(self._autolock_values):
+            minutes = self._autolock_values[idx]
+        else:
+            minutes = 0
+        self._settings.auto_lock_minutes = minutes
+        save_settings(self._settings)
+        _log.info("auto_lock_minutes set to %s", minutes)
+        self._reconfigure_idle_monitor()
+
+    def _reconfigure_idle_monitor(self) -> None:
+        """(Re)Inicializa monitor de inatividade conforme settings atuais.
+
+        So ativa se:
+        - password_lock ESTA habilitado
+        - auto_lock_minutes > 0
+        Caso contrario, para o monitor existente.
+        """
+        # Para o monitor antigo (se existe)
+        existing = getattr(self, "_idle_monitor", None)
+        if existing is not None:
+            existing.stop()
+            self._idle_monitor = None
+
+        if not self._settings.password_lock:
+            return
+        if self._settings.auto_lock_minutes <= 0:
+            return
+
+        self._idle_monitor = IdleMonitor(
+            window=self,
+            timeout_minutes=self._settings.auto_lock_minutes,
+            on_idle=self._on_idle_timeout,
+        )
+        self._idle_monitor.start()
+        _log.info(
+            "idle monitor started: %s min",
+            self._settings.auto_lock_minutes,
+        )
+
+    def _on_idle_timeout(self) -> None:
+        """Callback do IdleMonitor: esconde janela + forca reauth."""
+        _log.info("idle timeout — esconder janela e forcar reauth")
+        # Reseta auth flag pra proxima abertura pedir senha
+        app = self.get_application()
+        if hasattr(app, "_authed"):
+            app._authed = False  # type: ignore[attr-defined]
+        # Esconde janela (se tray ON, processo continua vivo)
+        self.set_visible(False)
 
     # ------------- Navigation API (chamada pelo tray via app actions) -------------
 

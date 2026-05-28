@@ -60,6 +60,9 @@ class TestLoadSettings:
         assert s.show_tray is False
         assert s.start_minimized is False
         assert s.password_lock is False
+        # v0.6.0 — novos defaults
+        assert s.theme == "system"
+        assert s.auto_lock_minutes == 0
 
     def test_loads_existing_file(self, isolated_paths):
         isolated_paths["state_dir"].mkdir(parents=True, exist_ok=True)
@@ -91,6 +94,41 @@ class TestLoadSettings:
         s = settings.load_settings()
         assert s.autostart is True
         assert s.show_tray is False  # default
+        assert s.theme == "system"  # default
+        assert s.auto_lock_minutes == 0
+
+    def test_invalid_theme_falls_back_to_system(self, isolated_paths):
+        isolated_paths["state_dir"].mkdir(parents=True, exist_ok=True)
+        isolated_paths["state_path"].write_text(
+            json.dumps({"theme": "neon-blue"})
+        )
+        s = settings.load_settings()
+        assert s.theme == "system"
+
+    def test_auto_lock_clamped_to_range(self, isolated_paths):
+        """auto_lock_minutes deve ser clampado em [0, 120]."""
+        isolated_paths["state_dir"].mkdir(parents=True, exist_ok=True)
+        isolated_paths["state_path"].write_text(
+            json.dumps({"auto_lock_minutes": 99999})
+        )
+        s = settings.load_settings()
+        assert s.auto_lock_minutes == 120
+
+    def test_auto_lock_negative_clamped_to_zero(self, isolated_paths):
+        isolated_paths["state_dir"].mkdir(parents=True, exist_ok=True)
+        isolated_paths["state_path"].write_text(
+            json.dumps({"auto_lock_minutes": -5})
+        )
+        s = settings.load_settings()
+        assert s.auto_lock_minutes == 0
+
+    def test_auto_lock_non_int_falls_back_to_zero(self, isolated_paths):
+        isolated_paths["state_dir"].mkdir(parents=True, exist_ok=True)
+        isolated_paths["state_path"].write_text(
+            json.dumps({"auto_lock_minutes": "ten"})
+        )
+        s = settings.load_settings()
+        assert s.auto_lock_minutes == 0
 
 
 class TestSaveSettings:

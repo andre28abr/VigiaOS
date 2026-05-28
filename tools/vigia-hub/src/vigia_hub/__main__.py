@@ -11,9 +11,11 @@ from __future__ import annotations
 import sys
 
 from .app import VigiaHubApp
+from .logging_setup import setup_logging
 
 
 def main() -> int:
+    setup_logging()  # ANTES de qualquer log no app
     minimized = "--minimized" in sys.argv
     if minimized:
         # Remove a flag pra nao confundir Gio.Application.run
