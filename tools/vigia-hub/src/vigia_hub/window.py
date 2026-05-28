@@ -39,6 +39,12 @@ from .registry import (
     ToolEntry,
     tools_by_category,
 )
+from .settings import (
+    autostart_is_enabled,
+    autostart_sync,
+    load_settings,
+    save_settings,
+)
 
 
 # Lista de emuladores de terminal em ordem de preferencia.
@@ -212,14 +218,7 @@ class VigiaHubWindow(Adw.ApplicationWindow):
                 raise RuntimeError("vigia_installer.window.build_content() faltando")
             return builder()
         if mode_id == "settings":
-            return Adw.StatusPage(
-                title="Configuracoes",
-                description=(
-                    "Settings globais do Hub: tema, autostart, notificacoes. "
-                    "Em construcao — sera adicionado em proxima versao."
-                ),
-                icon_name="preferences-system-symbolic",
-            )
+            return self._build_settings_page()
         if mode_id == "help":
             return Adw.StatusPage(
                 title="Manuais",
@@ -231,6 +230,133 @@ class VigiaHubWindow(Adw.ApplicationWindow):
                 icon_name="help-browser-symbolic",
             )
         raise ValueError(f"Modo desconhecido: {mode_id}")
+
+    # ========================================================================
+    # Settings page (Configuracoes)
+    # ========================================================================
+
+    def _build_settings_page(self) -> Gtk.Widget:
+        """Pagina Configuracoes — autostart, tray, bloqueio, etc."""
+        page = Adw.PreferencesPage()
+        page.set_title("Configuracoes")
+        page.set_icon_name("preferences-system-symbolic")
+
+        # Carrega state atual (sincroniza com .desktop file caso user tenha
+        # editado manualmente)
+        self._settings = load_settings()
+        disk_autostart = autostart_is_enabled()
+        if disk_autostart != self._settings.autostart:
+            self._settings.autostart = disk_autostart
+            save_settings(self._settings)
+
+        # ============= Grupo 1: Inicializacao ============= #
+        init_group = Adw.PreferencesGroup()
+        init_group.set_title("Inicializacao")
+        init_group.set_description(
+            "Como o Hub inicia junto com o sistema."
+        )
+
+        # Switch: autostart
+        self._sw_autostart = Adw.SwitchRow()
+        self._sw_autostart.set_title("Iniciar junto com o sistema")
+        self._sw_autostart.set_subtitle(
+            "Cria ~/.config/autostart/vigia-hub.desktop (XDG padrao)."
+        )
+        self._sw_autostart.set_active(self._settings.autostart)
+        self._sw_autostart.connect("notify::active", self._on_autostart_toggled)
+        init_group.add(self._sw_autostart)
+
+        # Switch: tray (placeholder Fase 1b)
+        self._sw_tray = Adw.SwitchRow()
+        self._sw_tray.set_title("Mostrar icone na bandeja do sistema")
+        self._sw_tray.set_subtitle(
+            "Em breve (Fase 1b): icone perto do relogio, com menu rapido."
+        )
+        self._sw_tray.set_active(False)
+        self._sw_tray.set_sensitive(False)
+        init_group.add(self._sw_tray)
+
+        # Switch: iniciar minimizado (placeholder Fase 1b)
+        self._sw_minimized = Adw.SwitchRow()
+        self._sw_minimized.set_title("Iniciar minimizado na bandeja")
+        self._sw_minimized.set_subtitle(
+            "Requer 'Mostrar icone na bandeja' habilitado. Em breve."
+        )
+        self._sw_minimized.set_active(False)
+        self._sw_minimized.set_sensitive(False)
+        init_group.add(self._sw_minimized)
+
+        page.add(init_group)
+
+        # ============= Grupo 2: Seguranca ============= #
+        sec_group = Adw.PreferencesGroup()
+        sec_group.set_title("Seguranca")
+        sec_group.set_description(
+            "Protecao do Hub e das ferramentas administrativas."
+        )
+
+        # Switch: password lock (placeholder Fase 2)
+        self._sw_lock = Adw.SwitchRow()
+        self._sw_lock.set_title("Exigir senha para abrir o Hub")
+        self._sw_lock.set_subtitle(
+            "Em breve (Fase 2): bloqueia o Hub atras da senha admin (Polkit)."
+        )
+        self._sw_lock.set_active(False)
+        self._sw_lock.set_sensitive(False)
+        sec_group.add(self._sw_lock)
+
+        page.add(sec_group)
+
+        # ============= Grupo 3: Sobre as configuracoes ============= #
+        info_group = Adw.PreferencesGroup()
+        info_group.set_title("Sobre as configuracoes")
+        info_row = Adw.ActionRow()
+        info_row.set_title("Arquivo de configuracao")
+        info_row.set_subtitle(
+            "~/.config/vigia-hub/settings.json (permissao 0600)"
+        )
+        info_row.add_prefix(
+            Gtk.Image.new_from_icon_name("text-x-generic-symbolic")
+        )
+        info_group.add(info_row)
+
+        autostart_row = Adw.ActionRow()
+        autostart_row.set_title("Autostart")
+        autostart_row.set_subtitle(
+            "~/.config/autostart/vigia-hub.desktop (XDG)"
+        )
+        autostart_row.add_prefix(
+            Gtk.Image.new_from_icon_name("system-run-symbolic")
+        )
+        info_group.add(autostart_row)
+
+        page.add(info_group)
+
+        return page
+
+    def _on_autostart_toggled(self, switch: Adw.SwitchRow, *_args) -> None:
+        """User toggleou autostart — atualiza .desktop file + state.json."""
+        enabled = switch.get_active()
+        ok = autostart_sync(
+            enabled=enabled,
+            minimized=self._settings.start_minimized,
+        )
+        if not ok:
+            # Reverte switch se gravacao falhou
+            switch.set_active(not enabled)
+            self._show_settings_error(
+                "Falha ao salvar autostart",
+                "Nao foi possivel escrever em ~/.config/autostart/. "
+                "Verifique permissoes da pasta.",
+            )
+            return
+        self._settings.autostart = enabled
+        save_settings(self._settings)
+
+    def _show_settings_error(self, heading: str, body: str) -> None:
+        dlg = Adw.AlertDialog(heading=heading, body=body)
+        dlg.add_response("ok", "OK")
+        dlg.present(self)
 
     # ========================================================================
     # Tools view (master-detail com categorias)
