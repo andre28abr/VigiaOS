@@ -120,7 +120,9 @@ def install_policy() -> tuple[bool, str]:
     """Instala o .policy em /etc/polkit-1/actions/ via pkexec.
 
     Estrategia: cria arquivo temp com o XML, depois pkexec install
-    pra mover (preserva permissoes/owner root:root).
+    pra mover (preserva permissoes/owner root:root). Apos copia,
+    espera ate 5s o polkitd reconhecer a action — alguns sistemas
+    nao tem inotify watch nos action dirs.
     """
     try:
         # Cria temp file com o XML
@@ -155,12 +157,51 @@ def install_policy() -> tuple[bool, str]:
         except OSError:
             pass
 
-        if result.returncode == 0:
-            return (True, "")
-        err = result.stderr.strip() or f"pkexec retornou {result.returncode}"
-        return (False, err)
+        if result.returncode != 0:
+            err = result.stderr.strip() or f"pkexec retornou {result.returncode}"
+            return (False, err)
+
+        # Espera ate 5s pelo polkitd reconhecer a nova action
+        if not wait_for_polkit_recognition(ACTION_ID, timeout=5.0):
+            return (
+                False,
+                "O arquivo foi instalado, mas o servico polkitd nao "
+                "reconheceu a action em ate 5 segundos. Tente desligar "
+                "e religar o switch (geralmente resolve), ou reinicie "
+                "o servico: sudo systemctl restart polkit",
+            )
+
+        return (True, "")
     except (OSError, subprocess.SubprocessError) as e:
         return (False, str(e))
+
+
+def wait_for_polkit_recognition(action_id: str, timeout: float = 5.0) -> bool:
+    """Espera o polkitd reconhecer a action recem-instalada.
+
+    Usa `pkaction --action-id <id>` em loop ate retornar exit 0 ou
+    timeout. Resolve a race condition entre `install` do .policy e
+    o inotify do polkitd.
+    """
+    if not shutil.which("pkaction"):
+        # Sem pkaction nao da pra verificar — assume que vai funcionar
+        return True
+
+    import time
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        try:
+            result = subprocess.run(
+                ["pkaction", "--action-id", action_id],
+                capture_output=True,
+                timeout=2,
+            )
+            if result.returncode == 0:
+                return True
+        except (subprocess.TimeoutExpired, FileNotFoundError):
+            pass
+        time.sleep(0.2)
+    return False
 
 
 def uninstall_policy() -> tuple[bool, str]:
