@@ -288,7 +288,7 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         stack.add_titled_with_icon(
             self._build_help_manual_tab("leigo"),
             "leigo",
-            "Manual simples",
+            "Manual para leigos",
             "user-info-symbolic",
         )
 
