@@ -1850,6 +1850,12 @@ mostra o resumo de syscalls (tabela por %tempo) num diálogo. Read-only.
   Suite 616→627. Dashboard v0.3.0; `strace` em wrapped_packages.
 - Doc-sync: badges de versão do README sincronizados (hub/file-integrity/
   tool-installer/dns/dashboard estavam stale dos commits do dia).
+- **v0.3.1 (fix, reportado pelo André)**: a aba Processos reconstruía a
+  lista inteira a cada 2s, colapsando a linha que o usuário acabara de
+  expandir ("abre e fecha" — e sumia com o botão Inspecionar antes do
+  clique). Bug pré-existente, virou bloqueante com o inspetor. Fix:
+  `_refresh()` pula o rebuild enquanto `_any_expanded()` (linha aberta);
+  retoma quando tudo fecha.
 
 ---
 
