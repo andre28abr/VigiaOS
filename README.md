@@ -15,7 +15,7 @@ Resultado: as ferramentas funcionam em qualquer Fedora Atomic (Silverblue,
 Kinoite, Bluefin, Bazzite, Aurora), aproveitando atualizações automáticas
 do sistema-base sem complicação.
 
-## O que está incluído (v2 — 17 ferramentas focadas em LGPD/escritório)
+## O que está incluído (v2 — 16 ferramentas focadas em LGPD/escritório)
 
 | # | Componente | Stack | Status |
 |---|---|---|---|

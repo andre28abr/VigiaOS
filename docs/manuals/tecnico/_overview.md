@@ -2,7 +2,7 @@
 
 ## O que é
 
-VigiaOS é uma **suite de 17 ferramentas GTK4 + libadwaita** focada em
+VigiaOS é uma **suite de 16 ferramentas GTK4 + libadwaita** focada em
 segurança, privacidade e conformidade com LGPD para Fedora Silverblue
 (e derivadas atômicas: Kinoite, Bluefin, Bazzite, Aurora).
 

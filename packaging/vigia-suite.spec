@@ -49,8 +49,9 @@ Requires:       vigia-reports >= 0.1.1
 Requires:       vigia-installer >= 0.1.0
 
 %description
-VigiaOS — metapackage que instala as 14 ferramentas de seguranca e
-monitoramento do VigiaOS (mais o Instalador) numa unica operacao.
+VigiaOS — metapackage que instala o Vigia Hub + as 14 ferramentas de
+seguranca/monitoramento + o Tool Installer (16 apps no total) numa
+unica operacao.
 
 Apos instalacao, abra "Vigia Hub" no menu GNOME para acessar todas
 as ferramentas embarcadas em uma unica janela.
@@ -62,7 +63,7 @@ Categorias:
                  Capabilities Inspector, Rootkit Scanner, Antivirus
 - Sistema:       Deployments Manager (rpm-ostree)
 - Relatorios:    Reports (PDF/HTML LGPD)
-- Catalogo:      Tool Installer (~30 ferramentas extras)
+- Catalogo:      Tool Installer (16 pacotes curados + extensoes)
 
 Compatibilidade: Fedora Silverblue, Kinoite, Bluefin, Bazzite, Aurora.
 

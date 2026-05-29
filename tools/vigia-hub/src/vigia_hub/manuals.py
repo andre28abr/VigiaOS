@@ -14,11 +14,11 @@ Arquivos .md ficam fora do codigo Python pra facilitar edicao:
   │   ├── _overview.md
   │   ├── vigia-hub.md
   │   ├── activity-log.md
-  │   └── ... (17 tools)
+  │   └── ... (16 tools + _overview)
   └── leigo/
       ├── _overview.md
       ├── vigia-hub.md
-      └── ... (17 tools)
+      └── ... (16 tools + _overview)
 
 Renderizacao:
 - Tenta WebKitGTK 6.0 + python-markdown (HTML rico, suporta tabelas,
