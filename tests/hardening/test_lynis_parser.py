@@ -184,13 +184,13 @@ class TestFormatAge:
         assert backend.format_age(0) == "agora mesmo"
 
     def test_minutes(self):
-        assert backend.format_age(42) == "ha 42 min"
+        assert backend.format_age(42) == "há 42 min"
 
     def test_hours(self):
-        assert backend.format_age(150) == "ha 2h"
+        assert backend.format_age(150) == "há 2h"
 
     def test_days_plural(self):
-        assert backend.format_age(60 * 24 * 3) == "ha 3 dias"
+        assert backend.format_age(60 * 24 * 3) == "há 3 dias"
 
     def test_one_day_singular(self):
-        assert backend.format_age(60 * 24) == "ha 1 dia"
+        assert backend.format_age(60 * 24) == "há 1 dia"
