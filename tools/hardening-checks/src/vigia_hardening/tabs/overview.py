@@ -21,6 +21,8 @@ from ..backend import (
 )
 from ._helpers import make_clamp, severity_css_class, severity_label, show_error
 
+from vigia_common.platform import install_hint
+
 
 class OverviewTab(Adw.Bin):
     """Tab principal: hardening index + acao de auditoria."""
@@ -263,8 +265,8 @@ class OverviewTab(Adw.Bin):
             show_error(
                 self,
                 "Lynis nao instalado",
-                "O pacote 'lynis' nao foi encontrado. Em Fedora Silverblue:\n\n"
-                "rpm-ostree install lynis\nsystemctl reboot",
+                "O pacote 'lynis' nao foi encontrado. Instale:\n\n"
+                + install_hint("lynis"),
             )
             return
 

@@ -12,6 +12,8 @@ gi.require_version("Adw", "1")
 
 from gi.repository import Adw, GLib, Gtk  # noqa: E402
 
+from vigia_common.platform import install_hint
+
 from .. import backend
 from ._helpers import make_clamp, show_error, show_info
 
@@ -209,7 +211,7 @@ class StatusTab(Adw.Bin):
             self._state_label.set_label("AIDE nao instalado")
             self._state_label.add_css_class("error")
             self._state_sub.set_label(
-                "Em Fedora Silverblue: rpm-ostree install aide && systemctl reboot"
+                "Para usar, instale o AIDE: " + install_hint("aide")
             )
         elif not has_baseline:
             self._state_label.set_label("Sem baseline")

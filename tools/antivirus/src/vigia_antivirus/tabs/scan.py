@@ -19,6 +19,7 @@ gi.require_version("Pango", "1.0")
 from gi.repository import Adw, Gio, GLib, Gtk, Pango  # noqa: E402
 
 from vigia_common.notifications import PRIORITY_HIGH, notify_if_unfocused
+from vigia_common.platform import install_hint
 
 from .. import backend
 from ._helpers import make_clamp, show_error
@@ -246,7 +247,7 @@ class ScanTab(Adw.Bin):
         if not installed:
             self._status_banner.set_title(
                 "ClamAV nao instalado. "
-                "Instale via: rpm-ostree install clamav clamav-update"
+                "Instale via: " + install_hint("clamav", "clamav-update")
             )
             self._status_banner.set_revealed(True)
             self._run_btn.set_sensitive(False)
@@ -287,7 +288,7 @@ class ScanTab(Adw.Bin):
             show_error(
                 self,
                 "ClamAV nao instalado",
-                "Instale com: rpm-ostree install clamav clamav-update && reboot",
+                "Instale com: " + install_hint("clamav", "clamav-update"),
             )
             return
 

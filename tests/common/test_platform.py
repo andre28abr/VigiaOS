@@ -42,3 +42,20 @@ class TestPackageManager:
         monkeypatch.setattr(plat, "is_atomic", lambda: False)
         assert plat.package_manager() == "dnf"
         assert plat.needs_reboot_to_apply() is False
+
+
+class TestInstallHint:
+    def test_atomic_with_reboot(self, monkeypatch):
+        monkeypatch.setattr(plat, "is_atomic", lambda: True)
+        assert plat.install_hint("lynis") == "rpm-ostree install lynis && systemctl reboot"
+
+    def test_atomic_no_reboot(self, monkeypatch):
+        monkeypatch.setattr(plat, "is_atomic", lambda: True)
+        assert plat.install_hint("aide", reboot=False) == "rpm-ostree install aide"
+
+    def test_workstation_never_reboots(self, monkeypatch):
+        monkeypatch.setattr(plat, "is_atomic", lambda: False)
+        assert (
+            plat.install_hint("clamav", "clamav-update")
+            == "sudo dnf install clamav clamav-update"
+        )
