@@ -122,7 +122,11 @@ TOOLS: list[ToolEntry] = [
             "ciano, Rede em violeta. Faciliter identificar de relance "
             "qual metrica esta picando.\n\n"
             "**Kill de processos** com confirmacao (SIGTERM ou SIGKILL). "
-            "Processos de outros users requerem admin via pkexec."
+            "Processos de outros users requerem admin via pkexec.\n\n"
+            "**Inspecionar processo**: botao por processo que roda "
+            "`strace -c` por ~5s e mostra o resumo de syscalls (read-only, "
+            "via pkexec). So' aparece se o `strace` estiver instalado — util "
+            "pra investigar o que um processo suspeito esta fazendo."
         ),
         features=[
             "**5 tabs**: Visao Geral, Recursos, Processos, Alertas, Sobre",
@@ -131,6 +135,7 @@ TOOLS: list[ToolEntry] = [
             "Temperatura via `/sys/class/thermal` (sem deps externas)",
             "Top 30 processos com filtros (search, sort, 'so meus')",
             "Kill com confirmacao + pkexec para processos do sistema",
+            "**Inspecionar** syscalls de um processo via `strace -c` (opcional, pkexec)",
             "**Sem persistencia** em disco — dados somem ao fechar",
         ],
         icon_path=_TOOLS_DIR / "dashboard" / "data" / "br.com.vigia.Dashboard.svg",
@@ -139,7 +144,7 @@ TOOLS: list[ToolEntry] = [
         available_fn=lambda: shutil.which("vigia-dashboard") is not None,
         embedded_module="vigia_dashboard.window",
         category="monitoramento",
-        wrapped_packages=["procfs"],
+        wrapped_packages=["procfs", "strace"],
     ),
     ToolEntry(
         id="activity-log",
