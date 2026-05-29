@@ -1678,7 +1678,7 @@ decisão de escopo no Tool Installer. Commits `7a32a93`..`b38655b`.
   opt-in, sem UI") corrigidas, e o §5.11 (que descrevia um catálogo
   de ~30 ferramentas que não batia com o `catalog.py` real).
 
-### 2026-05-30 — B5 (rename) + B1 (instalação modular) + B4 (trim catálogo)
+### 2026-05-30 — B5 (rename) + B1 (modular) + B4 (trim) + B3 (compat Workstation)
 
 Início da execução do backlog §10.6. Commits `0471e85`..`72ad85f`.
 
@@ -1718,6 +1718,19 @@ Início da execução do backlog §10.6. Commits `0471e85`..`72ad85f`.
   (serviço de defesa, não monitor) e `mtr`/`nethogs`/`iftop` (Dashboard
   só mostra banda **por interface**, não por processo/host). Contagens
   stale "~22" espalhadas pelos docs corrigidas pra 16.
+- **B3 — Compat Fedora Workstation, runtime (#90, feito)**: novo
+  `vigia_common/platform.py` — `is_atomic()` (checa `/run/ostree-booted`),
+  `package_manager()`, `needs_reboot_to_apply()` (+6 testes). **Tool
+  Installer v0.3.0**: install/uninstall dispatcham `rpm-ostree` (atômico)
+  vs `dnf` (Workstation); aba "Pendentes" escondida e mensagens
+  adaptadas no Workstation. **Hub v0.7.4**: `ToolEntry.atomic_only` +
+  `visible_tools()` escondem o **Deployments Manager** no Workstation;
+  instalador de dependência do tray usa `dnf`. Decisões do André:
+  esconder Deployments + adaptar o Installer. **Pendente** (não é o
+  core do B3): (a) `bootstrap.sh` branch dnf → vai com B2/B6; (b) textos
+  de sugestão "rpm-ostree install X" em mensagens de algumas tools
+  (antivirus/hardening/file-integrity/rootkit/dns) ainda fixos —
+  cosmético, polish futuro (#94).
 
 ---
 
@@ -1983,7 +1996,7 @@ shell script que roda **antes**: atualiza o sistema + instala tudo.
   Provável meio-termo: instalar deps das tools *core*, mas serviços
   (tor, fail2ban, dnscrypt-proxy) ficam **opt-in** via Installer.
 
-#### B3 — Compatibilidade Fedora Workstation (não-atômico) — #90
+#### B3 — Compatibilidade Fedora Workstation (não-atômico) — #90 ✅ runtime (ver §9 2026-05-30; bootstrap dnf fica no B2/B6)
 
 André: verificar se o Hub roda também no **Fedora Workstation
 tradicional** (dnf), e fazer o mesmo script de instalação.
