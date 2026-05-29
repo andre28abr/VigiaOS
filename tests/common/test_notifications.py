@@ -13,13 +13,17 @@ import pytest
 
 
 @pytest.fixture
-def no_default_app():
-    """Garante que nao ha Gio.Application default (forca o caminho no-op)."""
+def no_default_app(monkeypatch):
+    """Forca o caminho 'sem app rodando' (no-op gracioso).
+
+    O ideal seria `Gio.Application.set_default(None)`, mas o binding GI
+    marca o argumento como nao-nulavel (`TypeError: Argument 0 does not
+    allow None as a value`). Como nenhum teste registra uma GApplication
+    default, basta garantir que `get_default()` devolva None —
+    monkeypatchamos o metodo (restaurado no teardown pelo monkeypatch)."""
     from gi.repository import Gio
-    prev = Gio.Application.get_default()
-    Gio.Application.set_default(None)
+    monkeypatch.setattr(Gio.Application, "get_default", staticmethod(lambda: None))
     yield
-    Gio.Application.set_default(prev)
 
 
 @pytest.mark.gtk
