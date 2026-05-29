@@ -1,107 +1,107 @@
-# Antivirus
+# Antivírus
 
 ## Pra que serve
 
-Pra **procurar virus em arquivos** do seu computador.
+Pra **procurar vírus em arquivos** do seu computador.
 
-Usa o **ClamAV**, um antivirus de codigo aberto reconhecido. Funciona
-diferente do Norton ou Kaspersky do Windows: nao fica rodando o tempo
-todo bisbilhotando tudo. Voce **manda escanear** quando quiser — uma
+Usa o **ClamAV**, um antivírus de código aberto reconhecido. Funciona
+diferente do Norton ou Kaspersky do Windows: não fica rodando o tempo
+todo bisbilhotando tudo. Você **manda escanear** quando quiser — uma
 pasta, um arquivo, sua pasta de Downloads.
 
-E util principalmente em **2 cenarios**:
+É útil principalmente em **2 cenários**:
 
-1. **Voce baixou um arquivo e vai mandar pra alguem usando Windows.**
-   Mesmo que o virus nao afete seu Linux, voce nao quer passar
+1. **Você baixou um arquivo e vai mandar pra alguém usando Windows.**
+   Mesmo que o vírus não afete seu Linux, você não quer passar
    adiante.
-2. **Escritorio LGPD.** Voce precisa **provar** que esta cuidando dos
-   dados dos clientes. Escanear periodicamente e parte da diligencia.
+2. **Escritório LGPD.** Você precisa **provar** que está cuidando dos
+   dados dos clientes. Escanear periodicamente é parte da diligência.
 
-## Quando voce usa isso
+## Quando você usa isso
 
 - **Depois de baixar arquivos da internet** — especialmente PDFs,
-  documentos do Office, executaveis.
+  documentos do Office, executáveis.
 - **Antes de mandar arquivos por email** pra clientes ou parceiros.
 - **Periodicamente** (1x/semana) na sua pasta de Downloads ou
   Documents — preventivo.
-- **Quando alguem te mandar um arquivo suspeito** — antes de abrir.
-- **Servidor que recebe arquivos de terceiros** — scan diario via cron.
+- **Quando alguém te mandar um arquivo suspeito** — antes de abrir.
+- **Servidor que recebe arquivos de terceiros** — scan diário via cron.
 
-## O que voce vai ver
+## O que você vai ver
 
-Sao **3 abas**:
+São **3 abas**:
 
-1. **Scan** — Onde voce escolhe o que escanear e ve o resultado:
+1. **Scan** — Onde você escolhe o que escanear e vê o resultado:
    - Caixa de texto pra digitar um caminho (ou clicar a pasta)
    - **4 atalhos**: Home, Downloads, Documents, /tmp
-   - Botao **Iniciar scan**
+   - Botão **Iniciar scan**
    - Conforme escaneia, vai mostrando os arquivos analisados
-   - Se achar virus, aparece em destaque **vermelho**
+   - Se achar vírus, aparece em destaque **vermelho**
 
-2. **Base de dados** — A "lista de virus conhecidos":
-   - Versao do ClamAV
-   - Idade da base (quanto tempo desde a ultima atualizacao)
-   - Botao **Atualizar base agora** (pede senha admin)
-   - Lista dos ultimos scans feitos
+2. **Base de dados** — A "lista de vírus conhecidos":
+   - Versão do ClamAV
+   - Idade da base (quanto tempo desde a última atualização)
+   - Botão **Atualizar base agora** (pede senha admin)
+   - Lista dos últimos scans feitos
 
 3. **Sobre** — Manual interno mais detalhado.
 
 ## O que cada parte faz
 
-- **Banner no topo** — avisa se a base esta desatualizada ou se o
-  ClamAV nao esta instalado.
-- **Caminho do scan** — onde voce diz "olha aqui dentro". Pode ser
-  uma pasta inteira ou um arquivo soh.
+- **Banner no topo** — avisa se a base está desatualizada ou se o
+  ClamAV não está instalado.
+- **Caminho do scan** — onde você diz "olha aqui dentro". Pode ser
+  uma pasta inteira ou um arquivo só.
 - **Atalhos (Home, Downloads...)** — os lugares mais comuns onde
   baixamos arquivo do mundo externo.
-- **Iniciar scan** — comeca a varredura. Vai aparecendo log conforme
+- **Iniciar scan** — começa a varredura. Vai aparecendo log conforme
   ele encontra arquivos.
 - **Parar** — cancela o scan se demorar demais.
-- **Atualizar base** — baixa as assinaturas mais recentes de virus
+- **Atualizar base** — baixa as assinaturas mais recentes de vírus
   (cerca de 250 MB, leva 30-90 segundos).
-- **Historico** — guarda registro JSON de cada scan no
-  `~/.local/share/vigia-antivirus/` com permissao **so voce pode
-  ler**. Util pra audit LGPD.
+- **Histórico** — guarda registro JSON de cada scan no
+  `~/.local/share/vigia-antivirus/` com permissão **só você pode
+  ler**. Útil pra audit LGPD.
 
 ## Posso quebrar alguma coisa?
 
-**Nao com o scan.** O scan e somente leitura — ele soh **olha** os
-arquivos, nao apaga nem move nada.
+**Não com o scan.** O scan é somente leitura — ele só **olha** os
+arquivos, não apaga nem move nada.
 
-**Com a atualizacao da base, tambem nao.** Ela soh baixa um arquivo
+**Com a atualização da base, também não.** Ela só baixa um arquivo
 novo de assinaturas.
 
-**Atencao:** se aparecer um arquivo como **virus encontrado**, e
-voce decidir **apagar manualmente**, ai sim voce pode deletar algo
+**Atenção:** se aparecer um arquivo como **vírus encontrado**, e
+você decidir **apagar manualmente**, aí sim você pode deletar algo
 importante por engano. Sempre confirme antes de deletar:
 
-1. O ClamAV as vezes da **falso positivo** (acusa arquivo limpo como
-   virus).
-2. Olhe o nome do arquivo. Se for algo que voce reconhece (foto da
-   familia, doc do escritorio), pesquise o nome da assinatura no
+1. O ClamAV às vezes dá **falso positivo** (acusa arquivo limpo como
+   vírus).
+2. Olhe o nome do arquivo. Se for algo que você reconhece (foto da
+   família, doc do escritório), pesquise o nome da assinatura no
    Google antes de deletar.
-3. Em caso de duvida, **mova pra outra pasta** em vez de deletar.
+3. Em caso de dúvida, **mova pra outra pasta** em vez de deletar.
 
 ## Dica do dia
 
-**Atualize a base 1x/semana, no minimo.** Se ela esta desatualizada
-ha mais de 30 dias, o scan **nao pega virus novos**.
+**Atualize a base 1x/semana, no mínimo.** Se ela está desatualizada
+há mais de 30 dias, o scan **não pega vírus novos**.
 
-A maneira mais facil:
+A maneira mais fácil:
 
-1. Abra o Vigia Antivirus
+1. Abra o Vigia Antivírus
 2. Vai na aba **Base de dados**
 3. Olha a "Idade da base"
 4. Se passou de 7 dias, clica em **Atualizar base agora**
 5. Digita a senha
 6. Espera 30-90 segundos
 
-Voce tambem pode automatizar isso via `systemd timer` ou cron — pergunte
-a alguem que entenda. Mas pra escritorio pequeno, atualizacao manual 1x/semana
-ja resolve.
+Você também pode automatizar isso via `systemd timer` ou cron — pergunte
+a alguém que entenda. Mas pra escritório pequeno, atualização manual 1x/semana
+já resolve.
 
 **Importante**: o ClamAV detecta principalmente **malware Windows**
 (arquivos .exe, .dll, documentos Office com macros maliciosas) e
-**alguns shell scripts conhecidos**. **Nao pega** ataques sofisticados
-ou zero-day. E uma camada de baseline — combine com outras (firewall,
+**alguns shell scripts conhecidos**. **Não pega** ataques sofisticados
+ou zero-day. É uma camada de baseline — combine com outras (firewall,
 hardening, rootkit scanner).

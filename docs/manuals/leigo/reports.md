@@ -1,81 +1,81 @@
-# Relatorios
+# Relatórios
 
 ## Pra que serve
 
-Gera **relatorios em PDF** com o que aconteceu no seu computador — quem
+Gera **relatórios em PDF** com o que aconteceu no seu computador — quem
 fez login, quem usou senha de administrador, quais IPs foram bloqueados.
 
-E' o documento que voce mostra pra:
-- **Auditor de LGPD** ("como vocem monitoram acessos?")
+É o documento que você mostra pra:
+- **Auditor de LGPD** ("como vocês monitoram acessos?")
 - **Cliente desconfiado** ("quem mexeu nos dados do meu processo?")
-- **Voce mesmo no fim do mes** (revisao de seguranca)
+- **Você mesmo no fim do mês** (revisão de segurança)
 
-## Quando voce usa isso
+## Quando você usa isso
 
-- **Toda virada de mes**: gera relatorio dos ultimos 30 dias, salva PDF
+- **Toda virada de mês**: gera relatório dos últimos 30 dias, salva PDF
   numa pasta de auditoria.
-- **Quando algo estranho aconteceu**: relatorio das ultimas 24h pra
+- **Quando algo estranho aconteceu**: relatório das últimas 24h pra
   isolar o que rolou.
-- **Antes de reuniao com cliente**: prova que voce monitora.
-- **Quando o auditor vem**: pacote dos ultimos 90 dias.
+- **Antes de reunião com cliente**: prova que você monitora.
+- **Quando o auditor vem**: pacote dos últimos 90 dias.
 
-## O que voce vai ver
+## O que você vai ver
 
 A janela tem **3 abas**:
 
-**Gerar**: voce escolhe o que entra no relatorio e clica em "Gerar".
-Algumas opcoes:
-- Modelo: "Atividade geral" (panorama) ou "Eventos de autenticacao"
+**Gerar**: você escolhe o que entra no relatório e clica em "Gerar".
+Algumas opções:
+- Modelo: "Atividade geral" (panorama) ou "Eventos de autenticação"
   (focado em quem entrou)
-- Periodo: 24 horas, 7 dias, 30 dias, ou 90 dias
+- Período: 24 horas, 7 dias, 30 dias, ou 90 dias
 - **Modo admin** (interruptor): liga pra pegar dados completos (vai
   pedir sua senha 1x)
 
 Clicou em Gerar -> aparece uma barra de progresso por uns segundos ->
-o relatorio abre **automaticamente** no Firefox.
+o relatório abre **automaticamente** no Firefox.
 
-**Biblioteca**: lista todos os relatorios que voce ja gerou. Cada um
-tem botoes "Abrir" e "Excluir". Tem tambem um botao "Abrir pasta" pra
-ver onde os arquivos estao.
+**Biblioteca**: lista todos os relatórios que você já gerou. Cada um
+tem botões "Abrir" e "Excluir". Tem também um botão "Abrir pasta" pra
+ver onde os arquivos estão.
 
-**Sobre**: explicacao da ferramenta com mais detalhes.
+**Sobre**: explicação da ferramenta com mais detalhes.
 
 ## O que cada parte faz
 
 - **Atividade geral**: mostra um panorama — quantos logins SSH bem
   sucedidos, quantas falhas, quem usou administrador, IPs bloqueados.
-  Bom pra revisao mensal.
-- **Eventos de autenticacao**: detalha cada login, cada uso de senha
+  Bom pra revisão mensal.
+- **Eventos de autenticação**: detalha cada login, cada uso de senha
   de administrador, cada tentativa falhada. Bom pra auditoria LGPD
   formal.
-- **Modo admin**: quando ligado, a ferramenta consegue ver tambem as
+- **Modo admin**: quando ligado, a ferramenta consegue ver também as
   **tentativas de login que falharam** (importante!) e o registro
-  completo do sistema. Sem isso, vai faltar parte da historia.
+  completo do sistema. Sem isso, vai faltar parte da história.
 
 ### Como virar PDF
 
-O relatorio abre no Firefox. Pra salvar como PDF:
+O relatório abre no Firefox. Pra salvar como PDF:
 1. `Ctrl+P` (ou menu Arquivo -> Imprimir)
 2. Destino: "Salvar como PDF"
 3. Pronto
 
 ## Posso quebrar alguma coisa?
 
-**Nao.** Essa ferramenta so **le** o que o sistema ja registrou. Ela
-nao muda nada, nao mexe em arquivos, nao reinicia servico.
+**Não.** Essa ferramenta só **lê** o que o sistema já registrou. Ela
+não muda nada, não mexe em arquivos, não reinicia serviço.
 
-O unico cuidado: os relatorios contem dados sensiveis (IPs, nomes de
-usuario, comandos administrativos). A ferramenta salva eles num lugar
-seguro (`~/.local/share/vigia-reports/`) com permissoes restritivas —
-**so voce le**. Nao guarde em pasta sincronizada na nuvem
+O único cuidado: os relatórios contêm dados sensíveis (IPs, nomes de
+usuário, comandos administrativos). A ferramenta salva eles num lugar
+seguro (`~/.local/share/vigia-reports/`) com permissões restritivas —
+**só você lê**. Não guarde em pasta sincronizada na nuvem
 (Dropbox/iCloud/OneDrive) sem pensar duas vezes.
 
 ## Dica do dia
 
-**Crie uma rotina mensal**: todo dia 1, gera o relatorio "Atividade
-geral" dos ultimos 30 dias com modo admin ligado, salva como PDF numa
-pasta `Auditoria/2026-XX/`. Em 1 ano voce tem 12 PDFs que provam
-diligencia em qualquer fiscalizacao.
+**Crie uma rotina mensal**: todo dia 1, gera o relatório "Atividade
+geral" dos últimos 30 dias com modo admin ligado, salva como PDF numa
+pasta `Auditoria/2026-XX/`. Em 1 ano você tem 12 PDFs que provam
+diligência em qualquer fiscalização.
 
-Se voce e' advogado lidando com LGPD, isso e' literalmente prova
-documental de **medidas tecnicas e administrativas** (art. 46 da LGPD).
+Se você é advogado lidando com LGPD, isso é literalmente prova
+documental de **medidas técnicas e administrativas** (art. 46 da LGPD).

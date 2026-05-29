@@ -4,16 +4,16 @@
 
 Wrapper GTK4 para `aide` (intrusion detection sistema-wide com baseline
 SHA256 + diff) combinado com hash ad-hoc (`hashlib`) para arquivos do
-usuario — duas escalas, mesma logica de "baseline + diff".
+usuário — duas escalas, mesma lógica de "baseline + diff".
 
 ## O que envolve
 
 | Item | Valor |
 |---|---|
-| **Pacote** | `vigia-file-integrity` (versao 0.2.0) |
+| **Pacote** | `vigia-file-integrity` (versão 0.2.0) |
 | **App ID** | `br.com.vigia.FileIntegrity` |
 | **Pacotes wrapped** | `aide`, `coreutils` (hashlib do Python stdlib para hash ad-hoc) |
-| **Privilegios** | AIDE: tudo via `pkexec`. Hash ad-hoc: sem privilegios |
+| **Privilégios** | AIDE: tudo via `pkexec`. Hash ad-hoc: sem privilégios |
 | **Path config (sistema)** | `/etc/aide.conf` + `/var/lib/aide/aide.db.gz` |
 | **Path config (Silverblue)** | `/etc/aide-vigia.conf` + `/var/lib/aide/aide.db.vigia.gz` |
 | **State local** | `~/.config/vigia/file-integrity.json` (0600) + `~/.local/share/vigia-hash/` (0700) |
@@ -39,8 +39,8 @@ vigia_integrity/
 
 | Perfil | Config | DB | Quando usar |
 |---|---|---|---|
-| **Sistema padrao** | `/etc/aide.conf` | `aide.db.gz` | Distros tradicionais. Em Silverblue, monitora `/usr` que muda a cada upgrade -> ruido massivo. |
-| **Silverblue (Vigia)** | `/etc/aide-vigia.conf` | `aide.db.vigia.gz` | Exclui `/usr`, `/boot`, `/ostree`, `/sysroot` (cobertos pelo OSTree criptografico). Foca em `/etc`, `/root`, `/var/spool/cron`, `/usr/local`. |
+| **Sistema padrão** | `/etc/aide.conf` | `aide.db.gz` | Distros tradicionais. Em Silverblue, monitora `/usr` que muda a cada upgrade -> ruído massivo. |
+| **Silverblue (Vigia)** | `/etc/aide-vigia.conf` | `aide.db.vigia.gz` | Exclui `/usr`, `/boot`, `/ostree`, `/sysroot` (cobertos pelo OSTree criptográfico). Foca em `/etc`, `/root`, `/var/spool/cron`, `/usr/local`. |
 
 `silverblue_profile_active()` -> True se `/etc/aide-vigia.conf` existe.
 `active_conf_path()` / `active_db_path()` / `active_db_new_path()`
@@ -48,7 +48,7 @@ resolvem o perfil automaticamente.
 
 ### Cache LGPD em STATE_FILE
 
-`/var/lib/aide/` e' 0700 (root-only). `baseline_exists()` evita
+`/var/lib/aide/` é 0700 (root-only). `baseline_exists()` evita
 `stat()` no path (vazaria info para outros users em sistema
 multi-user). Usa proxy em `~/.config/vigia/file-integrity.json`:
 
@@ -95,35 +95,35 @@ hashlib.new("sha256").update(chunk)  # 1MB por iteracao
 
 ## Tabs / Funcionalidades
 
-| Tab | Escala | Privilegios | Descricao |
+| Tab | Escala | Privilégios | Descrição |
 |---|---|---|---|
-| **Status (AIDE)** | Sistema | root | Hero card mostrando estado + acoes "Criar baseline" / "Verificar agora" / "Atualizar baseline". Controle de perfil (Aplicar/Remover Silverblue). Stats do ultimo check. |
-| **Mudancas (AIDE)** | Sistema | root | Lista added/removed/changed do ultimo `aide --check`. Para changed mostra quais propriedades mudaram (perms, mtime, size, sha256...). |
-| **Hash** | Arquivo unico | user | File picker + ComboRow algoritmo (sha256/sha512/sha1/md5) + botao Calcular + copy hash. |
-| **Verificar** | Arquivo unico | user | Hash esperado + arquivo + algoritmo -> matches/computed. Aceita format `sha256sum` (`<hash>  <filename>`). |
-| **Baseline** | Diretorio | user | Cria JSON de hashes recursivos em `~/.local/share/vigia-hash/baseline-<dir>-<ts>.json`. Comparar baseline diz added/removed/modified/unchanged. |
-| **Sobre** | — | — | Explica AIDE + perfil Silverblue + paths monitorados (extraidos via `parse_conf_watched_paths()`). |
+| **Status (AIDE)** | Sistema | root | Hero card mostrando estado + ações "Criar baseline" / "Verificar agora" / "Atualizar baseline". Controle de perfil (Aplicar/Remover Silverblue). Stats do último check. |
+| **Mudanças (AIDE)** | Sistema | root | Lista added/removed/changed do último `aide --check`. Para changed mostra quais propriedades mudaram (perms, mtime, size, sha256...). |
+| **Hash** | Arquivo único | user | File picker + ComboRow algoritmo (sha256/sha512/sha1/md5) + botão Calcular + copy hash. |
+| **Verificar** | Arquivo único | user | Hash esperado + arquivo + algoritmo -> matches/computed. Aceita format `sha256sum` (`<hash>  <filename>`). |
+| **Baseline** | Diretório | user | Cria JSON de hashes recursivos em `~/.local/share/vigia-hash/baseline-<dir>-<ts>.json`. Comparar baseline diz added/removed/modified/unchanged. |
+| **Sobre** | — | — | Explica AIDE + perfil Silverblue + paths monitorados (extraídos via `parse_conf_watched_paths()`). |
 
 ## Quando usar
 
-- **Pos-instalacao do sistema**: criar baseline AIDE (perfil Silverblue
-  recomendado para Fedora atomicas).
-- **Pos-rpm-ostree upgrade**: rodar `aide --check`, validar mudancas
-  legitimas em `/etc`, clicar "Re-baseline" para aceitar.
-- **Forense / cadeia de custodia**: tab Hash + Verificar com sha256/sha512.
-- **Snapshot de diretorio user-space**: tab Baseline para `/home/andre/casos/processo-X`.
+- **Pós-instalação do sistema**: criar baseline AIDE (perfil Silverblue
+  recomendado para Fedora atômicas).
+- **Pós-rpm-ostree upgrade**: rodar `aide --check`, validar mudanças
+  legítimas em `/etc`, clicar "Re-baseline" para aceitar.
+- **Forense / cadeia de custódia**: tab Hash + Verificar com sha256/sha512.
+- **Snapshot de diretório user-space**: tab Baseline para `/home/andre/casos/processo-X`.
 
-## Limitacoes conhecidas
+## Limitações conhecidas
 
 - AIDE check em sistema completo demora minutos (timeout 30min default).
 - Cache de status no `STATE_FILE` pode ficar dessincronizado se baseline
   for criada via terminal direto (`pkexec aide --init` fora da tool).
-- Baseline ad-hoc segue symlinks? Nao — pula com
+- Baseline ad-hoc segue symlinks? Não — pula com
   `if not f.is_file() or f.is_symlink(): continue`.
 - Hash ad-hoc rejeita device/fifo/socket files (evita loop infinito de
   I/O em `/dev/zero`).
 
-## Trecho de codigo relevante
+## Trecho de código relevante
 
 Perfil Silverblue otimizado (`backend.py:558`):
 
@@ -156,5 +156,5 @@ return h.hexdigest(), ""
 ```
 
 Parser do output AIDE (`backend.py:262`) usa regex
-`^[fld][^:]*?:\s+(/.*)$` para extrair path (versoes anteriores faziam
+`^[fld][^:]*?:\s+(/.*)$` para extrair path (versões anteriores faziam
 `rsplit(":", 1)` que falhava silenciosamente em paths com `:`).

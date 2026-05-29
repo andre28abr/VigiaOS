@@ -4,18 +4,18 @@
 
 Wrapper GTK4 do **ClamAV** que substitui o `clamtk` (UI envelhecida) com
 interface libadwaita moderna: scan on-demand com streaming de output, base
-de assinaturas com freshclam e historico de reports JSON em modo 0600.
+de assinaturas com freshclam e histórico de reports JSON em modo 0600.
 
 ## O que envolve
 
 | Item | Detalhe |
 |---|---|
 | Pacotes wrap | `clamav`, `clamav-update` |
-| Versao | 0.1.1 |
+| Versão | 0.1.1 |
 | App ID | `br.com.vigia.Antivirus` |
-| Privilegios | `pkexec freshclam` (so pra atualizar base) |
-| Engine | clamscan standalone (NAO clamdscan/daemon nesta v0.1) |
-| Modulo | `vigia_antivirus` |
+| Privilégios | `pkexec freshclam` (só pra atualizar base) |
+| Engine | clamscan standalone (NÃO clamdscan/daemon nesta v0.1) |
+| Módulo | `vigia_antivirus` |
 | Reports | `~/.local/share/vigia-antivirus/scan-<timestamp>.json` (0600) |
 
 ## Arquitetura interna
@@ -72,16 +72,16 @@ clamscan -r --no-summary=no --bell=no /home/andre/Downloads
 
 Exit codes do ClamAV (tratados pelo backend):
 - `0` = limpo
-- `1` = malware encontrado (tambem considerado sucesso de execucao)
+- `1` = malware encontrado (também considerado sucesso de execução)
 - `2` = erro interno
 
 ## Tabs / Funcionalidades
 
-| Tab | Funcao |
+| Tab | Função |
 |---|---|
 | **Scan** | Banner com idade da base + entry de path + 4 atalhos (Home, Downloads, Documents, /tmp) + streaming live de findings |
-| **Base de dados** | Versao engine + DB + idade + botao `Atualizar base agora` (pkexec freshclam) + lista dos ultimos 5 scans |
-| **Sobre** | Manual didatico (`AboutTab` padrao Vigia) |
+| **Base de dados** | Versão engine + DB + idade + botão `Atualizar base agora` (pkexec freshclam) + lista dos últimos 5 scans |
+| **Sobre** | Manual didático (`AboutTab` padrão Vigia) |
 
 ## Streaming de findings
 
@@ -97,7 +97,7 @@ if m:
     ))
 ```
 
-Sumario parseado apos linha `----------- SCAN SUMMARY`:
+Sumário parseado após linha `----------- SCAN SUMMARY`:
 - `Scanned directories: N`
 - `Scanned files: N`
 - `Infected files: N`
@@ -108,20 +108,20 @@ Sumario parseado apos linha `----------- SCAN SUMMARY`:
 - **Antes de mandar arquivo pra cliente Windows** (PDF, .docx baixado).
 - **Periodicamente em Downloads/Documents** (1x/semana recomendado).
 - **Servidor de arquivos LGPD** com material recebido de terceiros.
-- **Maquina compartilhada** ou apos test em VM com binarios suspeitos.
+- **Máquina compartilhada** ou após test em VM com binários suspeitos.
 
-## Limitacoes conhecidas
+## Limitações conhecidas
 
-- **Sem quarentena visual** — findings sao listados; apaga/move manual.
+- **Sem quarentena visual** — findings são listados; apaga/move manual.
 - **Sem scheduled scans** via UI — use `systemctl enable clamav-clamonacc`
   ou cron pra agendamento.
-- **Sem clamdscan** (daemon) nesta v0.1 — forca uso do `clamscan`
-  standalone (~30s overhead por scan pra carregar base na memoria).
-- **Sem real-time protection** — Linux desktop nao precisa.
-- **Sem integracao com Activity Log** (alvo v0.3).
-- `clamscan` pode dar falso-positivo em packers legitimos (UPX) e PUAs.
+- **Sem clamdscan** (daemon) nesta v0.1 — força uso do `clamscan`
+  standalone (~30s overhead por scan pra carregar base na memória).
+- **Sem real-time protection** — Linux desktop não precisa.
+- **Sem integração com Activity Log** (alvo v0.3).
+- `clamscan` pode dar falso-positivo em packers legítimos (UPX) e PUAs.
 
-## Trecho de codigo relevante
+## Trecho de código relevante
 
 Worker thread que dispara `clamscan` e streama findings:
 
@@ -187,11 +187,11 @@ info.last_update_epoch = int(dt.timestamp())
 - **100% offline** — base baixada do mirror oficial ClamAV, nada vai
   pra nuvem.
 - Reports JSON em `~/.local/share/vigia-antivirus/` com mode `0600`,
-  diretorio com `0700`. Apenas o owner le.
-- ClamAV processa bytes dos arquivos mas NAO transmite — seguro pra
-  escanear documentos sensiveis.
+  diretório com `0700`. Apenas o owner lê.
+- ClamAV processa bytes dos arquivos mas NÃO transmite — seguro pra
+  escanear documentos sensíveis.
 
-## Referencias
+## Referências
 
 - `man clamscan`, `man freshclam`
 - Site oficial: https://www.clamav.net
