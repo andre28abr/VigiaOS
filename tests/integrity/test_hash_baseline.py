@@ -8,7 +8,16 @@ from __future__ import annotations
 
 import types
 
+import pytest
+
 from vigia_integrity import hash_backend as hb
+
+
+@pytest.fixture(autouse=True)
+def _isolate_baseline_dir(tmp_path, monkeypatch):
+    """Aponta BASELINE_DIR pra um tmp — nenhum teste escreve baseline no
+    ~/.local/share/vigia-hash/ real do usuario."""
+    monkeypatch.setattr(hb, "BASELINE_DIR", tmp_path / "vigia-hash")
 
 
 class TestDetectMoves:
@@ -43,30 +52,36 @@ class TestDetectMoves:
 
 
 class TestBaselineMovedIntegration:
+    # Hasheia um subdir `data/` (o baseline vai pra tmp/vigia-hash, irmao —
+    # nunca dentro da pasta escaneada, senao apareceria como 'adicionado').
     def test_move_detected_end_to_end(self, tmp_path):
-        (tmp_path / "a.txt").write_text("conteudo unico xyz")
-        (tmp_path / "keep.txt").write_text("igual")
-        r = hb.create_baseline_blocking(str(tmp_path))
+        data = tmp_path / "data"
+        data.mkdir()
+        (data / "a.txt").write_text("conteudo unico xyz")
+        (data / "keep.txt").write_text("igual")
+        r = hb.create_baseline_blocking(str(data))
         assert r.error == "" and r.engine == "python"
 
-        (tmp_path / "sub").mkdir()
-        (tmp_path / "a.txt").rename(tmp_path / "sub" / "b.txt")
+        (data / "sub").mkdir()
+        (data / "a.txt").rename(data / "sub" / "b.txt")
 
-        c = hb.compare_baseline_blocking(r.output_file, str(tmp_path))
+        c = hb.compare_baseline_blocking(r.output_file, str(data))
         assert c.moved == ["a.txt → sub/b.txt"]
         assert c.added == [] and c.removed == [] and c.unchanged == 1
 
     def test_add_remove_modify_still_work(self, tmp_path):
-        (tmp_path / "keep.txt").write_text("estavel")
-        (tmp_path / "gone.txt").write_text("vai sumir")
-        (tmp_path / "mod.txt").write_text("antes")
-        r = hb.create_baseline_blocking(str(tmp_path))
+        data = tmp_path / "data"
+        data.mkdir()
+        (data / "keep.txt").write_text("estavel")
+        (data / "gone.txt").write_text("vai sumir")
+        (data / "mod.txt").write_text("antes")
+        r = hb.create_baseline_blocking(str(data))
 
-        (tmp_path / "gone.txt").unlink()
-        (tmp_path / "mod.txt").write_text("DEPOIS diferente")
-        (tmp_path / "novo.txt").write_text("novinho")
+        (data / "gone.txt").unlink()
+        (data / "mod.txt").write_text("DEPOIS diferente")
+        (data / "novo.txt").write_text("novinho")
 
-        c = hb.compare_baseline_blocking(r.output_file, str(tmp_path))
+        c = hb.compare_baseline_blocking(r.output_file, str(data))
         assert c.added == ["novo.txt"]
         assert c.removed == ["gone.txt"]
         assert c.modified == ["mod.txt"]
