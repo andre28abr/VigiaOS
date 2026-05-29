@@ -1,5 +1,6 @@
-"""Janela principal — 2 tabs (Catalogo + Pendentes).
+"""Janela principal do Tool Installer (abas no Adw.ViewStack).
 
+Abas: Catalogo / Pendentes (so' em sistema atomico) / Extensoes / Sobre.
 Suporta modo standalone (VigiaInstallerWindow) e embedded (build_content()).
 """
 
@@ -14,6 +15,8 @@ from gi.repository import Adw, Gtk  # noqa: E402
 
 from . import WRAPPED_PACKAGES
 from .tabs import AboutTab, BrowseTab, ExtensionsTab, PendingTab
+
+from vigia_common.platform import is_atomic
 
 
 def _make_pkg_badges_bar() -> Gtk.Widget:
@@ -38,14 +41,18 @@ def _make_pkg_badges_bar() -> Gtk.Widget:
 
 class _InstallerContent:
     def __init__(self) -> None:
-        self.pending = PendingTab(on_changed=lambda: None)
+        # Aba "Pendentes" so' faz sentido em sistema atomico (rpm-ostree
+        # stage + reboot). No Workstation o dnf aplica na hora — escondida.
+        self._atomic = is_atomic()
+        self.pending = PendingTab(on_changed=lambda: None) if self._atomic else None
         self.browse = BrowseTab(on_changed=self._on_browse_changed)
         self.extensions = ExtensionsTab()
         self.about = AboutTab()
 
         stack = Adw.ViewStack()
         stack.add_titled_with_icon(self.browse, "browse", "Catalogo", "package-x-generic-symbolic")
-        stack.add_titled_with_icon(self.pending, "pending", "Pendentes", "view-refresh-symbolic")
+        if self.pending is not None:
+            stack.add_titled_with_icon(self.pending, "pending", "Pendentes", "view-refresh-symbolic")
         stack.add_titled_with_icon(self.extensions, "extensions", "Extensoes", "web-browser-symbolic")
         stack.add_titled_with_icon(self.about, "about", "Sobre", "help-about-symbolic")
 
@@ -63,8 +70,9 @@ class _InstallerContent:
         self.toolbar.set_content(stack)
 
     def _on_browse_changed(self) -> None:
-        """Apos install/uninstall, atualiza tab Pendentes."""
-        self.pending.refresh()
+        """Apos install/uninstall, atualiza tab Pendentes (so' em atomico)."""
+        if self.pending is not None:
+            self.pending.refresh()
 
 
 def build_content() -> Gtk.Widget:

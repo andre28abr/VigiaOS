@@ -19,6 +19,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable
 
+from vigia_common.platform import is_atomic
+
 
 _REPO_ROOT = Path(__file__).resolve().parents[4]
 _TOOLS_DIR = _REPO_ROOT / "tools"
@@ -65,6 +67,9 @@ class ToolEntry:
     # Pacote(s) original(is) que esta tool "wrappa" (ex: ["lynis"]).
     # Mostrado como badge no header pra dar transparencia ao user.
     wrapped_packages: list[str] = field(default_factory=list)
+    # So' faz sentido em sistema atomico (rpm-ostree). Escondida no Hub
+    # quando rodando em Fedora Workstation tradicional (ex: Deployments).
+    atomic_only: bool = False
 
     def is_available(self) -> bool:
         try:
@@ -83,6 +88,17 @@ def tools_by_category(tools: list[ToolEntry]) -> dict[str, list[ToolEntry]]:
     for t in tools:
         grouped.setdefault(t.category, []).append(t)
     return {c: grouped[c] for c in CATEGORIES_ORDER if c in grouped}
+
+
+def visible_tools() -> list[ToolEntry]:
+    """TOOLS aplicaveis a este sistema.
+
+    Esconde tools `atomic_only` (ex: Deployments Manager) quando o sistema
+    nao e' atomico (Fedora Workstation) — la' nao existe rpm-ostree nem
+    deployments, entao a tool nao faria sentido.
+    """
+    atomic = is_atomic()
+    return [t for t in TOOLS if atomic or not t.atomic_only]
 
 
 # ============================================================================
@@ -564,6 +580,7 @@ TOOLS: list[ToolEntry] = [
         embedded_module="vigia_deployments.window",
         category="sistema",
         wrapped_packages=["rpm-ostree"],
+        atomic_only=True,
     ),
     # NOTA: Tool Installer NAO esta mais nesta lista. Foi promovido a
     # entidade de primeiro nivel acessivel via icone 'Instalador' na

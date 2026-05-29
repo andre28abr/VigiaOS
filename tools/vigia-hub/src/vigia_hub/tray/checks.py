@@ -141,8 +141,13 @@ def tray_can_work() -> TrayCheck:
 
 
 def install_command() -> list[str]:
-    """Comando pra instalar os pacotes (pkexec rpm-ostree install ...)."""
-    return ["pkexec", "rpm-ostree", "install"] + INSTALL_PACKAGES
+    """Comando pra instalar os pacotes do tray. Atomico: rpm-ostree;
+    Workstation tradicional: dnf."""
+    from vigia_common.platform import is_atomic
+
+    if is_atomic():
+        return ["pkexec", "rpm-ostree", "install"] + INSTALL_PACKAGES
+    return ["pkexec", "dnf", "install", "-y"] + INSTALL_PACKAGES
 
 
 def enable_extension_command() -> list[str]:
