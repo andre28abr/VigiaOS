@@ -62,7 +62,7 @@ def _cmd_version(_args: argparse.Namespace) -> int:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="vigia",
-        description="Vigia Suite — utilitário de linha de comando.",
+        description="Vigia Hub — utilitário de linha de comando.",
     )
     sub = parser.add_subparsers(dest="cmd")
 

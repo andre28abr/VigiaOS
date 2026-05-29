@@ -1,4 +1,4 @@
-# RPM spec para vigia-caps (Vigia Suite)
+# RPM spec para vigia-caps (VigiaOS)
 # Buildado via COPR (https://copr.fedorainfracloud.org/coprs/andre28abr/vigia/)
 #
 # NOTA: o pacote se chama vigia-caps (igual ao [project].name do pyproject e
@@ -34,7 +34,7 @@ Requires:       libcap
 %description
 Audita binarios com Linux capabilities (alternativa granular ao SUID). Catalogo de 41 capabilities pt-BR (11 ALTO + 17 MEDIO + 13 BAIXO). Read-only em v0.1; modificacao via UI em v0.2.
 
-Faz parte da Vigia Suite — toolkit de seguranca para Fedora Atomic
+Faz parte do VigiaOS — toolkit de seguranca para Fedora Atomic
 (Silverblue, Kinoite, Bluefin, Bazzite, Aurora).
 
 Comando: vigia-caps

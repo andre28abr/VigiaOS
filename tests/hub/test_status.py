@@ -255,7 +255,7 @@ class TestRender:
 
     def test_format_text_contains_header(self, isolated_gather):
         text = status.format_text()
-        assert "Vigia Suite" in text
+        assert "VigiaOS" in text
         assert "Módulos" in text
 
     def test_to_dict_is_json_serializable(self, isolated_gather):

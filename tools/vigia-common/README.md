@@ -1,6 +1,6 @@
 # Vigia Common
 
-Helpers compartilhados entre as ferramentas da Vigia Suite. Centraliza
+Helpers compartilhados entre as ferramentas do VigiaOS. Centraliza
 código que estava duplicado em ~15 `_helpers.py` por tool.
 
 ## Status

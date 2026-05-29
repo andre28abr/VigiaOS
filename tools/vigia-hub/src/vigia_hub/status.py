@@ -1,4 +1,4 @@
-"""Status agregado da Vigia Suite — fonte unica de verdade.
+"""Status agregado do VigiaOS — fonte unica de verdade.
 
 Usado por:
 - CLI `vigia status` (cli.py)
@@ -277,7 +277,7 @@ def format_text(st: SuiteStatus | None = None) -> str:
     ok = "✓"   # ✓
     no = "✗"   # ✗
     lines: list[str] = []
-    lines.append("Vigia Suite — status")
+    lines.append("VigiaOS — status")
     lines.append(f"  Versão do Hub : {st.version}")
 
     def onoff(v: bool) -> str:

@@ -1,6 +1,6 @@
 # Vigia Reports
 
-Gerador de relatorios **HTML** (com layout pronto pra impressao em PDF) a partir de logs do sistema. Parte da [Vigia Suite](../../README.md).
+Gerador de relatorios **HTML** (com layout pronto pra impressao em PDF) a partir de logs do sistema. Parte do [VigiaOS](../../README.md).
 
 ## O que faz
 

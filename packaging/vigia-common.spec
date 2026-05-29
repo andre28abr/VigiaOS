@@ -7,7 +7,7 @@
 Name:           %{pkg_name}
 Version:        0.1.0
 Release:        1%{?dist}
-Summary:        Helpers compartilhados entre as ferramentas da Vigia Suite
+Summary:        Helpers compartilhados entre as ferramentas do VigiaOS
 License:        Apache-2.0
 URL:            https://github.com/andre28abr/VigiaOS
 Source0:        %{url}/archive/v%{version}.tar.gz#/VigiaOS-%{version}.tar.gz
@@ -25,7 +25,7 @@ Requires:       gtk4
 Requires:       libadwaita
 
 %description
-Vigia Common e' a biblioteca interna da Vigia Suite. Centraliza
+Vigia Common e' a biblioteca interna do VigiaOS. Centraliza
 helpers de UI (make_clamp, show_error/info, file picker, copy
 to clipboard), o conversor markdown → Pango, e helpers de badges
 para a sub-bar de WRAPPED_PACKAGES.

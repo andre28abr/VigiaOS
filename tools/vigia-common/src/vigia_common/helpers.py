@@ -1,4 +1,4 @@
-"""Helpers de UI compartilhados entre as tools da Vigia Suite.
+"""Helpers de UI compartilhados entre as tools do VigiaOS.
 
 API estavel — modificacoes devem ser retro-compativeis.
 """

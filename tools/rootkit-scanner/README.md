@@ -1,7 +1,7 @@
 # Vigia Rootkit Scanner
 
 Wrapper unificado de **chkrootkit** + **Rootkit Hunter** com UI GTK4.
-Parte da [Vigia Suite](../../README.md).
+Parte do [VigiaOS](../../README.md).
 
 v0.2.0: reescrito do zero usando pattern identico ao Antivirus.
 

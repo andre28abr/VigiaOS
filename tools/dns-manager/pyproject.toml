@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "vigia-dns"
 version = "0.4.1"
-description = "Gerenciador DNS com UI GTK4 (systemd-resolved + DoT, modo avancado dnscrypt-proxy) — parte da Vigia Suite"
+description = "Gerenciador DNS com UI GTK4 (systemd-resolved + DoT, modo avancado dnscrypt-proxy) — parte do VigiaOS"
 license = { text = "Apache-2.0" }
 readme = "README.md"
 requires-python = ">=3.11"

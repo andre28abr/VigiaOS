@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "vigia-hardening"
 version = "0.1.4"
-description = "Wrapper grafico do Lynis com Hardening Index, warnings e suggestions — parte da Vigia Suite"
+description = "Wrapper grafico do Lynis com Hardening Index, warnings e suggestions — parte do VigiaOS"
 license = { text = "Apache-2.0" }
 readme = "README.md"
 requires-python = ">=3.11"

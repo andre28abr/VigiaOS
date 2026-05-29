@@ -1,4 +1,4 @@
-# RPM spec para vigia-hub (Vigia Suite)
+# RPM spec para vigia-hub (VigiaOS)
 # Buildado via COPR (https://copr.fedorainfracloud.org/coprs/andre28abr/vigia/)
 
 %global pkg_name vigia-hub
@@ -7,7 +7,7 @@
 Name:           %{pkg_name}
 Version:        0.5.0
 Release:        1%{?dist}
-Summary:        Launcher mestre da Vigia Suite (3 paineis, embedded mode)
+Summary:        Launcher mestre do VigiaOS (3 paineis, embedded mode)
 License:        Apache-2.0
 URL:            https://github.com/andre28abr/VigiaOS
 Source0:        %{url}/archive/v%{version}.tar.gz#/VigiaOS-%{version}.tar.gz
@@ -28,11 +28,11 @@ Requires:       hicolor-icon-theme
 Requires:       vigia-common
 
 %description
-Vigia Hub e' o launcher mestre da Vigia Suite. Apresenta 18+ ferramentas em layout master-detail-content (3 paineis): nav lateral fina com icones + sidebar categorizada (Monitoramento, Privacidade, Defesa, Relatorios) + content embedded.
+Vigia Hub e' o launcher mestre do VigiaOS. Apresenta 18+ ferramentas em layout master-detail-content (3 paineis): nav lateral fina com icones + sidebar categorizada (Monitoramento, Privacidade, Defesa, Relatorios) + content embedded.
 
 Tools sao embarcadas diretamente no painel direito (single-window) quando disponiveis; fallback para subprocess se nao embeddable.
 
-Faz parte da Vigia Suite — toolkit de seguranca para Fedora Atomic
+Faz parte do VigiaOS — toolkit de seguranca para Fedora Atomic
 (Silverblue, Kinoite, Bluefin, Bazzite, Aurora).
 
 Comando: vigia-hub

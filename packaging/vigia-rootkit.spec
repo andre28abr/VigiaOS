@@ -1,4 +1,4 @@
-# RPM spec para vigia-rootkit (Vigia Suite)
+# RPM spec para vigia-rootkit (VigiaOS)
 # Buildado via COPR (https://copr.fedorainfracloud.org/coprs/andre28abr/vigia/)
 #
 # NOTA: o pacote/binario se chama vigia-rootkit (= [project].name e script do
@@ -39,7 +39,7 @@ output em tempo real, KPI cards (testes/warnings/infectados) e historico em
 ~/.local/share/vigia-rootkit/scans/ mode 0600 (JSON pra audit/LGPD). Roda como
 root via pkexec.
 
-Faz parte da Vigia Suite — toolkit de seguranca para Fedora Atomic
+Faz parte do VigiaOS — toolkit de seguranca para Fedora Atomic
 (Silverblue, Kinoite, Bluefin, Bazzite, Aurora).
 
 Comando: vigia-rootkit

@@ -1,5 +1,5 @@
 # RPM spec para vigia-suite (metapackage)
-# Instala TODAS as ferramentas da Vigia Suite numa unica operacao.
+# Instala TODAS as ferramentas do VigiaOS numa unica operacao.
 # Sem code/files proprios — apenas Requires.
 
 %global pkg_name vigia-suite
@@ -49,8 +49,8 @@ Requires:       vigia-reports >= 0.1.1
 Requires:       vigia-installer >= 0.1.0
 
 %description
-Vigia Suite — metapackage que instala as 14 ferramentas de seguranca e
-monitoramento da Vigia Suite (mais o Instalador) numa unica operacao.
+VigiaOS — metapackage que instala as 14 ferramentas de seguranca e
+monitoramento do VigiaOS (mais o Instalador) numa unica operacao.
 
 Apos instalacao, abra "Vigia Hub" no menu GNOME para acessar todas
 as ferramentas embarcadas em uma unica janela.
@@ -86,4 +86,4 @@ Compatibilidade: Fedora Silverblue, Kinoite, Bluefin, Bazzite, Aurora.
 - Metapackage agora cobre as 14 ferramentas + Instalador
 
 * Mon May 26 2026 André Augusto Azarias de Souza <andre@vigia.local> - 0.1.0-1
-- Metapackage v0.1.0 incluindo as 18 tools da Vigia Suite
+- Metapackage v0.1.0 incluindo as 18 tools do VigiaOS

@@ -105,7 +105,7 @@ NAV_MODES = [
 class VigiaHubWindow(Adw.ApplicationWindow):
     def __init__(self, app: Adw.Application):
         super().__init__(application=app)
-        self.set_title("Vigia Suite")
+        self.set_title("Vigia Hub")
         self.set_default_size(1340, 820)
 
         # Cache de widgets embarcados (tools): tool.id -> Gtk.Widget
@@ -323,7 +323,7 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         page = Adw.PreferencesPage()
 
         intro_group = Adw.PreferencesGroup()
-        intro_group.set_title("Manual da Vigia Suite")
+        intro_group.set_title("Manual do VigiaOS")
         intro_group.set_description(
             "Resumo rapido de cada ferramenta. Para detalhes tecnicos ou "
             "explicacao em linguagem simples, use as outras abas acima."
@@ -1408,7 +1408,7 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         content_toolbar = Adw.ToolbarView()
         content_toolbar.set_content(self._content_stack)
         content_page = Adw.NavigationPage(
-            title="Vigia Suite",
+            title="Vigia Hub",
             child=content_toolbar,
         )
         content_page.set_tag("content")
@@ -1468,7 +1468,7 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         toolbar.add_top_bar(header)
         toolbar.set_content(scrolled)
 
-        page = Adw.NavigationPage(title="Vigia Suite", child=toolbar)
+        page = Adw.NavigationPage(title="Ferramentas", child=toolbar)
         page.set_tag("sidebar")
         return page
 

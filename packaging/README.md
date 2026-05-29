@@ -1,4 +1,4 @@
-# Vigia Suite — Empacotamento RPM (COPR)
+# VigiaOS — Empacotamento RPM (COPR)
 
 Este diretório contém os **spec files RPM** para distribuir a Vigia
 Suite via COPR (Cool Other Package Repo, do Fedora).
@@ -23,7 +23,7 @@ Quando o COPR estiver publicado, em Silverblue/Kinoite/Bluefin/etc.:
 sudo wget -O /etc/yum.repos.d/_copr_andre28abr-vigia.repo \
     "https://copr.fedorainfracloud.org/coprs/andre28abr/vigia/repo/fedora-$(rpm -E %fedora)/andre28abr-vigia-fedora-$(rpm -E %fedora).repo"
 
-# 2. Instala a suite completa (metapackage com toda a Vigia Suite)
+# 2. Instala a suite completa (metapackage com todo o VigiaOS)
 sudo rpm-ostree install vigia-suite
 sudo systemctl reboot
 

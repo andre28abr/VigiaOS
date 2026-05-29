@@ -1,4 +1,4 @@
-# RPM spec para vigia-integrity (Vigia Suite)
+# RPM spec para vigia-integrity (VigiaOS)
 # Buildado via COPR (https://copr.fedorainfracloud.org/coprs/andre28abr/vigia/)
 
 %global pkg_name vigia-integrity
@@ -31,7 +31,7 @@ Requires:       aide
 %description
 Monitor de integridade de arquivos via AIDE. Perfil custom Silverblue foca em /etc, /root, cron (pula /usr read-only) + excludes /etc/systemd/system.control/ (volateis).
 
-Faz parte da Vigia Suite — toolkit de seguranca para Fedora Atomic
+Faz parte do VigiaOS — toolkit de seguranca para Fedora Atomic
 (Silverblue, Kinoite, Bluefin, Bazzite, Aurora).
 
 Comando: vigia-integrity

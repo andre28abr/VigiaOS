@@ -1,4 +1,4 @@
-# RPM spec para vigia-privacy (Vigia Suite)
+# RPM spec para vigia-privacy (VigiaOS)
 # Buildado via COPR (https://copr.fedorainfracloud.org/coprs/andre28abr/vigia/)
 
 %global pkg_name vigia-privacy
@@ -30,7 +30,7 @@ Requires:       vigia-common
 %description
 Painel de privacidade GTK4 com 13 toggles: 10 user-scope (dconf — localizacao, telemetria, historico, lock screen, limpeza auto) + 3 system-scope via pkexec (firewall, SSH, Tor).
 
-Faz parte da Vigia Suite — toolkit de seguranca para Fedora Atomic
+Faz parte do VigiaOS — toolkit de seguranca para Fedora Atomic
 (Silverblue, Kinoite, Bluefin, Bazzite, Aurora).
 
 Comando: vigia-privacy

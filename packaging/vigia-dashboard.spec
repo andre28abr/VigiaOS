@@ -1,4 +1,4 @@
-# RPM spec para vigia-dashboard (Vigia Suite)
+# RPM spec para vigia-dashboard (VigiaOS)
 # Buildado via COPR (https://copr.fedorainfracloud.org/coprs/andre28abr/vigia/)
 
 %global pkg_name vigia-dashboard
@@ -32,7 +32,7 @@ Dashboard de sistema em tempo real — CPU, memoria, disco I/O, rede e processos
 
 v0.2: per-process I/O (substitui iotop), per-process conexoes, alertas configuraveis com notificacao desktop.
 
-Faz parte da Vigia Suite — toolkit de seguranca para Fedora Atomic
+Faz parte do VigiaOS — toolkit de seguranca para Fedora Atomic
 (Silverblue, Kinoite, Bluefin, Bazzite, Aurora).
 
 Comando: vigia-dashboard

@@ -1,4 +1,4 @@
-# Visão geral da Vigia Suite (técnico)
+# Visão geral do VigiaOS (técnico)
 
 ## O que é
 

@@ -1,4 +1,4 @@
-# RPM spec para vigia-deployments (Vigia Suite)
+# RPM spec para vigia-deployments (VigiaOS)
 # Buildado via COPR (https://copr.fedorainfracloud.org/coprs/andre28abr/vigia/)
 #
 # NOTA: o pacote/binario se chama vigia-deployments (= [project].name e script
@@ -38,7 +38,7 @@ no menu do GRUB ao bootar. Rollback, pin/unpin, labels + notas multilinha
 (LGPD/audit), cleanup integrado (rpm-ostree cleanup -p -r -m) e alerta de /boot
 cheio. Operacoes privilegiadas via pkexec.
 
-Faz parte da Vigia Suite — toolkit de seguranca para Fedora Atomic
+Faz parte do VigiaOS — toolkit de seguranca para Fedora Atomic
 (Silverblue, Kinoite, Bluefin, Bazzite, Aurora).
 
 Comando: vigia-deployments

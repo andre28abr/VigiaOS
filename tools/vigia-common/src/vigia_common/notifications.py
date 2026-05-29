@@ -1,6 +1,6 @@
 """Notificacoes desktop nativas (GNOME Shell) via Gio.Notification.
 
-As tools da Vigia Suite rodam *embedded* no Hub (mesmo processo). Este
+As tools do VigiaOS rodam *embedded* no Hub (mesmo processo). Este
 helper pega a aplicacao em execucao (`Gio.Application.get_default()`) e
 dispara uma notificacao que o GNOME Shell renderiza como qualquer app
 nativo: banner no topo + entrada na lista do relogio. A notificacao

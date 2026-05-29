@@ -111,7 +111,7 @@ def _build_desktop_content(minimized: bool = False) -> str:
         "[Desktop Entry]\n"
         "Type=Application\n"
         "Name=Vigia Hub\n"
-        "Comment=Launcher da Vigia Suite\n"
+        "Comment=Launcher do VigiaOS\n"
         f"Exec={exec_line}\n"
         "Icon=br.com.vigia.Hub\n"
         "Terminal=false\n"
