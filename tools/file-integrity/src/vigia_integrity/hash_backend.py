@@ -7,8 +7,11 @@ Operacoes:
 - create_baseline_blocking(directory, output_file, algorithm) -> BaselineResult
 - compare_baseline_blocking(baseline_file, directory, algorithm) -> CompareResult
 
-Usa hashlib (Python stdlib) — sem subprocess. Em diretorios grandes
-(>10k arquivos), considera hashdeep paralelo em v0.2.
+Usa hashlib (Python stdlib) por padrao. Opcionalmente usa hashdeep
+(C, multi-thread) quando instalado, pra ganhar velocidade em arvores
+grandes — o hash final e' identico, entao os engines sao intercambiaveis.
+Deteccao de arquivo *movido* (mesmo hash, path diferente) e' feita no
+compare independente do engine.
 """
 
 from __future__ import annotations
@@ -17,6 +20,7 @@ import hashlib
 import json
 import os
 import shutil
+import subprocess
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -36,6 +40,7 @@ class BaselineResult:
     file_count: int = 0
     error: str = ""
     started_at: str = ""
+    engine: str = "python"  # "python" (hashlib) ou "hashdeep"
 
 
 @dataclass
@@ -46,6 +51,7 @@ class CompareResult:
     added: list[str] = field(default_factory=list)
     removed: list[str] = field(default_factory=list)
     modified: list[str] = field(default_factory=list)
+    moved: list[str] = field(default_factory=list)  # "old -> new" (mesmo hash)
     unchanged: int = 0
     error: str = ""
     started_at: str = ""
@@ -156,15 +162,108 @@ def verify_blocking(
 # Baseline (snapshot do diretorio)
 # ============================================================
 
+_HASHDEEP_ALGOS = {"md5", "sha1", "sha256"}  # hashdeep nao suporta sha512
+
+
+def _python_hash_dir(d: Path, algorithm: str) -> dict[str, str]:
+    """Hash recursivo via hashlib. {path_relativo: hash}."""
+    hashes: dict[str, str] = {}
+    for f in d.rglob("*"):
+        if not f.is_file() or f.is_symlink():
+            continue
+        try:
+            h, _ = hash_blocking(str(f), algorithm)
+            if h:
+                hashes[str(f.relative_to(d))] = h
+        except (OSError, ValueError):
+            continue
+    return hashes
+
+
+def _hashdeep_hash_dir(d: Path, algorithm: str) -> dict[str, str] | None:
+    """Hash recursivo via hashdeep (rapido em arvores grandes). Parseia o
+    formato 'size,hash,filename'. Retorna None se falhar (=> fallback Python)."""
+    try:
+        proc = subprocess.run(
+            ["hashdeep", "-r", "-c", algorithm, "."],
+            cwd=str(d), capture_output=True, text=True, timeout=1800,
+        )
+    except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
+        return None
+    if proc.returncode != 0:
+        return None
+    hashes: dict[str, str] = {}
+    for line in proc.stdout.splitlines():
+        if not line or line[0] in "%#":  # header (%%%%) / comentarios (##)
+            continue
+        parts = line.split(",", 2)  # maxsplit=2: filename pode ter virgulas
+        if len(parts) != 3:
+            continue
+        _size, h, fname = parts
+        if fname.startswith("./"):
+            fname = fname[2:]
+        if fname:
+            hashes[fname] = h.strip().lower()
+    return hashes
+
+
+def _hash_dir(
+    directory: str, algorithm: str, use_hashdeep: bool
+) -> tuple[dict[str, str], str]:
+    """Hash recursivo do diretorio. Usa hashdeep se pedido + instalado +
+    algo suportado; senao hashlib. Retorna (hashes, engine_usado)."""
+    d = Path(directory)
+    if use_hashdeep and hashdeep_installed() and algorithm in _HASHDEEP_ALGOS:
+        hd = _hashdeep_hash_dir(d, algorithm)
+        if hd is not None:
+            return hd, "hashdeep"
+    return _python_hash_dir(d, algorithm), "python"
+
+
+def _detect_moves(
+    removed: list[str],
+    added: list[str],
+    expected_hashes: dict[str, str],
+    current_hashes: dict[str, str],
+) -> tuple[list[str], list[str], list[str]]:
+    """Cruza removidos x adicionados: mesmo hash em path diferente = movido.
+    Retorna (moved['old -> new'], removed_restante, added_restante)."""
+    rem_by_hash: dict[str, list[str]] = {}
+    for p in removed:
+        rem_by_hash.setdefault(expected_hashes.get(p, ""), []).append(p)
+    add_by_hash: dict[str, list[str]] = {}
+    for p in added:
+        add_by_hash.setdefault(current_hashes.get(p, ""), []).append(p)
+
+    moved: list[str] = []
+    moved_rem: set[str] = set()
+    moved_add: set[str] = set()
+    for h, rem_paths in rem_by_hash.items():
+        if not h:
+            continue
+        add_paths = add_by_hash.get(h, [])
+        # pareia 1-a-1 (ordenado = deterministico)
+        for old, new in zip(sorted(rem_paths), sorted(add_paths)):
+            moved.append(f"{old} → {new}")
+            moved_rem.add(old)
+            moved_add.add(new)
+
+    removed_left = sorted(set(removed) - moved_rem)
+    added_left = sorted(set(added) - moved_add)
+    return sorted(moved), removed_left, added_left
+
 
 def create_baseline_blocking(
     directory: str,
     output_file: str | None = None,
     algorithm: str = "sha256",
+    use_hashdeep: bool = False,
 ) -> BaselineResult:
     """Cria baseline: hash de todos os arquivos no diretorio.
 
-    Output: JSON com {path_relativo: hash}.
+    Output: JSON com {path_relativo: hash}. Se use_hashdeep e o hashdeep
+    estiver instalado (e o algo for suportado), usa-o (mais rapido em
+    arvores grandes); senao hashlib. O hash final e' identico.
     """
     result = BaselineResult(
         directory=directory,
@@ -191,19 +290,8 @@ def create_baseline_blocking(
         outp = bd / f"baseline-{safe_name}-{safe_ts}.json"
     result.output_file = str(outp)
 
-    hashes: dict[str, str] = {}
     try:
-        for f in d.rglob("*"):
-            if not f.is_file() or f.is_symlink():
-                continue
-            try:
-                h, err = hash_blocking(str(f), algorithm)
-                if h:
-                    rel = str(f.relative_to(d))
-                    hashes[rel] = h
-            except (OSError, ValueError):
-                continue
-
+        hashes, result.engine = _hash_dir(str(d), algorithm, use_hashdeep)
         result.file_count = len(hashes)
 
         # Salva JSON
@@ -212,6 +300,7 @@ def create_baseline_blocking(
             "algorithm": algorithm,
             "created_at": result.started_at,
             "file_count": result.file_count,
+            "engine": result.engine,
             "hashes": hashes,
         }
         with open(outp, "w", encoding="utf-8") as f:
@@ -230,6 +319,7 @@ def compare_baseline_blocking(
     baseline_file: str,
     directory: str | None = None,
     algorithm: str | None = None,
+    use_hashdeep: bool = False,
 ) -> CompareResult:
     """Compara baseline JSON com estado atual.
 
@@ -280,18 +370,8 @@ def compare_baseline_blocking(
         return result
 
     # Computa estado atual
-    current_hashes: dict[str, str] = {}
     try:
-        for f in d.rglob("*"):
-            if not f.is_file() or f.is_symlink():
-                continue
-            try:
-                h, _ = hash_blocking(str(f), algo)
-                if h:
-                    rel = str(f.relative_to(d))
-                    current_hashes[rel] = h
-            except (OSError, ValueError):
-                continue
+        current_hashes, _ = _hash_dir(base_dir, algo, use_hashdeep)
     except (OSError, PermissionError) as e:
         result.error = f"Falha ao escanear: {e}"
         return result
@@ -300,8 +380,15 @@ def compare_baseline_blocking(
     expected_set = set(expected_hashes.keys())
     current_set = set(current_hashes.keys())
 
-    result.added = sorted(current_set - expected_set)
-    result.removed = sorted(expected_set - current_set)
+    added = sorted(current_set - expected_set)
+    removed = sorted(expected_set - current_set)
+    # Detecta movidos (mesmo hash, path diferente) — tira de added/removed.
+    moved, removed, added = _detect_moves(
+        removed, added, expected_hashes, current_hashes
+    )
+    result.added = added
+    result.removed = removed
+    result.moved = moved
     for path in expected_set & current_set:
         if expected_hashes[path] != current_hashes[path]:
             result.modified.append(path)

@@ -426,7 +426,8 @@ TOOLS: list[ToolEntry] = [
             "**6 tabs**: Status (AIDE), Mudancas (AIDE), Hash, Verificar, Baseline, Sobre",
             "**AIDE**: hero card integro/mudancas/sem baseline + lista filtravel de diffs",
             "**Hash ad-hoc**: 4 algoritmos (SHA-256, SHA-512, SHA-1, MD5)",
-            "**Baseline ad-hoc**: snapshot JSON de diretorio + diff added/modified/removed",
+            "**Baseline ad-hoc**: snapshot JSON de diretorio + diff added/modified/removed/**movido**",
+            "Motor **hashdeep** opcional (mais rapido em pastas grandes; hash identico)",
             "Dialog de confirmacao explicito antes de re-baseline AIDE",
             "Reports em `~/.config/vigia/file-integrity.json` + `~/.local/share/vigia-hash/`",
         ],
@@ -436,7 +437,7 @@ TOOLS: list[ToolEntry] = [
         available_fn=lambda: shutil.which("vigia-integrity") is not None,
         embedded_module="vigia_integrity.window",
         category="defesa",
-        wrapped_packages=["aide", "coreutils"],
+        wrapped_packages=["aide", "coreutils", "hashdeep"],
     ),
     ToolEntry(
         id="capabilities-inspector",
