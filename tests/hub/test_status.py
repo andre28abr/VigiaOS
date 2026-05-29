@@ -68,6 +68,29 @@ class TestIsoToEpoch:
         assert status._iso_to_epoch("") == 0.0
 
 
+class TestSafeInt:
+    def test_valid_int(self):
+        assert status._safe_int(5) == 5
+
+    def test_numeric_string(self):
+        assert status._safe_int("7") == 7
+
+    def test_none_returns_default(self):
+        assert status._safe_int(None) == 0
+
+    def test_garbage_string_returns_default(self):
+        assert status._safe_int("erro") == 0
+
+    def test_list_returns_default(self):
+        assert status._safe_int([1, 2]) == 0
+
+    def test_dict_returns_default(self):
+        assert status._safe_int({"x": 1}) == 0
+
+    def test_custom_default(self):
+        assert status._safe_int("x", default=-1) == -1
+
+
 # ============================================================
 # last scans
 # ============================================================
@@ -127,6 +150,18 @@ class TestLastAntivirusScan:
         info = status.last_antivirus_scan()
         assert info.clean is True  # pegou o novo (limpo)
 
+    def test_malformed_int_fields_dont_crash(self, scan_dirs):
+        """Relatorio corrompido (tipo errado) nao pode derrubar gather()."""
+        av, _ = scan_dirs
+        (av / "scan-1.json").write_text(json.dumps({
+            "started_at": datetime.now().isoformat(timespec="seconds"),
+            "infected_files": "muitos",    # string nao-numerica
+            "scanned_files": [1, 2, 3],     # lista
+        }))
+        info = status.last_antivirus_scan()  # nao deve levantar
+        assert info is not None
+        assert info.clean is True  # infected coerce -> 0
+
 
 class TestLastRootkitScan:
     def test_none_when_empty(self, scan_dirs):
@@ -157,6 +192,19 @@ class TestLastRootkitScan:
         info = status.last_rootkit_scan()
         assert info.clean is True
         assert info.detail == "limpo"
+
+    def test_malformed_int_fields_dont_crash(self, scan_dirs):
+        """Relatorio corrompido (tipo errado) nao pode derrubar gather()."""
+        _, rk = scan_dirs
+        (rk / "rkhunter-1.json").write_text(json.dumps({
+            "scanner": "rkhunter",
+            "started_at": datetime.now().isoformat(timespec="seconds"),
+            "infected_count": {"x": 1},    # dict
+            "warnings_count": None,         # null
+        }))
+        info = status.last_rootkit_scan()  # nao deve levantar
+        assert info is not None
+        assert info.clean is True
 
 
 # ============================================================
