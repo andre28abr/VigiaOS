@@ -212,11 +212,13 @@ def get_system_info() -> SystemInfo:
     if _SYSTEM_INFO_CACHE is None:
         info = SystemInfo()
         try:
-            info.hostname = open("/proc/sys/kernel/hostname").read().strip()
+            with open("/proc/sys/kernel/hostname") as f:
+                info.hostname = f.read().strip()
         except OSError:
             info.hostname = "?"
         try:
-            info.kernel = open("/proc/sys/kernel/osrelease").read().strip()
+            with open("/proc/sys/kernel/osrelease") as f:
+                info.kernel = f.read().strip()
         except OSError:
             info.kernel = "?"
         info.distro = _read_distro()

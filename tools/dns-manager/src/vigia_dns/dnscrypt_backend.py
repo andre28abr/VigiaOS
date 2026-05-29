@@ -136,7 +136,9 @@ def _read_config_parsed() -> dict:
     try:
         with open(CONFIG_PATH, "rb") as f:
             return tomllib.load(f)
-    except (OSError, PermissionError, Exception):
+    except (OSError, tomllib.TOMLDecodeError):
+        # Erro de leitura/parse conhecido => trata como "sem config".
+        # (Erros inesperados propagam de proposito — nao mascarar bug.)
         return {}
 
 
