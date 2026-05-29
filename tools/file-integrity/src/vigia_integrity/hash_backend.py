@@ -97,20 +97,20 @@ def hash_blocking(path: str, algorithm: str = "sha256") -> tuple[str, str]:
     import stat as stat_mod
 
     if algorithm not in ALGORITHMS:
-        return "", f"Algoritmo nao suportado: {algorithm}"
+        return "", f"Algoritmo não suportado: {algorithm}"
 
     p = Path(path)
     if not p.exists():
-        return "", f"Arquivo nao existe: {path}"
+        return "", f"Arquivo não existe: {path}"
     if not p.is_file():
-        return "", "Caminho nao e' um arquivo."
+        return "", "Caminho não é um arquivo."
 
     # Hardening: rejeita special files (block/char devices, fifos, sockets,
     # /proc/*, /sys/*). Caso contrario hash de /dev/zero trava infinito.
     try:
         st = p.stat()
         if not stat_mod.S_ISREG(st.st_mode):
-            return "", "Caminho nao e' um arquivo regular (e' device/fifo/socket)."
+            return "", "Caminho não é um arquivo regular (é device/fifo/socket)."
     except OSError as e:
         return "", f"Falha ao stat: {e}"
 
@@ -148,7 +148,7 @@ def verify_blocking(
         expected = expected.split()[0]
 
     if not all(c in "0123456789abcdef" for c in expected):
-        return False, "", "Hash esperado contem caracteres invalidos."
+        return False, "", "Hash esperado contém caracteres inválidos."
 
     computed, err = hash_blocking(path, algorithm)
     if err:
@@ -273,12 +273,12 @@ def create_baseline_blocking(
     )
 
     if algorithm not in ALGORITHMS:
-        result.error = f"Algoritmo nao suportado: {algorithm}"
+        result.error = f"Algoritmo não suportado: {algorithm}"
         return result
 
     d = Path(directory)
     if not d.exists() or not d.is_dir():
-        result.error = f"Diretorio nao existe: {directory}"
+        result.error = f"Diretório não existe: {directory}"
         return result
 
     if output_file:
@@ -337,7 +337,7 @@ def compare_baseline_blocking(
 
     bf = Path(baseline_file)
     if not bf.exists() or not bf.is_file():
-        result.error = f"Baseline nao existe: {baseline_file}"
+        result.error = f"Baseline não existe: {baseline_file}"
         return result
 
     try:
@@ -348,7 +348,7 @@ def compare_baseline_blocking(
         return result
     # HARDENING: baseline editavel/corrompivel — valida shape antes de usar.
     if not isinstance(data, dict):
-        result.error = "Baseline invalido (formato inesperado)."
+        result.error = "Baseline inválido (formato inesperado)."
         return result
 
     expected_hashes = data.get("hashes", {})
@@ -366,7 +366,7 @@ def compare_baseline_blocking(
 
     d = Path(base_dir)
     if not d.exists() or not d.is_dir():
-        result.error = f"Diretorio nao existe: {base_dir}"
+        result.error = f"Diretório não existe: {base_dir}"
         return result
 
     # Computa estado atual

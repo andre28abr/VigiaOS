@@ -198,7 +198,7 @@ def _escape_for_markup(s: str) -> str:
 class WarningsTab(FindingsListTab):
     SEVERITY_CSS = "error"
     EMPTY_TITLE = "Sem warnings"
-    EMPTY_DESC = "Nenhuma critica encontrada. Execute uma auditoria na aba 'Resumo'."
+    EMPTY_DESC = "Nenhuma crítica encontrada. Execute uma auditoria na aba 'Resumo'."
 
     def _extract_findings(self, report: LynisReport) -> list[Finding]:
         return list(report.warnings)

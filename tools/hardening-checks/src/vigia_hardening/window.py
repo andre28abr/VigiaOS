@@ -95,14 +95,14 @@ class _HardeningContent:
         if n_warn > 0:
             notify_if_unfocused(
                 f"Hardening: {n_warn} warning(s)",
-                f"{idx_txt}{n_sug} sugestao(oes). Abra o Vigia pra revisar.",
+                f"{idx_txt}{n_sug} sugestão(ões). Abra o Vigia pra revisar.",
                 notif_id="vigia-hardening-audit",
                 priority=PRIORITY_HIGH,
             )
         else:
             notify_if_unfocused(
                 "Hardening: nenhum warning",
-                f"{idx_txt}{n_sug} sugestao(oes) de melhoria.",
+                f"{idx_txt}{n_sug} sugestão(ões) de melhoria.",
                 notif_id="vigia-hardening-audit",
             )
 

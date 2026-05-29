@@ -120,7 +120,7 @@ def active_db_new_path() -> Path:
 
 
 def active_profile_name() -> str:
-    return "Silverblue (Vigia)" if silverblue_profile_active() else "Sistema padrao"
+    return "Silverblue (Vigia)" if silverblue_profile_active() else "Sistema padrão"
 
 
 # ============================================================
@@ -176,12 +176,12 @@ def format_age(seconds: int | None) -> str:
         return "agora mesmo"
     minutes = seconds // 60
     if minutes < 60:
-        return f"ha {minutes} min"
+        return f"há {minutes} min"
     hours = minutes // 60
     if hours < 24:
-        return f"ha {hours}h"
+        return f"há {hours}h"
     days = hours // 24
-    return f"ha {days} dia{'s' if days > 1 else ''}"
+    return f"há {days} dia{'s' if days > 1 else ''}"
 
 
 # ============================================================
@@ -391,7 +391,7 @@ def run_init_blocking() -> tuple[bool, str]:
     """
     if not aide_installed():
         return False, (
-            "AIDE nao esta instalado.\n\n"
+            "AIDE não está instalado.\n\n"
             "Instale o AIDE:\n" + install_hint("aide")
         )
 
@@ -400,7 +400,7 @@ def run_init_blocking() -> tuple[bool, str]:
     db_new = active_db_new_path()
 
     if not conf.is_file():
-        return False, f"Arquivo de configuracao {conf} nao encontrado."
+        return False, f"Arquivo de configuração {conf} não encontrado."
 
     # rm -f remove orfaos de runs abortados.
     # chmod 755 no diretorio: permite ao UI (user andre) fazer Path.is_file()
@@ -431,7 +431,7 @@ fi
         return False, "pkexec nao encontrado."
 
     if result.returncode in (126, 127):
-        return False, "Autenticacao cancelada."
+        return False, "Autenticação cancelada."
     if result.returncode != 0:
         stderr = (result.stderr or "").strip()
         return False, f"aide --init falhou (codigo {result.returncode}):\n\n{stderr[:500]}"
@@ -453,11 +453,11 @@ def run_check_blocking() -> CheckResult:
     result.started_at = datetime.now()
 
     if not aide_installed():
-        result.error = "AIDE nao esta instalado."
+        result.error = "AIDE não está instalado."
         return result
     if not baseline_exists():
         result.error = (
-            f"Baseline nao existe ({active_db_path()}). "
+            f"Baseline não existe ({active_db_path()}). "
             "Crie primeiro com 'Criar baseline'."
         )
         return result
@@ -480,7 +480,7 @@ def run_check_blocking() -> CheckResult:
     result.duration_seconds = int(time.monotonic() - t0)
 
     if proc.returncode in (126, 127):
-        result.error = "Autenticacao cancelada."
+        result.error = "Autenticação cancelada."
         return result
 
     # AIDE: 0 = sem mudancas; 1-7 = bitmask de tipos de mudancas detectadas
@@ -503,7 +503,7 @@ def run_check_blocking() -> CheckResult:
 def run_update_blocking() -> tuple[bool, str]:
     """`aide --update` + move db.new -> db. Re-baseline mantendo o anterior."""
     if not aide_installed():
-        return False, "AIDE nao esta instalado."
+        return False, "AIDE não está instalado."
     if not baseline_exists():
         return False, "Sem baseline para atualizar. Use 'Criar baseline'."
 
@@ -532,7 +532,7 @@ fi
         return False, "pkexec nao encontrado."
 
     if result.returncode in (126, 127):
-        return False, "Autenticacao cancelada."
+        return False, "Autenticação cancelada."
     # update tambem usa bitmask (0-7 ok), mas tudo acima e' erro real
     if result.returncode > 7:
         stderr = (result.stderr or "").strip()
@@ -692,7 +692,7 @@ chown root:root /etc/aide-vigia.conf
         return False, "Falha ao executar pkexec."
 
     if result.returncode in (126, 127):
-        return False, "Autenticacao cancelada."
+        return False, "Autenticação cancelada."
     if result.returncode != 0:
         stderr = (result.stderr or "").strip()
         return False, f"Falha ao instalar perfil:\n\n{stderr[:500]}"
@@ -716,7 +716,7 @@ rm -f /var/lib/aide/aide.db.vigia.new.gz
         return False, "Falha ao executar pkexec."
 
     if result.returncode in (126, 127):
-        return False, "Autenticacao cancelada."
+        return False, "Autenticação cancelada."
     if result.returncode != 0:
         stderr = (result.stderr or "").strip()
         return False, f"Falha ao remover perfil:\n\n{stderr[:500]}"

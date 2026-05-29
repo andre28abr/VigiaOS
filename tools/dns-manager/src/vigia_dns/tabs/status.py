@@ -76,7 +76,7 @@ class StatusTab(Adw.Bin):
         self._restore_btn = Gtk.Button(label="Restaurar systemd-resolved")
         self._restore_btn.add_css_class("destructive-action")
         self._restore_btn.set_tooltip_text(
-            "Desativa dnscrypt-proxy e restaura systemd-resolved padrao. "
+            "Desativa dnscrypt-proxy e restaura systemd-resolved padrão. "
             "Pra quem quer parar de usar o DNS Manager."
         )
         self._restore_btn.connect("clicked", self._on_restore_clicked)
@@ -93,7 +93,7 @@ class StatusTab(Adw.Bin):
         self._row_service.add_suffix(self._lbl_service)
         self._info_group.add(self._row_service)
 
-        self._row_version = Adw.ActionRow(title="Versao")
+        self._row_version = Adw.ActionRow(title="Versão")
         self._row_version.add_css_class("property")
         self._lbl_version = Gtk.Label(label="—")
         self._lbl_version.add_css_class("monospace")
@@ -110,7 +110,7 @@ class StatusTab(Adw.Bin):
         # ===== Config group =====
         self._cfg_group = Adw.PreferencesGroup()
         self._cfg_group.set_margin_top(24)
-        self._cfg_group.set_title("Configuracao")
+        self._cfg_group.set_title("Configuração")
 
         self._row_servers = Adw.ActionRow(title="Servers ativos")
         self._row_servers.add_css_class("property")
@@ -176,7 +176,7 @@ class StatusTab(Adw.Bin):
             self._state_label.remove_css_class(cls)
 
         if not installed:
-            self._state_label.set_label("dnscrypt-proxy nao instalado")
+            self._state_label.set_label("dnscrypt-proxy não instalado")
             self._state_label.add_css_class("error")
             self._state_sub.set_label(
                 "Instale via Vigia Tool Installer (rpm-ostree install dnscrypt-proxy)."
@@ -187,16 +187,16 @@ class StatusTab(Adw.Bin):
             self._state_label.set_label("dnscrypt-proxy parado")
             self._state_label.add_css_class("warning")
             self._state_sub.set_label(
-                "Instalado mas nao rodando. Clique em 'Ativar dnscrypt-proxy' "
+                "Instalado mas não rodando. Clique em 'Ativar dnscrypt-proxy' "
                 "para configurar como backend DNS do sistema."
             )
             self._activate_btn.set_visible(True)
             self._restore_btn.set_sensitive(True)
         elif not ready:
-            self._state_label.set_label("Quase la")
+            self._state_label.set_label("Quase lá")
             self._state_label.add_css_class("warning")
             self._state_sub.set_label(
-                "dnscrypt-proxy esta rodando, mas o sistema nao esta apontando "
+                "dnscrypt-proxy está rodando, mas o sistema não está apontando "
                 "pra ele. Clique 'Ativar' pra ajustar /etc/resolv.conf."
             )
             self._activate_btn.set_visible(True)
@@ -221,10 +221,10 @@ class StatusTab(Adw.Bin):
         for cls in ("success", "warning", "error", "dim-label"):
             self._lbl_service.remove_css_class(cls)
         if not installed:
-            self._lbl_service.set_label("nao instalado")
+            self._lbl_service.set_label("não instalado")
             self._lbl_service.add_css_class("error")
         elif st.active:
-            self._lbl_service.set_label("ativo" + (" (enabled)" if st.enabled else " (nao enabled)"))
+            self._lbl_service.set_label("ativo" + (" (enabled)" if st.enabled else " (não enabled)"))
             self._lbl_service.add_css_class("success")
         else:
             self._lbl_service.set_label("parado")
@@ -253,7 +253,7 @@ class StatusTab(Adw.Bin):
             self._lbl_dnssec.set_label("sim")
             self._lbl_dnssec.add_css_class("success")
         else:
-            self._lbl_dnssec.set_label("nao")
+            self._lbl_dnssec.set_label("não")
             self._lbl_dnssec.add_css_class("warning")
 
         for cls in ("success", "warning"):
@@ -262,7 +262,7 @@ class StatusTab(Adw.Bin):
             self._lbl_nolog.set_label("sim")
             self._lbl_nolog.add_css_class("success")
         else:
-            self._lbl_nolog.set_label("nao")
+            self._lbl_nolog.set_label("não")
             self._lbl_nolog.add_css_class("warning")
 
         return False
@@ -277,13 +277,13 @@ class StatusTab(Adw.Bin):
         dlg = Adw.AlertDialog(
             heading="Ativar dnscrypt-proxy como backend DNS?",
             body=(
-                "Esta acao:\n"
+                "Esta ação:\n"
                 "• Faz backup de /etc/systemd/resolved.conf e /etc/resolv.conf\n"
                 "• Para o systemd-resolved (libera porta 53)\n"
                 "• Inicia o dnscrypt-proxy em 127.0.0.1\n"
                 "• Aponta /etc/resolv.conf para 127.0.0.1\n\n"
-                "Voce pode reverter a qualquer momento via 'Restaurar systemd-resolved'.\n\n"
-                "Sera pedida senha admin (pkexec)."
+                "Você pode reverter a qualquer momento via 'Restaurar systemd-resolved'.\n\n"
+                "Será pedida senha admin (pkexec)."
             ),
         )
         dlg.add_response("cancel", "Cancelar")
@@ -315,8 +315,8 @@ class StatusTab(Adw.Bin):
         else:
             show_info(
                 self, "dnscrypt-proxy ativo",
-                "Backend DNS do sistema agora e' dnscrypt-proxy. "
-                "Pode levar alguns segundos para todas as queries comecarem "
+                "Backend DNS do sistema agora é dnscrypt-proxy. "
+                "Pode levar alguns segundos para todas as queries começarem "
                 "a passar pelo novo resolver.",
             )
             self.refresh()
@@ -333,18 +333,18 @@ class StatusTab(Adw.Bin):
 
     def _on_restore_clicked(self, _btn: Gtk.Button) -> None:
         dlg = Adw.AlertDialog(
-            heading="Restaurar systemd-resolved padrao?",
+            heading="Restaurar systemd-resolved padrão?",
             body=(
-                "Esta acao DESATIVA o dnscrypt-proxy e volta o sistema ao "
-                "default Fedora (systemd-resolved). Recomendado se voce "
+                "Esta ação DESATIVA o dnscrypt-proxy e volta o sistema ao "
+                "default Fedora (systemd-resolved). Recomendado se você "
                 "quer parar de usar o DNS Manager.\n\n"
                 "O que acontece:\n"
                 "• Para e desabilita dnscrypt-proxy\n"
                 "• Restaura /etc/systemd/resolved.conf do backup\n"
                 "• Restaura /etc/resolv.conf -> stub-resolv.conf\n"
                 "• Inicia systemd-resolved\n\n"
-                "O pacote dnscrypt-proxy NAO eh desinstalado — voce pode "
-                "reativar a qualquer momento. Sera pedida senha admin."
+                "O pacote dnscrypt-proxy NÃO é desinstalado — você pode "
+                "reativar a qualquer momento. Será pedida senha admin."
             ),
         )
         dlg.add_response("cancel", "Cancelar")
@@ -377,7 +377,7 @@ class StatusTab(Adw.Bin):
             show_info(
                 self, "systemd-resolved restaurado",
                 "DNS do sistema voltou ao default Fedora. O dnscrypt-proxy "
-                "esta parado mas continua instalado. Pode reativar a qualquer "
+                "está parado mas continua instalado. Pode reativar a qualquer "
                 "momento via 'Ativar dnscrypt-proxy'.",
             )
             self.refresh()

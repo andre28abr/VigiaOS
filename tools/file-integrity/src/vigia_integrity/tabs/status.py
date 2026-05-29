@@ -111,7 +111,7 @@ class StatusTab(Adw.Bin):
         self._profile_group.set_margin_top(24)
         self._profile_group.set_title("Perfil AIDE")
         self._profile_group.set_description(
-            "Em Silverblue, /usr e' OSTree imutavel — o perfil Vigia exclui "
+            "Em Silverblue, /usr é OSTree imutável — o perfil Vigia exclui "
             "esse path e foca em /etc, /root, cron. Veja 'Sobre' pra detalhes."
         )
 
@@ -137,7 +137,7 @@ class StatusTab(Adw.Bin):
 
         # Check
         self._check_row = Adw.ActionRow(title="Verificar integridade")
-        self._check_row.set_subtitle("Compara o sistema com o baseline. Pode demorar varios minutos.")
+        self._check_row.set_subtitle("Compara o sistema com o baseline. Pode demorar vários minutos.")
         self._check_btn = Gtk.Button(label="Verificar")
         self._check_btn.add_css_class("suggested-action")
         self._check_btn.set_valign(Gtk.Align.CENTER)
@@ -147,7 +147,7 @@ class StatusTab(Adw.Bin):
 
         # Init / Update
         self._init_row = Adw.ActionRow(title="Criar baseline")
-        self._init_row.set_subtitle("Snapshot inicial do sistema. Faca quando ele estiver 'limpo'.")
+        self._init_row.set_subtitle("Snapshot inicial do sistema. Faça quando ele estiver 'limpo'.")
         self._init_btn = Gtk.Button(label="Criar")
         self._init_btn.set_valign(Gtk.Align.CENTER)
         self._init_btn.connect("clicked", self._on_init_clicked)
@@ -155,7 +155,7 @@ class StatusTab(Adw.Bin):
         self._actions_group.add(self._init_row)
 
         self._update_row = Adw.ActionRow(title="Re-baseline (apos updates legitimos)")
-        self._update_row.set_subtitle("Aceita as mudancas atuais como nova baseline.")
+        self._update_row.set_subtitle("Aceita as mudanças atuais como nova baseline.")
         self._update_btn = Gtk.Button(label="Atualizar")
         self._update_btn.set_valign(Gtk.Align.CENTER)
         self._update_btn.connect("clicked", self._on_update_clicked)
@@ -208,7 +208,7 @@ class StatusTab(Adw.Bin):
             self._state_label.remove_css_class(cls)
 
         if not installed:
-            self._state_label.set_label("AIDE nao instalado")
+            self._state_label.set_label("AIDE não instalado")
             self._state_label.add_css_class("error")
             self._state_sub.set_label(
                 "Para usar, instale o AIDE: " + install_hint("aide")
@@ -217,20 +217,20 @@ class StatusTab(Adw.Bin):
             self._state_label.set_label("Sem baseline")
             self._state_label.add_css_class("warning")
             self._state_sub.set_label(
-                "Crie um baseline para comecar a monitorar integridade dos arquivos."
+                "Crie um baseline para começar a monitorar integridade dos arquivos."
             )
         elif last_summary is None:
             self._state_label.set_label("Baseline ativo")
             self._state_label.add_css_class("dim-label")
             self._state_sub.set_label(
-                "Baseline criado, ainda nao houve verificacao. Clique 'Verificar'."
+                "Baseline criado, ainda não houve verificação. Clique 'Verificar'."
             )
         elif last_summary.has_changes:
-            self._state_label.set_label("Mudancas detectadas")
+            self._state_label.set_label("Mudanças detectadas")
             self._state_label.add_css_class("warning")
             n = last_summary.added + last_summary.removed + last_summary.changed
             self._state_sub.set_label(
-                f"{n} arquivos divergem do baseline. Veja a aba 'Mudancas'."
+                f"{n} arquivos divergem do baseline. Veja a aba 'Mudanças'."
             )
         else:
             self._state_label.set_label("Integro")
@@ -283,9 +283,9 @@ class StatusTab(Adw.Bin):
             self._profile_btn.remove_css_class(cls)
 
         if is_silverblue:
-            self._profile_action_row.set_title("Voltar ao perfil padrao do sistema")
+            self._profile_action_row.set_title("Voltar ao perfil padrão do sistema")
             self._profile_action_row.set_subtitle(
-                "Remove /etc/aide-vigia.conf e o db Vigia. AIDE volta a usar /etc/aide.conf padrao."
+                "Remove /etc/aide-vigia.conf e o db Vigia. AIDE volta a usar /etc/aide.conf padrão."
             )
             self._profile_btn.set_label("Remover")
             self._profile_btn.add_css_class("destructive-action")
@@ -308,7 +308,7 @@ class StatusTab(Adw.Bin):
     def _on_check_clicked(self, _btn: Gtk.Button) -> None:
         if self._running:
             return
-        self._set_running(True, "Verificando integridade (pode demorar varios minutos)...")
+        self._set_running(True, "Verificando integridade (pode demorar vários minutos)...")
         threading.Thread(target=self._check_worker, daemon=True).start()
 
     def _check_worker(self) -> None:
@@ -338,8 +338,8 @@ class StatusTab(Adw.Bin):
             dlg = Adw.AlertDialog(
                 heading="Recriar baseline?",
                 body=(
-                    "Vai sobrescrever o baseline atual. Use esta opcao se voce quer "
-                    "comecar do zero (ex: depois de uma reinstalacao limpa do sistema)."
+                    "Vai sobrescrever o baseline atual. Use esta opção se você quer "
+                    "começar do zero (ex: depois de uma reinstalação limpa do sistema)."
                 ),
             )
             dlg.add_response("cancel", "Cancelar")
@@ -371,7 +371,7 @@ class StatusTab(Adw.Bin):
         if not ok:
             show_error(self, "Falha ao criar baseline", err)
         else:
-            show_info(self, "Baseline criado", "O baseline esta ativo. Agora 'Verificar' compara contra ele.")
+            show_info(self, "Baseline criado", "O baseline está ativo. Agora 'Verificar' compara contra ele.")
             self.refresh()
         return False
 
@@ -379,11 +379,11 @@ class StatusTab(Adw.Bin):
         if self._running:
             return
         dlg = Adw.AlertDialog(
-            heading="Aceitar mudancas atuais?",
+            heading="Aceitar mudanças atuais?",
             body=(
-                "Re-baseline aceita o estado atual do sistema como referencia. "
-                "Faca isso apos uma atualizacao legitima (rpm-ostree upgrade, etc.).\n\n"
-                "Se voce nao consegue explicar as mudancas, NAO aceite — investigue primeiro."
+                "Re-baseline aceita o estado atual do sistema como referência. "
+                "Faça isso após uma atualização legítima (rpm-ostree upgrade, etc.).\n\n"
+                "Se você não consegue explicar as mudanças, NÃO aceite — investigue primeiro."
             ),
         )
         dlg.add_response("cancel", "Cancelar")
@@ -411,7 +411,7 @@ class StatusTab(Adw.Bin):
         if not ok:
             show_error(self, "Falha ao atualizar baseline", err)
         else:
-            show_info(self, "Baseline atualizado", "O estado atual foi aceito como nova referencia.")
+            show_info(self, "Baseline atualizado", "O estado atual foi aceito como nova referência.")
             self.refresh()
         return False
 
@@ -424,9 +424,9 @@ class StatusTab(Adw.Bin):
             heading="Aplicar perfil Silverblue?",
             body=(
                 "Vai criar /etc/aide-vigia.conf otimizado para sistemas "
-                "atomicos.\n\nApos aplicar, voce precisa criar um baseline "
-                "novo (botao 'Criar' abaixo). O baseline do perfil padrao "
-                "(se houver) fica intacto e disponivel se voltar atras."
+                "atômicos.\n\nApós aplicar, você precisa criar um baseline "
+                "novo (botão 'Criar' abaixo). O baseline do perfil padrão "
+                "(se houver) fica intacto e disponível se voltar atrás."
             ),
         )
         dlg.add_response("cancel", "Cancelar")
@@ -465,12 +465,12 @@ class StatusTab(Adw.Bin):
 
     def _on_remove_profile_clicked(self, _btn: Gtk.Button) -> None:
         dlg = Adw.AlertDialog(
-            heading="Voltar ao perfil padrao?",
+            heading="Voltar ao perfil padrão?",
             body=(
                 "Vai deletar /etc/aide-vigia.conf e /var/lib/aide/aide.db.vigia.gz "
                 "(baseline do perfil Vigia). AIDE volta a usar /etc/aide.conf "
-                "padrao (que monitora /usr, /boot — gera ruido em Silverblue).\n\n"
-                "O baseline do perfil padrao, se existir, NAO sera tocado."
+                "padrão (que monitora /usr, /boot — gera ruído em Silverblue).\n\n"
+                "O baseline do perfil padrão, se existir, NÃO será tocado."
             ),
         )
         dlg.add_response("cancel", "Cancelar")
@@ -500,7 +500,7 @@ class StatusTab(Adw.Bin):
         else:
             show_info(
                 self,
-                "Perfil padrao ativo",
+                "Perfil padrão ativo",
                 "AIDE voltou a usar /etc/aide.conf. Crie um baseline com o "
                 "perfil sistema se quiser monitorar nesse modo.",
             )

@@ -36,9 +36,9 @@ class HashTab(Adw.Bin):
 
         header_desc = Gtk.Label(
             label=(
-                "Calcula o digest criptografico de um arquivo. Use para "
+                "Calcula o digest criptográfico de um arquivo. Use para "
                 "verificar integridade de downloads, gerar fingerprints de "
-                "evidencias forenses ou comparar versoes."
+                "evidências forenses ou comparar versões."
             )
         )
         header_desc.add_css_class("dim-label")
@@ -49,7 +49,7 @@ class HashTab(Adw.Bin):
 
         # Inputs
         input_group = Adw.PreferencesGroup()
-        input_group.set_title("Parametros")
+        input_group.set_title("Parâmetros")
 
         self._target_entry = Gtk.Entry()
         self._target_entry.set_placeholder_text("/caminho/para/arquivo")
@@ -60,7 +60,7 @@ class HashTab(Adw.Bin):
         self._algo_combo = Gtk.DropDown.new_from_strings(backend.list_algorithms())
         self._algo_combo.set_selected(0)  # sha256
         algo_row = Adw.ActionRow(title="Algoritmo")
-        algo_row.set_subtitle("SHA-256 e' o padrao moderno. MD5/SHA-1 so para compatibilidade.")
+        algo_row.set_subtitle("SHA-256 é o padrão moderno. MD5/SHA-1 só para compatibilidade.")
         algo_row.add_suffix(self._algo_combo)
         input_group.add(algo_row)
 
@@ -184,4 +184,4 @@ class HashTab(Adw.Bin):
         start, end = self._result_buf.get_bounds()
         text = self._result_buf.get_text(start, end, False)
         copy_to_clipboard(self, text)
-        show_info(self, "Copiado", "Hash copiado para a area de transferencia.")
+        show_info(self, "Copiado", "Hash copiado para a área de transferência.")

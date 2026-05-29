@@ -30,9 +30,9 @@ class VerifyTab(Adw.Bin):
 
         header_desc = Gtk.Label(
             label=(
-                "Compara um hash <i>esperado</i> (que voce recebeu de uma fonte "
-                "confiavel) contra o hash <i>computado</i> do arquivo local. "
-                "Bate: arquivo intacto. Nao bate: arquivo corrompido ou adulterado."
+                "Compara um hash <i>esperado</i> (que você recebeu de uma fonte "
+                "confiável) contra o hash <i>computado</i> do arquivo local. "
+                "Bate: arquivo intacto. Não bate: arquivo corrompido ou adulterado."
             )
         )
         header_desc.set_use_markup(True)
@@ -44,7 +44,7 @@ class VerifyTab(Adw.Bin):
 
         # Inputs
         input_group = Adw.PreferencesGroup()
-        input_group.set_title("Parametros")
+        input_group.set_title("Parâmetros")
 
         self._target_entry = Gtk.Entry()
         self._target_entry.set_placeholder_text("/caminho/para/arquivo")
@@ -57,7 +57,7 @@ class VerifyTab(Adw.Bin):
         exp_row = Adw.ActionRow(title="Hash esperado")
         exp_row.set_subtitle(
             "Aceita formato 'hash  filename' (output do sha256sum). "
-            "Apenas a parte hexadecimal e' usada."
+            "Apenas a parte hexadecimal é usada."
         )
         exp_row.set_subtitle_lines(2)
         exp_row.add_suffix(self._expected_entry)
@@ -82,7 +82,7 @@ class VerifyTab(Adw.Bin):
         action_box.append(self._spinner)
 
         # Result hero
-        self._verdict_label = Gtk.Label(label="(aguardando verificacao)")
+        self._verdict_label = Gtk.Label(label="(aguardando verificação)")
         self._verdict_label.add_css_class("title-2")
         self._verdict_label.add_css_class("dim-label")
         self._verdict_label.set_halign(Gtk.Align.CENTER)
@@ -209,11 +209,11 @@ class VerifyTab(Adw.Bin):
                 f"Arquivo intacto. {algo.upper()} bate com o hash esperado."
             )
         else:
-            self._verdict_label.set_label("✗ Hashes nao batem")
+            self._verdict_label.set_label("✗ Hashes não batem")
             self._verdict_label.add_css_class("error")
             self._verdict_sub.set_label(
-                "Arquivo CORROMPIDO ou ADULTERADO. Nao confie no conteudo "
-                "ate investigar a fonte do hash esperado."
+                "Arquivo CORROMPIDO ou ADULTERADO. Não confie no conteúdo "
+                "até investigar a fonte do hash esperado."
             )
 
         return False

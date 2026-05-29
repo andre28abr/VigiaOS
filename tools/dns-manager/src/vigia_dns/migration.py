@@ -154,7 +154,7 @@ systemctl enable --now dnscrypt-proxy
 """
     rc, _, err = _run(["pkexec", "bash", "-c", script], timeout=30)
     if rc in (126, 127):
-        return False, "Autenticacao cancelada."
+        return False, "Autenticação cancelada."
     if rc != 0:
         return False, (err.strip() or "Falha ao ativar dnscrypt-proxy.")[:600]
     return True, ""
@@ -199,7 +199,7 @@ systemctl enable --now systemd-resolved
 """
     rc, _, err = _run(["pkexec", "bash", "-c", script], timeout=30)
     if rc in (126, 127):
-        return False, "Autenticacao cancelada."
+        return False, "Autenticação cancelada."
     if rc != 0:
         return False, (err.strip() or "Falha ao restaurar systemd-resolved.")[:600]
     return True, ""

@@ -273,7 +273,7 @@ fi
 """
     rc, _, err = _run(["pkexec", "bash", "-c", script], timeout=30)
     if rc in (126, 127):
-        return False, "Autenticacao cancelada."
+        return False, "Autenticação cancelada."
     if rc != 0:
         return False, (err.strip() or "Falha ao escrever config.")[:500]
     return True, ""
@@ -296,7 +296,7 @@ def enable_blocking() -> tuple[bool, str]:
         timeout=20,
     )
     if rc in (126, 127):
-        return False, "Autenticacao cancelada."
+        return False, "Autenticação cancelada."
     if rc != 0:
         return False, (err.strip() or "Falha ao ativar service.")[:500]
     return True, ""
@@ -314,7 +314,7 @@ def disable_blocking() -> tuple[bool, str]:
         timeout=20,
     )
     if rc in (126, 127):
-        return False, "Autenticacao cancelada."
+        return False, "Autenticação cancelada."
     if rc != 0:
         return False, (err.strip() or "Falha ao desativar service.")[:500]
     return True, ""
@@ -328,18 +328,18 @@ def disable_blocking() -> tuple[bool, str]:
 def set_servers_blocking(server_names: list[str]) -> tuple[bool, str]:
     """Atualiza server_names no .toml + reload do service."""
     if not CONFIG_PATH.exists():
-        return False, f"Config nao existe: {CONFIG_PATH}"
+        return False, f"Config não existe: {CONFIG_PATH}"
 
     # Validacao: apenas chars seguros (anti-injection)
     safe = []
     for name in server_names:
         if not re.match(r"^[a-zA-Z0-9._\-]+$", name):
-            return False, f"Nome de server invalido: {name!r}"
+            return False, f"Nome de server inválido: {name!r}"
         safe.append(name)
 
     lines = _read_config_lines()
     if not lines:
-        return False, "Falha ao ler config (sem permissao?)"
+        return False, "Falha ao ler config (sem permissão?)"
 
     array_repr = "[" + ", ".join(f"'{s}'" for s in safe) + "]"
     new_lines = _update_toml_key(lines, "server_names", array_repr)

@@ -35,8 +35,8 @@ def _md_to_pango(md: str) -> str:
 HEADER_DESC = (
     "Servers <b>dnscrypt-proxy</b> (DoH, DoT, DNSCrypt nativos). Aplicar "
     "edita <tt>server_names</tt> em <tt>/etc/dnscrypt-proxy/dnscrypt-proxy.toml</tt> "
-    "e reinicia o servico. Cada server tem politicas proprias (logs, filtros, "
-    "DNSSEC, jurisdicao). Recomendado: pelo menos <b>no-logs</b> + <b>DNSSEC</b>."
+    "e reinicia o serviço. Cada server tem políticas próprias (logs, filtros, "
+    "DNSSEC, jurisdição). Recomendado: pelo menos <b>no-logs</b> + <b>DNSSEC</b>."
 )
 
 
@@ -133,12 +133,12 @@ class ResolversTab(Adw.Bin):
         # Banner
         if not installed:
             self._banner.set_title(
-                "dnscrypt-proxy nao instalado. Instale via Vigia Tool Installer."
+                "dnscrypt-proxy não instalado. Instale via Vigia Tool Installer."
             )
             self._banner.set_revealed(True)
         elif not active:
             self._banner.set_title(
-                "dnscrypt-proxy instalado mas nao ativo. Ative na aba Status."
+                "dnscrypt-proxy instalado mas não ativo. Ative na aba Status."
             )
             self._banner.set_revealed(True)
         else:
@@ -259,8 +259,8 @@ class ResolversTab(Adw.Bin):
             body=(
                 f"Vai editar /etc/dnscrypt-proxy/dnscrypt-proxy.toml:\n"
                 f"  server_names = ['{server.id}']\n\n"
-                f"Backup do .toml atual sera salvo em "
-                f"dnscrypt-proxy.toml.vigia-backup (se nao existir).\n\n"
+                f"Backup do .toml atual será salvo em "
+                f"dnscrypt-proxy.toml.vigia-backup (se não existir).\n\n"
                 f"dnscrypt-proxy sera reiniciado.\n\n"
                 f"<i>Operador</i>: {server.provider}"
                 + (f" ({server.country})" if server.country else "") + "\n"
@@ -316,7 +316,7 @@ class ResolversTab(Adw.Bin):
                 self,
                 f"{server.label} ativo",
                 f"dnscrypt-proxy reconfigurado para usar '{server.id}'. "
-                "Va para a aba Status para verificar.",
+                "Vá para a aba Status para verificar.",
             )
             # Refresh com hint pra UI ja marcar como ATIVO
             self.refresh(expected_active_servers=[server.id])
