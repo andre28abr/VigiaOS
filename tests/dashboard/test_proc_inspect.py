@@ -56,6 +56,20 @@ class TestParseStraceSummary:
         rows, total = pi.parse_strace_summary(noisy)
         assert len(rows) == 3 and total == 230
 
+    def test_comma_decimal_locale(self):
+        # locale pt-BR: strace imprime virgula decimal ("100,00") — bug real
+        # reportado pelo Andre. O parser tem que normalizar pra ponto.
+        sample = (
+            "% time     seconds  usecs/call     calls    errors syscall\n"
+            " 60,00    0,001000          10       100         5 read\n"
+            " 40,00    0,000500           5        50           write\n"
+            "100,00    0,001500                   150         5 total\n"
+        )
+        rows, total = pi.parse_strace_summary(sample)
+        assert [r.syscall for r in rows] == ["read", "write"]
+        assert total == 150
+        assert rows[0].time_pct == 60.0
+
 
 def _fake_run(returncode=0, stdout="", stderr=""):
     def runner(cmd, *a, **kw):
@@ -74,8 +88,9 @@ class TestInspectProcessBlocking:
         assert res.error == ""
         assert res.total_calls == 230
         assert res.rows[0].syscall == "read"
-        # comando: pkexec timeout -s INT <dur> strace -f -c -p <pid>
-        assert run.cmd[:4] == ["pkexec", "timeout", "-s", "INT"]
+        # comando: pkexec env LC_ALL=C timeout -s INT <dur> strace -f -c -p <pid>
+        assert run.cmd[:3] == ["pkexec", "env", "LC_ALL=C"]
+        assert "strace" in run.cmd
         assert run.cmd[-2:] == ["-p", "1234"]
 
     def test_not_installed(self, monkeypatch):

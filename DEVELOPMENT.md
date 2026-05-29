@@ -1856,6 +1856,14 @@ mostra o resumo de syscalls (tabela por %tempo) num diálogo. Read-only.
   clique). Bug pré-existente, virou bloqueante com o inspetor. Fix:
   `_refresh()` pula o rebuild enquanto `_any_expanded()` (linha aberta);
   retoma quando tudo fecha.
+- **v0.3.2 (fix de locale, reportado pelo André)**: o inspetor dava
+  "Sem dados de syscall" no Fedora pt-BR. Causa: `strace -c` imprime os
+  floats com **vírgula** decimal (`100,00`) no locale pt-BR, e
+  `float("100,00")` estoura → todas as rows descartadas. Fix duplo:
+  rodar o strace via `pkexec env LC_ALL=C …` (força ponto; pkexec
+  sanitiza env, daí o `env` explícito) + parser troca `,`→`.` antes do
+  `float`. *Lição geral: subprocess cujo output tem número formatado
+  deve rodar com `LC_ALL=C` — só pega em sistema com locale não-inglês.*
 
 ---
 
