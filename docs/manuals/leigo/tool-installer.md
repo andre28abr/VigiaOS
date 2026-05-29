@@ -21,8 +21,7 @@ Tudo com 1 clique.
 - **Quando voce quer melhorar privacidade do navegador**: a aba
   Extensoes lista as melhores opcoes gratuitas.
 - **Quando voce vai investigar uma maquina comprometida**: instala
-  ClamAV (antivirus), binwalk (analisar arquivos suspeitos), hashdeep
-  (hash de evidencias).
+  ClamAV (antivirus) e hashdeep (hash de evidencias).
 
 ## O que voce vai ver
 
@@ -30,10 +29,10 @@ A janela tem **4 abas**:
 
 **Catalogo**: lista de ferramentas agrupadas em 5 categorias:
 - **Auditoria e hardening** (lynis, AIDE, chkrootkit, rkhunter)
-- **Rede** (nmap, tcpdump, mtr, nethogs, iftop)
+- **Rede** (mtr, nethogs, iftop)
 - **Monitoramento** (htop, iotop, lsof, strace, fail2ban)
 - **Privacidade** (tor, torsocks, wireguard, dnscrypt-proxy)
-- **Forense** (clamav, binwalk, hashdeep)
+- **Forense** (clamav, hashdeep)
 
 Cada item tem um botao "Instalar" (ou "Remover" se ja tiver). Tem busca
 no topo pra filtrar.

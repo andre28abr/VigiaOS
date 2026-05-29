@@ -37,10 +37,10 @@ vigia_installer/
 | Categoria | Pacotes |
 |---|---|
 | **Auditoria e hardening** | lynis, aide, chkrootkit, rkhunter |
-| **Rede** | nmap, tcpdump, mtr, nethogs, iftop |
+| **Rede** | mtr, nethogs, iftop |
 | **Monitoramento e diagnostico** | htop, iotop, lsof, strace, fail2ban |
 | **Privacidade e criptografia** | tor, torsocks, wireguard-tools, dnscrypt-proxy |
-| **Forense e analise** | clamav, binwalk, hashdeep |
+| **Forense e analise** | clamav, hashdeep |
 
 Cada `CatalogEntry` tem `package`, `name`, `description` (1 linha),
 `why` (paragrafo com markdown leve via `_md_to_pango`), `category`,
@@ -124,8 +124,7 @@ xdg-open "https://chromewebstore.google.com/detail/cjpalhdlnbpafiamejdnhcphjbkei
   servico SSH.
 - **Privacidade browser**: instalar uBlock Origin + Privacy Badger +
   ClearURLs em Firefox novo.
-- **Forense**: clamav + binwalk + hashdeep para investigar maquina
-  comprometida.
+- **Forense**: clamav + hashdeep para investigar maquina comprometida.
 
 ## Limitacoes conhecidas
 
