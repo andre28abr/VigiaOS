@@ -223,54 +223,51 @@ def run_audit_blocking() -> tuple[bool, str]:
         )
 
     # Bug fix critico: Lynis roda como root via pkexec e gera
-    # /var/log/lynis-report.dat com perms 600 (root only). Sem `chmod`,
-    # o backend (rodando como user) nao consegue ler o report — parser
-    # silenciosamente retorna vazio (UI mostra "Nao avaliado").
+    # /var/log/lynis-report.dat dono root:root. Sem `chown`/`chmod`, o Hub
+    # (rodando como user) nao consegue ler o report — o parser retorna vazio
+    # (UI mostra "Nao avaliado" E a notificacao de fim de audit nao dispara,
+    # porque report.has_data() fica False).
     #
-    # LGPD HARDENING: chmod 640 + chown root:<user>. 644 deixaria report
-    # world-readable. 640 + grupo = apenas root e o user que iniciou a
-    # auditoria leem.
-    #
-    # SECURITY: $USER e $LOGNAME passam via env var DEDICADA do subprocess,
-    # NAO interpolados em f-string. Atacante setando USER='root && rm -rf /'
-    # antes de iniciar o GUI nao consegue injetar comando, pois o script
-    # bash referencia "$VIGIA_TARGET_USER" como variavel.
-    # Validacao extra: regex POSIX-conforme para nome de usuario.
+    # SECURITY: o username vai como ARGUMENTO POSICIONAL do bash ($1), nao
+    # interpolado em f-string nem via env var. Atacante setando
+    # USER='root && rm -rf /' nao injeta comando (o script trata "$1" como
+    # dado, nao como codigo). Validacao extra: regex POSIX-conforme.
     raw_user = os.environ.get("USER") or os.environ.get("LOGNAME") or ""
     if re.match(r"^[a-z_][a-z0-9_-]{0,31}\$?$", raw_user):
         # POSIX-compliant username
         validated_user = raw_user
     else:
-        validated_user = ""  # sem chown — apenas chmod
+        validated_user = ""  # sem chown — fallback chmod 644
+    # IMPORTANTE: o pkexec HIGIENIZA o ambiente — so repassa env vars
+    # declaradas num polkit action (allow_env), que nao temos. Por isso o
+    # username NAO pode ir via env=... (chegaria VAZIO no processo root,
+    # pulando o chown e deixando o report root:root ilegivel pro Hub).
+    # argv, ao contrario, e' SEMPRE repassado pelo pkexec.
     script = """set +e
+target_user="$1"
 lynis audit system --quiet --no-colors
 rc=$?
-# LGPD: 640 + chown para o user (nao world-readable)
-if [ -n "$VIGIA_TARGET_USER" ]; then
-    chown root:"$VIGIA_TARGET_USER" /var/log/lynis-report.dat 2>/dev/null || true
-    chown root:"$VIGIA_TARGET_USER" /var/log/lynis.log 2>/dev/null || true
+if [ -n "$target_user" ]; then
+    # LGPD: chown pro user + 640 — so root e o dono leem (nao world-readable).
+    chown "root:$target_user" /var/log/lynis-report.dat 2>/dev/null || true
+    chown "root:$target_user" /var/log/lynis.log 2>/dev/null || true
+    chmod 640 /var/log/lynis-report.dat 2>/dev/null || true
+    chmod 640 /var/log/lynis.log 2>/dev/null || true
+else
+    # Fallback (username invalido/ausente): 644 garante a leitura pelo Hub.
+    chmod 644 /var/log/lynis-report.dat 2>/dev/null || true
+    chmod 644 /var/log/lynis.log 2>/dev/null || true
 fi
-chmod 640 /var/log/lynis-report.dat 2>/dev/null || true
-chmod 640 /var/log/lynis.log 2>/dev/null || true
 exit $rc
 """
     try:
-        # pkexec passa SOMENTE env whitelisted ao processo root.
-        # Definimos VIGIA_TARGET_USER explicitamente; pkexec config
-        # (--keep-env-list / polkit) precisa permitir VIGIA_TARGET_USER
-        # — alternativa segura: hardcode no script via bash -c VAR='%s' ...
-        # Aqui usamos abordagem hibrida: passa via subprocess env (que
-        # pkexec geralmente repassa para o script), com fallback de NO-OP
-        # quando a variavel chega vazia (script ja trata $VIGIA_TARGET_USER
-        # vazio como skip do chown).
-        env = os.environ.copy()
-        env["VIGIA_TARGET_USER"] = validated_user
+        # bash -c SCRIPT NOME ARG1 → dentro do script $0=NOME, $1=ARG1.
+        # validated_user chega como "$1" (sobrevive a' higienizacao do pkexec).
         result = subprocess.run(
-            ["pkexec", "bash", "-c", script],
+            ["pkexec", "bash", "-c", script, "vigia-hardening", validated_user],
             capture_output=True,
             text=True,
             timeout=600,
-            env=env,
         )
     except subprocess.TimeoutExpired:
         return False, "Lynis demorou mais de 10 minutos. Audit cancelado."
