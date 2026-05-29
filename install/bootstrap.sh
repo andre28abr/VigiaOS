@@ -70,7 +70,7 @@ DEPS_BACKENDS=(
     fail2ban                              # defesa (servico — fica OFF)
     tor torsocks wireguard-tools          # privacidade (tor fica OFF)
     dnscrypt-proxy                        # DNS encriptado (fica OFF)
-    hashdeep                              # forense
+    md5deep                               # forense (binarios hashdeep/sha256deep)
 )
 
 # Ferramentas Vigia (dirs em tools/). vigia-common primeiro (dep das outras).

@@ -1821,6 +1821,13 @@ já cobre hash/verify/baseline desde o merge do Hash Tools, #68).
   (movido + add/rem/mod), seleção de engine (python default, fallback sem
   hashdeep, sha512→python, hashdeep mockado + parse, returncode≠0→fallback,
   filename com vírgula). Suite **604→616**. file-integrity v0.2.2.
+- **Fix (teste do André na VM)**: `rpm-ostree install hashdeep` falhava
+  com "Packages not found" — o **pacote** no Fedora é **`md5deep`** (a
+  suite md5deep/sha256deep/hashdeep; o **binário** é `hashdeep`).
+  Corrigido o `package` no `catalog.py` (md5deep; `binary`/detecção
+  seguem `hashdeep`, que está correto) + `bootstrap.sh`. installer
+  v0.3.2. *Lição: nome-de-pacote ≠ nome-de-binário só pega em teste real
+  de repo — análise estática no mac não alcança.*
 
 ---
 

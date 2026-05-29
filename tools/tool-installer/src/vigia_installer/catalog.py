@@ -251,13 +251,19 @@ CATALOG: list[CatalogEntry] = [
     # binarios e' nicho ofensivo/CTF — vai pro **Vigia Red**. Era o backend
     # da GUI Firmware Analyzer, ja removida pelo mesmo motivo.
     CatalogEntry(
-        package="hashdeep",
+        # NOTA: o binario chama-se `hashdeep`, mas o PACOTE no Fedora e'
+        # `md5deep` (a suite md5deep/sha256deep/hashdeep). `rpm-ostree
+        # install hashdeep` falha com "Packages not found" (2026-05-30).
+        package="md5deep",
         name="hashdeep",
         description="Computa hashes recursivamente + compara conjuntos.",
         why=(
             "Quando voce quer hashear uma pasta inteira e depois verificar se "
             "**algum arquivo mudou** sem precisar de baseline AIDE. Util para "
-            "cadeia de custodia em casos forenses."
+            "cadeia de custodia em casos forenses.\n\n"
+            "*No Fedora vem no pacote **`md5deep`** (inclui `hashdeep`, "
+            "`md5deep`, `sha256deep`). O **Vigia File Integrity** usa o "
+            "`hashdeep` como motor opcional na aba Baseline.*"
         ),
         category="forense",
         binary="hashdeep",
