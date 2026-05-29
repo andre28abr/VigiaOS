@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "vigia-netmon"
-version = "0.1.0"
+version = "0.1.1"
 description = "Monitor de conexoes de rede em tempo real (TCP/UDP) — parte da Vigia Suite"
 license = { text = "Apache-2.0" }
 readme = "README.md"
