@@ -1885,6 +1885,117 @@ memory forensics.
 **Quando revisitar**: após VigiaOS estar em v1.0 (estável, COPR ativo,
 ~6 meses de uso). Começar por **VigiaOps** — interesse imediato.
 
+### 10.6 Backlog priorizado — próxima sessão (planejado 2026-05-30)
+
+> Levantado com o André em 2026-05-29. Cada item já vem com o que o
+> código faz **hoje** (verificado na fonte) + o que falta + decisões a
+> tomar. Itens B1–B5 = tasks #88–#92.
+
+**Modelo conceitual confirmado** (norteia B5): **VigiaOS** é o
+*ecossistema* (este monorepo / toolkit). **Vigia Hub** é *este app* (o
+launcher central). **Vigia Red / Blue / Ops** serão apps *irmãos* dentro
+do mesmo ecossistema. Logo "Vigia Suite" é nome legado a aposentar em
+favor de "Vigia Hub" (app) + "VigiaOS" (ecossistema).
+
+#### B1 — Instalação modular (rodar 1 tool isolada) — #88
+
+André: o Hub é o switch completo, mas às vezes o user quer só **um
+módulo** (ex: só o Antivírus) — aparece no GNOME com ícone próprio,
+clica, roda isolado.
+
+- **Hoje**: tecnicamente **já funciona**. Cada tool tem entry-point
+  próprio (`vigia-antivirus`, `vigia-dns`, …) e `.desktop` próprio
+  (`br.com.vigia.Antivirus.desktop`, `Exec=vigia-antivirus`,
+  `Icon=br.com.vigia.Antivirus`). Todas dependem de `vigia-common`.
+- **Falta**: (a) **unidade de distribuição** instalável sozinha — há
+  specs RPM por tool (COPR), validar que 1 RPM/tool resolve dep de
+  `vigia-common`; (b) **documentar** o fluxo "instale só o módulo X"
+  (leigo + técnico); (c) garantir que o `.desktop` + ícone de cada tool
+  é instalado mesmo sem o Hub.
+- **Decisão**: a doc descreve instalar via RPM por tool (COPR) ou via
+  `pip install -e tools/<tool>`? Definir o caminho oficial pro user.
+
+#### B2 — First-run instala todas as deps (repensar o Installer) — #89
+
+André: ao instalar pela 1ª vez, já instalar **todos** os pacotes que o
+Hub precisa. Aí o Tool Installer fica meio desnecessário. Talvez um
+shell script que roda **antes**: atualiza o sistema + instala tudo.
+
+- **Hoje**: `bootstrap.sh` **já layerа RPMs + Flatpaks**, MAS:
+  1. **Dessincronizado** — ainda inclui `nmap`, `tcpdump`, `binwalk`,
+     `yara`, `wireshark-cli`, `nmap-ncat` (perfil ofensivo que tiramos
+     do escopo em 2026-05-29 → VigiaRed). Precisa enxugar pra bater com
+     o catálogo defensivo (18 pkgs).
+  2. **Não instala os tools Vigia em si** — não clona repo, não roda
+     `pip install`, não cria symlinks/.desktop. Só prepara dependências.
+  3. **Drift no §8.3**: a descrição que ajustei em 2026-05-29 ("clona
+     repo + pip installs + symlinks + .desktop") **não corresponde** ao
+     `bootstrap.sh` real — corrigir um dos dois (provavelmente fazer o
+     script realmente instalar os tools, e então a doc fica correta).
+- **Falta / trabalho**: reescrever `bootstrap.sh` → (1) `update`;
+  (2) instalar só deps do catálogo enxuto; (3) instalar os tools Vigia;
+  (4) criar `.desktop`/ícones. Repensar o **papel do Tool Installer**:
+  se tudo já vem, ele vira gerenciador *opcional* (add/remove) e não
+  porta de entrada obrigatória.
+- **Tensão a resolver**: instalar TUDO de cara contraria o princípio
+  **minimum surface area** (LGPD/escritório — abrir só o necessário).
+  Provável meio-termo: instalar deps das tools *core*, mas serviços
+  (tor, fail2ban, dnscrypt-proxy) ficam **opt-in** via Installer.
+
+#### B3 — Compatibilidade Fedora Workstation (não-atômico) — #90
+
+André: verificar se o Hub roda também no **Fedora Workstation
+tradicional** (dnf), e fazer o mesmo script de instalação.
+
+- **Hoje**: **atomic-only**. `bootstrap.sh` faz `exit 1` se não achar
+  `rpm-ostree`. **24 arquivos .py** chamam `rpm-ostree`. **Não existe
+  detecção de distro** em lugar nenhum.
+- **Bloqueios reais**: **Deployments Manager** é intrinsecamente
+  atômico (deployments rpm-ostree não existem no Workstation). Tool
+  Installer usa `pkexec rpm-ostree install` (+ reboot) — no Workstation
+  seria `dnf install` (sem reboot, sem tab Pendentes).
+- **Trabalho**: (a) helper `is_atomic()` em `vigia-common` (checar
+  `/run/ostree-booted` ou presença de `rpm-ostree`); (b) abstrair o
+  backend de install (rpm-ostree ↔ dnf); (c) esconder/adaptar tools
+  atomic-only no Workstation (Deployments; tab Pendentes do Installer);
+  (d) branch `dnf` no `bootstrap.sh`. **Item substancial** — escopo
+  grande, fazer por etapas.
+
+#### B4 — Pente-fino de redundâncias (Dashboard ↔ catálogo) — #91
+
+André: revisar features/pacotes a manter ou retirar. Ex: o **Dashboard**
+já mostra monitor de sistema com processos — alguns pacotes de monitor
+podem ser redundantes. "Verificar com calma."
+
+- **Hoje**: catálogo *monitoramento* = `htop`, `iotop`, `lsof`,
+  `strace`, `fail2ban`. O **Dashboard** já cobre processos, I/O,
+  conexões, CPU/mem em GUI nativa — e as próprias descrições de
+  `htop`/`iotop` no catálogo **já dizem** "alternativa GUI: Vigia
+  Dashboard".
+- **A auditar**: `htop`/`iotop` redundantes com o Dashboard?
+  `lsof`/`strace` são debug pontual (provável manter). Mapear
+  sobreposição e decidir o que sai. **Sem ação imediata** — análise.
+
+#### B5 — Polimento visual (3 sub-itens) — #92
+
+- **5a · X de fechar duplicado na Ajuda (Markdown)**: tirar o X do
+  visualizador, deixar só o da janela do Hub (que minimiza/fecha
+  conforme config de tray). **Suspeito**: `_wrap_with_header`
+  (`window.py:629`) e os headers das abas Ajuda/Configurações criam
+  `Adw.HeaderBar` com window-controls próprios, somados ao X da janela.
+  **Fix provável**: `header.set_show_end_title_buttons(False)` nos
+  headers internos. *Confirmar qual header gera o X extra.*
+- **5b · Header da sidebar**: hoje `Adw.WindowTitle(title="Vigia Suite",
+  subtitle="Toolkit")` (`window.py:1415`). → título **"Vigia Hub"**;
+  subtítulo "Toolkit" → **remover ou substituir** (sugestão: "VigiaOS").
+- **5c · Rename "Vigia Suite" → "Vigia Hub"**: aparece em MUITOS
+  lugares — `window.py` (108, 324, 1399, 1415, 1456), `.desktop`
+  (`Name=Vigia Suite`), descrições de `pyproject` e READMEs ("parte da
+  Vigia Suite"). **Decisão**: rename global ou só strings visíveis do
+  app? E a tagline "parte da Vigia Suite" das 16 tools vira "parte do
+  **VigiaOS**"? *Recomendação a confirmar*: app visível = "Vigia Hub";
+  subtítulo = "VigiaOS"; tagline das tools = "parte do VigiaOS".
+
 ---
 
 ## 11. Lições aprendidas
