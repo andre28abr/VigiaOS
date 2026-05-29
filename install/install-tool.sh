@@ -18,6 +18,9 @@
 #
 set -euo pipefail
 
+# pip --user em Fedora 38+ exige isto (PEP 668: Python externally-managed).
+export PIP_BREAK_SYSTEM_PACKAGES=1
+
 # ---- visual ---------------------------------------------------------------
 GREEN=$'\e[32m'; RED=$'\e[31m'; YELLOW=$'\e[33m'
 DIM=$'\e[2m'; BOLD=$'\e[1m'; NC=$'\e[0m'

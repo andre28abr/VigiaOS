@@ -1758,6 +1758,44 @@ Início da execução do backlog §10.6. Commits `0471e85`..`72ad85f`.
   mostravam o comando errado no Workstation). +3 testes; vigia-common
   v0.2.1. Fecha o último pendente do B3.
 
+### 2026-05-30 — Auditoria padrão completa (vistoria + fixes + +30 testes)
+
+Vistoria de 4 dimensões (4 agentes de review em paralelo) + sweep
+mecânico. **Veredito**: código "unusually disciplined / remarkably
+solid" — zero `shell=True`/`os.system`/`eval`, todo pkexec em argv,
+sem vazamento de segredo, zip-slip defendido (backup.py), versões
+`pyproject`↔`__init__` alinhadas, sintaxe limpa em todos os `.py`.
+
+**Fixes aplicados**:
+- **F1 (HIGH)** `install/bootstrap.sh`: em atômico, `git`/`pip` layered
+  só ativam após reboot, mas o script clonava/pip-installava na mesma
+  passada → falha no `curl|bash` vanilla. Agora detecta e pede "reboot +
+  rode de novo" (2ª passada idempotente).
+- **F2 (MED)** PEP 668: `pip install --user` é recusado no Fedora 38+
+  sem `--break-system-packages`. `export PIP_BREAK_SYSTEM_PACKAGES=1` nos
+  dois scripts de install.
+- **F3 (MED)** `dnscrypt_backend.py`: `except (OSError, …, Exception)`
+  engolia tudo (mascararia regressão de parse como "sem config") →
+  estreitado pra `(OSError, tomllib.TOMLDecodeError)`.
+- **F4 (LOW/LGPD)** `browser_extensions.py`: state salvo sem perms →
+  agora dir 0700 + arquivo 0600 (consistente com as outras tools).
+- **F5 (LOW)** `dashboard/backend.py`: 2 `open()` sem context manager →
+  `with`.
+
+**Cobertura nova (+30 testes, 574→604)**: `tests/installer/test_backend.py`
+(dispatch rpm-ostree↔dnf no install/uninstall, `_run_pkg_cmd` 7 ramos,
+`reboot_system`) + `tests/hub/test_registry.py` (`visible_tools`
+atomic_only, `tools_by_category`, métodos de `ToolEntry`). Mock-key:
+`backend.py`/`registry.py` importam `is_atomic` no topo → patcha-se
+`backend.is_atomic`/`registry.is_atomic`. Bumps: dns v0.4.2, installer
+v0.3.1.
+
+**Aceito sem corrigir** (consciente): create-then-chmod TOCTOU sub-ms em
+4 writers (LOW, workstation single-user — reescrever arriscaria
+regressão); `print()` p/ erro em ~10 sites (cosmético, devia ser
+`logging`); `dnf` vs `dnf5` futuro (hoje `dnf` é symlink); mensagem
+fire-and-forget do install do tray.
+
 ---
 
 ## 10. Roadmap

@@ -261,7 +261,9 @@ def _save_state(state: dict) -> None:
     """Salva state em ~/.config/vigia-installer/."""
     try:
         STATE_PATH.parent.mkdir(parents=True, exist_ok=True)
+        STATE_PATH.parent.chmod(0o700)  # LGPD: dir restrita ao dono
         STATE_PATH.write_text(json.dumps(state, indent=2), encoding="utf-8")
+        STATE_PATH.chmod(0o600)         # LGPD: metadado de privacidade do usuario
     except OSError as e:
         print(f"[browser_extensions] save_state falhou: {e}", flush=True)
 

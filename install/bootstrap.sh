@@ -25,6 +25,10 @@
 #
 set -euo pipefail
 
+# pip --user em Fedora 38+ exige isto (PEP 668: Python externally-managed).
+# Em pip sem PEP 668, --break-system-packages e' no-op inofensivo.
+export PIP_BREAK_SYSTEM_PACKAGES=1
+
 REPO_URL="https://github.com/andre28abr/VigiaOS"
 CLONE_DIR="${VIGIA_DIR:-$HOME/dev/VigiaOS}"
 
@@ -125,6 +129,22 @@ else
     sudo dnf -y upgrade || warn "upgrade pulado."
     info "Instalando dependencias..."
     sudo dnf install -y "${DEPS_CORE[@]}" "${DEPS_BACKENDS[@]}"
+fi
+
+# ---- 1b. atomico: git/pip layered so' ativam apos reboot ------------------
+# Numa instalacao vanilla sem git/pip no base, eles foram so' STAGED acima;
+# clonar/pip agora falharia. Pede reboot + re-run (a 2a passada e' idempotente).
+if [ "$ATOMIC" = "1" ] \
+   && { ! command -v git >/dev/null 2>&1 || ! python3 -m pip --version >/dev/null 2>&1; }; then
+    hr
+    warn "git/pip entraram como camada — so' ativam apos reboot."
+    echo
+    echo "${BOLD}Reinicie e rode este bootstrap de novo${NC} pra clonar e instalar"
+    echo "as ferramentas (as dependencias ja' estao staged):"
+    echo
+    echo "    ${BOLD}systemctl reboot${NC}"
+    echo
+    exit 0
 fi
 
 # ---- 2. clona o repo (se necessario) --------------------------------------
