@@ -511,13 +511,16 @@ ClearURLs, LibRedirect) que abrem direto na AMO/Chrome Web Store.
 
 **Stack**: Python + PyGObject + GTK4 + libadwaita.
 
-**Categorias** (~30 ferramentas catalogadas):
-- Network — nmap, tcpdump, wireshark, ncat, mtr
-- Forensics — sleuthkit, foremost, scalpel
-- Malware — yara, chkrootkit, rkhunter
-- Crypto — age, gpg, keepassxc
-- Logs — fail2ban (já wrappado em parte pelo Activity Log)
-- Flatpaks — Tor Browser, Signal, KeePassXC GUI
+**Categorias** (18 pacotes em `catalog.py`, 5 categorias):
+- Auditoria e hardening — lynis, aide, chkrootkit, rkhunter
+- Rede — mtr, nethogs, iftop
+- Monitoramento e diagnóstico — htop, iotop, lsof, strace, fail2ban
+- Privacidade e criptografia — tor, torsocks, wireguard-tools, dnscrypt-proxy
+- Forense e análise — clamav, hashdeep
+
+Recon ativo e RE (`nmap`, `tcpdump`, `binwalk`) ficam **fora de
+propósito** — são perfil ofensivo, reservados pro futuro **VigiaRed**
+(§10.5). O foco do catálogo aqui é defesa/auditoria/privacidade.
 
 **Padrão**: chama `pkexec rpm-ostree install <pkg>` async + status visual.
 Reboot recomendado após install.
@@ -1037,8 +1040,7 @@ curl -fsSL https://raw.githubusercontent.com/andre28abr/VigiaOS/main/bootstrap.s
 systemctl reboot
 ```
 
-Instala layered deps + clona repo + pip installs + symlinks + .desktop +
-sugere Flatpaks (Tor Browser, KeePassXC, Signal) via Tool Installer.
+Instala layered deps + clona repo + pip installs + symlinks + .desktop.
 
 ---
 
@@ -1649,6 +1651,33 @@ dev sem GI) e `notify_if_unfocused` ja' e' no-op gracioso sem app. Suite
 inalterada: **487 passed, 4 skipped**. So' `git pull` + reabrir o Hub na
 VM (editable install — codigo reflete sem reinstalar; nao mudou entrypoint).
 
+### 2026-05-29 — Auditoria de consistência + trim do catálogo
+
+Pente-fino pós-enxugamento (drift acumulado das remoções de tools) +
+decisão de escopo no Tool Installer. Commits `7a32a93`..`b38655b`.
+
+- **Packaging & versões** (#81–#83, #86): removidos dirs/specs órfãos de
+  tools já deletadas; specs Python normalizados (glob `dist-info`
+  sistêmico); 5 versões `pyproject` ≠ `__init__` alinhadas; specs
+  `caps`/suite corrigidos.
+- **Robustez** (#79–#80): fix do argv do `pkexec` na notificação do
+  Hardening; `status.py` do Hub blindado contra JSON malformado.
+- **Testes** (#84): +68 casos de parser dedicados (Lynis/AIDE/ClamAV) —
+  Hardening não tinha dir de teste. Fixture `no_default_app` consertada:
+  `Gio.Application.set_default(None)` é rejeitado pelo binding GI
+  (arg não-nulável), então monkeypatch de `get_default` no lugar. Suite:
+  **564 passed, 4 skipped** no dev (mac); **568** na VM com GTK real.
+- **Docs** (#85): DEVELOPMENT/README/tests sincronizados com as 16 tools
+  reais (16 binários, `vigia-caps` não `vigia-capabilities`, etc.).
+- **Trim do catálogo** (#87, `b38655b`): `nmap`, `tcpdump` e `binwalk`
+  removidos de `catalog.py` (21→18 pacotes; rede 5→3, forense 3→2).
+  Recon/sniffing/RE = perfil ofensivo → reservados pro **VigiaRed**
+  (§10.5); `nmap`/`binwalk` eram os backends das GUIs Network Scanner e
+  Firmware Analyzer já removidas. De quebra, descrições stale de
+  `wireguard` (citava VPN Manager) e `dnscrypt-proxy` (citava "v0.2
+  opt-in, sem UI") corrigidas, e o §5.11 (que descrevia um catálogo
+  de ~30 ferramentas que não batia com o `catalog.py` real).
+
 ---
 
 ## 10. Roadmap
@@ -1834,8 +1863,11 @@ rodando remoto, audit log assinado.
 
 **VigiaRed** poderia trazer de volta **Network Scanner (nmap)** e
 **Firmware Analyzer (binwalk)** que removemos do VigiaOS — naquela
-audiência fazem sentido. Mais possíveis: vuln scanner (nuclei),
-web scanner (zap), exploitation (metasploit lite), OSINT.
+audiência fazem sentido. Em **2026-05-29** os próprios pacotes `nmap`,
+`tcpdump` e `binwalk` saíram também do catálogo do Tool Installer pelo
+mesmo motivo (recon/sniffing/RE = perfil ofensivo), ficando reservados
+pra cá. Mais possíveis: vuln scanner (nuclei), web scanner (zap),
+exploitation (metasploit lite), OSINT.
 
 **VigiaBlue** estende **Activity Log core (Rust)** com correlation
 distribuída, log aggregation, threat intel feeds (MISP, OTX), YARA,
