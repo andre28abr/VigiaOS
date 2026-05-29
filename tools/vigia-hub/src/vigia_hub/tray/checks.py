@@ -127,9 +127,9 @@ def tray_can_work() -> TrayCheck:
     if not has_lib:
         missing.append("libayatana-appindicator-gtk3 (biblioteca)")
     if not has_ext:
-        missing.append("gnome-shell-extension-appindicator (extensao)")
+        missing.append("gnome-shell-extension-appindicator (extensão)")
     elif not ext_enabled:
-        missing.append("extensao AppIndicator esta instalada mas desativada")
+        missing.append("extensão AppIndicator está instalada mas desativada")
 
     return TrayCheck(
         ok=False,
