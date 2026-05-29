@@ -213,10 +213,10 @@ class TestFormatAge:
         assert backend.format_age(30) == "agora mesmo"
 
     def test_minutes(self):
-        assert backend.format_age(120) == "ha 2 min"
+        assert backend.format_age(120) == "há 2 min"
 
     def test_hours(self):
-        assert backend.format_age(3600 * 5) == "ha 5h"
+        assert backend.format_age(3600 * 5) == "há 5h"
 
     def test_days(self):
-        assert backend.format_age(86400 * 2) == "ha 2 dias"
+        assert backend.format_age(86400 * 2) == "há 2 dias"

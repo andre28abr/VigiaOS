@@ -179,7 +179,7 @@ class TestTrayCanWork:
         result = checks.tray_can_work()
         assert result.ok is False
         assert result.has_extension is False
-        assert "extensao" in result.error_msg.lower()
+        assert "extens" in result.error_msg.lower()
 
     @patch("vigia_hub.tray.checks.appindicator_extension_enabled")
     @patch("vigia_hub.tray.checks.appindicator_lib_available")
