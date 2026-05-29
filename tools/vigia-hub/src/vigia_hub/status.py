@@ -136,6 +136,20 @@ def _iso_to_epoch(s: str) -> float:
         return 0.0
 
 
+def _safe_int(value: object, default: int = 0) -> int:
+    """Coerce pra int sem crashar com JSON malformado (tipo errado/None).
+
+    Os relatorios sao escritos pelas proprias tools, mas um unico arquivo
+    corrompido (ex: "infected_files": "erro" ou uma lista) NAO pode derrubar
+    `vigia status` (CLI) nem o refresh periodico da bandeja — ambos chamam
+    gather() sem try/except em volta.
+    """
+    try:
+        return int(value)  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        return default
+
+
 def _load_json(path: Path) -> object:
     try:
         with open(path, "r", encoding="utf-8") as fh:
@@ -172,8 +186,8 @@ def last_antivirus_scan() -> ScanInfo | None:
     data = _newest_report(AV_REPORTS_DIR, "scan-*.json")
     if data is None:
         return None
-    infected = int(data.get("infected_files", 0) or 0)
-    scanned = int(data.get("scanned_files", 0) or 0)
+    infected = _safe_int(data.get("infected_files"))
+    scanned = _safe_int(data.get("scanned_files"))
     iso = str(data.get("started_at", ""))
     epoch = _iso_to_epoch(iso)
     clean = infected == 0
@@ -191,8 +205,8 @@ def last_rootkit_scan() -> ScanInfo | None:
     if data is None:
         return None
     scanner = str(data.get("scanner", "rootkit"))
-    infected = int(data.get("infected_count", 0) or 0)
-    warnings = int(data.get("warnings_count", 0) or 0)
+    infected = _safe_int(data.get("infected_count"))
+    warnings = _safe_int(data.get("warnings_count"))
     iso = str(data.get("started_at", ""))
     epoch = _iso_to_epoch(iso)
     clean = infected == 0 and warnings == 0
