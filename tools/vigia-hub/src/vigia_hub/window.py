@@ -181,9 +181,11 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         box.set_size_request(74, -1)
 
         # Header do hub (logo discreto)
-        header_lbl = Gtk.Label(label="VIGIA")
+        header_lbl = Gtk.Label(label="Vigia Hub")
         header_lbl.add_css_class("caption-heading")
         header_lbl.add_css_class("dim-label")
+        header_lbl.set_wrap(True)
+        header_lbl.set_justify(Gtk.Justification.CENTER)
         header_lbl.set_margin_top(16)
         header_lbl.set_margin_bottom(20)
         box.append(header_lbl)
@@ -426,6 +428,11 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         sidebar_toolbar = Adw.ToolbarView()
         sidebar_header = Adw.HeaderBar()
         sidebar_header.set_show_back_button(False)
+        # Sem window-controls (X) aqui: este SplitView fica DENTRO da aba
+        # Ajuda, cujo header externo (com o ViewSwitcher) ja' carrega o X.
+        # Mostrar de novo gerava o "botao de fechar duplicado".
+        sidebar_header.set_show_start_title_buttons(False)
+        sidebar_header.set_show_end_title_buttons(False)
         sidebar_header.set_title_widget(Adw.WindowTitle(
             title="Ferramentas", subtitle=""
         ))
@@ -452,6 +459,11 @@ class VigiaHubWindow(Adw.ApplicationWindow):
 
         content_toolbar = Adw.ToolbarView()
         content_header = Adw.HeaderBar()
+        # Idem sidebar_header: sem X aqui (era o botao de fechar duplicado
+        # que aparecia ao abrir um manual). So' o header externo da aba
+        # Ajuda mantem os window-controls.
+        content_header.set_show_start_title_buttons(False)
+        content_header.set_show_end_title_buttons(False)
         content_header.set_title_widget(Adw.WindowTitle(
             title=(
                 "Manual técnico" if kind == "tecnico"
@@ -1412,7 +1424,10 @@ class VigiaHubWindow(Adw.ApplicationWindow):
     def _build_sidebar(self) -> Adw.NavigationPage:
         """Sidebar com tools agrupadas por categoria."""
         header = Adw.HeaderBar()
-        title = Adw.WindowTitle(title="Vigia Suite", subtitle="Toolkit")
+        # Branding "Vigia Hub" fica no rail (esquerda); aqui a sidebar so'
+        # rotula o que ela e' (lista de ferramentas). Antes dizia
+        # "Vigia Suite / Toolkit" (nome legado + redundante com o rail).
+        title = Adw.WindowTitle(title="Ferramentas", subtitle="")
         header.set_title_widget(title)
 
         self._sidebar_list = Gtk.ListBox()
