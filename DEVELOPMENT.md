@@ -1996,6 +1996,47 @@ podem ser redundantes. "Verificar com calma."
   **VigiaOS**"? *Recomendação a confirmar*: app visível = "Vigia Hub";
   subtítulo = "VigiaOS"; tagline das tools = "parte do VigiaOS".
 
+#### B6 — Organização do repo: separação por plataforma SEM duplicar código — #93
+
+**Decidido com o André em 2026-05-29** (não é mais pergunta aberta).
+Motivação dele: o usuário precisa **entender de relance** o que roda no
+sistema dele (Silverblue vs Workstation) e como instalar só uma peça.
+
+**Decisão**: a separação é **visual/de instalação**, não de código.
+Código fica **único e DRY** — nada de duas árvores-mestre duplicadas
+(duplicar significaria todo bug-fix 2× + drift; a única diferença real
+entre plataformas é o backend de install, resolvido em runtime por B3).
+
+Estrutura-alvo:
+
+```
+VigiaOS/                       ← repo = ecossistema
+├── README.md                 ← visão geral + MATRIZ de compat (✅/⚠️/❌) + ecossistema
+├── install/
+│   ├── silverblue/           ← bootstrap.sh (rpm-ostree) + README (guia + instalar 1 módulo)
+│   └── workstation/          ← bootstrap.sh (dnf) + README
+├── tools/                    ← CÓDIGO, uma cópia só (vigia-common + 16 tools)
+├── docs/  └─ packaging/
+```
+
+**Trabalho**:
+- Mover o `bootstrap.sh` atual → `install/silverblue/bootstrap.sh`;
+  criar `install/workstation/bootstrap.sh` (branch dnf — depende de B3).
+  Atualizar a URL `curl` do bootstrap nos docs (raiz → `install/...`).
+- README de cada plataforma: lista os produtos/módulos + como instalar
+  **um só** (conecta com B1).
+- README raiz: **matriz de compatibilidade** (tool × Silverblue/Workstation)
+  + seção do **ecossistema** (VigiaOS hoje; VigiaRed/VigiaBlue reservados).
+- README por módulo orientando instalação separada (conecta com B1).
+- **Produtos futuros (Red/Blue)**: **NÃO** criar pastas vazias agora —
+  só sinalizar no README; cria a estrutura quando o produto começar.
+  **Tudo no mesmo repo** (decisão do André).
+
+**Dependências**: precisa de **B3** (`is_atomic()` + abstração
+rpm-ostree↔dnf) pros dois bootstraps fazerem sentido. Casa com **B1**
+(instalar módulo isolado) e **B2** (conteúdo dos bootstraps). Ordem
+sugerida revisada: **B5 → B1 → (B3 ⇒ B2 ⇒ B6) → B4**.
+
 ---
 
 ## 11. Lições aprendidas
