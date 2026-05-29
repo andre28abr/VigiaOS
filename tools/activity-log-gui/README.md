@@ -1,6 +1,6 @@
 # Vigia Activity Log GUI
 
-Frontend **GTK4** do `vigia-log` (parser Rust). Parte da [Vigia Suite](../../README.md).
+Frontend **GTK4** do `vigia-log` (parser Rust). Parte do [VigiaOS](../../README.md).
 
 ## Arquitetura
 

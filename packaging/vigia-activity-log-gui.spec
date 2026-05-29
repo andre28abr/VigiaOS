@@ -1,4 +1,4 @@
-# RPM spec para vigia-activity-log-gui (Vigia Suite)
+# RPM spec para vigia-activity-log-gui (VigiaOS)
 # Buildado via COPR (https://copr.fedorainfracloud.org/coprs/andre28abr/vigia/)
 #
 # NOTA: o pacote RPM se chama vigia-activity-log-gui (pareia com o core Rust
@@ -37,7 +37,7 @@ Requires:       vigia-activity-log
 %description
 GUI Python do parser Rust vigia-log. Consolida audit.log, systemd journal e fail2ban.log numa unica linha do tempo, detecta correlations cross-source, classifica por severidade.
 
-Faz parte da Vigia Suite — toolkit de seguranca para Fedora Atomic
+Faz parte do VigiaOS — toolkit de seguranca para Fedora Atomic
 (Silverblue, Kinoite, Bluefin, Bazzite, Aurora).
 
 Comando: vigia-log-gui

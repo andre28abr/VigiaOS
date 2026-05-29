@@ -1,4 +1,4 @@
-# RPM spec para vigia-reports (Vigia Suite)
+# RPM spec para vigia-reports (VigiaOS)
 # Buildado via COPR (https://copr.fedorainfracloud.org/coprs/andre28abr/vigia/)
 
 %global pkg_name vigia-reports
@@ -32,7 +32,7 @@ Requires:       python3-weasyprint
 %description
 Gera relatorios PDF/HTML para LGPD-compliance a partir do JSON do Vigia Activity Log. Templates Jinja2 + WeasyPrint. PDFs salvos em ~/.local/share/vigia-reports/ com mode 0600.
 
-Faz parte da Vigia Suite — toolkit de seguranca para Fedora Atomic
+Faz parte do VigiaOS — toolkit de seguranca para Fedora Atomic
 (Silverblue, Kinoite, Bluefin, Bazzite, Aurora).
 
 Comando: vigia-reports

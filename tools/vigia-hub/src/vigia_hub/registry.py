@@ -1,4 +1,4 @@
-"""Registry das ferramentas da Vigia Suite.
+"""Registry das ferramentas do VigiaOS.
 
 Para adicionar uma ferramenta nova: cria uma `ToolEntry` e adiciona em `TOOLS`.
 Ordem na lista controla ordem visual no hub.

@@ -2,7 +2,7 @@
 
 ## Em uma frase
 
-Launcher mestre da Vigia Suite que embarca todas as 14 ferramentas num único processo GTK4, com tray icon, autostart XDG, password lock via Polkit e auto-lock por inatividade.
+Launcher mestre do VigiaOS que embarca todas as 14 ferramentas num único processo GTK4, com tray icon, autostart XDG, password lock via Polkit e auto-lock por inatividade.
 
 ## O que envolve
 

@@ -8,7 +8,7 @@
 Name:           %{crate_name}
 Version:        0.7.0
 Release:        1%{?dist}
-Summary:        Parser de logs do Linux com narrativa human-readable (Vigia Suite)
+Summary:        Parser de logs do Linux com narrativa human-readable (VigiaOS)
 License:        Apache-2.0
 URL:            https://github.com/andre28abr/VigiaOS
 Source0:        %{url}/archive/v%{version}.tar.gz#/VigiaOS-%{version}.tar.gz
@@ -23,7 +23,7 @@ Requires:       hicolor-icon-theme
 ExclusiveArch:  %{rust_arches}
 
 %description
-Vigia Activity Log faz parte da Vigia Suite — toolkit de seguranca
+Vigia Activity Log faz parte do VigiaOS — toolkit de seguranca
 para Fedora Atomic. Le /var/log/audit/audit.log, systemd journal e
 /var/log/fail2ban.log, sintetiza eventos em narrativas human-readable
 em portugues, detecta correlations cross-source (ex: fail2ban burst,

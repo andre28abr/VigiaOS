@@ -1,7 +1,7 @@
 # Vigia DNS Manager
 
 Gerenciador de DNS focado em **privacidade**, wrappa o `dnscrypt-proxy`.
-Parte da [Vigia Suite](../../README.md).
+Parte do [VigiaOS](../../README.md).
 
 ## O que faz
 

@@ -1,6 +1,6 @@
 # Vigia Tool Installer
 
-Catalogo curado de **ferramentas de seguranca** para Fedora Silverblue, com **one-click install** via `rpm-ostree`. Parte da [Vigia Suite](../../README.md).
+Catalogo curado de **ferramentas de seguranca** para Fedora Silverblue, com **one-click install** via `rpm-ostree`. Parte do [VigiaOS](../../README.md).
 
 ## Por que existe
 

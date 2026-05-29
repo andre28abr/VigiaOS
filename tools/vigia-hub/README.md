@@ -1,6 +1,6 @@
 # Vigia Hub
 
-> Launcher mestre da **Vigia Suite**. Em vez de cada ferramenta ter seu próprio
+> Launcher mestre do **VigiaOS**. Em vez de cada ferramenta ter seu próprio
 > ícone no menu do GNOME, o Hub aparece como um único app que lista todas as
 > ferramentas disponíveis e lança cada uma com um clique.
 
@@ -57,7 +57,7 @@ cp data/br.com.vigia.Hub.svg ~/.local/share/icons/hicolor/scalable/apps/
 update-desktop-database ~/.local/share/applications 2>/dev/null || true
 ```
 
-Aperta Super, digita "Vigia Suite". Apenas **1 entry** aparece no menu, em vez
+Aperta Super, digita "Vigia Hub". Apenas **1 entry** aparece no menu, em vez
 de uma por ferramenta. Cada tool é lançada de dentro do Hub.
 
 ## Roadmap

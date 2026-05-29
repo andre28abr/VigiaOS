@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "vigia-caps"
 version = "0.1.0"
-description = "Auditoria de Linux capabilities (getcap) com UI GTK4 — parte da Vigia Suite"
+description = "Auditoria de Linux capabilities (getcap) com UI GTK4 — parte do VigiaOS"
 license = { text = "Apache-2.0" }
 readme = "README.md"
 requires-python = ">=3.11"

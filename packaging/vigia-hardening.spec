@@ -1,4 +1,4 @@
-# RPM spec para vigia-hardening (Vigia Suite)
+# RPM spec para vigia-hardening (VigiaOS)
 # Buildado via COPR (https://copr.fedorainfracloud.org/coprs/andre28abr/vigia/)
 
 %global pkg_name vigia-hardening
@@ -31,7 +31,7 @@ Requires:       lynis
 %description
 Auditoria de hardening via Lynis. Parsea /var/log/lynis-report.dat, categoriza findings (avisos, sugestoes), banners de contexto Silverblue (findings em /usr nao acionaveis).
 
-Faz parte da Vigia Suite — toolkit de seguranca para Fedora Atomic
+Faz parte do VigiaOS — toolkit de seguranca para Fedora Atomic
 (Silverblue, Kinoite, Bluefin, Bazzite, Aurora).
 
 Comando: vigia-hardening

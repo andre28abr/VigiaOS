@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "vigia-common"
 version = "0.1.0"
-description = "Helpers compartilhados entre as ferramentas da Vigia Suite"
+description = "Helpers compartilhados entre as ferramentas do VigiaOS"
 license = { text = "Apache-2.0" }
 readme = "README.md"
 requires-python = ">=3.11"

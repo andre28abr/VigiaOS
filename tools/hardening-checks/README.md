@@ -2,7 +2,7 @@
 
 Wrapper GTK4 do **Lynis** com UI focada em Hardening Index, warnings e suggestions.
 
-Parte da [Vigia Suite](../../README.md).
+Parte do [VigiaOS](../../README.md).
 
 ## O que faz
 

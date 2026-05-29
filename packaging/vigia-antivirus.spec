@@ -1,4 +1,4 @@
-# RPM spec para vigia-antivirus (Vigia Suite)
+# RPM spec para vigia-antivirus (VigiaOS)
 # Buildado via COPR (https://copr.fedorainfracloud.org/coprs/andre28abr/vigia/)
 
 %global pkg_name vigia-antivirus
@@ -32,7 +32,7 @@ Requires:       clamav-update
 %description
 Antivirus on-demand para Linux desktop usando engine ClamAV. Streaming de findings, update via freshclam, banner de estado, reports em ~/.local/share/vigia-antivirus/ mode 0600.
 
-Faz parte da Vigia Suite — toolkit de seguranca para Fedora Atomic
+Faz parte do VigiaOS — toolkit de seguranca para Fedora Atomic
 (Silverblue, Kinoite, Bluefin, Bazzite, Aurora).
 
 Comando: vigia-antivirus

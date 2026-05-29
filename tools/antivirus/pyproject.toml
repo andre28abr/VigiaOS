@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "vigia-antivirus"
 version = "0.1.1"
-description = "Antivirus on-demand com UI GTK4 (wrapper ClamAV) — parte da Vigia Suite"
+description = "Antivirus on-demand com UI GTK4 (wrapper ClamAV) — parte do VigiaOS"
 license = { text = "Apache-2.0" }
 readme = "README.md"
 requires-python = ">=3.11"

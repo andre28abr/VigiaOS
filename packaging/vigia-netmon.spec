@@ -1,4 +1,4 @@
-# RPM spec para vigia-netmon (Vigia Suite)
+# RPM spec para vigia-netmon (VigiaOS)
 # Buildado via COPR (https://copr.fedorainfracloud.org/coprs/andre28abr/vigia/)
 
 %global pkg_name vigia-netmon
@@ -31,7 +31,7 @@ Requires:       iproute
 %description
 Wrapper de 'ss -tunap' com auto-refresh, filtros e modo admin opt-in (pkexec) para revelar nomes de processos do sistema.
 
-Faz parte da Vigia Suite — toolkit de seguranca para Fedora Atomic
+Faz parte do VigiaOS — toolkit de seguranca para Fedora Atomic
 (Silverblue, Kinoite, Bluefin, Bazzite, Aurora).
 
 Comando: vigia-netmon

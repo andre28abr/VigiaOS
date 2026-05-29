@@ -21,7 +21,7 @@ use crate::narrator::narrate;
 #[derive(Parser, Debug)]
 #[command(
     name = "vigia-log",
-    about = "Parseia audit.log e journald com narrativa human-readable. Parte da Vigia Suite.",
+    about = "Parseia audit.log e journald com narrativa human-readable. Parte do VigiaOS.",
     version
 )]
 struct Cli {

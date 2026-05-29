@@ -1,7 +1,7 @@
 # Vigia Deployments Manager
 
 GUI pra gerenciar **deployments do rpm-ostree** — os "snapshots" que
-aparecem no menu do GRUB ao bootar. Parte da [Vigia Suite](../../README.md).
+aparecem no menu do GRUB ao bootar. Parte do [VigiaOS](../../README.md).
 
 ## O que faz
 

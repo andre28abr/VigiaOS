@@ -2,13 +2,13 @@
 
 ## Pra que serve
 
-O **Vigia Hub** é o aplicativo que junta todas as ferramentas da Vigia Suite numa **janela só**. Sem ele, você teria que abrir um app diferente toda vez que quisesse ver os logs, mexer no firewall ou checar se o sistema está seguro. Pense nele como o **painel de controle** do seu computador — uma porta única de entrada pra tudo.
+O **Vigia Hub** é o aplicativo que junta todas as ferramentas do VigiaOS numa **janela só**. Sem ele, você teria que abrir um app diferente toda vez que quisesse ver os logs, mexer no firewall ou checar se o sistema está seguro. Pense nele como o **painel de controle** do seu computador — uma porta única de entrada pra tudo.
 
 Você abre o Hub, e ele te mostra na lateral as ferramentas disponíveis (Dashboard, Activity Log, Privacy Controls e mais). Clica em uma, e ela aparece **dentro da mesma janela**. Sem cinco janelas abertas no Alt+Tab.
 
 ## Quando você usa isso
 
-- Você vai usar a Vigia Suite mais de uma vez por mês — então quer ter ela **a um clique** na bandeja do sistema
+- Você vai usar o Vigia Hub mais de uma vez por mês — então quer ter ele **a um clique** na bandeja do sistema
 - Quer **proteger o acesso** ao painel com senha (caso outra pessoa pegue seu PC)
 - Quer que o Hub abra junto com o computador, já minimizado, esperando você
 - Quer **ler os manuais** das ferramentas sem precisar abrir o navegador

@@ -1,6 +1,6 @@
 # Vigia File Integrity
 
-Wrapper GTK4 do **AIDE** (Advanced Intrusion Detection Environment). Parte da [Vigia Suite](../../README.md).
+Wrapper GTK4 do **AIDE** (Advanced Intrusion Detection Environment). Parte do [VigiaOS](../../README.md).
 
 ## O que faz
 

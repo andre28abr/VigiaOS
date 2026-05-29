@@ -1,7 +1,7 @@
-# Vigia Suite — Testes (pytest)
+# VigiaOS — Testes (pytest)
 
 Suite de testes para validar parsers, validators e formatters das
-ferramentas da Vigia Suite. Não testa UI (GTK) — os tests assumem
+ferramentas do VigiaOS. Não testa UI (GTK) — os tests assumem
 backend puro.
 
 ## Setup

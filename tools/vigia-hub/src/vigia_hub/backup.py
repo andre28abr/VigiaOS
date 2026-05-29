@@ -1,4 +1,4 @@
-"""Backup / restauracao das configuracoes e dados da Vigia Suite (.zip).
+"""Backup / restauracao das configuracoes e dados do VigiaOS (.zip).
 
 LGPD: o .zip pode conter relatorios de scan (caminhos de arquivos do
 usuario, achados etc.) — dado sensivel. Por isso:

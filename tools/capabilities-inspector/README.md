@@ -1,6 +1,6 @@
 # Vigia Capabilities Inspector
 
-Auditoria de **Linux capabilities** (via `getcap`) com UI GTK4. Parte da [Vigia Suite](../../README.md).
+Auditoria de **Linux capabilities** (via `getcap`) com UI GTK4. Parte do [VigiaOS](../../README.md).
 
 ## O que faz
 

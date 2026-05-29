@@ -47,7 +47,7 @@ class TestStatusCommand:
         rc = cli.main(["status"])
         assert rc == 0
         out = capsys.readouterr().out
-        assert "Vigia Suite" in out
+        assert "VigiaOS" in out
         assert "9.9.9" in out
 
     def test_status_json(self, fake_status, capsys):
@@ -62,7 +62,7 @@ class TestStatusCommand:
         rc = cli.main([])
         assert rc == 0
         out = capsys.readouterr().out
-        assert "Vigia Suite" in out
+        assert "VigiaOS" in out
 
 
 class TestVersionCommand:
