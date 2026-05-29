@@ -22,6 +22,8 @@ from ..catalog import (
 )
 from ._helpers import make_clamp, show_error, show_info
 
+from vigia_common.platform import needs_reboot_to_apply, package_manager
+
 
 # Markdown leve compartilhado — duplicado do hub por enquanto.
 import re
@@ -42,6 +44,9 @@ class BrowseTab(Adw.Bin):
         super().__init__()
         self._on_changed = on_changed
         self._running = False
+        # Plataforma: atomico (rpm-ostree, precisa reboot) vs dnf (na hora).
+        self._needs_reboot = needs_reboot_to_apply()
+        self._pm = package_manager()
         self._initial_load_done = False
         self._pulse_id: int | None = None
         self._row_widgets: dict[str, dict] = {}  # package -> {row, btn, status_lbl}
@@ -58,7 +63,12 @@ class BrowseTab(Adw.Bin):
         header_desc = Gtk.Label(
             label=(
                 f"{len(CATALOG)} ferramentas de seguranca selecionadas. "
-                "Cada install vira uma camada via rpm-ostree e precisa de reboot para aplicar."
+                + (
+                    "Cada install vira uma camada via rpm-ostree e precisa "
+                    "de reboot para aplicar."
+                    if self._needs_reboot
+                    else "Cada install usa dnf e e' aplicado na hora."
+                )
             )
         )
         header_desc.add_css_class("dim-label")
@@ -310,6 +320,8 @@ class BrowseTab(Adw.Bin):
             body=(
                 f"O pacote `{package}` sera removido na proxima reinicializacao "
                 "(rpm-ostree uninstall). Mudanca aplicada com reboot."
+                if self._needs_reboot
+                else f"O pacote `{package}` sera removido agora (dnf remove)."
             ),
         )
         dlg.add_response("cancel", "Cancelar")
@@ -324,7 +336,7 @@ class BrowseTab(Adw.Bin):
             self._do_uninstall(package)
 
     def _do_install(self, package: str) -> None:
-        self._set_running(True, f"Instalando {package} via rpm-ostree...")
+        self._set_running(True, f"Instalando {package} via {self._pm}...")
         threading.Thread(target=self._install_worker, args=(package,), daemon=True).start()
 
     def _install_worker(self, package: str) -> None:
@@ -342,14 +354,16 @@ class BrowseTab(Adw.Bin):
             show_info(
                 self,
                 f"{package}: pronto",
-                "Mudanca staged. Para usar, reinicie o sistema (aba 'Pendentes' tem botao Reboot).",
+                "Mudanca staged. Para usar, reinicie o sistema (aba 'Pendentes' tem botao Reboot)."
+                if self._needs_reboot
+                else "Instalado. Ja' pode usar — sem reboot.",
             )
             self.refresh_statuses()
             self._on_changed()
         return False
 
     def _do_uninstall(self, package: str) -> None:
-        self._set_running(True, f"Removendo {package} via rpm-ostree...")
+        self._set_running(True, f"Removendo {package} via {self._pm}...")
         threading.Thread(target=self._uninstall_worker, args=(package,), daemon=True).start()
 
     def _uninstall_worker(self, package: str) -> None:
@@ -366,8 +380,10 @@ class BrowseTab(Adw.Bin):
         else:
             show_info(
                 self,
-                f"{package}: removido (pendente)",
-                "Mudanca staged. Reinicie para aplicar.",
+                f"{package}: removido" + (" (pendente)" if self._needs_reboot else ""),
+                "Mudanca staged. Reinicie para aplicar."
+                if self._needs_reboot
+                else "Removido (dnf). Aplicado na hora.",
             )
             self.refresh_statuses()
             self._on_changed()

@@ -1,4 +1,4 @@
-"""Backend rpm-ostree.
+"""Backend de pacotes: rpm-ostree (sistema atomico) ou dnf (Workstation).
 
 Operacoes:
 - is_package_installed(pkg) -> bool (via `rpm -q`)
@@ -14,6 +14,8 @@ import json
 import shutil
 import subprocess
 from dataclasses import dataclass
+
+from vigia_common.platform import is_atomic
 
 
 @dataclass
@@ -130,22 +132,17 @@ def pending_changes() -> PendingChanges:
 # ============================================================
 
 
-def install_packages_blocking(packages: list[str]) -> tuple[bool, str]:
-    """`pkexec rpm-ostree install <pkgs...>`. Bloqueante."""
-    if not packages:
-        return False, "Nenhum pacote selecionado."
-    if not rpm_ostree_available():
-        return False, "rpm-ostree nao encontrado (este sistema nao e' atomico?)."
-
-    cmd = ["pkexec", "rpm-ostree", "install", "--idempotent"] + list(packages)
+def _run_pkg_cmd(cmd: list[str], timeout: int, label: str) -> tuple[bool, str]:
+    """Roda um comando de pacote (rpm-ostree/dnf via pkexec) e normaliza
+    o resultado. returncode 126/127 = autenticacao pkexec cancelada."""
     try:
         result = subprocess.run(
-            cmd, capture_output=True, text=True, timeout=900,
+            cmd, capture_output=True, text=True, timeout=timeout,
         )
     except subprocess.TimeoutExpired:
-        return False, "rpm-ostree install demorou mais de 15 minutos."
+        return False, f"{label} excedeu o tempo limite."
     except FileNotFoundError:
-        return False, "pkexec ou rpm-ostree nao encontrado."
+        return False, "pkexec ou gerenciador de pacotes nao encontrado."
 
     if result.returncode in (126, 127):
         return False, "Autenticacao cancelada."
@@ -154,32 +151,33 @@ def install_packages_blocking(packages: list[str]) -> tuple[bool, str]:
         return False, f"Falha (codigo {result.returncode}):\n\n{out[:800]}"
 
     return True, result.stdout.strip()
+
+
+def install_packages_blocking(packages: list[str]) -> tuple[bool, str]:
+    """Instala pacotes (bloqueante). Em sistema **atomico** usa
+    `rpm-ostree install --idempotent` (precisa reboot pra aplicar); no
+    **Workstation** tradicional usa `dnf install -y` (aplica na hora)."""
+    if not packages:
+        return False, "Nenhum pacote selecionado."
+    pkgs = list(packages)
+    if is_atomic():
+        cmd = ["pkexec", "rpm-ostree", "install", "--idempotent"] + pkgs
+        return _run_pkg_cmd(cmd, 900, "rpm-ostree install")
+    cmd = ["pkexec", "dnf", "install", "-y"] + pkgs
+    return _run_pkg_cmd(cmd, 900, "dnf install")
 
 
 def uninstall_packages_blocking(packages: list[str]) -> tuple[bool, str]:
-    """`pkexec rpm-ostree uninstall <pkgs...>`. Bloqueante."""
+    """Remove pacotes (bloqueante). Atomico: `rpm-ostree uninstall`;
+    Workstation: `dnf remove -y`."""
     if not packages:
         return False, "Nenhum pacote selecionado."
-    if not rpm_ostree_available():
-        return False, "rpm-ostree nao encontrado."
-
-    cmd = ["pkexec", "rpm-ostree", "uninstall"] + list(packages)
-    try:
-        result = subprocess.run(
-            cmd, capture_output=True, text=True, timeout=600,
-        )
-    except subprocess.TimeoutExpired:
-        return False, "rpm-ostree uninstall demorou mais de 10 minutos."
-    except FileNotFoundError:
-        return False, "pkexec ou rpm-ostree nao encontrado."
-
-    if result.returncode in (126, 127):
-        return False, "Autenticacao cancelada."
-    if result.returncode != 0:
-        out = (result.stderr or result.stdout or "").strip()
-        return False, f"Falha (codigo {result.returncode}):\n\n{out[:800]}"
-
-    return True, result.stdout.strip()
+    pkgs = list(packages)
+    if is_atomic():
+        cmd = ["pkexec", "rpm-ostree", "uninstall"] + pkgs
+        return _run_pkg_cmd(cmd, 600, "rpm-ostree uninstall")
+    cmd = ["pkexec", "dnf", "remove", "-y"] + pkgs
+    return _run_pkg_cmd(cmd, 600, "dnf remove")
 
 
 def reboot_system() -> tuple[bool, str]:

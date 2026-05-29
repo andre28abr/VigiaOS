@@ -42,6 +42,7 @@ from .registry import (
     TOOLS,
     ToolEntry,
     tools_by_category,
+    visible_tools,
 )
 from .auth import (
     check_auth_async,
@@ -330,7 +331,7 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         )
         page.add(intro_group)
 
-        grouped = tools_by_category(TOOLS)
+        grouped = tools_by_category(visible_tools())
         for cat, tools_in_cat in grouped.items():
             group = Adw.PreferencesGroup()
             group.set_title(CATEGORY_LABELS.get(cat, cat))
@@ -1157,17 +1158,25 @@ class VigiaHubWindow(Adw.ApplicationWindow):
             self._enable_tray_extension()
 
     def _run_tray_install(self) -> None:
-        """Lanca pkexec rpm-ostree install em background."""
+        """Lanca o install dos pacotes do tray em background (rpm-ostree
+        em sistema atomico, dnf no Workstation)."""
         import subprocess
+        from vigia_common.platform import needs_reboot_to_apply
         cmd = install_command()
         try:
             subprocess.Popen(cmd)
-            self._show_settings_error(
-                "Instalacao iniciada",
-                "Acompanhe a senha de admin (pkexec). Ao terminar, "
-                "<b>reinicie o sistema</b> pra a biblioteca ficar disponivel. "
-                "Depois ative a extensao e religue o switch.",
-            )
+            if needs_reboot_to_apply():
+                msg = (
+                    "Acompanhe a senha de admin (pkexec). Ao terminar, "
+                    "<b>reinicie o sistema</b> pra a biblioteca ficar "
+                    "disponivel. Depois ative a extensao e religue o switch."
+                )
+            else:
+                msg = (
+                    "Acompanhe a senha de admin (pkexec). Ao terminar, ative "
+                    "a extensao AppIndicator e religue o switch (sem reboot)."
+                )
+            self._show_settings_error("Instalacao iniciada", msg)
         except OSError as e:
             self._show_settings_error(
                 "Falha ao chamar pkexec",
@@ -1391,7 +1400,7 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         self._content_stack.set_transition_type(Gtk.StackTransitionType.CROSSFADE)
         self._content_stack.set_transition_duration(180)
 
-        for tool in TOOLS:
+        for tool in visible_tools():
             detail = self._build_detail_page(tool)
             self._content_stack.add_named(detail, self._detail_name(tool.id))
 
@@ -1436,7 +1445,7 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         self._sidebar_list.connect("row-selected", self._on_sidebar_selected)
 
         # Adiciona rows agrupadas por categoria, com headers separadores
-        grouped = tools_by_category(TOOLS)
+        grouped = tools_by_category(visible_tools())
         for cat, tools_in_cat in grouped.items():
             # Header row (nao selecionavel)
             header_row = Gtk.ListBoxRow()
