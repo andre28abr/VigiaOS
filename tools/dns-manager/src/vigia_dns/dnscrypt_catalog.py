@@ -54,7 +54,7 @@ SERVERS: list[DnsCryptServer] = [
         dnssec=True,
         description=(
             "Cloudflare 1.1.1.2 — bloqueia malware/phishing conhecidos. "
-            "Variante de seguranca do 1.1.1.1."
+            "Variante de segurança do 1.1.1.1."
         ),
         country="US",
     ),
@@ -67,7 +67,7 @@ SERVERS: list[DnsCryptServer] = [
         no_filter=False,
         dnssec=True,
         description=(
-            "Cloudflare 1.1.1.3 — bloqueia malware + conteudo adulto. "
+            "Cloudflare 1.1.1.3 — bloqueia malware + conteúdo adulto. "
             "Recomendado para ambiente familiar."
         ),
         country="US",
@@ -83,8 +83,8 @@ SERVERS: list[DnsCryptServer] = [
         no_filter=False,
         dnssec=True,
         description=(
-            "Quad9 9.9.9.9 — bloqueia dominios maliciosos (threat "
-            "intelligence). Suica, sem fins lucrativos."
+            "Quad9 9.9.9.9 — bloqueia domínios maliciosos (threat "
+            "intelligence). Suíça, sem fins lucrativos."
         ),
         country="CH",
     ),
@@ -98,7 +98,7 @@ SERVERS: list[DnsCryptServer] = [
         dnssec=True,
         description=(
             "Quad9 9.9.9.10 — variante sem filtros. Para quem prefere "
-            "controlar filtros via blocklist propria."
+            "controlar filtros via blocklist própria."
         ),
         country="CH",
     ),
@@ -113,8 +113,8 @@ SERVERS: list[DnsCryptServer] = [
         no_filter=False,
         dnssec=True,
         description=(
-            "Bloqueia ads + trackers + malware. Util para reduzir "
-            "tracking de marketing em escritorio."
+            "Bloqueia ads + trackers + malware. Útil para reduzir "
+            "tracking de marketing em escritório."
         ),
         country="CY",
     ),
@@ -127,7 +127,7 @@ SERVERS: list[DnsCryptServer] = [
         no_filter=False,
         dnssec=True,
         description=(
-            "AdGuard com bloqueio adicional de conteudo adulto. "
+            "AdGuard com bloqueio adicional de conteúdo adulto. "
             "Variante mais restritiva."
         ),
         country="CY",
@@ -143,8 +143,8 @@ SERVERS: list[DnsCryptServer] = [
         no_filter=True,
         dnssec=True,
         description=(
-            "Operado pela Mullvad VPN (Suecia). Politica de privacy "
-            "verificavel, sem filtros."
+            "Operado pela Mullvad VPN (Suécia). Política de privacy "
+            "verificável, sem filtros."
         ),
         country="SE",
     ),
@@ -174,7 +174,7 @@ SERVERS: list[DnsCryptServer] = [
         dnssec=True,
         description=(
             "Quad9 via protocolo DNSCrypt (alternativa ao DoH). "
-            "Util em redes que bloqueiam HTTPS/DoH."
+            "Útil em redes que bloqueiam HTTPS/DoH."
         ),
         country="CH",
     ),
@@ -192,7 +192,7 @@ SERVERS: list[DnsCryptServer] = [
         no_filter=True,
         dnssec=True,
         description=(
-            "Relay localizado na Franca para anonymized DNS. Usado em "
+            "Relay localizado na França para anonymized DNS. Usado em "
             "conjunto com outro server — esconde seu IP do resolver "
             "final. Setup mais complexo (v0.2.1+)."
         ),

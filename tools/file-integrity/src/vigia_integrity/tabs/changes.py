@@ -27,7 +27,7 @@ CHANGE_CSS = {
 
 
 PROP_LABELS = {
-    "perms": "permissoes",
+    "perms": "permissões",
     "uid": "uid",
     "gid": "gid",
     "size": "tamanho",
@@ -84,8 +84,8 @@ class ChangesTab(Adw.Bin):
         self._list.add_css_class("boxed-list")
 
         self._empty_state = Adw.StatusPage(
-            title="Sem mudancas",
-            description="Execute uma verificacao na aba 'Status' para popular esta lista.",
+            title="Sem mudanças",
+            description="Execute uma verificação na aba 'Status' para popular esta lista.",
             icon_name="dialog-information-symbolic",
         )
         self._empty_state.set_vexpand(True)
@@ -143,16 +143,16 @@ class ChangesTab(Adw.Bin):
         total = len(self._changes)
         if total == 0:
             self._stack.set_visible_child_name("empty")
-            self._header_label.set_label("Sem mudancas")
+            self._header_label.set_label("Sem mudanças")
             self._header_desc.set_label("")
             return
 
         shown = len(visible)
         self._stack.set_visible_child_name("list")
         if shown == total:
-            self._header_label.set_label(f"{total} {'mudanca' if total == 1 else 'mudancas'}")
+            self._header_label.set_label(f"{total} {'mudança' if total == 1 else 'mudanças'}")
         else:
-            self._header_label.set_label(f"{shown} de {total} mudancas")
+            self._header_label.set_label(f"{shown} de {total} mudanças")
 
         added = sum(1 for c in self._changes if c.change_type == "added")
         removed = sum(1 for c in self._changes if c.change_type == "removed")

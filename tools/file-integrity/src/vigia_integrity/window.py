@@ -62,7 +62,7 @@ class _IntegrityContent:
         stack = Adw.ViewStack()
         # AIDE (escala sistema, requer root)
         stack.add_titled_with_icon(self.status, "status", "Status", "dialog-information-symbolic")
-        stack.add_titled_with_icon(self.changes, "changes", "Mudancas", "view-list-symbolic")
+        stack.add_titled_with_icon(self.changes, "changes", "Mudanças", "view-list-symbolic")
         # Hash ad-hoc (escala arquivo/diretorio, sem root)
         stack.add_titled_with_icon(self.hash_tab, "hash", "Hash", "edit-find-symbolic")
         stack.add_titled_with_icon(self.verify, "verify", "Verificar", "object-select-symbolic")
@@ -95,7 +95,7 @@ class _IntegrityContent:
         if s.has_changes:
             total = s.added + s.changed + s.removed
             notify_if_unfocused(
-                f"Integridade: {total} mudanca(s) detectada(s)",
+                f"Integridade: {total} mudança(s) detectada(s)",
                 f"{s.added} novo(s) · {s.changed} alterado(s) · "
                 f"{s.removed} removido(s). Abra o Vigia pra revisar.",
                 notif_id="vigia-integrity-check",

@@ -19,38 +19,38 @@ from ._helpers import make_clamp
 
 ABOUT_TEXT = (
     "<b>AIDE</b> (<i>Advanced Intrusion Detection Environment</i>) calcula um "
-    "<i>snapshot</i> dos arquivos do sistema — permissoes, owner, mtime, tamanho "
+    "<i>snapshot</i> dos arquivos do sistema — permissões, owner, mtime, tamanho "
     "e hash <tt>SHA256</tt> de cada arquivo monitorado.\n\n"
-    "Esse snapshot inicial e' o <b>baseline</b>. A partir dele, qualquer "
-    "verificacao posterior compara o estado atual com o baseline e reporta "
-    "<b>diferencas</b> — arquivos novos, removidos ou modificados.\n\n"
-    "<b>Quando ha alarme?</b>\n"
+    "Esse snapshot inicial é o <b>baseline</b>. A partir dele, qualquer "
+    "verificação posterior compara o estado atual com o baseline e reporta "
+    "<b>diferenças</b> — arquivos novos, removidos ou modificados.\n\n"
+    "<b>Quando há alarme?</b>\n"
     "- Cron job suspeito em <tt>/etc/cron.daily/</tt> → entrada nova, <i>alarme</i>.\n"
     "- <tt>/etc/passwd</tt> editado para criar conta — hash diverge, <i>alarme</i>.\n"
     "- Backdoor em <tt>/root/.ssh/authorized_keys</tt> — hash diverge, <i>alarme</i>.\n\n"
-    "<b>Quando nao ha alarme?</b>\n"
-    "- Updates legitimos do sistema. Apos <tt>rpm-ostree upgrade</tt>, voce verifica "
-    "→ ve as mudancas em <tt>/etc</tt> → valida → clica em <b>Re-baseline</b>.\n\n"
-    "<b>Boa pratica</b>: verificar 1x por dia (via cron/systemd) e re-baselinear "
-    "apos cada update intencional."
+    "<b>Quando não há alarme?</b>\n"
+    "- Updates legítimos do sistema. Após <tt>rpm-ostree upgrade</tt>, você verifica "
+    "→ vê as mudanças em <tt>/etc</tt> → valida → clica em <b>Re-baseline</b>.\n\n"
+    "<b>Boa prática</b>: verificar 1x por dia (via cron/systemd) e re-baselinear "
+    "após cada update intencional."
 )
 
 
 SILVERBLUE_PROFILE_TEXT = (
     "<b>Por que existe um perfil dedicado?</b>\n\n"
-    "AIDE foi pensado para sistemas tradicionais com <tt>/usr</tt> mutavel. "
-    "Em Silverblue, <tt>/usr</tt> e' uma <b>arvore OSTree imutavel</b> — toda "
-    "atualizacao substitui literalmente milhares de arquivos. Se AIDE "
+    "AIDE foi pensado para sistemas tradicionais com <tt>/usr</tt> mutável. "
+    "Em Silverblue, <tt>/usr</tt> é uma <b>árvore OSTree imutável</b> — toda "
+    "atualização substitui literalmente milhares de arquivos. Se AIDE "
     "monitorasse <tt>/usr</tt>, cada <tt>rpm-ostree upgrade</tt> dispararia "
     "<i>milhares de alarmes</i>, escondendo o que importa.\n\n"
-    "A integridade do <tt>/usr</tt> em Silverblue ja e' garantida pelo <b>OSTree "
-    "criptografico</b> (verificacao do commit a cada boot).\n\n"
+    "A integridade do <tt>/usr</tt> em Silverblue já é garantida pelo <b>OSTree "
+    "criptográfico</b> (verificação do commit a cada boot).\n\n"
     "O <b>perfil Silverblue (Vigia)</b> usa <tt>/etc/aide-vigia.conf</tt> "
     "(separado do <tt>/etc/aide.conf</tt> do sistema) e foca em:\n"
     "- <tt>/etc</tt> inteiro (sudoers, passwd, shadow, ssh, systemd)\n"
     "- <tt>/root</tt> (.ssh, dotfiles)\n"
     "- <tt>/var/spool/cron</tt>, <tt>/var/spool/at</tt> (cron jobs)\n"
-    "- <tt>/usr/local</tt> (instalacoes fora do OSTree)\n\n"
+    "- <tt>/usr/local</tt> (instalações fora do OSTree)\n\n"
     "<i>Excluindo</i> <tt>/usr</tt>, <tt>/boot</tt>, <tt>/ostree</tt>, "
     "<tt>/sysroot</tt> — gerenciados pelo OSTree.\n\n"
     "<b>Para aplicar/voltar</b>: vai na aba <b>Status</b>."
@@ -109,7 +109,7 @@ class AboutTab(Adw.Bin):
         self._paths_group = Adw.PreferencesGroup()
         self._paths_group.set_title("Caminhos monitorados")
         self._paths_group.set_description(
-            "Extraido do config do perfil ativo."
+            "Extraído do config do perfil ativo."
         )
 
         # Layout
@@ -179,7 +179,7 @@ class AboutTab(Adw.Bin):
         if not paths:
             row = Adw.ActionRow(title="Nenhum path detectado")
             row.set_subtitle(
-                f"Verifique se {conf_path} existe e tem entradas validas."
+                f"Verifique se {conf_path} existe e tem entradas válidas."
             )
             self._paths_group.add(row)
             self._path_rows.append(row)

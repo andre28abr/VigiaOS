@@ -32,13 +32,13 @@ class BaselineTab(Adw.Bin):
 
         header_desc = Gtk.Label(
             label=(
-                "Cria um <b>baseline</b> (snapshot de hashes) de um diretorio. "
+                "Cria um <b>baseline</b> (snapshot de hashes) de um diretório. "
                 "Depois compara contra o estado atual e mostra arquivos "
                 "<i>adicionados</i>, <i>removidos</i>, <i>modificados</i> ou "
-                "<i>movidos</i> (mesmo conteudo, outro caminho).\n\n"
-                "<b>Caso de uso</b>: voce tem o diretorio <tt>/etc/</tt> ou "
-                "pasta de configs critica de uma aplicacao. Cria baseline. "
-                "Apos algum tempo, roda comparativo — qualquer diff e' suspeito."
+                "<i>movidos</i> (mesmo conteúdo, outro caminho).\n\n"
+                "<b>Caso de uso</b>: você tem o diretório <tt>/etc/</tt> ou "
+                "pasta de configs crítica de uma aplicação. Cria baseline. "
+                "Após algum tempo, roda comparativo — qualquer diff é suspeito."
             )
         )
         header_desc.set_use_markup(True)
@@ -56,9 +56,9 @@ class BaselineTab(Adw.Bin):
         )
 
         self._cdir_entry = Gtk.Entry()
-        self._cdir_entry.set_placeholder_text("/caminho/para/diretorio")
+        self._cdir_entry.set_placeholder_text("/caminho/para/diretório")
         self._cdir_entry.set_hexpand(True)
-        create_group.add(make_file_picker_row("Diretorio", self._cdir_entry, folder_only=True))
+        create_group.add(make_file_picker_row("Diretório", self._cdir_entry, folder_only=True))
 
         self._create_algo = Gtk.DropDown.new_from_strings(backend.list_algorithms())
         self._create_algo.set_selected(0)
@@ -73,8 +73,8 @@ class BaselineTab(Adw.Bin):
             self._hashdeep_switch = Adw.SwitchRow()
             self._hashdeep_switch.set_title("Usar hashdeep")
             self._hashdeep_switch.set_subtitle(
-                "Mais rapido em pastas grandes (motor C). Hash identico — "
-                "aplica na criacao e na comparacao."
+                "Mais rápido em pastas grandes (motor C). Hash idêntico — "
+                "aplica na criação e na comparação."
             )
             create_group.add(self._hashdeep_switch)
 
@@ -129,14 +129,14 @@ class BaselineTab(Adw.Bin):
 
         self._diff_group = Adw.PreferencesGroup()
         self._diff_group.set_margin_top(28)
-        self._diff_group.set_title("Diferencas detectadas")
+        self._diff_group.set_title("Diferenças detectadas")
         self._diff_rows: list = []
         self._render_diff()
 
         # Available baselines
         list_group = Adw.PreferencesGroup()
         list_group.set_margin_top(28)
-        list_group.set_title("Baselines disponiveis")
+        list_group.set_title("Baselines disponíveis")
         list_group.set_description(
             "Baselines criados pelo Vigia, em ~/.local/share/vigia-hash/."
         )
@@ -194,7 +194,7 @@ class BaselineTab(Adw.Bin):
             return
         dirpath = self._cdir_entry.get_text().strip()
         if not dirpath:
-            show_error(self, "Sem diretorio", "Informe o diretorio para baseline.")
+            show_error(self, "Sem diretório", "Informe o diretório para baseline.")
             return
 
         algo = backend.list_algorithms()[self._create_algo.get_selected()]
@@ -203,7 +203,7 @@ class BaselineTab(Adw.Bin):
         self._create_btn.set_sensitive(False)
         self._compare_btn.set_sensitive(False)
         self._create_spinner.start()
-        self._create_status.set_label("Hashing arquivos... pode levar minutos em diretorio grande.")
+        self._create_status.set_label("Hashing arquivos... pode levar minutos em diretório grande.")
 
         use_hd = self._use_hashdeep()
         threading.Thread(
@@ -257,7 +257,7 @@ class BaselineTab(Adw.Bin):
         self._create_btn.set_sensitive(False)
         self._compare_btn.set_sensitive(False)
         self._compare_spinner.start()
-        self._compare_status.set_label("Comparando... pode levar minutos em diretorio grande.")
+        self._compare_status.set_label("Comparando... pode levar minutos em diretório grande.")
 
         use_hd = self._use_hashdeep()
         threading.Thread(
@@ -288,11 +288,11 @@ class BaselineTab(Adw.Bin):
 
         if n_total_diff == 0:
             self._compare_status.set_label(
-                f"✓ Nenhuma diferenca. {result.unchanged} arquivo(s) inalterado(s)."
+                f"✓ Nenhuma diferença. {result.unchanged} arquivo(s) inalterado(s)."
             )
         else:
             self._compare_status.set_label(
-                f"⚠ {n_total_diff} diferenca(s): "
+                f"⚠ {n_total_diff} diferença(s): "
                 f"{n_added} adicionado(s), {n_modified} modificado(s), "
                 f"{n_removed} removido(s), {n_moved} movido(s). "
                 f"{result.unchanged} inalterado(s)."
@@ -308,7 +308,7 @@ class BaselineTab(Adw.Bin):
         self._diff_rows = []
 
         if self._last_compare is None:
-            row = Adw.ActionRow(title="Nenhuma comparacao ainda")
+            row = Adw.ActionRow(title="Nenhuma comparação ainda")
             row.set_subtitle("Crie um baseline e clique 'Comparar' para popular.")
             row.add_css_class("dim-label")
             self._diff_group.add(row)
@@ -319,8 +319,8 @@ class BaselineTab(Adw.Bin):
             not self._last_compare.removed and
             not self._last_compare.modified and
             not self._last_compare.moved):
-            row = Adw.ActionRow(title="Nenhuma diferenca")
-            row.set_subtitle("Diretorio inalterado desde o baseline.")
+            row = Adw.ActionRow(title="Nenhuma diferença")
+            row.set_subtitle("Diretório inalterado desde o baseline.")
             row.add_css_class("success")
             self._diff_group.add(row)
             self._diff_rows.append(row)

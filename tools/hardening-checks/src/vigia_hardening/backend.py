@@ -26,7 +26,7 @@ LOG_PATH = Path("/var/log/lynis.log")
 
 # Categorias de testes Lynis (prefixo do test-id), traduzidas pt-BR.
 CATEGORY_LABELS: dict[str, str] = {
-    "AUTH": "Autenticacao",
+    "AUTH": "Autenticação",
     "BANN": "Banners de login",
     "BOOT": "Boot e loader",
     "CONT": "Containers",
@@ -34,7 +34,7 @@ CATEGORY_LABELS: dict[str, str] = {
     "CUST": "Custom (auditor)",
     "DBS":  "Bancos de dados",
     "DEPR": "Itens obsoletos",
-    "FILE": "Permissoes de arquivos",
+    "FILE": "Permissões de arquivos",
     "FINT": "Integridade de arquivos",
     "FIRE": "Firewall",
     "HRDN": "Hardening geral",
@@ -46,13 +46,13 @@ CATEGORY_LABELS: dict[str, str] = {
     "MACF": "MAC (SELinux/AppArmor)",
     "MAIL": "Servidores de email",
     "MALW": "Malware scanner",
-    "NAME": "Resolucao DNS",
+    "NAME": "Resolução DNS",
     "NETW": "Rede",
     "NFS":  "NFS",
     "PHP":  "PHP",
-    "PHYS": "Seguranca fisica",
+    "PHYS": "Segurança física",
     "PKGS": "Pacotes instalados",
-    "PRNT": "Impressao",
+    "PRNT": "Impressão",
     "PROC": "Processos",
     "RPCS": "RPC services",
     "SCHD": "Tarefas agendadas (cron)",
@@ -64,7 +64,7 @@ CATEGORY_LABELS: dict[str, str] = {
     "TIME": "Tempo e NTP",
     "TOOL": "Tools auxiliares",
     "USB":  "Dispositivos USB",
-    "VRTL": "Virtualizacao",
+    "VRTL": "Virtualização",
     "WEBS": "Servidores web",
 }
 
@@ -218,7 +218,7 @@ def run_audit_blocking() -> tuple[bool, str]:
     """
     if not lynis_installed():
         return False, (
-            "Lynis nao esta instalado.\n\n"
+            "Lynis não está instalado.\n\n"
             "Instale o Lynis:\n" + install_hint("lynis")
         )
 
@@ -275,7 +275,7 @@ exit $rc
         return False, "pkexec nao encontrado. Instale o pacote polkit."
 
     if result.returncode in (126, 127):
-        return False, "Autenticacao cancelada."
+        return False, "Autenticação cancelada."
     if result.returncode != 0:
         stderr = (result.stderr or "").strip()
         if stderr:
@@ -292,9 +292,9 @@ def format_age(minutes: int | None) -> str:
     if minutes < 1:
         return "agora mesmo"
     if minutes < 60:
-        return f"ha {minutes} min"
+        return f"há {minutes} min"
     hours = minutes // 60
     if hours < 24:
-        return f"ha {hours}h"
+        return f"há {hours}h"
     days = hours // 24
-    return f"ha {days} dia{'s' if days > 1 else ''}"
+    return f"há {days} dia{'s' if days > 1 else ''}"

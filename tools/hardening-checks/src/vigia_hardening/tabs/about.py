@@ -13,11 +13,11 @@ from gi.repository import Adw, Gtk  # noqa: E402
 SECTIONS: list[tuple[str, str]] = [
     (
         "O que faz",
-        "Roda o <b>Lynis</b> (~250 controles de seguranca) e mostra o "
-        "resultado numa interface escaneavel, em vez do wall-of-text do "
-        "terminal. A metrica principal e' o <b>Hardening Index</b> (0–100) "
+        "Roda o <b>Lynis</b> (~250 controles de segurança) e mostra o "
+        "resultado numa interface escaneável, em vez do wall-of-text do "
+        "terminal. A métrica principal é o <b>Hardening Index</b> (0–100) "
         "— quanto maior, melhor a postura geral do sistema.\n\n"
-        "Util para <b>demonstrar postura LGPD</b> num escritorio de "
+        "Útil para <b>demonstrar postura LGPD</b> num escritório de "
         "advocacia ou outro contexto regulado."
     ),
     (
@@ -30,35 +30,35 @@ SECTIONS: list[tuple[str, str]] = [
         "<b>Periodicamente</b>:\n"
         "- Aba <i>Warnings</i>: trate primeiro (criticidades imediatas)\n"
         "- Aba <i>Suggestions</i>: melhorias incrementais\n"
-        "- Aba <i>Categorias</i>: visao agregada por area (AUTH, BOOT, "
+        "- Aba <i>Categorias</i>: visão agregada por área (AUTH, BOOT, "
         "KRNL, MACF, etc.)\n\n"
         "Cada finding tem um <tt>test-id</tt> (ex: <tt>KRNL-5820</tt>). "
         "Google esse ID para ver a remediation oficial do Lynis."
     ),
     (
         "Conceitos importantes",
-        "<b>Hardening Index</b> e' calculado pelo Lynis baseado no ratio "
+        "<b>Hardening Index</b> é calculado pelo Lynis baseado no ratio "
         "de testes passed / total. Escala:\n"
         "- 85-100: Excelente\n"
         "- 75-84: Bom\n"
-        "- 60-74: Razoavel\n"
+        "- 60-74: Razoável\n"
         "- 40-59: Insuficiente\n"
-        "- 0-39: Critico\n\n"
+        "- 0-39: Crítico\n\n"
         "<b>Warnings vs Suggestions</b>:\n"
-        "- <i>Warning</i> (criticas): problemas que merecem atencao "
-        "imediata (ex: senha de root nao configurada)\n"
+        "- <i>Warning</i> (críticas): problemas que merecem atenção "
+        "imediata (ex: senha de root não configurada)\n"
         "- <i>Suggestion</i> (melhorias): hardening incremental "
-        "(ex: configurar minimo password age)\n\n"
-        "<b>Tests skipped</b>: em Silverblue ~40% dos testes Lynis sao "
-        "pulados (assumem <tt>dnf</tt> ou <tt>/usr</tt> mutavel — "
-        "irrelevantes em sistema atomico). E' esperado, nao bug."
+        "(ex: configurar mínimo password age)\n\n"
+        "<b>Tests skipped</b>: em Silverblue ~40% dos testes Lynis são "
+        "pulados (assumem <tt>dnf</tt> ou <tt>/usr</tt> mutável — "
+        "irrelevantes em sistema atômico). É esperado, não bug."
     ),
     (
-        "Limitacoes conhecidas",
-        "- Audit do Lynis e' read-only — NAO corrige nada, so reporta\n"
-        "- Algumas suggestions sao irrelevantes em Silverblue mas Lynis "
-        "ainda lista (ex: 'instalar antivirus' quando ClamAV ja existe)\n"
-        "- Sem comparacao temporal (run1 vs run2) — v0.2 vai trazer"
+        "Limitações conhecidas",
+        "- Audit do Lynis é read-only — NÃO corrige nada, só reporta\n"
+        "- Algumas suggestions são irrelevantes em Silverblue mas Lynis "
+        "ainda lista (ex: 'instalar antivirus' quando ClamAV já existe)\n"
+        "- Sem comparação temporal (run1 vs run2) — v0.2 vai trazer"
     ),
     (
         "Saiba mais",

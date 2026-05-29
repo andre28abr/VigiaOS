@@ -73,7 +73,7 @@ class OverviewTab(Adw.Bin):
         self._stats_group = Adw.PreferencesGroup()
         self._stats_group.set_title("Resumo da auditoria")
 
-        self._row_warnings = Adw.ActionRow(title="Warnings (criticas)")
+        self._row_warnings = Adw.ActionRow(title="Warnings (críticas)")
         self._row_warnings.add_css_class("property")
         self._warnings_count = Gtk.Label(label="—")
         self._warnings_count.add_css_class("monospace")
@@ -93,15 +93,15 @@ class OverviewTab(Adw.Bin):
 
         self._row_tests_skipped = Adw.ActionRow(title="Tests pulados (skipped)")
         self._row_tests_skipped.set_subtitle(
-            "Lynis pula testes que nao se aplicam ao sistema. Esperado "
-            "em Silverblue (alguns checks assumem dnf, /usr mutavel)."
+            "Lynis pula testes que não se aplicam ao sistema. Esperado "
+            "em Silverblue (alguns checks assumem dnf, /usr mutável)."
         )
         self._row_tests_skipped.add_css_class("property")
         self._tests_skipped_count = Gtk.Label(label="—")
         self._tests_skipped_count.add_css_class("monospace")
         self._row_tests_skipped.add_suffix(self._tests_skipped_count)
 
-        self._row_last_run = Adw.ActionRow(title="Ultima execucao")
+        self._row_last_run = Adw.ActionRow(title="Última execução")
         self._row_last_run.add_css_class("property")
         self._last_run_label = Gtk.Label(label="Nunca")
         self._last_run_label.add_css_class("monospace")
@@ -125,8 +125,8 @@ class OverviewTab(Adw.Bin):
         self._action_group.set_margin_top(24)
         self._action_group.set_title("Auditoria")
         self._action_group.set_description(
-            "Lynis examina ~250 controles de seguranca (kernel, boot, "
-            "permissoes, autenticacao, rede, MAC). Precisa de root."
+            "Lynis examina ~250 controles de segurança (kernel, boot, "
+            "permissões, autenticação, rede, MAC). Precisa de root."
         )
 
         action_row = Adw.ActionRow(title="Executar auditoria completa")
@@ -142,7 +142,7 @@ class OverviewTab(Adw.Bin):
         self._progress_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
         self._progress_box.set_visible(False)
         self._progress_box.set_margin_top(8)
-        self._progress_label = Gtk.Label(label="Lynis em execucao... pode levar alguns minutos.")
+        self._progress_label = Gtk.Label(label="Lynis em execução... pode levar alguns minutos.")
         self._progress_label.add_css_class("dim-label")
         self._progress_bar = Gtk.ProgressBar()
         self._progress_bar.set_pulse_step(0.1)
@@ -218,7 +218,7 @@ class OverviewTab(Adw.Bin):
         # Caso 1: rodou mas nao gerou hardening_index — bug ou parser falhou
         if report.hardening_index is None and report.tests_executed > 0:
             self._context_banner.set_title(
-                "Lynis rodou mas nao gerou Hardening Index. "
+                "Lynis rodou mas não gerou Hardening Index. "
                 "Verifique /var/log/lynis-report.dat manualmente."
             )
             self._context_banner.add_css_class("error")
@@ -229,8 +229,8 @@ class OverviewTab(Adw.Bin):
         # ou parser nao pegou
         if report.hardening_index is not None and total_warn_sug == 0:
             self._context_banner.set_title(
-                "Lynis nao encontrou warnings nem suggestions. "
-                "Pode ser sistema bem configurado OU testes que nao se "
+                "Lynis não encontrou warnings nem suggestions. "
+                "Pode ser sistema bem configurado OU testes que não se "
                 "aplicam (esperado em Silverblue)."
             )
             self._context_banner.add_css_class("warning")
@@ -246,7 +246,7 @@ class OverviewTab(Adw.Bin):
                 self._context_banner.set_title(
                     f"{report.tests_skipped} testes pulados ({pct}% do total). "
                     "Comum em Silverblue: alguns checks assumem dnf ou "
-                    "/usr mutavel — irrelevantes em sistema atomico."
+                    "/usr mutável — irrelevantes em sistema atômico."
                 )
                 self._context_banner.set_revealed(True)
                 return
@@ -264,8 +264,8 @@ class OverviewTab(Adw.Bin):
         if not lynis_installed():
             show_error(
                 self,
-                "Lynis nao instalado",
-                "O pacote 'lynis' nao foi encontrado. Instale:\n\n"
+                "Lynis não instalado",
+                "O pacote 'lynis' não foi encontrado. Instale:\n\n"
                 + install_hint("lynis"),
             )
             return
