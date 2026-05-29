@@ -2,8 +2,8 @@
 
 ## Em uma frase
 
-GUI GTK4 pra `rpm-ostree` que lista os deployments do sistema atomico
-(snapshots imutaveis que aparecem no GRUB), permite **rollback / pin /
+GUI GTK4 pra `rpm-ostree` que lista os deployments do sistema atômico
+(snapshots imutáveis que aparecem no GRUB), permite **rollback / pin /
 cleanup** via pkexec e adiciona camada de **labels + notas multilinha**
 em JSON local 0600 pra audit LGPD.
 
@@ -12,10 +12,10 @@ em JSON local 0600 pra audit LGPD.
 | Item | Detalhe |
 |---|---|
 | Pacotes wrap | `rpm-ostree`, `ostree` |
-| Versao | 0.1.1 |
+| Versão | 0.1.1 |
 | App ID | `br.com.vigia.DeploymentsManager` |
-| Privilegios | `pkexec` pra rollback/pin/unpin/cleanup |
-| Modulo | `vigia_deployments` |
+| Privilégios | `pkexec` pra rollback/pin/unpin/cleanup |
+| Módulo | `vigia_deployments` |
 | State local | `~/.config/vigia-deployments/state.json` (0600) |
 
 ## Arquitetura interna
@@ -31,7 +31,7 @@ vigia_deployments/
     └── about.py        # Manual didatico
 ```
 
-State local (limit tecnico: rpm-ostree nao tem campo "label custom"):
+State local (limit técnico: rpm-ostree não tem campo "label custom"):
 
 ```json
 {
@@ -44,7 +44,7 @@ State local (limit tecnico: rpm-ostree nao tem campo "label custom"):
 }
 ```
 
-Mapping eh por **checksum SHA-256** do deployment (chave estavel).
+Mapping é por **checksum SHA-256** do deployment (chave estável).
 Quando um deployment some (cleanup), o `cleanup_orphaned()` remove o
 entry correspondente.
 
@@ -58,7 +58,7 @@ df -m /boot
 rpm-ostree db diff <commit_a> <commit_b>
 ```
 
-Operacoes elevadas (pkexec):
+Operações elevadas (pkexec):
 
 ```bash
 pkexec rpm-ostree rollback
@@ -68,24 +68,24 @@ pkexec rpm-ostree cleanup -p -r -m
 ```
 
 Flags do `cleanup`:
-- `-p` pending — staged que ainda nao bootou
+- `-p` pending — staged que ainda não bootou
 - `-r` rollback — deployment de boot anterior
 - `-m` metadata — refspecs em cache
 
 ## Tabs / Funcionalidades
 
-| Tab | Funcao |
+| Tab | Função |
 |---|---|
-| **Deployments** | Lista de `Adw.ExpanderRow` por deployment. Header: badge STATUS + label custom + checksum/timestamp. Expandido: editar label + notas + lista de pacotes layered + botoes (Reverter, Pin/Unpin) |
-| **Cleanup** | Espaco em `/boot` (total/usado/disponivel) + KPIs de deployments (total/pinned/will-clean) + botao `Limpar tudo` (pkexec, 1 dialog) + alerta vermelho se `/boot >85%` |
-| **Sobre** | Manual didatico denso (10 secoes sobre deployments, atomic, pin, /boot, LGPD) |
+| **Deployments** | Lista de `Adw.ExpanderRow` por deployment. Header: badge STATUS + label custom + checksum/timestamp. Expandido: editar label + notas + lista de pacotes layered + botões (Reverter, Pin/Unpin) |
+| **Cleanup** | Espaço em `/boot` (total/usado/disponível) + KPIs de deployments (total/pinned/will-clean) + botão `Limpar tudo` (pkexec, 1 dialog) + alerta vermelho se `/boot >85%` |
+| **Sobre** | Manual didático denso (10 seções sobre deployments, atomic, pin, /boot, LGPD) |
 
 ## Status badges
 
 | Badge | Cor | Significado |
 |---|---|---|
-| ATIVO | verde | `booted=true`. Rodando agora. Nao pode ser removido. |
-| STAGED | amarelo | `staged=true`. Pending. Vai virar ATIVO no proximo boot. Cleanup remove com `-p`. |
+| ATIVO | verde | `booted=true`. Rodando agora. Não pode ser removido. |
+| STAGED | amarelo | `staged=true`. Pending. Vai virar ATIVO no próximo boot. Cleanup remove com `-p`. |
 | ROLLBACK | cinza | Deployment anterior preservado. Cleanup remove com `-r`. |
 | PIN | azul | `pinned=true`. NUNCA removido automaticamente. |
 
@@ -118,32 +118,32 @@ class Deployment:
   data e motivo.
 - **Antes de rebase** pra outra variant (Silverblue -> Kinoite): pin.
 - **Quando `/boot` >70%**: rodar cleanup pra evitar bloqueio de upgrades.
-- **Audit LGPD**: documentar contexto de cada mudanca importante via
+- **Audit LGPD**: documentar contexto de cada mudança importante via
   labels + notas.
 
 ## Cuidado com /boot
 
-Em sistemas atomicos, `/boot` e tipicamente 600 MB – 1 GB. Cada deployment
+Em sistemas atômicos, `/boot` é tipicamente 600 MB – 1 GB. Cada deployment
 usa 100-200 MB (kernel + initramfs). Com 5+ deployments pinados, `/boot`
 pode encher e **impedir upgrades futuros**.
 
 Thresholds visuais (na aba Cleanup):
 - `>70%` — banner amarelo
-- `>85%` — banner vermelho com sugestao de cleanup
+- `>85%` — banner vermelho com sugestão de cleanup
 
-## Limitacoes conhecidas (tecnicas do rpm-ostree)
+## Limitações conhecidas (técnicas do rpm-ostree)
 
-- **Sem criar snapshot manual** ("snapshot agora"): nao existe no
-  rpm-ostree. Deployments so nascem via `install`/`upgrade`/`rebase`.
+- **Sem criar snapshot manual** ("snapshot agora"): não existe no
+  rpm-ostree. Deployments só nascem via `install`/`upgrade`/`rebase`.
   Workaround: `rpm-ostree install --idempotent <pkg-ja-instalado>`
-  forca um novo deployment.
-- **Label do Vigia e display-only** — nao modifica nada no rpm-ostree.
-- **Sem deletar deployment especifico** via UI — cleanup remove pending,
+  força um novo deployment.
+- **Label do Vigia é display-only** — não modifica nada no rpm-ostree.
+- **Sem deletar deployment específico** via UI — cleanup remove pending,
   rollback ou cache em batch. Pra remover um pinned, primeiro despinne.
-- **Sem pkg-diff visual entre deployments arbitrarios** na UI (backend
-  tem `pkg_diff_blocking`, mas a tab nao expoe widget — vem na v0.2).
+- **Sem pkg-diff visual entre deployments arbitrários** na UI (backend
+  tem `pkg_diff_blocking`, mas a tab não expõe widget — vem na v0.2).
 
-## Trecho de codigo relevante
+## Trecho de código relevante
 
 State local com atomic write + chmod 0600:
 
@@ -230,13 +230,13 @@ def get_deployments() -> list[Deployment]:
 - **100% offline**.
 - **State local**: `~/.config/vigia-deployments/state.json` com mode
   `0600`, dir `0700`.
-- **Operacoes elevadas via pkexec** (in-app polkit dialog). Nunca
+- **Operações elevadas via pkexec** (in-app polkit dialog). Nunca
   `sudo` ou shell escape.
-- **Audit trail**: rpm-ostree mantem historico completo de deployments
-  com checksums. Combinado com notas + labels, voce tem evidencia de
-  processo de mudancas (LGPD-friendly).
+- **Audit trail**: rpm-ostree mantém histórico completo de deployments
+  com checksums. Combinado com notas + labels, você tem evidência de
+  processo de mudanças (LGPD-friendly).
 
-## Referencias
+## Referências
 
 - `man rpm-ostree`, `man ostree`
 - Docs Silverblue: https://docs.fedoraproject.org/en-US/fedora-silverblue/

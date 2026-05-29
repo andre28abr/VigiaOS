@@ -2,8 +2,8 @@
 
 ## Em uma frase
 
-Audita Linux capabilities setadas em binarios do sistema via `getcap -r`,
-classifica por risco (alto/medio/baixo) e expoe um catalogo pt-BR das 41
+Audita Linux capabilities setadas em binários do sistema via `getcap -r`,
+classifica por risco (alto/médio/baixo) e expõe um catálogo pt-BR das 41
 capabilities documentadas.
 
 ## O que envolve
@@ -11,12 +11,12 @@ capabilities documentadas.
 | Item | Detalhe |
 |---|---|
 | Pacotes wrap | `libcap`, `getcap` |
-| Versao | 0.1.0 (read-only) |
+| Versão | 0.1.0 (read-only) |
 | App ID | `br.com.vigia.CapabilitiesInspector` |
-| Privilegios | `pkexec` apenas pra scan elevado (cobertura total) |
+| Privilégios | `pkexec` apenas pra scan elevado (cobertura total) |
 | Tipo | Read-only (sem `setcap` nesta release) |
-| Saidas | Lista in-memory + UI (nao persiste reports) |
-| Modulo | `vigia_caps` |
+| Saídas | Lista in-memory + UI (não persiste reports) |
+| Módulo | `vigia_caps` |
 
 ## Arquitetura interna
 
@@ -36,14 +36,14 @@ Dois caminhos de scan:
 
 - **Quick scan** (user mode, sem pkexec): roda `getcap -r` em `/usr/bin`,
   `/usr/sbin`, `/usr/libexec`, `/usr/local/bin`, `/usr/local/sbin`, `/opt`.
-  Cobertura parcial mas instantanea.
-- **Scan completo** (pkexec): um unico dialog cobre `/usr`, `/opt`, `/var`,
-  `/srv`. Leva 5-30s. Usa wrapper bash com `set +e` pra ignorar codigos
-  de retorno nao-zero do getcap em paths vazios.
+  Cobertura parcial mas instantânea.
+- **Scan completo** (pkexec): um único dialog cobre `/usr`, `/opt`, `/var`,
+  `/srv`. Leva 5-30s. Usa wrapper bash com `set +e` pra ignorar códigos
+  de retorno não-zero do getcap em paths vazios.
 
 ## Comandos disparados
 
-Quick scan (sem privilegios):
+Quick scan (sem privilégios):
 ```bash
 getcap -r /usr/bin
 getcap -r /usr/sbin
@@ -64,7 +64,7 @@ exit 0
 '
 ```
 
-Inspect ad-hoc de um binario:
+Inspect ad-hoc de um binário:
 ```bash
 getcap /usr/bin/ping
 # /usr/bin/ping cap_net_raw=ep
@@ -72,25 +72,25 @@ getcap /usr/bin/ping
 
 ## Tabs / Funcionalidades
 
-| Tab | Funcao |
+| Tab | Função |
 |---|---|
-| **Visao Geral** | Hero com state label (verde/amarelo/vermelho), KPIs por risco, 2 botoes (Scan elevado + Quick scan) |
-| **Binarios** | Lista de `BinaryWithCaps` filtravel via `SearchEntry` + `DropDown` (Todos/Alto/Medio/Baixo). Cada row expansivel mostra TODAS as caps |
-| **Capabilities** | Catalogo das 41 caps Linux com descricao pt-BR e classe de risco |
-| **Sobre** | Manual didatico (`AboutTab` padrao Vigia) |
+| **Visão Geral** | Hero com state label (verde/amarelo/vermelho), KPIs por risco, 2 botões (Scan elevado + Quick scan) |
+| **Binários** | Lista de `BinaryWithCaps` filtrável via `SearchEntry` + `DropDown` (Todos/Alto/Médio/Baixo). Cada row expansível mostra TODAS as caps |
+| **Capabilities** | Catálogo das 41 caps Linux com descrição pt-BR e classe de risco |
+| **Sobre** | Manual didático (`AboutTab` padrão Vigia) |
 
-## Catalogo de risco
+## Catálogo de risco
 
-Classificacao opinada (vide `capabilities.py`):
+Classificação opinada (vide `capabilities.py`):
 
-- **ALTO** (10 caps): bypass efetivo do modelo de seguranca.
+- **ALTO** (10 caps): bypass efetivo do modelo de segurança.
   `cap_dac_override`, `cap_mac_admin`, `cap_mac_override`, `cap_setgid`,
   `cap_setpcap`, `cap_setuid`, `cap_sys_admin`, `cap_sys_boot`,
   `cap_sys_module`, `cap_sys_ptrace`, `cap_sys_rawio`.
-- **MEDIO** (~17 caps): potencialmente perigosas, mas escopadas.
+- **MÉDIO** (~17 caps): potencialmente perigosas, mas escopadas.
   `cap_chown`, `cap_dac_read_search`, `cap_net_admin`, `cap_net_raw`,
   `cap_kill`, `cap_setfcap`, `cap_sys_chroot`, etc.
-- **BAIXO** (~14 caps): especificas, usadas por daemons normais.
+- **BAIXO** (~14 caps): específicas, usadas por daemons normais.
   `cap_net_bind_service`, `cap_audit_write`, `cap_ipc_lock`, etc.
 
 Lookup ignora case e o prefix `cap_` (opcional):
@@ -103,27 +103,27 @@ risk_for_cap("CAP_SETUID")  # 'alto'
 
 ## Quando usar
 
-- **Apos `rpm-ostree upgrade`**: verifica se algum binario novo ganhou
+- **Após `rpm-ostree upgrade`**: verifica se algum binário novo ganhou
   capability inesperada.
-- **Apos incidente suspeito**: caca por `cap_sys_admin` ou `cap_setuid`
-  em paths nao-canonicos (`/tmp`, `/home`, `/var/tmp`).
-- **Audit periodico LGPD**: documenta superficie de privilege escalation
+- **Após incidente suspeito**: caça por `cap_sys_admin` ou `cap_setuid`
+  em paths não-canônicos (`/tmp`, `/home`, `/var/tmp`).
+- **Audit periódico LGPD**: documenta superfície de privilege escalation
   via filesystem caps.
-- **Investigacao de exploit**: combina com [GTFOBins](https://gtfobins.github.io/)
-  pra checar se algum binario com cap pode ser explorado.
+- **Investigação de exploit**: combina com [GTFOBins](https://gtfobins.github.io/)
+  pra checar se algum binário com cap pode ser explorado.
 
-## Limitacoes conhecidas
+## Limitações conhecidas
 
-- Read-only — nao executa `setcap` pra add/remover caps (chega na v0.2).
-- So inspeciona **filesystem capabilities** (caps de arquivo). NAO
+- Read-only — não executa `setcap` pra add/remover caps (chega na v0.2).
+- Só inspeciona **filesystem capabilities** (caps de arquivo). NÃO
   inspeciona thread capabilities setadas em runtime via `prctl()`.
-- Catalogo de risco e opiniao informada — algumas caps classificadas
-  como MEDIO podem ser ALTO num threat model especifico (ex: `cap_net_admin`
+- Catálogo de risco é opinião informada — algumas caps classificadas
+  como MÉDIO podem ser ALTO num threat model específico (ex: `cap_net_admin`
   em servidor exposto).
 - Quick scan perde paths em `/root`, `/var`, `/srv` (precisa do scan
   elevado pra cobertura total).
 
-## Trecho de codigo relevante
+## Trecho de código relevante
 
 Scan elevado com pkexec (1 dialog cobre todos os paths):
 
@@ -173,9 +173,9 @@ def parse_getcap_output(text: str) -> list[BinaryWithCaps]:
     return binaries
 ```
 
-## Referencias
+## Referências
 
 - `man capabilities(7)`
 - `man getcap`, `man setcap`
-- [GTFOBins](https://gtfobins.github.io/) — binarios SUID/cap explotaveis
+- [GTFOBins](https://gtfobins.github.io/) — binários SUID/cap explotáveis
 - Kernel docs: https://www.kernel.org/doc/html/latest/security/credentials.html

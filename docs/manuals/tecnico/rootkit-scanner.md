@@ -3,8 +3,8 @@
 ## Em uma frase
 
 Wrapper GTK4 que unifica **chkrootkit** + **Rootkit Hunter (rkhunter)** —
-os dois scanners classicos pra busca de rootkits e backdoors no Linux —
-em UI libadwaita com streaming de output e historico de scans em JSON
+os dois scanners clássicos pra busca de rootkits e backdoors no Linux —
+em UI libadwaita com streaming de output e histórico de scans em JSON
 0600.
 
 ## O que envolve
@@ -12,10 +12,10 @@ em UI libadwaita com streaming de output e historico de scans em JSON
 | Item | Detalhe |
 |---|---|
 | Pacotes wrap | `chkrootkit`, `rkhunter` |
-| Versao | 0.2.0 (rewrite pattern Antivirus) |
+| Versão | 0.2.0 (rewrite pattern Antivirus) |
 | App ID | `br.com.vigia.RootkitScanner` |
-| Privilegios | `pkexec` pra ambos os scans (precisam ler `/etc`, `/dev`, `/proc`) |
-| Modulo | `vigia_rootkit` |
+| Privilégios | `pkexec` pra ambos os scans (precisam ler `/etc`, `/dev`, `/proc`) |
+| Módulo | `vigia_rootkit` |
 | Reports | `~/.local/share/vigia-rootkit/scans/<scanner>-<timestamp>.json` (0600) |
 
 ## Arquitetura interna
@@ -31,20 +31,20 @@ vigia_rootkit/
     └── about.py        # Manual didatico
 ```
 
-Reports JSON sao escritos em `~/.local/share/vigia-rootkit/scans/` com
+Reports JSON são escritos em `~/.local/share/vigia-rootkit/scans/` com
 `mode 0600`, dir `0700`. Limite de `raw_output` armazenado: 256 KB por
 report (truncado).
 
 ## Comandos disparados
 
-Detect versoes (sem root):
+Detect versões (sem root):
 
 ```bash
 chkrootkit -V
 rkhunter --version
 ```
 
-Scan chkrootkit (rapido, ~30s):
+Scan chkrootkit (rápido, ~30s):
 
 ```bash
 pkexec chkrootkit
@@ -59,17 +59,17 @@ pkexec rkhunter --check --skip-keypress --no-mail-on-warning --rwo
 Flags do rkhunter:
 - `--check` — roda todos os checks (200+)
 - `--skip-keypress` — sem `[Press Enter to continue]`
-- `--no-mail-on-warning` — nao tenta mandar email
+- `--no-mail-on-warning` — não tenta mandar email
 - `--rwo` — Report Warnings Only (filtra OKs)
 
 ## Tabs / Funcionalidades
 
-| Tab | Funcao |
+| Tab | Função |
 |---|---|
-| **chkrootkit** | Banner status + 2 botoes (Iniciar / Parar) + log streaming + summary final |
+| **chkrootkit** | Banner status + 2 botões (Iniciar / Parar) + log streaming + summary final |
 | **Rootkit Hunter** | Mesmo pattern, scan mais demorado |
-| **Historico** | Lista de reports anteriores (recents-first), abre detalhes ao clicar |
-| **Sobre** | Manual didatico |
+| **Histórico** | Lista de reports anteriores (recents-first), abre detalhes ao clicar |
+| **Sobre** | Manual didático |
 
 ## Parsers
 
@@ -166,36 +166,36 @@ def _run_scan_streaming(
 
 ## Quando usar
 
-- **Apos comportamento anomalo** do sistema (alto uso de CPU sem causa,
-  conexoes de rede estranhas, arquivos modificados).
-- **Periodicamente** (1x/mes) como audit baseline.
-- **Apos `rpm-ostree upgrade` major** ou rebase pra outra variant.
-- **Combinado com File Integrity** (AIDE) pra cross-check de mudancas
-  em binarios.
+- **Após comportamento anômalo** do sistema (alto uso de CPU sem causa,
+  conexões de rede estranhas, arquivos modificados).
+- **Periodicamente** (1x/mês) como audit baseline.
+- **Após `rpm-ostree upgrade` major** ou rebase pra outra variant.
+- **Combinado com File Integrity** (AIDE) pra cross-check de mudanças
+  em binários.
 
 ## Interpretando resultados
 
 - **Limpo**: nenhum sinal. Sistema OK.
-- **Warning**: possivel falso positivo. Causas comuns:
-  - Arquivos modificados apos `rpm-ostree upgrade`
-  - Modulos proprietarios (NVIDIA, VirtualBox)
-  - Configs SSH OK no contexto especifico
+- **Warning**: possível falso positivo. Causas comuns:
+  - Arquivos modificados após `rpm-ostree upgrade`
+  - Módulos proprietários (NVIDIA, VirtualBox)
+  - Configs SSH OK no contexto específico
 - **Infected**: alta probabilidade de comprometimento.
   1. Desconectar da rede
-  2. Salvar o report (esta em `~/.local/share/vigia-rootkit/scans/`)
+  2. Salvar o report (está em `~/.local/share/vigia-rootkit/scans/`)
   3. Cruzar com Vigia File Integrity (AIDE)
   4. Considerar reinstalar
 
-## Limitacoes conhecidas
+## Limitações conhecidas
 
-- chkrootkit e rkhunter sao **deteccao baseada em assinaturas conhecidas**
-  — nao pegam rootkits zero-day ou customizados.
+- chkrootkit e rkhunter são **detecção baseada em assinaturas conhecidas**
+  — não pegam rootkits zero-day ou customizados.
 - rkhunter gera **muitos falsos-positivos** em sistemas modernos
   (esperado — atualize `rkhunter.dat` periodicamente).
 - Em Silverblue, alguns checks de filesystem reportam diff porque
-  rootfs e imutavel — esperado.
-- Scans precisam de pkexec a cada execucao (sem cache de auth).
-- Limite de `raw_output` salvo: 1 MB em memoria, 256 KB persistido.
+  rootfs é imutável — esperado.
+- Scans precisam de pkexec a cada execução (sem cache de auth).
+- Limite de `raw_output` salvo: 1 MB em memória, 256 KB persistido.
 
 ## Privacidade / LGPD
 
@@ -219,7 +219,7 @@ def _run_scan_streaming(
 }
 ```
 
-## Referencias
+## Referências
 
 - `man chkrootkit`, `man rkhunter`
 - chkrootkit: http://www.chkrootkit.org/

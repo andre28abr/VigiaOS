@@ -2,18 +2,18 @@
 
 ## Em uma frase
 
-Catalogo curado de 16 ferramentas de seguranca instalaveis com 1 clique
-via `rpm-ostree` + catalogo de 8 extensoes FOSS para navegadores que
+Catálogo curado de 16 ferramentas de segurança instaláveis com 1 clique
+via `rpm-ostree` + catálogo de 8 extensões FOSS para navegadores que
 abrem em AMO/Chrome Web Store via `xdg-open`.
 
 ## O que envolve
 
 | Item | Valor |
 |---|---|
-| **Pacote** | `vigia-tool-installer` (versao 0.2.0) |
+| **Pacote** | `vigia-tool-installer` (versão 0.2.0) |
 | **App ID** | `br.com.vigia.ToolInstaller` |
 | **Pacotes wrapped** | `rpm-ostree`, `xdg-open` |
-| **Privilegios** | `pkexec rpm-ostree install/uninstall` |
+| **Privilégios** | `pkexec rpm-ostree install/uninstall` |
 | **State local** | `~/.config/vigia-installer/browser-extensions.json` |
 | **Stack** | Python 3.11+ . PyGObject . GTK4 . libadwaita 1 |
 
@@ -32,42 +32,42 @@ vigia_installer/
     `-- about.py
 ```
 
-### Catalogo de pacotes (5 categorias)
+### Catálogo de pacotes (5 categorias)
 
 | Categoria | Pacotes |
 |---|---|
 | **Auditoria e hardening** | lynis, aide, chkrootkit, rkhunter |
 | **Rede** | mtr, nethogs, iftop |
-| **Monitoramento e diagnostico** | lsof, strace, fail2ban |
+| **Monitoramento e diagnóstico** | lsof, strace, fail2ban |
 | **Privacidade e criptografia** | tor, torsocks, wireguard-tools, dnscrypt-proxy |
-| **Forense e analise** | clamav, hashdeep |
+| **Forense e análise** | clamav, hashdeep |
 
 Cada `CatalogEntry` tem `package`, `name`, `description` (1 linha),
-`why` (paragrafo com markdown leve via `_md_to_pango`), `category`,
-`binary` (para detecao). `by_category()` retorna agrupado preservando
+`why` (parágrafo com markdown leve via `_md_to_pango`), `category`,
+`binary` (para detecção). `by_category()` retorna agrupado preservando
 ordem em `CATEGORIES_ORDER`.
 
-### Catalogo de extensoes (8 FOSS)
+### Catálogo de extensões (8 FOSS)
 
-| Extensao | Categoria | License | Firefox slug / Chrome ID |
+| Extensão | Categoria | License | Firefox slug / Chrome ID |
 |---|---|---|---|
 | uBlock Origin | ad-blocker | GPL-3.0 | `ublock-origin` / `cjpalhdlnbpafiamejdnhcphjbkeiagm` |
 | AdGuard AdBlocker | ad-blocker | GPL-3.0 | `adguard-adblocker` / `bgnkhhnnamicmpeenaelnjfhikgbkllg` |
 | Privacy Badger | tracker-blocker | GPL-3.0 | `privacy-badger17` / `pkehgijcmpdhfbdbbnkijodmdjhbjlgp` |
 | ClearURLs | url-cleaner | LGPL-3.0 | `clearurls` / `lckanjgmijmafbedllaakclkaicjfmnk` |
-| LibRedirect | redirector | GPL-3.0 | `libredirect` / (so Firefox) |
+| LibRedirect | redirector | GPL-3.0 | `libredirect` / (só Firefox) |
 | Cookie AutoDelete | cookie-manager | MIT | `cookie-autodelete` / `fhcgjolkccmbidfldomjliifgaodjagh` |
-| Decentraleyes | cdn-cache | MPL-2.0 | `decentraleyes` / (so Firefox) |
+| Decentraleyes | cdn-cache | MPL-2.0 | `decentraleyes` / (só Firefox) |
 
-Categoria `ad-blocker` esta em `EXCLUSIVE_CATEGORIES` — `find_conflicts()`
-detecta se user ja marcou uBlock e esta tentando marcar AdGuard, dispara
+Categoria `ad-blocker` está em `EXCLUSIVE_CATEGORIES` — `find_conflicts()`
+detecta se user já marcou uBlock e está tentando marcar AdGuard, dispara
 dialog "Substituir uBlock?".
 
 ### Navegadores suportados
 
 `detect_installed_browsers()` usa `shutil.which(binary)` para cada:
 firefox, firefox-esr, librewolf, google-chrome, chromium-browser,
-brave-browser, vivaldi. Familia firefox/chromium determina qual URL
+brave-browser, vivaldi. Família firefox/chromium determina qual URL
 gerar (AMO vs Chrome Web Store).
 
 ### Pending changes via rpm-ostree status
@@ -109,35 +109,35 @@ xdg-open "https://chromewebstore.google.com/detail/cjpalhdlnbpafiamejdnhcphjbkei
 
 ## Tabs / Funcionalidades
 
-| Tab | Descricao |
+| Tab | Descrição |
 |---|---|
-| **Catalogo** | Lista categorizada em `Adw.PreferencesGroup`. Cada item e' `Adw.ExpanderRow` com prefix badge de status (`Disponivel` / `INSTALADO` / `PENDENTE`) + suffix botao acao (`Instalar` / `Remover` / `Pendente`). Expansao mostra `why` + nome do pacote. Status carregado em worker thread (`refresh_statuses_async`). Search filtra em nome/desc/pacote/why. |
-| **Pendentes** | Hero "X pendentes" + grupos "Sera instalado" / "Sera removido no proximo boot" + botao `Reiniciar agora` (`pkexec systemctl reboot`). |
-| **Extensoes** | Detecta navegadores instalados, lista catalogo FOSS + botao "Abrir no <browser>" (xdg-open URL da AMO/Web Store). Marcacao manual de "ja instalei" persistente em JSON. Lock por categoria ad-blocker (so 1 por browser). |
-| **Sobre** | 5 secoes markup-formatted. |
+| **Catálogo** | Lista categorizada em `Adw.PreferencesGroup`. Cada item é `Adw.ExpanderRow` com prefix badge de status (`Disponivel` / `INSTALADO` / `PENDENTE`) + suffix botão ação (`Instalar` / `Remover` / `Pendente`). Expansão mostra `why` + nome do pacote. Status carregado em worker thread (`refresh_statuses_async`). Search filtra em nome/desc/pacote/why. |
+| **Pendentes** | Hero "X pendentes" + grupos "Será instalado" / "Será removido no próximo boot" + botão `Reiniciar agora` (`pkexec systemctl reboot`). |
+| **Extensões** | Detecta navegadores instalados, lista catálogo FOSS + botão "Abrir no <browser>" (xdg-open URL da AMO/Web Store). Marcação manual de "já instalei" persistente em JSON. Lock por categoria ad-blocker (só 1 por browser). |
+| **Sobre** | 5 seções markup-formatted. |
 
 ## Quando usar
 
-- **Setup pos-instalacao**: instalar lynis + aide + chkrootkit em
-  sequencia, depois reiniciar 1x.
-- **Hardening incremental**: adicionar fail2ban quando comecar a expor
-  servico SSH.
+- **Setup pós-instalação**: instalar lynis + aide + chkrootkit em
+  sequência, depois reiniciar 1x.
+- **Hardening incremental**: adicionar fail2ban quando começar a expor
+  serviço SSH.
 - **Privacidade browser**: instalar uBlock Origin + Privacy Badger +
   ClearURLs em Firefox novo.
-- **Forense**: clamav + hashdeep para investigar maquina comprometida.
+- **Forense**: clamav + hashdeep para investigar máquina comprometida.
 
-## Limitacoes conhecidas
+## Limitações conhecidas
 
-- Sem multi-select (v0.2 roadmap: checkboxes + 1 transacao para varios
-  pacotes simultaneos).
-- Sem busca em repos externos — apenas o catalogo curado.
-- Instalacoes com muitas dependencias podem demorar 5-10min.
-- Extensoes nao tem deteccao real de "instalada no browser" — apenas
-  marcacao manual em JSON local. CLI APIs do browser nao permitem instalar.
-- `dnscrypt-proxy` no catalogo mas o DNS Manager v0.4 ja gerencia ele
-  nativamente; instalar via Tool Installer e' redundante se ja usa o DNS Manager.
+- Sem multi-select (v0.2 roadmap: checkboxes + 1 transação para vários
+  pacotes simultâneos).
+- Sem busca em repos externos — apenas o catálogo curado.
+- Instalações com muitas dependências podem demorar 5-10min.
+- Extensões não tem detecção real de "instalada no browser" — apenas
+  marcação manual em JSON local. CLI APIs do browser não permitem instalar.
+- `dnscrypt-proxy` no catálogo mas o DNS Manager v0.4 já gerencia ele
+  nativamente; instalar via Tool Installer é redundante se já usa o DNS Manager.
 
-## Trecho de codigo relevante
+## Trecho de código relevante
 
 Install consolidado (`backend.py:122`):
 

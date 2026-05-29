@@ -2,19 +2,19 @@
 
 ## Em uma frase
 
-Wrapper para `dnscrypt-proxy` com catalogo curado de 11 servers
-(DoH/DoT/DNSCrypt), edicao linha-a-linha do `/etc/dnscrypt-proxy.toml`
-preservando comentarios, e migracao 1-click de `systemd-resolved` para
+Wrapper para `dnscrypt-proxy` com catálogo curado de 11 servers
+(DoH/DoT/DNSCrypt), edição linha-a-linha do `/etc/dnscrypt-proxy.toml`
+preservando comentários, e migração 1-click de `systemd-resolved` para
 `dnscrypt-proxy` como backend DNS do sistema.
 
 ## O que envolve
 
 | Item | Valor |
 |---|---|
-| **Pacote** | `vigia-dns-manager` (versao 0.4.1) |
+| **Pacote** | `vigia-dns-manager` (versão 0.4.1) |
 | **App ID** | `br.com.vigia.DnsManager` |
 | **Pacotes wrapped** | `dnscrypt-proxy` |
-| **Privilegios** | `pkexec systemctl` + `pkexec bash -c` (escrita atomica de config) |
+| **Privilégios** | `pkexec systemctl` + `pkexec bash -c` (escrita atômica de config) |
 | **Path config** | `/etc/dnscrypt-proxy/dnscrypt-proxy.toml` |
 | **Backup config** | `.vigia-backup` (chmod 0600) |
 | **Backup resolved** | `/etc/systemd/resolved.conf.vigia-resolved-backup` |
@@ -34,15 +34,15 @@ vigia_dns/
     `-- about.py
 ```
 
-> Nota historica: o codigo em `tabs/about.py` ainda fala de "Modo
-> simples (systemd-resolved DoT)" vs "Modo avancado (dnscrypt-proxy)" —
-> texto stale da v0.2. Desde v0.3 a tool e' **dnscrypt-only**. A v0.4
-> removeu blocklists e stats (ad-blocking e' melhor servido por uBlock
+> Nota histórica: o código em `tabs/about.py` ainda fala de "Modo
+> simples (systemd-resolved DoT)" vs "Modo avançado (dnscrypt-proxy)" —
+> texto stale da v0.2. Desde v0.3 a tool é **dnscrypt-only**. A v0.4
+> removeu blocklists e stats (ad-blocking é melhor servido por uBlock
 > Origin via Tool Installer).
 
-### Catalogo de 11 servers
+### Catálogo de 11 servers
 
-| Provider | Servers | Pais |
+| Provider | Servers | País |
 |---|---|---|
 | **Cloudflare** | `cloudflare` (DoH), `cloudflare-security` (1.1.1.2 malware), `cloudflare-family` (1.1.1.3 adult) | US |
 | **Quad9** | `quad9-doh-ip4-port443-filter-pri` (9.9.9.9 filtrado), `quad9-doh-ip4-nofilter-pri` (9.9.9.10) | CH |
@@ -54,7 +54,7 @@ vigia_dns/
 `default_servers()` retorna `["cloudflare", "quad9-doh-ip4-port443-filter-pri"]`.
 Cada server tem flags `no_logs`, `no_filter`, `dnssec`.
 
-### Migracao systemd-resolved -> dnscrypt-proxy
+### Migração systemd-resolved -> dnscrypt-proxy
 
 `migration.ensure_dnscrypt_active_blocking()` consolida 5 passos em UM
 `pkexec`:
@@ -69,15 +69,15 @@ Cada server tem flags `no_logs`, `no_filter`, `dnssec`.
 aponta para `127.0.0.1` ou `::1`. Detecta symlink para
 `stub-resolv.conf` (systemd) como NOT ready.
 
-### Edicao TOML preservando comentarios
+### Edição TOML preservando comentários
 
-`_read_config_lines()` le como `list[str]`. `_update_toml_key(lines,
+`_read_config_lines()` lê como `list[str]`. `_update_toml_key(lines,
 key, new_value)` faz regex `^(\s*){key}\s*=` no scope global (sem
-section). Se nao acha, insere antes da primeira `[...]`. Preserva
-indentacao e comentarios.
+section). Se não acha, insere antes da primeira `[...]`. Preserva
+indentação e comentários.
 
-Validacao anti-injection em `set_servers_blocking`: nomes devem casar
-`^[a-zA-Z0-9._\-]+$` — caso contrario rejeita.
+Validação anti-injection em `set_servers_blocking`: nomes devem casar
+`^[a-zA-Z0-9._\-]+$` — caso contrário rejeita.
 
 ### Cache dir warning fix (v0.4.1)
 
@@ -143,39 +143,39 @@ systemctl enable --now systemd-resolved
 
 ## Tabs / Funcionalidades
 
-| Tab | Descricao |
+| Tab | Descrição |
 |---|---|
-| **Status** | Hero com 4 estados: "nao instalado" / "parado" / "Quase la" (rodando mas resolv.conf nao aponta) / "Ativo e seguro". Action bar: Atualizar / Ativar dnscrypt-proxy / Restaurar systemd-resolved. Info group: servico/versao/listen address. Config group: servers ativos, require DNSSEC, require no-logs. |
-| **Provedores** | Lista os 11 servers em `Adw.ExpanderRow` com badges (DoH/DoT/DNSCrypt, no-logs, DNSSEC, no-filter, country). Aplicar -> `set_servers_blocking([id])` -> edita TOML -> restart dnscrypt-proxy. Banner amarelo se dnscrypt nao esta ativo. |
-| **Sobre** | 5 secoes markup-formatted (NB: parte do texto e' v0.2 stale). |
+| **Status** | Hero com 4 estados: "não instalado" / "parado" / "Quase lá" (rodando mas resolv.conf não aponta) / "Ativo e seguro". Action bar: Atualizar / Ativar dnscrypt-proxy / Restaurar systemd-resolved. Info group: serviço/versão/listen address. Config group: servers ativos, require DNSSEC, require no-logs. |
+| **Provedores** | Lista os 11 servers em `Adw.ExpanderRow` com badges (DoH/DoT/DNSCrypt, no-logs, DNSSEC, no-filter, country). Aplicar -> `set_servers_blocking([id])` -> edita TOML -> restart dnscrypt-proxy. Banner amarelo se dnscrypt não está ativo. |
+| **Sobre** | 5 seções markup-formatted (NB: parte do texto é v0.2 stale). |
 
 ## Quando usar
 
 - **Setup novo de privacidade**: instalar dnscrypt-proxy via Tool
   Installer + Ativar pelo DNS Manager + escolher Cloudflare + Quad9.
-- **LGPD/escritorio**: AdGuard ou Mullvad AdBlock para bloquear
-  tracking corporate no nivel DNS.
-- **Forcar DNSSEC explicito**: garantir que respostas DNS nao foram
+- **LGPD/escritório**: AdGuard ou Mullvad AdBlock para bloquear
+  tracking corporate no nível DNS.
+- **Forçar DNSSEC explícito**: garantir que respostas DNS não foram
   manipuladas no caminho.
-- **Voltar atras**: "Restaurar systemd-resolved" se outra tool exigir
+- **Voltar atrás**: "Restaurar systemd-resolved" se outra tool exigir
   o default Fedora.
 
-## Limitacoes conhecidas
+## Limitações conhecidas
 
 - Requer `dnscrypt-proxy` instalado (rpm-ostree -> reboot). Hero mostra
-  "nao instalado" se ausente.
+  "não instalado" se ausente.
 - Editar `/etc/dnscrypt-proxy/dnscrypt-proxy.toml` direto durante uso
   da tool pode causar diff em key insertion (Vigia usa regex line-based,
-  nao re-serializa o TOML inteiro).
-- NetworkManager pode reescrever `/etc/resolv.conf` em reconexao se
-  config da conexao nao tem `ignore-auto-dns yes`.
+  não re-serializa o TOML inteiro).
+- NetworkManager pode reescrever `/etc/resolv.conf` em reconexão se
+  config da conexão não tem `ignore-auto-dns yes`.
 - Anonymized DNS Relay (`anon-cs-fr`) listado mas requer setup
   adicional de `anonymized_dns` no .toml (v0.2.1+).
-- Texto da aba "Sobre" e' stale (fala de Modo simples / Modo avancado da v0.2).
+- Texto da aba "Sobre" é stale (fala de Modo simples / Modo avançado da v0.2).
 
-## Trecho de codigo relevante
+## Trecho de código relevante
 
-Idempotencia em ensure_dnscrypt (`migration.py:103`):
+Idempotência em ensure_dnscrypt (`migration.py:103`):
 
 ```python
 def ensure_dnscrypt_active_blocking() -> tuple[bool, str]:
@@ -184,7 +184,7 @@ def ensure_dnscrypt_active_blocking() -> tuple[bool, str]:
     # ... script pkexec ...
 ```
 
-Edicao TOML preservando comentarios (`dnscrypt_backend.py:188`):
+Edição TOML preservando comentários (`dnscrypt_backend.py:188`):
 
 ```python
 def _update_toml_key(lines: list[str], key: str, new_value: str) -> list[str]:
@@ -208,7 +208,7 @@ def _update_toml_key(lines: list[str], key: str, new_value: str) -> list[str]:
     return out
 ```
 
-Validacao anti-injection (`dnscrypt_backend.py:326`):
+Validação anti-injection (`dnscrypt_backend.py:326`):
 
 ```python
 def set_servers_blocking(server_names: list[str]) -> tuple[bool, str]:
