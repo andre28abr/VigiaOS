@@ -1033,14 +1033,19 @@ gtk-update-icon-cache ~/.local/share/icons/hicolor 2>/dev/null || true
 update-desktop-database ~/.local/share/applications 2>/dev/null || true
 ```
 
-### 8.3 Bootstrap.sh (one-shot)
+### 8.3 install/bootstrap.sh (one-shot, auto-detecta a plataforma)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/andre28abr/VigiaOS/main/bootstrap.sh | bash
-systemctl reboot
+curl -fsSL https://raw.githubusercontent.com/andre28abr/VigiaOS/main/install/bootstrap.sh | bash
+# Em sistema atômico: systemctl reboot ao final
 ```
 
-Instala layered deps + clona repo + pip installs + symlinks + .desktop.
+Detecta atomic (`/run/ostree-booted`) vs Workstation e usa `rpm-ostree`
+ou `dnf`. Instala deps + backends (lynis/clamav/…) + clona o repo + pip
+installs as 16 tools + registra `.desktop`/ícones no GNOME + Flatpaks de
+privacidade. **Não liga serviços** (tor/fail2ban/dnscrypt off — opt-in
+nas tools). Guias por plataforma em `install/silverblue/` e
+`install/workstation/`.
 
 ---
 
@@ -1678,7 +1683,7 @@ decisão de escopo no Tool Installer. Commits `7a32a93`..`b38655b`.
   opt-in, sem UI") corrigidas, e o §5.11 (que descrevia um catálogo
   de ~30 ferramentas que não batia com o `catalog.py` real).
 
-### 2026-05-30 — B5 (rename) + B1 (modular) + B4 (trim) + B3 (compat Workstation)
+### 2026-05-30 — B5 + B1 + B4 + B3 + B2/B6 (sistema de instalação)
 
 Início da execução do backlog §10.6. Commits `0471e85`..`72ad85f`.
 
@@ -1731,6 +1736,20 @@ Início da execução do backlog §10.6. Commits `0471e85`..`72ad85f`.
   de sugestão "rpm-ostree install X" em mensagens de algumas tools
   (antivirus/hardening/file-integrity/rootkit/dns) ainda fixos —
   cosmético, polish futuro (#94).
+- **B2 + B6 — Sistema de instalação (#89 + #93, feito)**: reescrito o
+  bootstrap como **`install/bootstrap.sh` único que auto-detecta** a
+  plataforma (`/run/ostree-booted`) e usa `rpm-ostree` ou `dnf` — em vez
+  de dois scripts quase iguais (mais DRY, casa com o espírito do B6).
+  Default escolhido pelo André: **instala as 16 tools + backends
+  (lynis/clamav/…) + Flatpaks de privacidade, mas NÃO liga serviço
+  nenhum** (tor/fail2ban/dnscrypt off — opt-in nas tools = minimum
+  surface/LGPD). O `bootstrap.sh` raiz (que só layerava deps ofensivas e
+  nem instalava as tools) foi **removido**. Criadas
+  `install/silverblue/README.md` + `install/workstation/README.md`
+  (guias por plataforma que o B6 pedia) + matriz de compatibilidade no
+  README raiz. §8.3 corrigido (URL + descrição batem com o real agora).
+  Tool Installer segue útil (extensões + add/remove), só não é mais a
+  porta de entrada obrigatória.
 
 ---
 
@@ -1969,7 +1988,7 @@ clica, roda isolado.
 - **Decisão**: a doc descreve instalar via RPM por tool (COPR) ou via
   `pip install -e tools/<tool>`? Definir o caminho oficial pro user.
 
-#### B2 — First-run instala todas as deps (repensar o Installer) — #89
+#### B2 — First-run instala todas as deps (repensar o Installer) — #89 ✅ (ver §9 2026-05-30)
 
 André: ao instalar pela 1ª vez, já instalar **todos** os pacotes que o
 Hub precisa. Aí o Tool Installer fica meio desnecessário. Talvez um
@@ -2050,7 +2069,7 @@ podem ser redundantes. "Verificar com calma."
   **VigiaOS**"? *Recomendação a confirmar*: app visível = "Vigia Hub";
   subtítulo = "VigiaOS"; tagline das tools = "parte do VigiaOS".
 
-#### B6 — Organização do repo: separação por plataforma SEM duplicar código — #93
+#### B6 — Organização do repo: separação por plataforma SEM duplicar código — #93 ✅ (feito como 1 bootstrap auto-detect + READMEs por plataforma; ver §9 2026-05-30)
 
 **Decidido com o André em 2026-05-29** (não é mais pergunta aberta).
 Motivação dele: o usuário precisa **entender de relance** o que roda no
