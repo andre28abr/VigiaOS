@@ -57,23 +57,23 @@ Em 2026-05-28 adicionada **Deployments Manager** (rpm-ostree GUI).
 
 | # | Ferramenta | Versão | Stack | Status |
 |---|---|---|---|---|
-| 1 | **Vigia Hub** | v0.5.10 | Python + GTK4 + libadwaita | 🟢 3 painéis + autostart XDG + tray (subprocess GTK3) + lock Polkit |
+| 1 | **Vigia Hub** | v0.7.1 | Python + GTK4 + libadwaita | 🟢 3 painéis + autostart XDG + tray (quick actions, subprocess GTK3) + lock Polkit + Ajuda (manuais MD) |
 | 2 | **Activity Log (core)** | v0.7.1 (Rust) | Rust + Ratatui + Crossterm | 🟢 3 sources + correlations + JsonBundle |
 | 3 | **Activity Log (GUI)** | v0.1.0 | Python + GTK4 | 🟢 Frontend do core Rust via JSON |
 | 4 | **Privacy Controls** | v0.3.1 | Python + GTK4 | 🟢 13 toggles user+system scope |
 | 5 | **SELinux Manager** | v0.2.0 | Python + GTK4 | 🟢 6 tabs + pt-BR + audit2allow + lazy tabs |
 | 6 | **Firewall Manager** | v0.1.0 | Python + GTK4 | 🟡 Status + zones CRUD |
 | 7 | **Network Monitor** | v0.1.0 | Python + GTK4 | 🟡 Conexões + modo admin + auto-refresh smart |
-| 8 | **Hardening Checks** | v0.1.2 | Python + GTK4 | 🟢 Lynis wrapper + perfil Silverblue |
+| 8 | **Hardening Checks** | v0.1.4 | Python + GTK4 | 🟢 Lynis wrapper + perfil Silverblue |
 | 9 | **Reports** | v0.1.1 | Python + GTK4 + Jinja2 + WeasyPrint | 🟢 PDF/HTML LGPD via Activity Log JSON |
-| 10 | **File Integrity** | v0.2.0 | Python + GTK4 | 🟢 AIDE (sistema) + Hash ad-hoc (user) — 6 tabs |
+| 10 | **File Integrity** | v0.2.1 | Python + GTK4 | 🟢 AIDE (sistema) + Hash ad-hoc (user) — 6 tabs |
 | 11 | **Tool Installer** | v0.2.0 | Python + GTK4 | 🟢 Catálogo rpm-ostree + Extensoes navegador (FOSS) |
 | 12 | **DNS Manager** | v0.4.1 | Python + GTK4 | 🟢 dnscrypt-proxy only — 11 servers curados |
 | 13 | **Capabilities Inspector** | v0.1.0 | Python + GTK4 | 🟢 getcap audit + catálogo pt-BR de 41 caps |
 | 14 | **Antivirus** | v0.1.1 | Python + GTK4 | 🟢 ClamAV wrapper — substitui clamtk |
-| 15 | **Dashboard** | v0.2.0 | Python + GTK4 + Cairo | 🟢 Sistema em tempo real + per-process I/O + alertas |
+| 15 | **Dashboard** | v0.2.1 | Python + GTK4 + Cairo | 🟢 Sistema em tempo real + per-process I/O + alertas |
 | 16 | **Rootkit Scanner** | v0.2.0 | Python + GTK4 | 🟢 chkrootkit + rkhunter — pattern PreferencesGroup |
-| 17 | **Deployments Manager** | v0.1.0 | Python + GTK4 | 🟢 rpm-ostree deployments (rollback/pin/cleanup) + labels/notas LGPD |
+| 17 | **Deployments Manager** | v0.1.1 | Python + GTK4 | 🟢 rpm-ostree deployments (rollback/pin/cleanup) + labels/notas LGPD |
 
 **Removidas na limpeza 2026-05-27** (foco LGPD/escritorio):
 - ~~Network Scanner (nmap)~~ — fora do escopo + risco etico
@@ -218,7 +218,7 @@ build system (`pyproject.toml`, `Cargo.toml`). Versionam separadamente.
 
 ## 5. Catálogo de ferramentas — estado atual
 
-### 5.1 Vigia Hub (`tools/vigia-hub/`, v0.5.0)
+### 5.1 Vigia Hub (`tools/vigia-hub/`, v0.7.1)
 
 **Função**: Launcher mestre. Um único ícone no menu GNOME que abre tudo.
 
@@ -234,7 +234,6 @@ build system (`pyproject.toml`, `Cargo.toml`). Versionam separadamente.
 │  ⚙  │  PRIVACIDADE  │  [Conteudo embedded da tool]      │
 │      │  • Privacy    │                                   │
 │      │  • DNS        │                                   │
-│      │  • VPN        │                                   │
 │      │  DEFESA       │                                   │
 │      │  • Firewall   │                                   │
 │      │  • SELinux    │                                   │
@@ -250,10 +249,11 @@ nav fina    sidebar média          content rico
 (ícones)    (categorizada)         (embedded ou detalhe)
 ```
 
-**Categorias** (`registry.py`):
-- `monitoramento` — Activity Log, NetMon
-- `privacidade` — Privacy Controls, DNS, VPN
-- `defesa` — Firewall, SELinux, Hardening Checks, File Integrity, Capabilities
+**Categorias** (`registry.py`, 14 tools na sidebar):
+- `monitoramento` — Dashboard, Activity Log, NetMon
+- `privacidade` — Privacy Controls, DNS
+- `defesa` — SELinux, Firewall, Hardening Checks, File Integrity, Capabilities, Rootkit Scanner, Antivirus
+- `sistema` — Deployments Manager
 - `relatorios` — Reports
 
 **Tool Installer** (categoria à parte, ícone fixo na nav fina): aparece como
@@ -273,8 +273,8 @@ disponível, o Hub importa via `importlib.import_module()` + cache, e chama
 **Sub-bar WRAPPED_PACKAGES**: `toolbar.add_top_bar()` com label
 "Wrapper de:" + pills com nome do(s) pacote(s) original(is). Aparece abaixo
 do header principal, antes do conteúdo da tool. Dá transparência ao
-usuário sobre o que está sendo envolvido (ex: `lynis`, `wireguard-tools`,
-`systemd-resolved`).
+usuário sobre o que está sendo envolvido (ex: `lynis`, `aide`,
+`dnscrypt-proxy`).
 
 ---
 
@@ -333,7 +333,7 @@ Python.
 
 ---
 
-### 5.4 Vigia Privacy Controls (`tools/privacy-controls/`, v0.3.0)
+### 5.4 Vigia Privacy Controls (`tools/privacy-controls/`, v0.3.1)
 
 **Função**: 13 toggles de privacidade em uma única janela.
 
@@ -398,7 +398,7 @@ confirmação explícita.
 
 ---
 
-### 5.7 Vigia Network Monitor (`tools/netmon-gui/`, v0.1.0)
+### 5.7 Vigia Network Monitor (`tools/netmon-gui/`, v0.1.1)
 
 **Função**: Conexões TCP/UDP em tempo real.
 
@@ -417,7 +417,7 @@ auto-refresh smart (pausa quando modo admin ON).
 
 ---
 
-### 5.8 Vigia Hardening Checks (`tools/hardening-checks/`, v0.1.2)
+### 5.8 Vigia Hardening Checks (`tools/hardening-checks/`, v0.1.4)
 
 **Função**: Wrapper de Lynis. Roda `lynis audit system`, parseia
 `/var/log/lynis-report.dat`, renderiza findings categorizados.
@@ -465,14 +465,18 @@ com `chmod 0600`.
 
 ---
 
-### 5.10 Vigia File Integrity (`tools/file-integrity/`, v0.1.3)
+### 5.10 Vigia File Integrity (`tools/file-integrity/`, v0.2.1)
 
-**Função**: Wrapper de AIDE (Advanced Intrusion Detection Environment).
+**Função**: Wrapper de AIDE (Advanced Intrusion Detection Environment) para
+integridade de sistema, **+ hashing ad-hoc** (SHA-256/512/1, MD5) e
+baseline-diff de diretórios em escopo de usuário — fusão do antigo Hash Tools
+(merge na v0.2.0, task #68).
 
 **Stack**: Python + PyGObject + GTK4 + libadwaita.
 
-**Tabs**: Status (+ controles do perfil Silverblue) + Init/Update + Check +
-Histórico + Sobre.
+**Tabs** (6): Status (AIDE) + Mudanças (AIDE) + Hash + Verificar + Baseline +
+Sobre. As 3 últimas (Hash/Verificar/Baseline) vieram do merge com Hash Tools —
+escopo de usuário, sem root, complementam o AIDE de sistema.
 
 **Perfil Silverblue customizado** (`3bc9057`): AIDE padrão do Fedora vasculha
 `/usr` que é read-only no Silverblue (ruído inútil). Perfil custom foca em:
@@ -493,14 +497,17 @@ voláteis por design, geram 10+ "modified" por check.
 
 **LGPD permissions**: report files `chmod 0600`.
 
-**Wrapper de**: `aide`.
+**Wrapper de**: `aide` (AIDE, sistema) + `hashlib` stdlib (hashing/baseline
+ad-hoc do usuário, sem subprocess).
 
 ---
 
-### 5.11 Vigia Tool Installer (`tools/tool-installer/`, v0.1.0)
+### 5.11 Vigia Tool Installer (`tools/tool-installer/`, v0.2.0)
 
 **Função**: Catálogo curado de ferramentas de segurança instaláveis via
-`rpm-ostree install` ou `flatpak install`.
+`rpm-ostree install` ou `flatpak install`. **v0.2** adicionou a aba
+**Extensões de Navegador** (recomendações FOSS: uBlock Origin, Privacy Badger,
+ClearURLs, LibRedirect) que abrem direto na AMO/Chrome Web Store.
 
 **Stack**: Python + PyGObject + GTK4 + libadwaita.
 
@@ -526,72 +533,37 @@ ferramentas de uso diário.
 
 ---
 
-### 5.12 Vigia VPN Manager (`tools/vpn-manager/`, v0.1.1)
+### 5.12 Vigia DNS Manager (`tools/dns-manager/`, v0.4.1)
 
-**Função**: Wrapper GUI de WireGuard (`wg-quick`).
-
-**Stack**: Python + PyGObject + GTK4 + libadwaita.
-
-**Tabs**: Status + Perfis + Sobre.
-
-**Operações**:
-- Listar configs em `/etc/wireguard/*.conf` (via `pkexec ls`)
-- Conectar (`pkexec wg-quick up <name>`)
-- Desconectar (`pkexec wg-quick down <name>`)
-- Importar perfil (cola conteúdo de `.conf` → salva em
-  `/etc/wireguard/<name>.conf` com heredoc UUID-delimited)
-
-**Dialog de import — paste fallback** (polish v0.2, `e5011e4`):
-- Original: `TextView` não recebia Ctrl+V porque dialog abria sem keyboard
-  focus.
-- Fix: `set_editable(True)`, `set_can_focus(True)`, `set_accepts_tab(False)`,
-  botão "Colar" no header do textarea com fallback via
-  `Gdk.Display.get_clipboard().read_text_async()`, `grab_focus` inicial no
-  `name_entry` via `GLib.idle_add`.
-
-**Heredoc UUID-delimited**: para escrever config sem injeção shell,
-`bash -c "cat > /etc/wireguard/$NAME.conf << '$UUID'\n$CONTENT\n$UUID"`. UUID
-random a cada call evita colisão se conteúdo tiver "EOF" literal.
-
-**SVG**: tunnel concept (2 endpoints + curva + lock no meio).
-
-**Wrapper de**: `wireguard-tools` (binários `wg`, `wg-quick`).
-
----
-
-### 5.13 Vigia DNS Manager (`tools/dns-manager/`, v0.1.0)
-
-**Função**: Wrapper de `systemd-resolved` + `resolvectl`. Configura DNS
-over TLS (DoT) com providers curados.
+**Função**: DNS focado em privacidade — wrappa o `dnscrypt-proxy` (DoH/DNSCrypt
+com DNSSEC + no-logs). A v0.3 removeu o "modo simples" (systemd-resolved);
+desde então é **dnscrypt-proxy only**.
 
 **Stack**: Python + PyGObject + GTK4 + libadwaita.
 
-**Tabs**: Status (DNS atual, DoT enabled?) + Provedores (catálogo) + Sobre.
+**Tabs** (3): Status + Provedores + Sobre. (v0.4.0 removeu Blocklists e Stats —
+bloqueio de ads/trackers é trabalho de extensão de navegador, não de DNS.)
 
-**Catálogo (9 providers)**:
-| Provider | Variantes |
-|---|---|
-| Cloudflare | Standard, Malware-blocking, Family |
-| Quad9 | Standard |
-| AdGuard | Standard, Family |
-| Mullvad | Standard, Adblock |
-| Google | Standard |
+**Catálogo (11 servers curados)** em `dnscrypt_catalog.py`: Cloudflare
+(Standard/Security/Family), Quad9 (Standard/unfiltered), AdGuard (DNS/Family),
+Mullvad (Standard/AdBlock), Quad9 DNSCrypt e Anonymized Relay. Filtros +
+1-click apply.
 
-**Padrão**: edita `/etc/systemd/resolved.conf` (com backup automático
-`.vigia-backup` antes de cada write) + `pkexec systemctl restart
-systemd-resolved`.
+**Migração 1-click** (`migration.py`): "Ativar dnscrypt-proxy" faz backup do
+`systemd-resolved`, aponta `/etc/resolv.conf` → 127.0.0.1 e sobe o serviço;
+"Restaurar systemd-resolved padrão" reverte. Tudo via `pkexec`.
 
-**Particularidades de naming**: tem `resolvers.py` (catálogo de providers)
-E `tabs/resolvers.py` (tab UI). Para evitar colisão de import, criou-se
-`_resolvers_module.py` como wrapper de import.
+**LGPD/privacidade**: query log off por default (minimum-surface); quando
+ligado fica local; backups de config `chmod 0600`; recomenda servers no-logs
+(Quad9, Mullvad, Anonymized Relay).
 
-**SVG**: globe with meridians + lock no centro.
+**Pré-requisito**: `dnscrypt-proxy` instalado (via Tool Installer ou
+`rpm-ostree install dnscrypt-proxy`).
 
-**Wrapper de**: `systemd-resolved` (binário `resolvectl`).
+**Wrapper de**: `dnscrypt-proxy` (config TOML) + `systemd-resolved` (restore).
 
 ---
-
-### 5.14 Vigia Capabilities Inspector (`tools/capabilities-inspector/`, v0.1.0)
+### 5.13 Vigia Capabilities Inspector (`tools/capabilities-inspector/`, v0.1.0)
 
 **Função**: Audit de Linux capabilities. Lista binários com capabilities
 setadas via `getcap -r /`, mostra detalhes pt-BR de cada capability.
@@ -616,7 +588,7 @@ power tools pra isso.
 
 ---
 
-### 5.15 Vigia Antivirus (`tools/antivirus/`, v0.1.0)
+### 5.14 Vigia Antivirus (`tools/antivirus/`, v0.1.1)
 
 **Função**: Antivirus on-demand para Linux desktop, wrapper de ClamAV.
 
@@ -647,145 +619,7 @@ com `chmod 0600` (LGPD).
 
 ---
 
-### 5.16 Vigia Network Scanner (`tools/network-scanner/`, v0.1.0)
-
-**Função**: GUI moderna para nmap — discovery e port scan com perfis
-pré-definidos.
-
-**Stack**: Python + PyGObject + GTK4 + libadwaita.
-
-**Tabs**: Scan (target + perfil + run) + Hosts (histórico) + Perfis
-(catálogo) + Sobre.
-
-**6 perfis** em `profiles.py` (dataclass `ScanProfile`):
-| Perfil | Args | Root? | Velocidade | Intrusividade |
-|---|---|---|---|---|
-| Discovery (ping scan) | `-sn` | não | rápido | baixo |
-| Quick (top 100) | `-F` | não | rápido | baixo |
-| Standard (top 1000 + version) | `-sV` | não | médio | médio |
-| Stealth (SYN scan) | `-sS -sV` | sim | médio | médio |
-| Aggressive (-A) | `-A` | sim | lento | alto |
-| Full (todas) | `-p- -sV` | não | lento | alto |
-
-**Parse XML do nmap**: `nmap -oX -` → `ElementTree.fromstring()` → estrutura
-`Host(address, hostname, status, ports)` com `Port(port, protocol, state,
-service, product, version)`.
-
-**Validação de target**: regex `^[a-zA-Z0-9.\-_:/, ]+$` rejeita chars de
-shell injection. Aceita IPv4, IPv6, hostname, CIDR.
-
-**Uso ético**: banner no header da aba Scan + seção dedicada na aba Sobre
-explicando art. 154-A do CP (Lei Carolina Dieckmann).
-
-**Histórico**: em `~/.local/share/vigia-netscan/scan-<timestamp>.json`
-com `chmod 0600` (inclui hosts + portas + versões detectadas).
-
-**SVG**: radar (círculos concêntricos) com nós descobertos + cone de varredura.
-
-**Wrapper de**: `nmap`.
-
----
-
-### 5.17 Vigia Firmware Analyzer (`tools/firmware-analyzer/`, v0.1.0)
-
-**Função**: GUI para binwalk — análise de firmware de roteadores, IoT,
-cameras IP e binários genéricos.
-
-**Stack**: Python + PyGObject + GTK4 + libadwaita.
-
-**Tabs**: Analisar (signatures) + Extrair + Entropia + Sobre.
-
-**Operações** (sem pkexec — binwalk roda em arquivos que o user lê):
-- `analyze_blocking(path)` → `binwalk <path>` → parse output texto →
-  `list[Signature(offset, offset_hex, description)]`
-- `extract_blocking(path, outdir)` → `binwalk -e --directory <out> <path>`
-  → conta arquivos em `_<basename>.extracted/`
-- `entropy_blocking(path)` → `binwalk -E --nplot` → parse edges →
-  `list[EntropyPoint(offset, entropy)]`
-
-**Entropia (qualitativa)** — labels visuais por faixa:
-- <0.3: "padrão repetitivo" (verde)
-- 0.3-0.6: "dados estruturados" (verde)
-- 0.6-0.85: "dados densos" (dim)
-- >0.95: "compactado/encryptado" (warning)
-
-**Casos de uso documentados na aba Sobre**: auditar firmware antes de
-instalar em câmeras IP / roteadores num escritório (LGPD context).
-
-**Limitação v0.1**: gráfico visual de entropia (Cairo) fica para v0.2.
-v0.1 mostra apenas edges com labels qualitativos.
-
-**SVG**: chip em camadas (firmware → bytes → arquivos extraídos → report).
-
-**Wrapper de**: `binwalk`.
-
----
-
-### 5.18 Vigia Hash Tools (`tools/hash-tools/`, v0.1.0)
-
-**Função**: Cálculo e verificação de hashes criptográficos, + baseline
-diff de diretório.
-
-**Stack**: Python + PyGObject + GTK4 + libadwaita.
-
-**Tabs**: Hash (single file) + Verificar (compare expected vs computed) +
-Baseline (snapshot + diff) + Sobre.
-
-**Algoritmos** (`hashlib` stdlib, sem subprocess):
-- SHA-256 (default)
-- SHA-512
-- SHA-1 (depreciado, só compat legacy)
-- MD5 (quebrado, só compat legacy)
-
-**Hash streaming**: lê em chunks de 1 MB (`f.read(1 << 20)`) — funciona
-em arquivos grandes sem carregar tudo na memória.
-
-**Baseline JSON format**:
-```json
-{
-  "directory": "/etc",
-  "algorithm": "sha256",
-  "created_at": "2026-05-25T14:30:00",
-  "file_count": 1247,
-  "hashes": {
-    "passwd": "abc123...",
-    "hostname": "def456...",
-    ...
-  }
-}
-```
-
-**Diff visual**: 3 categorias com badges colorides:
-- MOD (warning/amarelo) — modificado
-- ADD (success/verde) — adicionado
-- REM (error/vermelho) — removido
-
-Limit de 30 paths visíveis por categoria + "... +N more" para não estourar.
-
-**Complementar a `vigia-integrity` (AIDE)**: AIDE é mais robusto (mtime,
-size, perms, inode, link target, attrs), `vigia-hash` é mais simples
-(só conteúdo). Use AIDE para `/etc/` + system files; use Hash Tools para
-projetos/diretórios específicos.
-
-**Copy to clipboard**: 1 clique no botão "Copiar" → hash no clipboard
-via `Gdk.Display.get_clipboard().set(text)`.
-
-**Limitação v0.1**: `hashdeep` paralelo (multi-thread) chega em v0.2.
-v0.1 usa `hashlib` single-threaded — pode ser lento em diretórios com
-100k+ arquivos.
-
-**Baselines**: `~/.local/share/vigia-hash/baseline-<dirname>-<ts>.json`
-com `chmod 0600` (LGPD).
-
-**SVG**: documento → função hash (caixa com `#`) → digest (blocos hex).
-
-**Wrapper de**: `coreutils` (sha256sum/512/1, md5sum). `hashdeep` foi
-removido dos repos do Fedora recentes; v0.2 vai usar `md5deep` (contém
-binário `hashdeep`) ou multiprocessing em Python puro.
-
----
-
-### 5.19 Vigia Dashboard (`tools/dashboard/`, v0.1.0)
+### 5.15 Vigia Dashboard (`tools/dashboard/`, v0.2.1)
 
 **Função**: Dashboard de sistema em tempo real — CPU, memória, disco
 I/O, rede e processos com gráficos visuais.
@@ -869,6 +703,53 @@ dashboard é "agora", não "histórico".
 
 **Wrapper de**: `procfs` (kernel interface, sem pacote externo).
 Opcional: `lm_sensors` para sensores extras.
+
+---
+
+### 5.16 Vigia Rootkit Scanner (`tools/rootkit-scanner/`, v0.2.0)
+
+**Função**: Wrapper unificado de **chkrootkit** + **Rootkit Hunter (rkhunter)**.
+v0.2.0 reescrito do zero com o mesmo pattern PreferencesGroup do Antivirus.
+
+**Stack**: Python + PyGObject + GTK4 + libadwaita.
+
+**Tabs** (4): chkrootkit (scan rápido ~30s) + Rootkit Hunter (scan completo
+2-5min) + Histórico + Sobre.
+
+**Streaming**: scan async via `subprocess.Popen` lendo stdout linha-a-linha em
+thread + `GLib.idle_add` (igual Antivirus). Saída estilo terminal.
+
+**Histórico/LGPD**: reports JSON em `~/.local/share/vigia-rootkit/scans/` com
+`chmod 0600`.
+
+**Pré-requisitos**: `chkrootkit` + `rkhunter` (instaláveis via Tool Installer).
+
+**Wrapper de**: `chkrootkit`, `rkhunter`.
+
+---
+
+### 5.17 Vigia Deployments Manager (`tools/deployments-manager/`, v0.1.1)
+
+**Função**: GUI para os **deployments do `rpm-ostree`** — os snapshots
+imutáveis que aparecem no GRUB. Lista (atual/rollback/staged/pinados),
+rollback, pin/unpin, cleanup e alerta de `/boot` cheio.
+
+**Stack**: Python + PyGObject + GTK4 + libadwaita.
+
+**Tabs**: Deployments (lista + ações) + Limpeza (cleanup + alerta `/boot`) +
+Sobre.
+
+**Operações** (elevadas via `pkexec`): `rpm-ostree rollback`,
+`rpm-ostree cleanup -p -r -m`, pin/unpin. Alerta de `/boot`: banner amarelo
+>70%, vermelho >85%.
+
+**Labels + notas LGPD**: rpm-ostree não suporta nome custom nativo; o Vigia
+guarda labels/notas por checksum em `~/.config/vigia-deployments/state.json`
+(`chmod 0600`) — display-only, como evidência de processo de mudanças.
+
+**Histórico nativo**: checksums + timestamps do próprio rpm-ostree.
+
+**Wrapper de**: `rpm-ostree`.
 
 ---
 
@@ -1048,9 +929,10 @@ update-desktop-database ~/.local/share/applications 2>/dev/null || true
 Problema: `pip install --user` instala em `~/.local/bin/`, sudo não vê.
 Solução: symlink em `/usr/local/bin/` (mutável no Silverblue):
 ```bash
-for tool in vigia-hub vigia-privacy vigia-selinux vigia-firewall vigia-netmon \
-            vigia-hardening vigia-reports vigia-integrity vigia-installer \
-            vigia-vpn vigia-dns vigia-capabilities vigia-activity; do
+for tool in vigia-hub vigia-dashboard vigia-privacy vigia-selinux vigia-firewall \
+            vigia-netmon vigia-hardening vigia-reports vigia-integrity vigia-installer \
+            vigia-dns vigia-caps vigia-log-gui vigia-antivirus vigia-rootkit \
+            vigia-deployments; do
   sudo ln -sf "$HOME/.local/bin/$tool" /usr/local/bin/$tool
 done
 ```
@@ -1060,7 +942,7 @@ done
 ## 7. Como adicionar uma ferramenta nova
 
 1. **Cria o diretório** `tools/<nome>/`
-2. **Copia estrutura** de uma ferramenta existente (e.g., `vpn-manager` se
+2. **Copia estrutura** de uma ferramenta existente (e.g., `dns-manager` se
    for tool simples, ou `selinux-gui` se vai ter muitas tabs)
 3. **Adapta** `pyproject.toml` (nome, version, entry_point),
    `__init__.py` (`__app_id__`, `WRAPPED_PACKAGES`)
@@ -1099,14 +981,13 @@ sudo rpm-ostree install \
     python3-gobject python3-pip \
     libadwaita gtk4 \
     aide lynis \
-    wireguard-tools \
-    systemd-resolved \
+    dnscrypt-proxy \
     clamav clamav-update \
-    nmap binwalk
+    chkrootkit rkhunter
 systemctl reboot
 
-# Nota: hashdeep foi removido dos repos do Fedora. Hash Tools v0.1
-# usa hashlib do Python puro — nao precisa instalar nada.
+# Nota: o hashing ad-hoc (aba Hash do File Integrity) usa hashlib do Python
+# puro — nao precisa instalar nada. AIDE cuida do baseline de integridade.
 ```
 
 (`reports/` requer adicional `python3-jinja2 python3-weasyprint` — instalar
@@ -1135,7 +1016,7 @@ done
 # Symlink em /usr/local/bin para acesso via sudo
 for tool in vigia-hub vigia-privacy vigia-selinux vigia-firewall vigia-netmon \
             vigia-hardening vigia-reports vigia-integrity vigia-installer \
-            vigia-dns vigia-capabilities vigia-log-gui \
+            vigia-dns vigia-caps vigia-log-gui \
             vigia-antivirus vigia-dashboard vigia-rootkit \
             vigia-deployments; do
   sudo ln -sf "$HOME/.local/bin/$tool" /usr/local/bin/$tool
@@ -1828,52 +1709,16 @@ VM (editable install — codigo reflete sem reinstalar; nao mudou entrypoint).
 - "Bundles" pré-definidos (Network Pro, Forensics Starter, etc.)
 - Status: "Instalado / Pendente / Disponível" por entry
 
-**VPN Manager v0.2+**:
-- Auto-connect em redes específicas (SSID-based)
-- Stats: bytes in/out por sessão
-- Suporte OpenVPN (atualmente só WireGuard)
-
-**DNS Manager v0.2+** — Modo avançado opt-in via `dnscrypt-proxy`:
-
-A v0.1 wrappa apenas `systemd-resolved` (DoT, 9 providers curados). A
-v0.2 adiciona um **switch no topo** para alternar entre dois backends:
-
-- **Modo simples** (default, atual): `systemd-resolved`. Ideal para user
-  casual. DoT + providers pré-curados. Sem blocklists, sem stats.
-- **Modo avançado** (opt-in): `dnscrypt-proxy`. Substitui o resolver
-  default em `127.0.0.1:53`. Mais features, mais complexo.
-
-Features do modo avançado (somente `dnscrypt-proxy` cobre):
-
-- **DoH** (DNS-over-HTTPS, porta 443) — indistinguível de HTTPS normal,
-  passa por censura/inspecao de rede. systemd-resolved só faz DoT.
-- **DNSCrypt** (protocolo próprio) — alternativa madura ao DoT/DoH
-- **Blocklists locais** (Pi-hole-like): formato `.txt` linha-por-linha
-  com domínios bloqueados (`doubleclick.net`, `googletagmanager.com`,
-  etc.). Util para escritório que quer **bloquear tracking corporate**
-  sem rodar Pi-hole em hardware separado.
-- **Anonymized DNS**: relay servers entre user e resolver — esconde o
-  IP do user do resolver final (~Tor-light para DNS). Util para LGPD-
-  paranoia.
-- **Stats**: queries answered / blocked / cached (últimas 24h) com
-  histórico por domínio. UI estilo Pi-hole dashboard mini.
-- **DNSSEC validation toggle** explícito (default ON).
-
-Implementação:
-- Backend novo `dnscrypt_backend.py` paralelo ao `backend.py` atual
-- UI condicional: tabs `Status`, `Provedores`, `Sobre` se adaptam ao
-  modo ativo (modo avançado adiciona tabs `Blocklists` e `Stats`)
-- Migração sem perda: backup do `/etc/systemd/resolved.conf` antes
-  de ativar dnscrypt; rollback com 1 click
-- Detecção automática: se `dnscrypt-proxy` não está instalado, modo
-  avançado fica desabilitado com tooltip "instalar via Vigia Tool
-  Installer ou `rpm-ostree install dnscrypt-proxy`"
-
-Notas:
-- `dnscrypt-proxy` foi REMOVIDO do catálogo do Tool Installer (estava
-  em "privacidade") porque será **gerenciado pelo DNS Manager v0.2+**.
-  Mesmo padrão que `htop`/`iotop` que ganharam nota "cobertos pelo
-  Dashboard" — evita duplicação de UX.
+**DNS Manager v0.5+** (backend já é `dnscrypt-proxy` desde a v0.4.1 — DoH +
+DNSCrypt + DNSSEC, 3 abas Status/Provedores/Sobre):
+- **Blocklists locais** (Pi-hole-like) opcionais — `.txt` linha-por-linha
+  (`doubleclick.net`, `googletagmanager.com`, …) para bloquear tracking
+  corporate sem rodar Pi-hole em hardware separado. Existiram nas v0.2-v0.3,
+  removidas na v0.4.0 por complexidade; podem voltar como opt-in.
+- **Anonymized DNS**: relay servers entre user e resolver — esconde o IP
+  do user do resolver final (~Tor-light para DNS). Útil para LGPD-paranoia.
+- **Stats**: queries answered / blocked / cached, estilo Pi-hole mini
+  (também removidas na v0.4.0; voltariam junto das blocklists).
 
 **Capabilities Inspector v0.2+**:
 - Modificação de capabilities (`setcap`) com confirmação forte
@@ -1924,8 +1769,10 @@ Notas:
 
 ### 10.2 Ferramentas novas planejadas (post-v0.1)
 
-**Antivirus / Network Scanner / Firmware Analyzer / Hash Tools** — IMPLEMENTADAS
-no ciclo 2026-05-25 (security toolkit). Roadmap delas em §10.1 acima.
+**Antivirus** — IMPLEMENTADO no ciclo 2026-05-25 (security toolkit); roadmap
+em §10.1 acima. Network Scanner, Firmware Analyzer e Hash Tools nasceram no
+mesmo ciclo mas foram removidos/mergeados depois (ver §2 e a lista de
+"Removidas" na §1) — só o Antivirus permanece.
 
 **Vigia Container Audit** (v0.5 alvo):
 - Audit de containers Podman/Docker rodando
@@ -2261,12 +2108,12 @@ sudo install -m 0755 target/release/vigia-log /usr/local/bin/vigia-log
 cd tools/<nome>
 pip install --user -e .
 
-# Symlinks sudo-friendly (todos os 18 entrypoints)
+# Symlinks sudo-friendly (todos os 16 entrypoints)
 for tool in vigia-hub vigia-privacy vigia-selinux vigia-firewall vigia-netmon \
             vigia-hardening vigia-reports vigia-integrity vigia-installer \
-            vigia-vpn vigia-dns vigia-capabilities vigia-log-gui \
-            vigia-antivirus vigia-netscan vigia-firmware vigia-hash \
-            vigia-dashboard; do
+            vigia-dns vigia-caps vigia-log-gui \
+            vigia-antivirus vigia-dashboard vigia-rootkit \
+            vigia-deployments; do
   sudo ln -sf "$HOME/.local/bin/$tool" /usr/local/bin/$tool
 done
 
@@ -2281,14 +2128,12 @@ vigia-firewall     # firewalld manager
 vigia-netmon       # network monitor
 vigia-hardening    # Lynis wrapper
 vigia-reports      # PDF LGPD
-vigia-integrity    # AIDE wrapper
+vigia-integrity    # AIDE wrapper + hashing ad-hoc (SHA/MD5)
 vigia-installer    # catálogo de tools
-vigia-vpn          # WireGuard manager
-vigia-dns          # systemd-resolved manager
-vigia-capabilities # getcap audit
+vigia-dns          # dnscrypt-proxy manager (DoH/DNSCrypt/DNSSEC)
+vigia-caps         # getcap audit
 vigia-antivirus    # ClamAV wrapper
-vigia-netscan      # nmap GUI
-vigia-firmware     # binwalk wrapper
-vigia-hash         # hash + baseline
+vigia-rootkit      # chkrootkit + rkhunter
+vigia-deployments  # rpm-ostree manager (deployments/pinning/cleanup)
 vigia-dashboard    # sistema em tempo real (CPU/RAM/disco/rede/procs)
 ```

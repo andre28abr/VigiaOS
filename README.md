@@ -20,22 +20,22 @@ do sistema-base sem complicação.
 | # | Componente | Stack | Status |
 |---|---|---|---|
 | 1 | `bootstrap.sh` | bash | 🟡 Em desenvolvimento |
-| 2 | **[Vigia Hub](tools/vigia-hub/)** v0.5.10 | Python + GTK4 | 🟢 3 painéis + autostart XDG + tray icon (subprocess GTK3) + lock Polkit |
-| 3 | **[Vigia Dashboard](tools/dashboard/)** v0.2 | Python + GTK4 + Cairo | 🟢 Sistema em tempo real + per-process I/O + alertas |
-| 4 | **[Vigia Activity Log](tools/activity-log/)** v0.7 (core) + [GUI](tools/activity-log-gui/) v0.1 | Rust + Python | 🟢 audit + journald + fail2ban + correlations |
+| 2 | **[Vigia Hub](tools/vigia-hub/)** v0.7.1 | Python + GTK4 | 🟢 3 painéis + autostart XDG + tray (quick actions) + lock Polkit + backup/restore + Ajuda (manuais MD) |
+| 3 | **[Vigia Dashboard](tools/dashboard/)** v0.2.1 | Python + GTK4 + Cairo | 🟢 Sistema em tempo real + per-process I/O + alertas |
+| 4 | **[Vigia Activity Log](tools/activity-log/)** v0.7.1 (core) + [GUI](tools/activity-log-gui/) v0.1 | Rust + Python | 🟢 audit + journald + fail2ban + correlations |
 | 5 | **[Vigia Privacy Controls](tools/privacy-controls/)** v0.3.1 | Python + GTK4 | 🟢 13 toggles user+system scope |
 | 6 | **[Vigia SELinux GUI](tools/selinux-gui/)** v0.2 | Python + GTK4 | 🟢 6 tabs + pt-BR + audit2allow |
 | 7 | **[Vigia Firewall GUI](tools/firewall-gui/)** v0.1 | Python + GTK4 | 🟡 Status + zones CRUD |
-| 8 | **[Vigia Network Monitor](tools/netmon-gui/)** v0.1 | Python + GTK4 | 🟡 Conexões + modo admin opt-in |
-| 9 | **[Vigia Hardening Checks](tools/hardening-checks/)** v0.1.2 | Python + GTK4 | 🟢 Lynis wrapper + perfil Silverblue |
+| 8 | **[Vigia Network Monitor](tools/netmon-gui/)** v0.1.1 | Python + GTK4 | 🟡 Conexões + modo admin opt-in |
+| 9 | **[Vigia Hardening Checks](tools/hardening-checks/)** v0.1.4 | Python + GTK4 | 🟢 Lynis wrapper + perfil Silverblue |
 | 10 | **[Vigia Reports](tools/reports/)** v0.1.1 | Python + Jinja2 + WeasyPrint | 🟢 PDF/HTML LGPD |
-| 11 | **[Vigia File Integrity](tools/file-integrity/)** v0.2.0 | Python + GTK4 | 🟢 AIDE (sistema) + Hash ad-hoc (user) — 6 tabs |
+| 11 | **[Vigia File Integrity](tools/file-integrity/)** v0.2.1 | Python + GTK4 | 🟢 AIDE (sistema) + Hash ad-hoc (user) — 6 tabs |
 | 12 | **[Vigia Tool Installer](tools/tool-installer/)** v0.2.0 | Python + GTK4 | 🟢 rpm-ostree + **extensões navegador open source** |
 | 13 | **[Vigia DNS Manager](tools/dns-manager/)** v0.4.1 | Python + GTK4 | 🟢 **dnscrypt-proxy** (DoH/DoT) com 11 servers curados |
 | 14 | **[Vigia Capabilities Inspector](tools/capabilities-inspector/)** v0.1 | Python + GTK4 | 🟢 getcap audit + 41 caps pt-BR |
 | 15 | **[Vigia Antivirus](tools/antivirus/)** v0.1.1 | Python + GTK4 | 🟢 ClamAV wrapper (substitui clamtk) |
 | 16 | **[Vigia Rootkit Scanner](tools/rootkit-scanner/)** v0.2.0 | Python + GTK4 | 🟢 **chkrootkit + rkhunter** unificados |
-| 17 | **[Vigia Deployments Manager](tools/deployments-manager/)** v0.1.0 | Python + GTK4 | 🟢 **rpm-ostree** GUI — rollback, pin, cleanup, labels LGPD |
+| 17 | **[Vigia Deployments Manager](tools/deployments-manager/)** v0.1.1 | Python + GTK4 | 🟢 **rpm-ostree** GUI — rollback, pin, cleanup, labels LGPD |
 
 ### Removidas na limpeza 2026-05-27 (foco LGPD)
 
@@ -44,7 +44,12 @@ do sistema-base sem complicação.
 - ~~VPN Manager~~ — NetworkManager nativo do GNOME já gerencia WireGuard
 - ~~Hash Tools~~ — mergeado em File Integrity v0.2.0 (mesma categoria)
 
-### Novidades do Hub v0.5.10 (2026-05-28)
+### Novidades do Hub v0.7.1 (2026-05-29)
+
+Além das **Configurações** (centro de preferências com 3 sub-abas, abaixo), as
+versões v0.6–v0.7 adicionaram a aba **Ajuda** (manuais em Markdown renderizados
+in-app), **ações rápidas na bandeja** (submenu "Abrir módulo" → Dashboard,
+Antivírus, etc.) e **backup/restauração** da config em `.zip` (0600, LGPD).
 
 A aba **Configurações** do Hub virou um centro real de preferências, com 3 sub-abas:
 
