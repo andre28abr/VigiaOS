@@ -16,10 +16,10 @@ Silverblue e' atomico: `dnf install` nao funciona — voce usa `rpm-ostree insta
 | Categoria | Ferramentas |
 |-----------|-------------|
 | **Auditoria** | lynis, aide, chkrootkit, rkhunter |
-| **Rede** | nmap, tcpdump, mtr, nethogs, iftop |
+| **Rede** | mtr, nethogs, iftop |
 | **Monitoramento** | htop, iotop, lsof, strace, fail2ban |
 | **Privacidade** | tor, torsocks, wireguard-tools, dnscrypt-proxy |
-| **Forense** | clamav, binwalk, hashdeep |
+| **Forense** | clamav, hashdeep |
 
 A lista esta em `src/vigia_installer/catalog.py` — adicionar uma tool nova e' apenas instanciar um `CatalogEntry`.
 

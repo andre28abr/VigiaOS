@@ -96,30 +96,11 @@ CATALOG: list[CatalogEntry] = [
     ),
 
     # ===== REDE ===== #
-    CatalogEntry(
-        package="nmap",
-        name="Nmap",
-        description="Scanner de portas e servicos.",
-        why=(
-            "Padrao da industria para **descobrir hosts** numa rede, **portas "
-            "abertas** e **versoes de servicos**. Util para auditar a propria "
-            "infra (`nmap localhost` mostra o que esta exposto)."
-        ),
-        category="rede",
-        binary="nmap",
-    ),
-    CatalogEntry(
-        package="tcpdump",
-        name="tcpdump",
-        description="Captura de pacotes na linha de comando.",
-        why=(
-            "Quando voce precisa **ver os pacotes** que entram/saem para "
-            "debugar algo (`tcpdump -i any port 443`). Mais leve que o "
-            "Wireshark mas igualmente potente."
-        ),
-        category="rede",
-        binary="tcpdump",
-    ),
+    # NOTA: nmap e tcpdump removidos do catalogo (2026-05-29). Sao
+    # ferramentas de recon/sniffing de perfil ofensivo — vao pro projeto
+    # **Vigia Red** (pentest). nmap era inclusive o backend da GUI Network
+    # Scanner, ja removida ("risco etico, Lei 12.737"). O foco do Vigia Hub
+    # aqui e defesa/auditoria/privacidade, nao recon ativo de rede.
     CatalogEntry(
         package="mtr",
         name="MTR",
@@ -246,8 +227,9 @@ CATALOG: list[CatalogEntry] = [
         description="VPN moderna e simples (chave publica/privada).",
         why=(
             "VPN **muito mais simples e rapida** que OpenVPN. Config em "
-            "arquivo `.conf` curto. O Vigia VPN Manager (futuro) vai usar "
-            "esta ferramenta como base."
+            "arquivo `.conf` curto. No GNOME, o **NetworkManager** ja "
+            "importa e gerencia tuneis WireGuard nativamente "
+            "(Configuracoes -> Rede -> VPN), sem precisar de tool dedicada."
         ),
         category="privacidade",
         binary="wg",
@@ -255,16 +237,14 @@ CATALOG: list[CatalogEntry] = [
     CatalogEntry(
         package="dnscrypt-proxy",
         name="dnscrypt-proxy",
-        description="DNS over HTTPS/TLS local (gerenciado pelo Vigia DNS Manager v0.2+).",
+        description="DNS over HTTPS/TLS local (backend do Vigia DNS Manager).",
         why=(
             "**Encripta as queries DNS** que normalmente vao em texto puro. "
-            "Roda como servico local que substitui o resolver default — "
-            "mais poderoso que o `systemd-resolved` (DoH + blocklists + "
-            "anonymized DNS + stats).\n\n"
-            "*Sera gerenciado nativamente pelo **Vigia DNS Manager v0.2+** "
-            "como modo avancado opt-in (switch no topo da tool). Por agora, "
-            "se instalar, a configuracao via UI ainda nao esta disponivel — "
-            "edite manual em `/etc/dnscrypt-proxy/dnscrypt-proxy.toml`.*"
+            "Roda como servico local que substitui o resolver default, com "
+            "suporte a **DoH/DoT** e servidores sem log.\n\n"
+            "*E' o backend do **Vigia DNS Manager** — instale por aqui e "
+            "gerencie tudo na tool (escolha do resolver, aplicar, status), "
+            "sem editar `/etc/dnscrypt-proxy/dnscrypt-proxy.toml` na mao.*"
         ),
         category="privacidade",
         binary="dnscrypt-proxy",
@@ -283,22 +263,12 @@ CATALOG: list[CatalogEntry] = [
         category="forense",
         binary="clamscan",
     ),
-    # NOTA: ClamTK removido do catalogo. O Vigia vai criar GUI propria
-    # para o ClamAV (planejada: "Vigia Antivirus" — usa clamav como backend).
-    # Manter ClamTK aqui duplicaria o caso de uso. O clamav (pacote)
-    # continua no catalogo pra que a futura tool Vigia possa usar.
-    CatalogEntry(
-        package="binwalk",
-        name="binwalk",
-        description="Extrator e analisador de firmwares/imagens binarias.",
-        why=(
-            "Util para **analisar firmwares de IoT** ou descobrir o que esta "
-            "embutido em arquivos binarios (assinaturas, arquivos comprimidos, "
-            "filesystem images embedded)."
-        ),
-        category="forense",
-        binary="binwalk",
-    ),
+    # NOTA: ClamTK removido do catalogo. O Vigia tem GUI propria para o
+    # ClamAV (Vigia Antivirus — usa clamav como backend). O clamav (pacote)
+    # continua no catalogo pra que a tool Vigia possa usar.
+    # NOTA: binwalk removido do catalogo (2026-05-29). RE de firmware/
+    # binarios e' nicho ofensivo/CTF — vai pro **Vigia Red**. Era o backend
+    # da GUI Firmware Analyzer, ja removida pelo mesmo motivo.
     CatalogEntry(
         package="hashdeep",
         name="hashdeep",
