@@ -5,7 +5,7 @@ Suite via COPR (Cool Other Package Repo, do Fedora).
 
 ## Estado
 
-- **20 spec files** no total (`vigia-common` + 18 tools + metapackage `vigia-suite`)
+- **19 spec files** no total (metapackage `vigia-suite` + lib `vigia-common` + core Rust `vigia-activity-log` + 16 specs Python)
 - `Makefile` com targets para SRPM, RPM local e push COPR
 - **COPR ainda não foi ativado** — requer setup manual (instruções abaixo)
 
@@ -23,7 +23,7 @@ Quando o COPR estiver publicado, em Silverblue/Kinoite/Bluefin/etc.:
 sudo wget -O /etc/yum.repos.d/_copr_andre28abr-vigia.repo \
     "https://copr.fedorainfracloud.org/coprs/andre28abr/vigia/repo/fedora-$(rpm -E %fedora)/andre28abr-vigia-fedora-$(rpm -E %fedora).repo"
 
-# 2. Instala a suite completa (metapackage com as 18 tools)
+# 2. Instala a suite completa (metapackage com toda a Vigia Suite)
 sudo rpm-ostree install vigia-suite
 sudo systemctl reboot
 
@@ -49,7 +49,7 @@ sudo dnf install vigia-suite
 
 | Pacote | Versão | Tipo |
 |---|---|---|
-| `vigia-suite` | 0.1.0 | **metapackage** (instala tudo) |
+| `vigia-suite` | 0.2.0 | **metapackage** (instala tudo) |
 | `vigia-common` | 0.1.0 | lib interna (dep de todas) |
 | `vigia-activity-log` | 0.7.0 | core Rust |
 | `vigia-activity-log-gui` | 0.1.0 | frontend Python |
@@ -63,13 +63,11 @@ sudo dnf install vigia-suite
 | `vigia-reports` | 0.1.1 | PDF LGPD |
 | `vigia-integrity` | 0.1.3 | AIDE |
 | `vigia-installer` | 0.1.0 | catálogo tools |
-| `vigia-vpn` | 0.1.1 | WireGuard |
 | `vigia-dns` | 0.1.0 | systemd-resolved |
-| `vigia-capabilities` | 0.1.0 | getcap |
+| `vigia-caps` | 0.1.0 | getcap |
 | `vigia-antivirus` | 0.1.1 | ClamAV |
-| `vigia-netscan` | 0.1.0 | nmap |
-| `vigia-firmware` | 0.1.0 | binwalk |
-| `vigia-hash-tools` | 0.1.1 | hash + baseline |
+| `vigia-rootkit` | 0.2.0 | chkrootkit + rkhunter |
+| `vigia-deployments` | 0.1.1 | rpm-ostree snapshots |
 
 ## Para o mantenedor (build + submit ao COPR)
 
@@ -159,13 +157,11 @@ packaging/
 ├── vigia-reports.spec
 ├── vigia-integrity.spec
 ├── vigia-installer.spec
-├── vigia-vpn.spec
 ├── vigia-dns.spec
-├── vigia-capabilities.spec
+├── vigia-caps.spec
 ├── vigia-antivirus.spec
-├── vigia-netscan.spec
-├── vigia-firmware.spec
-├── vigia-hash-tools.spec
+├── vigia-rootkit.spec
+├── vigia-deployments.spec
 │
 ├── vigia-log.desktop               # pre-existente (Activity Log core)
 └── vigia-log.svg                   # pre-existente
@@ -186,7 +182,7 @@ packaging/
 
 ## Detalhes técnicos
 
-### Specs Python (17 tools)
+### Specs Python (16 specs)
 
 Padrão comum:
 - `BuildArch: noarch` — sem código nativo
@@ -205,7 +201,7 @@ Spec separado (`vigia-activity-log.spec`) porque é Rust.
 
 ### Metapackage `vigia-suite`
 
-Sem `%files`, apenas `Requires:` listando todos os 19 pacotes.
+Sem `%files`, apenas `Requires:` listando todos os 18 pacotes.
 Garante versão mínima de cada. Útil para "instalar tudo de uma vez".
 
 ### Dependências entre pacotes
@@ -217,7 +213,8 @@ Garante versão mínima de cada. Útil para "instalar tudo de uma vez".
 Pacotes que wrappam tools upstream declaram esses como `Requires`:
 - `vigia-selinux` → `policycoreutils-python-utils`, `setools-console`, `audit`
 - `vigia-antivirus` → `clamav`, `clamav-update`
-- `vigia-vpn` → `wireguard-tools`
+- `vigia-rootkit` → `chkrootkit`, `rkhunter`
+- `vigia-deployments` → `rpm-ostree`
 - `vigia-integrity` → `aide`
 - etc.
 
