@@ -3,8 +3,8 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "vigia-deployments-manager"
-version = "0.1.0"
+name = "vigia-deployments"
+version = "0.1.1"
 description = "Gerenciador de deployments rpm-ostree com UI GTK4 — parte da Vigia Suite"
 license = { text = "Apache-2.0" }
 readme = "README.md"
