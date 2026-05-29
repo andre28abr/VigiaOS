@@ -117,7 +117,7 @@ class TestRunPkgCmd:
 
         monkeypatch.setattr(backend.subprocess, "run", boom)
         ok, out = backend._run_pkg_cmd(["x"], 10, "teste")
-        assert ok is False and "nao encontrado" in out
+        assert ok is False and "encontrado" in out
 
 
 class TestRebootSystem:
@@ -148,4 +148,4 @@ class TestRebootSystem:
 
         monkeypatch.setattr(backend.subprocess, "run", boom)
         ok, out = backend.reboot_system()
-        assert ok is False and "nao encontrado" in out
+        assert ok is False and "encontrado" in out

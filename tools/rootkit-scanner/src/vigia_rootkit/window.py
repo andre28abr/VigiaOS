@@ -44,7 +44,7 @@ def build_content() -> Gtk.Widget:
     stack = Adw.ViewStack()
     stack.add_titled_with_icon(chk_tab, "chkrootkit", "chkrootkit", "edit-find-symbolic")
     stack.add_titled_with_icon(rkh_tab, "rkhunter", "Rootkit Hunter", "system-search-symbolic")
-    stack.add_titled_with_icon(history_tab, "history", "Historico", "document-open-recent-symbolic")
+    stack.add_titled_with_icon(history_tab, "history", "Histórico", "document-open-recent-symbolic")
     stack.add_titled_with_icon(about_tab, "about", "Sobre", "help-about-symbolic")
 
     switcher = Adw.ViewSwitcher()

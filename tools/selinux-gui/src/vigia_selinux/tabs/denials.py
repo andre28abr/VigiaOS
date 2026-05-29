@@ -20,7 +20,7 @@ SINCE_OPTIONS = [
     ("Hoje", "today"),
     ("Esta semana", "this-week"),
     ("Recente (10 min)", "recent"),
-    ("Este mes", "this-month"),
+    ("Este mês", "this-month"),
 ]
 
 
@@ -36,7 +36,7 @@ class DenialsTab(Gtk.Box):
 
         # Barra superior: combo de periodo + botao carregar
         toolbar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        label = Gtk.Label(label="Periodo:")
+        label = Gtk.Label(label="Período:")
         label.set_valign(Gtk.Align.CENTER)
         toolbar.append(label)
 
@@ -115,7 +115,7 @@ class DenialsTab(Gtk.Box):
         while child := self._list.get_first_child():
             self._list.remove(child)
         if not denials:
-            self._render_empty("Nenhum denial encontrado no periodo. SELinux esta tranquilo!")
+            self._render_empty("Nenhum denial encontrado no período. SELinux está tranquilo!")
             return
         # Mais recente primeiro
         for d in reversed(denials):
@@ -172,8 +172,8 @@ class DenialsTab(Gtk.Box):
     def _show_audit2allow_dialog(self, denial: backend.Denial, suggestion: str) -> bool:
         dlg = Adw.AlertDialog(
             heading=f"Policy sugerida para denial de '{denial.comm}'",
-            body=f"audit2allow propos:\n\n{suggestion}\n\n"
-            "Para aplicar como modulo custom: salve em arquivo.te, compile com\n"
+            body=f"audit2allow propôs:\n\n{suggestion}\n\n"
+            "Para aplicar como módulo custom: salve em arquivo.te, compile com\n"
             "  checkmodule -M -m -o arquivo.mod arquivo.te\n"
             "  semodule_package -o arquivo.pp -m arquivo.mod\n"
             "  semodule -i arquivo.pp",

@@ -21,9 +21,9 @@ TOP_N = 30
 
 SORT_OPTIONS = [
     ("cpu", "CPU"),
-    ("mem", "Memoria"),
+    ("mem", "Memória"),
     ("io", "I/O (read+write)"),
-    ("conn", "Conexoes ativas"),
+    ("conn", "Conexões ativas"),
     ("pid", "PID"),
     ("name", "Nome"),
 ]
@@ -51,8 +51,8 @@ class ProcessesTab(Adw.Bin):
 
         header_desc = Gtk.Label(
             label=(
-                f"Top {TOP_N} processos por padrao. Refresh a cada 2s. "
-                "Killar processos que voce nao possui requer admin (pkexec)."
+                f"Top {TOP_N} processos por padrão. Refresh a cada 2s. "
+                "Killar processos que você não possui requer admin (pkexec)."
             )
         )
         header_desc.add_css_class("dim-label")
@@ -87,7 +87,7 @@ class ProcessesTab(Adw.Bin):
         # Filter "only mine"
         mine_switch = Adw.SwitchRow()
         mine_switch.set_title("Apenas meus processos")
-        mine_switch.set_subtitle("Esconde processos de root e outros usuarios")
+        mine_switch.set_subtitle("Esconde processos de root e outros usuários")
         mine_switch.set_active(False)
         mine_switch.connect("notify::active", self._on_mine_toggled)
         filters_group.add(mine_switch)
@@ -268,7 +268,7 @@ class ProcessesTab(Adw.Bin):
             )
         n_conn = p.n_tcp_established + p.n_tcp_listen + p.n_udp
         if n_conn > 0:
-            sub_bits.append(f"{n_conn} conexao(oes)")
+            sub_bits.append(f"{n_conn} conexão(ões)")
         row.set_subtitle(" · ".join(sub_bits))
         row.set_subtitle_lines(2)
         row.add_css_class("property")
@@ -324,7 +324,7 @@ class ProcessesTab(Adw.Bin):
         row.add_row(io_row)
 
         # v0.2 — Conexoes row
-        conn_row = Adw.ActionRow(title="Conexoes")
+        conn_row = Adw.ActionRow(title="Conexões")
         conn_row.add_css_class("property")
         conn_row.set_subtitle(
             "TCP estabelecidas + TCP listening + UDP. Bytes/s "
@@ -363,12 +363,12 @@ class ProcessesTab(Adw.Bin):
         term_btn.connect("clicked", lambda _b, pid=p.pid: self._do_kill(pid, term=True))
         kill_box.append(term_btn)
 
-        force_btn = Gtk.Button(label="Forcar (SIGKILL)")
+        force_btn = Gtk.Button(label="Forçar (SIGKILL)")
         force_btn.add_css_class("destructive-action")
         force_btn.connect("clicked", lambda _b, pid=p.pid: self._do_kill(pid, term=False))
         kill_box.append(force_btn)
 
-        kill_row = Adw.ActionRow(title="Acoes")
+        kill_row = Adw.ActionRow(title="Ações")
         kill_row.add_suffix(kill_box)
         row.add_row(kill_row)
 
@@ -381,7 +381,7 @@ class ProcessesTab(Adw.Bin):
     def _do_kill(self, pid: int, term: bool = True) -> None:
         import signal
         sig = signal.SIGTERM if term else signal.SIGKILL
-        action = "Terminar" if term else "Forcar morte de"
+        action = "Terminar" if term else "Forçar morte de"
 
         # Dialog de confirmacao
         proc = next((p for p in self._all_procs if p.pid == pid), None)
@@ -392,9 +392,9 @@ class ProcessesTab(Adw.Bin):
         dlg = Adw.AlertDialog(
             heading=f"{action} {proc_label}?",
             body=(
-                "Esta acao envia o sinal "
-                f"{'SIGTERM (graceful)' if term else 'SIGKILL (forcado, sem cleanup)'}.\n\n"
-                "Se for processo de outro usuario ou do sistema, vai pedir "
+                "Esta ação envia o sinal "
+                f"{'SIGTERM (graceful)' if term else 'SIGKILL (forçado, sem cleanup)'}.\n\n"
+                "Se for processo de outro usuário ou do sistema, vai pedir "
                 "senha admin (pkexec)."
             ),
         )
@@ -427,7 +427,7 @@ class ProcessesTab(Adw.Bin):
             heading=f"Inspecionar {label}?",
             body=(
                 "Rastreia as chamadas de sistema (syscalls) deste processo por "
-                "~5 segundos e mostra um resumo. Read-only — nao altera o "
+                "~5 segundos e mostra um resumo. Read-only — não altera o "
                 "processo.\n\nPede senha de administrador (ptrace via pkexec)."
             ),
         )
@@ -455,7 +455,7 @@ class ProcessesTab(Adw.Bin):
 
     def _show_inspect_result(self, result, label: str) -> bool:
         if result.error:
-            show_error(self, "Inspecao falhou", result.error)
+            show_error(self, "Inspeção falhou", result.error)
             return False
 
         dlg = Adw.AlertDialog(

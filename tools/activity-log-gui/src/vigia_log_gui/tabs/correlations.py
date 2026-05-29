@@ -33,9 +33,9 @@ class CorrelationsTab(Adw.Bin):
 
         self._header_desc = Gtk.Label(
             label=(
-                "Correlations sao padroes detectados cross-source: ex. "
-                "*fail2ban baniu IP X apos 3 tentativas SSH* combina eventos do "
-                "fail2ban + audit em uma unica narrativa."
+                "Correlations são padrões detectados cross-source: ex. "
+                "*fail2ban baniu IP X após 3 tentativas SSH* combina eventos do "
+                "fail2ban + audit em uma única narrativa."
             )
         )
         self._header_desc.add_css_class("dim-label")
@@ -52,7 +52,7 @@ class CorrelationsTab(Adw.Bin):
 
         self._empty_state = Adw.StatusPage(
             title="Sem correlations",
-            description="Nenhum padrao cross-source detectado nos eventos atuais.",
+            description="Nenhum padrão cross-source detectado nos eventos atuais.",
             icon_name="dialog-information-symbolic",
         )
         self._empty_state.set_vexpand(True)

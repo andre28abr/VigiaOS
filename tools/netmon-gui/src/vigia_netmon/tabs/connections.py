@@ -129,7 +129,7 @@ class ConnectionsTab(Gtk.Box):
         # Empty placeholder ate o primeiro fetch terminar
         loading_row = Adw.ActionRow()
         loading_row.set_title("Carregando…")
-        loading_row.set_subtitle("Coletando conexoes via `ss -tunap`")
+        loading_row.set_subtitle("Coletando conexões via `ss -tunap`")
         loading_row.add_css_class("dim-label")
         self._list.append(loading_row)
         self._count_label.set_text("Carregando…")
@@ -188,10 +188,10 @@ class ConnectionsTab(Gtk.Box):
 
             if not conns:
                 empty = Adw.ActionRow()
-                empty.set_title("Sem conexoes")
-                empty.set_subtitle("`ss -tunap` nao retornou nada (raro) ou nao esta disponivel.")
+                empty.set_title("Sem conexões")
+                empty.set_subtitle("`ss -tunap` não retornou nada (raro) ou não está disponível.")
                 self._list.append(empty)
-                self._count_label.set_text("0 conexoes")
+                self._count_label.set_text("0 conexões")
                 return False
 
             for c in conns:
@@ -202,7 +202,7 @@ class ConnectionsTab(Gtk.Box):
                     f"{c.proto} {c.state}"
                 ).lower()
 
-            self._count_label.set_text(f"{len(conns)} conexoes")
+            self._count_label.set_text(f"{len(conns)} conexões")
             if query:
                 self._list.invalidate_filter()
         finally:

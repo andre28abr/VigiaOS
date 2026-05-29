@@ -50,10 +50,10 @@ class _InstallerContent:
         self.about = AboutTab()
 
         stack = Adw.ViewStack()
-        stack.add_titled_with_icon(self.browse, "browse", "Catalogo", "package-x-generic-symbolic")
+        stack.add_titled_with_icon(self.browse, "browse", "Catálogo", "package-x-generic-symbolic")
         if self.pending is not None:
             stack.add_titled_with_icon(self.pending, "pending", "Pendentes", "view-refresh-symbolic")
-        stack.add_titled_with_icon(self.extensions, "extensions", "Extensoes", "web-browser-symbolic")
+        stack.add_titled_with_icon(self.extensions, "extensions", "Extensões", "web-browser-symbolic")
         stack.add_titled_with_icon(self.about, "about", "Sobre", "help-about-symbolic")
 
         switcher = Adw.ViewSwitcher()

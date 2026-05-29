@@ -55,7 +55,7 @@ class LibraryTab(Adw.Bin):
         self._list.add_css_class("boxed-list")
 
         self._empty_state = Adw.StatusPage(
-            title="Sem relatorios",
+            title="Sem relatórios",
             description="Use a aba 'Gerar' para criar o primeiro. Eles aparecem aqui.",
             icon_name="document-symbolic",
         )
@@ -97,8 +97,8 @@ class LibraryTab(Adw.Bin):
 
         reports_dir = backend.REPORTS_DIR
         if not reports_dir.is_dir():
-            self._header_label.set_label("Sem relatorios")
-            self._header_desc.set_label(f"Pasta nao existe ainda: {reports_dir}")
+            self._header_label.set_label("Sem relatórios")
+            self._header_desc.set_label(f"Pasta não existe ainda: {reports_dir}")
             self._stack.set_visible_child_name("empty")
             return
 
@@ -109,13 +109,13 @@ class LibraryTab(Adw.Bin):
         )
 
         if not files:
-            self._header_label.set_label("Sem relatorios")
+            self._header_label.set_label("Sem relatórios")
             self._header_desc.set_label(f"Pasta: {reports_dir}")
             self._stack.set_visible_child_name("empty")
             return
 
         self._header_label.set_label(
-            f"{len(files)} {'relatorio' if len(files) == 1 else 'relatorios'}"
+            f"{len(files)} {'relatório' if len(files) == 1 else 'relatórios'}"
         )
         self._header_desc.set_label(f"Pasta: {reports_dir}")
         self._stack.set_visible_child_name("list")
@@ -181,8 +181,8 @@ class LibraryTab(Adw.Bin):
 
     def _on_delete_clicked(self, _btn: Gtk.Button, path: Path) -> None:
         dlg = Adw.AlertDialog(
-            heading="Excluir relatorio?",
-            body=f"{path.name}\n\nEsta acao nao pode ser desfeita.",
+            heading="Excluir relatório?",
+            body=f"{path.name}\n\nEsta ação não pode ser desfeita.",
         )
         dlg.add_response("cancel", "Cancelar")
         dlg.add_response("delete", "Excluir")

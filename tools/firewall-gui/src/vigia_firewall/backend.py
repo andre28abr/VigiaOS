@@ -31,7 +31,7 @@ def _fw_cmd(*args: str, timeout: int = 10) -> tuple[int, str, str]:
 def _pkexec_fw(*args: str, timeout: int = 30) -> None:
     """Roda pkexec firewall-cmd ARGS. Raise RuntimeError em falha."""
     if shutil.which("pkexec") is None:
-        raise RuntimeError("pkexec nao encontrado. Instale polkit.")
+        raise RuntimeError("pkexec não encontrado. Instale polkit.")
     result = subprocess.run(
         ["pkexec", "firewall-cmd"] + list(args),
         capture_output=True, text=True, timeout=timeout,
@@ -39,7 +39,7 @@ def _pkexec_fw(*args: str, timeout: int = 30) -> None:
     if result.returncode != 0:
         stderr = (result.stderr or result.stdout).strip()
         if "Request dismissed" in stderr or result.returncode == 126:
-            raise RuntimeError("Autenticacao cancelada pelo usuario.")
+            raise RuntimeError("Autenticação cancelada pelo usuário.")
         raise RuntimeError(f"firewall-cmd {' '.join(args)} falhou: {stderr}")
 
 
@@ -79,7 +79,7 @@ def stop_firewalld() -> None:
 
 def _pkexec_systemctl(action: str, unit: str) -> None:
     if shutil.which("pkexec") is None:
-        raise RuntimeError("pkexec nao encontrado.")
+        raise RuntimeError("pkexec não encontrado.")
     result = subprocess.run(
         ["pkexec", "systemctl", action, "--now", f"{unit}.service"]
         if action in ("enable", "disable")
@@ -89,7 +89,7 @@ def _pkexec_systemctl(action: str, unit: str) -> None:
     if result.returncode != 0:
         stderr = (result.stderr or result.stdout).strip()
         if "Request dismissed" in stderr or result.returncode == 126:
-            raise RuntimeError("Autenticacao cancelada pelo usuario.")
+            raise RuntimeError("Autenticação cancelada pelo usuário.")
         raise RuntimeError(f"systemctl {action} {unit} falhou: {stderr}")
 
 
@@ -204,9 +204,9 @@ def list_zone_ports(zone: str) -> list[PortRule]:
 
 def add_zone_port(zone: str, port: str, protocol: str) -> None:
     if protocol not in ("tcp", "udp"):
-        raise ValueError(f"Protocolo invalido: {protocol}")
+        raise ValueError(f"Protocolo inválido: {protocol}")
     if not port.replace("-", "").isdigit():
-        raise ValueError(f"Porta invalida: {port}")
+        raise ValueError(f"Porta inválida: {port}")
     _pkexec_fw("--permanent", f"--zone={zone}", f"--add-port={port}/{protocol}")
     _reload()
 

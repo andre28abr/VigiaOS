@@ -22,7 +22,7 @@ from ._helpers import make_clamp, show_error, show_info
 
 HEADER_DESC = (
     "<b>Rootkit Hunter (rkhunter)</b> roda 200+ checks: rootkits, "
-    "backdoors, integridade de binarios via hash, permissoes, configs "
+    "backdoors, integridade de binários via hash, permissões, configs "
     "SSH, processos escondidos. Mais detalhado que chkrootkit. "
     "Demora 2-5 minutos."
 )
@@ -78,7 +78,7 @@ class RkhunterTab(Adw.Bin):
 
         kpis_group = Adw.PreferencesGroup()
         kpis_group.set_margin_top(8)
-        kpis_group.set_title("Estatisticas")
+        kpis_group.set_title("Estatísticas")
 
         self._row_tests = Adw.ActionRow(title="Testes rodados")
         self._row_tests.add_css_class("property")
@@ -102,7 +102,7 @@ class RkhunterTab(Adw.Bin):
         kpis_group.add(self._row_inf)
 
         log_expander = Adw.ExpanderRow()
-        log_expander.set_title("Saida do scan")
+        log_expander.set_title("Saída do scan")
         log_expander.set_subtitle("Output bruto (streaming em tempo real)")
         log_expander.set_expanded(True)
 
@@ -172,7 +172,7 @@ class RkhunterTab(Adw.Bin):
     def refresh(self) -> None:
         if not backend.rkhunter_installed():
             self._banner.set_title(
-                "rkhunter nao instalado. Instale via Vigia Tool Installer "
+                "rkhunter não instalado. Instale via Vigia Tool Installer "
                 "(pacote rkhunter)."
             )
             self._banner.set_revealed(True)
@@ -190,7 +190,7 @@ class RkhunterTab(Adw.Bin):
             body=(
                 "rkhunter vai rodar como root via pkexec.\n\n"
                 "Tempo aproximado: 2-5 minutos.\n\n"
-                "Voce pode parar a qualquer momento. Sera pedida senha admin."
+                "Você pode parar a qualquer momento. Será pedida senha admin."
             ),
         )
         dlg.add_response("cancel", "Cancelar")
@@ -282,9 +282,9 @@ class RkhunterTab(Adw.Bin):
             self._set_label_color(self._lbl_inf, "error")
 
         if result.cancelled:
-            self._status_label.set_label("Scan cancelado pelo usuario.")
+            self._status_label.set_label("Scan cancelado pelo usuário.")
             self._append_summary_line("\n══ Scan cancelado ══", self._tag_warning)
-            show_info(self, "Scan cancelado", "Scan interrompido pelo usuario.")
+            show_info(self, "Scan cancelado", "Scan interrompido pelo usuário.")
         elif result.error:
             self._status_label.set_label(f"Erro: {result.error[:120]}")
             self._append_summary_line(
@@ -301,12 +301,12 @@ class RkhunterTab(Adw.Bin):
             show_error(
                 self,
                 f"rkhunter: {result.infected_count} infectado(s)",
-                "Revise a saida do scan e tome acoes apropriadas. "
-                "Resultado salvo no Historico.",
+                "Revise a saída do scan e tome ações apropriadas. "
+                "Resultado salvo no Histórico.",
             )
             notify_if_unfocused(
                 f"rkhunter: {result.infected_count} infectado(s)",
-                "Possivel rootkit detectado. Abra o Vigia pra revisar.",
+                "Possível rootkit detectado. Abra o Vigia pra revisar.",
                 notif_id="vigia-rootkit-rkhunter",
                 priority=PRIORITY_HIGH,
             )
@@ -320,11 +320,11 @@ class RkhunterTab(Adw.Bin):
             show_info(
                 self,
                 f"rkhunter: {result.warnings_count} warning(s)",
-                "Sistema parece OK mas vale revisar. Resultado salvo no Historico.",
+                "Sistema parece OK mas vale revisar. Resultado salvo no Histórico.",
             )
             notify_if_unfocused(
                 f"rkhunter: {result.warnings_count} warning(s)",
-                "Scan concluido — vale revisar os avisos no Vigia.",
+                "Scan concluído — vale revisar os avisos no Vigia.",
                 notif_id="vigia-rootkit-rkhunter",
             )
         else:
@@ -333,7 +333,7 @@ class RkhunterTab(Adw.Bin):
             show_info(
                 self,
                 "rkhunter: limpo",
-                "Nenhum sinal de rootkit detectado. Resultado salvo no Historico.",
+                "Nenhum sinal de rootkit detectado. Resultado salvo no Histórico.",
             )
             notify_if_unfocused(
                 "rkhunter: limpo",

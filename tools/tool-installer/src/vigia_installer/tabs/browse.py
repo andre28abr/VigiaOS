@@ -55,19 +55,19 @@ class BrowseTab(Adw.Bin):
         self._installed_set: set[str] = set()
 
         # Header
-        header_lbl = Gtk.Label(label="Catalogo curado")
+        header_lbl = Gtk.Label(label="Catálogo curado")
         header_lbl.add_css_class("title-2")
         header_lbl.set_halign(Gtk.Align.START)
         header_lbl.set_margin_bottom(8)
 
         header_desc = Gtk.Label(
             label=(
-                f"{len(CATALOG)} ferramentas de seguranca selecionadas. "
+                f"{len(CATALOG)} ferramentas de segurança selecionadas. "
                 + (
                     "Cada install vira uma camada via rpm-ostree e precisa "
                     "de reboot para aplicar."
                     if self._needs_reboot
-                    else "Cada install usa dnf e e' aplicado na hora."
+                    else "Cada install usa dnf e é aplicado na hora."
                 )
             )
         )
@@ -79,7 +79,7 @@ class BrowseTab(Adw.Bin):
 
         # Search
         self._search = Gtk.SearchEntry()
-        self._search.set_placeholder_text("Buscar por nome, descricao ou pacote...")
+        self._search.set_placeholder_text("Buscar por nome, descrição ou pacote...")
         self._search.set_hexpand(True)
         self._search.connect("search-changed", lambda _e: self._apply_filter())
         self._search.set_margin_bottom(16)
@@ -257,7 +257,7 @@ class BrowseTab(Adw.Bin):
                 btn.remove_css_class("suggested-action")
                 btn.remove_css_class("destructive-action")
             elif pkg in pending_removed_set:
-                status.set_label("REMOCAO PENDENTE")
+                status.set_label("REMOÇÃO PENDENTE")
                 status.add_css_class("warning")
                 btn.set_label("Removendo")
                 btn.set_sensitive(False)
@@ -270,7 +270,7 @@ class BrowseTab(Adw.Bin):
                 btn.add_css_class("destructive-action")
                 btn.add_css_class("flat")
             else:
-                status.set_label("Disponivel")
+                status.set_label("Disponível")
                 status.add_css_class("dim-label")
                 btn.set_label("Instalar")
                 btn.set_sensitive(not self._running)
@@ -318,10 +318,10 @@ class BrowseTab(Adw.Bin):
         dlg = Adw.AlertDialog(
             heading=f"Remover {entry.name}?",
             body=(
-                f"O pacote `{package}` sera removido na proxima reinicializacao "
-                "(rpm-ostree uninstall). Mudanca aplicada com reboot."
+                f"O pacote `{package}` será removido na próxima reinicialização "
+                "(rpm-ostree uninstall). Mudança aplicada com reboot."
                 if self._needs_reboot
-                else f"O pacote `{package}` sera removido agora (dnf remove)."
+                else f"O pacote `{package}` será removido agora (dnf remove)."
             ),
         )
         dlg.add_response("cancel", "Cancelar")
@@ -354,9 +354,9 @@ class BrowseTab(Adw.Bin):
             show_info(
                 self,
                 f"{package}: pronto",
-                "Mudanca staged. Para usar, reinicie o sistema (aba 'Pendentes' tem botao Reboot)."
+                "Mudança staged. Para usar, reinicie o sistema (aba 'Pendentes' tem botão Reboot)."
                 if self._needs_reboot
-                else "Instalado. Ja' pode usar — sem reboot.",
+                else "Instalado. Já pode usar — sem reboot.",
             )
             self.refresh_statuses()
             self._on_changed()
@@ -381,7 +381,7 @@ class BrowseTab(Adw.Bin):
             show_info(
                 self,
                 f"{package}: removido" + (" (pendente)" if self._needs_reboot else ""),
-                "Mudanca staged. Reinicie para aplicar."
+                "Mudança staged. Reinicie para aplicar."
                 if self._needs_reboot
                 else "Removido (dnf). Aplicado na hora.",
             )

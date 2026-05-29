@@ -112,8 +112,8 @@ def _build_page() -> Gtk.Widget:
     """
     if not ALL_TOGGLES:
         return Adw.StatusPage(
-            title="Nenhum toggle disponivel",
-            description="Verifique se o GNOME esta instalado e schemas dconf estao presentes.",
+            title="Nenhum toggle disponível",
+            description="Verifique se o GNOME está instalado e schemas dconf estão presentes.",
             icon_name="dialog-warning-symbolic",
         )
 
@@ -178,7 +178,7 @@ def _apply_toggle_state(
 ) -> bool:
     if not available:
         row.set_sensitive(False)
-        row.set_subtitle(f"{tog.description}\n[indisponivel neste sistema]")
+        row.set_subtitle(f"{tog.description}\n[indisponível neste sistema]")
         return False
     switch.set_active(enabled)
     switch.set_sensitive(True)

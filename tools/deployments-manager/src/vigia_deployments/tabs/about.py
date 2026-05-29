@@ -12,35 +12,35 @@ from gi.repository import Adw, Gtk  # noqa: E402
 
 SECTIONS: list[tuple[str, str]] = [
     (
-        "O que sao deployments",
+        "O que são deployments",
         "Em sistemas Fedora Atomic (Silverblue, Kinoite, Bluefin, Bazzite, "
-        "Aurora) o sistema operacional eh <b>imutavel</b>. Cada vez que voce "
+        "Aurora) o sistema operacional é <b>imutável</b>. Cada vez que você "
         "instala um pacote (<tt>rpm-ostree install</tt>) ou faz upgrade "
         "(<tt>rpm-ostree upgrade</tt>), o sistema cria um <b>novo deployment</b> "
-        "— um snapshot completo da nova versao.\n\n"
+        "— um snapshot completo da nova versão.\n\n"
         "O deployment anterior fica preservado como <b>rollback</b>. No menu "
-        "do <b>GRUB</b> ao bootar, voce pode escolher qual deployment usar.\n\n"
-        "<i>Atomic</i>: ou a operacao deu certo 100%, ou voce volta pro estado "
+        "do <b>GRUB</b> ao bootar, você pode escolher qual deployment usar.\n\n"
+        "<i>Atomic</i>: ou a operação deu certo 100%, ou você volta pro estado "
         "anterior. Sem updates pela metade."
     ),
     (
         "Quantos deployments existem?",
         "Normalmente <b>2</b>: o atual (booted) + o anterior (rollback). "
-        "Quando voce faz <tt>rpm-ostree install</tt>, um terceiro aparece "
-        "como <b>staged</b> (pending) — vira o atual no proximo boot.\n\n"
-        "Voce pode <b>pinnar</b> deployments adicionais (limite ~5 por causa "
-        "do espaco em <tt>/boot</tt>). Deployments pinados NAO sao removidos "
+        "Quando você faz <tt>rpm-ostree install</tt>, um terceiro aparece "
+        "como <b>staged</b> (pending) — vira o atual no próximo boot.\n\n"
+        "Você pode <b>pinnar</b> deployments adicionais (limite ~5 por causa "
+        "do espaço em <tt>/boot</tt>). Deployments pinados NÃO são removidos "
         "automaticamente no upgrade."
     ),
     (
         "Status dos deployments",
-        "<b>ATIVO</b> (verde): rodando agora. Nao pode ser removido.\n\n"
-        "<b>STAGED</b> (amarelo): pending. Vai virar ATIVO no proximo boot. "
+        "<b>ATIVO</b> (verde): rodando agora. Não pode ser removido.\n\n"
+        "<b>STAGED</b> (amarelo): pending. Vai virar ATIVO no próximo boot. "
         "Cleanup remove com <tt>cleanup -p</tt>.\n\n"
         "<b>ROLLBACK</b> (cinza): deployment anterior. Cleanup remove com "
-        "<tt>cleanup -r</tt>. Geralmente o sistema preserva pra emergencia.\n\n"
-        "<b>PIN</b> (azul): protegido. NUNCA eh removido automaticamente. "
-        "Use pra preservar um estado conhecido como bom antes de mudancas "
+        "<tt>cleanup -r</tt>. Geralmente o sistema preserva pra emergência.\n\n"
+        "<b>PIN</b> (azul): protegido. NUNCA é removido automaticamente. "
+        "Use pra preservar um estado conhecido como bom antes de mudanças "
         "arriscadas."
     ),
     (
@@ -49,51 +49,51 @@ SECTIONS: list[tuple[str, str]] = [
         "• Instalar pacote experimental (<tt>rpm-ostree install</tt>)\n"
         "• Upgrade major do Fedora (ex: 41 -> 42)\n"
         "• Rebase pra outra variant (Silverblue -> Kinoite)\n"
-        "• Layer drivers proprietarios (NVIDIA, etc.)\n\n"
-        "Depois, se algo quebrar, voce sabe que tem um estado bom pra "
+        "• Layer drivers proprietários (NVIDIA, etc.)\n\n"
+        "Depois, se algo quebrar, você sabe que tem um estado bom pra "
         "voltar via <b>Reverter</b>."
     ),
     (
         "Cuidado com /boot",
-        "A particao <tt>/boot</tt> em sistemas atomicos eh pequena "
-        "(geralmente 600MB-1GB). Cada deployment usa 100-200MB la dentro "
+        "A partição <tt>/boot</tt> em sistemas atômicos é pequena "
+        "(geralmente 600MB-1GB). Cada deployment usa 100-200MB lá dentro "
         "(kernel + initramfs).\n\n"
         "Com 5+ deployments pinados, <tt>/boot</tt> pode encher e <b>impedir "
-        "upgrades futuros</b>. Solucao: cleanup periodico ou despinnar "
+        "upgrades futuros</b>. Solução: cleanup periódico ou despinnar "
         "deployments antigos.\n\n"
         "A aba <b>Cleanup</b> mostra alerta amarelo (>70%) ou vermelho "
-        "(>85%) e botao pra liberar espaco em 1 clique."
+        "(>85%) e botão pra liberar espaço em 1 clique."
     ),
     (
         "Rollback vs reverter",
-        "Os termos sao usados quase como sinonimos no Vigia:\n\n"
-        "• <b>Rollback automatico</b>: GRUB oferece bootar deployment "
-        "anterior se o atual nao iniciar. Acontece sozinho.\n\n"
-        "• <b>Reverter manual</b>: voce escolhe via UI (esta tool) ou "
-        "<tt>rpm-ostree rollback</tt>. Toma efeito no proximo boot. "
+        "Os termos são usados quase como sinônimos no Vigia:\n\n"
+        "• <b>Rollback automático</b>: GRUB oferece bootar deployment "
+        "anterior se o atual não iniciar. Acontece sozinho.\n\n"
+        "• <b>Reverter manual</b>: você escolhe via UI (esta tool) ou "
+        "<tt>rpm-ostree rollback</tt>. Toma efeito no próximo boot. "
         "Pode ser revertido novamente (voltar pro que era antes)."
     ),
     (
         "Labels e notas (LGPD/audit)",
         "rpm-ostree identifica deployments por <b>checksum SHA-256</b> + "
-        "timestamp. Nao tem campo 'nome customizado'.\n\n"
+        "timestamp. Não tem campo 'nome customizado'.\n\n"
         "O Vigia adiciona <b>label</b> e <b>notas multilinha</b> que ficam "
         "salvos LOCAL em <tt>~/.config/vigia-deployments/state.json</tt> "
         "com <tt>mode 0600</tt> (owner-only — LGPD).\n\n"
         "<b>Uso pra audit</b>: documentar contexto de cada deployment "
-        "importante. Ex: <i>'Pre instalacao do dnscrypt-proxy pro cliente "
+        "importante. Ex: <i>'Pré instalação do dnscrypt-proxy pro cliente "
         "X. Backup antes do audit semanal LGPD.'</i>"
     ),
     (
-        "O que NAO consegue fazer",
-        "Limitacoes tecnicas do rpm-ostree (nao da tool):\n\n"
-        "• <b>Criar snapshot manual</b> ('snapshot agora'): nao existe. "
-        "Deployments so nascem via <tt>install/upgrade/rebase</tt>. "
-        "Workaround: faca um <tt>rpm-ostree install --idempotent</tt> com "
-        "um pacote ja instalado pra forcar um novo deployment.\n\n"
-        "• <b>Renomear de verdade</b>: o label do Vigia eh display only, "
-        "nao muda nada no rpm-ostree.\n\n"
-        "• <b>Deletar deployment especifico</b>: cleanup remove pending, "
+        "O que NÃO consegue fazer",
+        "Limitações técnicas do rpm-ostree (não da tool):\n\n"
+        "• <b>Criar snapshot manual</b> ('snapshot agora'): não existe. "
+        "Deployments só nascem via <tt>install/upgrade/rebase</tt>. "
+        "Workaround: faça um <tt>rpm-ostree install --idempotent</tt> com "
+        "um pacote já instalado pra forçar um novo deployment.\n\n"
+        "• <b>Renomear de verdade</b>: o label do Vigia é display only, "
+        "não muda nada no rpm-ostree.\n\n"
+        "• <b>Deletar deployment específico</b>: cleanup remove pending, "
         "rollback ou cache. Pra remover um pinado, primeiro despinne."
     ),
     (
@@ -101,11 +101,11 @@ SECTIONS: list[tuple[str, str]] = [
         "<b>100% offline</b>. Nenhum dado vai pra rede.\n\n"
         "<b>State local</b>: labels e notas em "
         "<tt>~/.config/vigia-deployments/state.json</tt> com mode 0600.\n\n"
-        "<b>Operacoes elevadas</b>: usa <tt>pkexec</tt> (in-app polkit dialog). "
+        "<b>Operações elevadas</b>: usa <tt>pkexec</tt> (in-app polkit dialog). "
         "Nunca <tt>sudo</tt> ou shell escape.\n\n"
-        "<b>Audit trail</b>: rpm-ostree mantem historico completo de "
-        "deployments com checksums. Combinado com notas + labels, voce tem "
-        "evidencia de processo de mudancas (LGPD-friendly)."
+        "<b>Audit trail</b>: rpm-ostree mantém histórico completo de "
+        "deployments com checksums. Combinado com notas + labels, você tem "
+        "evidência de processo de mudanças (LGPD-friendly)."
     ),
     (
         "Saiba mais",

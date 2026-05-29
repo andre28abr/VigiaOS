@@ -14,10 +14,10 @@ SECTIONS: list[tuple[str, str]] = [
     (
         "O que faz",
         "Procura por <b>rootkits</b>, <b>backdoors</b> e <b>sinais de "
-        "comprometimento</b> usando dois scanners classicos:\n\n"
-        "- <b>chkrootkit</b> — rapido (~30s), checks por binario\n"
+        "comprometimento</b> usando dois scanners clássicos:\n\n"
+        "- <b>chkrootkit</b> — rápido (~30s), checks por binário\n"
         "- <b>Rootkit Hunter (rkhunter)</b> — completo (2-5min), 200+ checks\n\n"
-        "Os dois sao complementares. Rode periodicamente."
+        "Os dois são complementares. Rode periodicamente."
     ),
     (
         "Como usar",
@@ -26,14 +26,14 @@ SECTIONS: list[tuple[str, str]] = [
         "3. Abra a aba do scanner desejado\n"
         "4. Clique <i>Iniciar scan</i>, digite senha admin\n"
         "5. Output streama em tempo real (warnings amarelo, INFECTED vermelho)\n"
-        "6. Resultado fica salvo no Historico"
+        "6. Resultado fica salvo no Histórico"
     ),
     (
         "Interpretando resultados",
         "<b>Limpo</b>: nenhum sinal. Sistema OK.\n\n"
-        "<b>Warning</b>: possivel falso positivo. Causas comuns:\n"
-        "- Arquivos modificados apos <tt>rpm-ostree upgrade</tt>\n"
-        "- Modules proprietarios (NVIDIA, VirtualBox)\n"
+        "<b>Warning</b>: possível falso positivo. Causas comuns:\n"
+        "- Arquivos modificados após <tt>rpm-ostree upgrade</tt>\n"
+        "- Modules proprietários (NVIDIA, VirtualBox)\n"
         "- Configs SSH OK no seu contexto\n\n"
         "<b>Infected</b>: alta probabilidade de comprometimento.\n"
         "1. Desconectar da rede\n"

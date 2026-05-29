@@ -2,7 +2,7 @@
 
 {% block content %}
 
-<h2>Visao geral</h2>
+<h2>Visão geral</h2>
 
 <div class="kpi-grid">
   <div class="kpi accent">
@@ -34,7 +34,7 @@
 <h2>SSH — aceitos</h2>
 {% if ssh_success %}
 <table>
-  <thead><tr><th>Quando</th><th>Usuario</th><th>De</th></tr></thead>
+  <thead><tr><th>Quando</th><th>Usuário</th><th>De</th></tr></thead>
   <tbody>
     {% for e in ssh_success %}
     <tr>
@@ -46,13 +46,13 @@
   </tbody>
 </table>
 {% else %}
-<div class="empty">Nenhum login SSH aceito no periodo.</div>
+<div class="empty">Nenhum login SSH aceito no período.</div>
 {% endif %}
 
 <h2>SSH — falhados</h2>
 {% if ssh_failed %}
 <table>
-  <thead><tr><th>Quando</th><th>Usuario</th><th>De</th></tr></thead>
+  <thead><tr><th>Quando</th><th>Usuário</th><th>De</th></tr></thead>
   <tbody>
     {% for e in ssh_failed %}
     <tr>
@@ -64,13 +64,13 @@
   </tbody>
 </table>
 {% else %}
-<div class="empty">Nenhuma tentativa SSH falhada no periodo.</div>
+<div class="empty">Nenhuma tentativa SSH falhada no período.</div>
 {% endif %}
 
 <h2>Sudo</h2>
 {% if sudo %}
 <table>
-  <thead><tr><th>Quando</th><th>Usuario</th><th>TTY</th><th>Como</th><th>Comando</th></tr></thead>
+  <thead><tr><th>Quando</th><th>Usuário</th><th>TTY</th><th>Como</th><th>Comando</th></tr></thead>
   <tbody>
     {% for s in sudo %}
     <tr>
@@ -84,13 +84,13 @@
   </tbody>
 </table>
 {% else %}
-<div class="empty">Nenhuma invocacao sudo no periodo.</div>
+<div class="empty">Nenhuma invocação sudo no período.</div>
 {% endif %}
 
 <h2>pkexec</h2>
 {% if pkexec %}
 <table>
-  <thead><tr><th>Quando</th><th>Usuario</th><th>Comando</th></tr></thead>
+  <thead><tr><th>Quando</th><th>Usuário</th><th>Comando</th></tr></thead>
   <tbody>
     {% for p in pkexec %}
     <tr>
@@ -102,13 +102,13 @@
   </tbody>
 </table>
 {% else %}
-<div class="empty">Nenhuma invocacao pkexec no periodo.</div>
+<div class="empty">Nenhuma invocação pkexec no período.</div>
 {% endif %}
 
 <h2>Logins recentes (last)</h2>
 {% if logins %}
 <table>
-  <thead><tr><th>Usuario</th><th>TTY</th><th>De</th><th>Quando</th></tr></thead>
+  <thead><tr><th>Usuário</th><th>TTY</th><th>De</th><th>Quando</th></tr></thead>
   <tbody>
     {% for l in logins %}
     <tr>
@@ -121,13 +121,13 @@
   </tbody>
 </table>
 {% else %}
-<div class="empty">Sem historico de logins disponivel.</div>
+<div class="empty">Sem histórico de logins disponível.</div>
 {% endif %}
 
 {% if failed_logins %}
 <h2>Tentativas de login falhadas (lastb)</h2>
 <table>
-  <thead><tr><th>Usuario</th><th>TTY</th><th>De</th><th>Quando</th></tr></thead>
+  <thead><tr><th>Usuário</th><th>TTY</th><th>De</th><th>Quando</th></tr></thead>
   <tbody>
     {% for l in failed_logins %}
     <tr>

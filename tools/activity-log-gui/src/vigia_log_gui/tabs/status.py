@@ -16,9 +16,9 @@ from ._helpers import make_clamp
 
 SOURCE_DESCS = {
     "audit": "Linux Audit (/var/log/audit/audit.log) — eventos do kernel/SELinux",
-    "journal": "systemd-journald — logs do systemd e servicos",
-    "journald": "systemd-journald — logs do systemd e servicos",
-    "fail2ban": "fail2ban (/var/log/fail2ban.log) — bans automaticos por brute-force",
+    "journal": "systemd-journald — logs do systemd e serviços",
+    "journald": "systemd-journald — logs do systemd e serviços",
+    "fail2ban": "fail2ban (/var/log/fail2ban.log) — bans automáticos por brute-force",
 }
 
 
@@ -49,7 +49,7 @@ class StatusTab(Adw.Bin):
 
         # Last collection
         self._last_group = Adw.PreferencesGroup()
-        self._last_group.set_title("Ultima coleta")
+        self._last_group.set_title("Última coleta")
 
         self._row_events = Adw.ActionRow(title="Eventos")
         self._row_events.add_css_class("property")
@@ -99,7 +99,7 @@ class StatusTab(Adw.Bin):
         # Sources disponiveis
         self._sources_group = Adw.PreferencesGroup()
         self._sources_group.set_margin_top(24)
-        self._sources_group.set_title("Fontes disponiveis")
+        self._sources_group.set_title("Fontes disponíveis")
         self._sources_group.set_description(
             "Sources detectadas neste sistema. Selecione no header quais coletar."
         )
@@ -110,7 +110,7 @@ class StatusTab(Adw.Bin):
             row.set_title(src_name)
             row.set_subtitle(SOURCE_DESCS.get(src_name, ""))
             badge = Gtk.Label(
-                label="Disponivel" if src_name in available else "Faltando"
+                label="Disponível" if src_name in available else "Faltando"
             )
             badge.add_css_class("monospace")
             badge.add_css_class("success" if src_name in available else "error")
@@ -125,7 +125,7 @@ class StatusTab(Adw.Bin):
         row_bin = Adw.ActionRow(title="vigia-log no PATH")
         row_bin.add_css_class("property")
         bin_lbl = Gtk.Label(
-            label="Sim" if backend.vigia_log_installed() else "Nao"
+            label="Sim" if backend.vigia_log_installed() else "Não"
         )
         bin_lbl.add_css_class("monospace")
         bin_lbl.add_css_class("success" if backend.vigia_log_installed() else "error")
@@ -181,7 +181,7 @@ class StatusTab(Adw.Bin):
         else:
             self._state_label.set_label("Atividade rotineira")
             self._state_label.add_css_class("success")
-            self._state_sub.set_label("Nada fora do padrao no periodo coletado.")
+            self._state_sub.set_label("Nada fora do padrão no período coletado.")
 
         self._lbl_events.set_label(str(len(bundle.events)) if bundle.has_data() else "—")
         self._lbl_susp.set_label(str(susp) if bundle.has_data() else "—")

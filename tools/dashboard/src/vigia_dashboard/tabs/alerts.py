@@ -36,7 +36,7 @@ class AlertsTab(Adw.Bin):
         self._prev_cpu: backend.CpuTimes | None = None
 
         # ===== Header =====
-        header_lbl = Gtk.Label(label="Alertas configuraveis")
+        header_lbl = Gtk.Label(label="Alertas configuráveis")
         header_lbl.add_css_class("title-2")
         header_lbl.set_halign(Gtk.Align.START)
         header_lbl.set_margin_bottom(8)
@@ -44,9 +44,9 @@ class AlertsTab(Adw.Bin):
         header_desc = Gtk.Label(
             label=(
                 "Defina regras tipo \"CPU > 95% por 60s\" e receba "
-                "<b>notificacao desktop</b> quando disparar. Regras salvas em "
+                "<b>notificação desktop</b> quando disparar. Regras salvas em "
                 "<tt>~/.config/vigia/dashboard-alerts.json</tt>.\n\n"
-                "Cada regra tem <i>cooldown</i> para nao spammar notificacoes "
+                "Cada regra tem <i>cooldown</i> para não spammar notificações "
                 "do mesmo problema."
             )
         )
@@ -61,7 +61,7 @@ class AlertsTab(Adw.Bin):
         self._rules_group = Adw.PreferencesGroup()
         self._rules_group.set_title("Regras")
         self._rules_group.set_description(
-            "Toggle para ativar/desativar. Edite os parametros e salve para aplicar."
+            "Toggle para ativar/desativar. Edite os parâmetros e salve para aplicar."
         )
         self._rule_rows: list = []
 
@@ -79,7 +79,7 @@ class AlertsTab(Adw.Bin):
         self._history_group.set_margin_top(28)
         self._history_group.set_title("Disparos recentes")
         self._history_group.set_description(
-            "Ultimos 20 alertas disparados nesta sessao (nao persistido)."
+            "Últimos 20 alertas disparados nesta sessão (não persistido)."
         )
         self._history_rows: list = []
 
@@ -237,7 +237,7 @@ class AlertsTab(Adw.Bin):
         thr_row.add_suffix(thr_lbl)
         row.add_row(thr_row)
 
-        dur_row = Adw.ActionRow(title="Duracao minima")
+        dur_row = Adw.ActionRow(title="Duração mínima")
         dur_row.add_css_class("property")
         dur_row.set_subtitle("Tempo acima do limiar antes de disparar")
         dur_lbl = Gtk.Label(label=f"{rule.duration_sec}s")
@@ -268,7 +268,7 @@ class AlertsTab(Adw.Bin):
         del_btn.connect("clicked", lambda _b, r=rule: self._confirm_remove(r))
         actions_box.append(del_btn)
 
-        actions_row = Adw.ActionRow(title="Acoes")
+        actions_row = Adw.ActionRow(title="Ações")
         actions_row.add_suffix(actions_box)
         row.add_row(actions_row)
 
@@ -309,7 +309,7 @@ class AlertsTab(Adw.Bin):
 
         dlg = Adw.AlertDialog(
             heading="Nova regra de alerta" if is_new else f"Editar: {rule.label or 'regra'}",
-            body="Configure os parametros e clique 'Salvar'.",
+            body="Configure os parâmetros e clique 'Salvar'.",
         )
 
         body = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
@@ -323,7 +323,7 @@ class AlertsTab(Adw.Bin):
         body.append(name_entry)
 
         # Metric
-        body.append(Gtk.Label(label="Metrica:", halign=Gtk.Align.START))
+        body.append(Gtk.Label(label="Métrica:", halign=Gtk.Align.START))
         metric_keys = list(alerts_mod.METRICS.keys())
         metric_labels = [alerts_mod.METRICS[k]["label"] for k in metric_keys]
         metric_combo = Gtk.DropDown.new_from_strings(metric_labels)
@@ -347,7 +347,7 @@ class AlertsTab(Adw.Bin):
         body.append(thr_spin)
 
         # Duration
-        body.append(Gtk.Label(label="Duracao minima (segundos):", halign=Gtk.Align.START))
+        body.append(Gtk.Label(label="Duração mínima (segundos):", halign=Gtk.Align.START))
         dur_spin = Gtk.SpinButton.new_with_range(1, 3600, 1)
         dur_spin.set_value(rule.duration_sec)
         body.append(dur_spin)
@@ -412,7 +412,7 @@ class AlertsTab(Adw.Bin):
     def _confirm_remove(self, rule: alerts_mod.AlertRule) -> None:
         dlg = Adw.AlertDialog(
             heading=f"Remover '{rule.label or alerts_mod.metric_label(rule.metric)}'?",
-            body="Esta acao nao pode ser desfeita.",
+            body="Esta ação não pode ser desfeita.",
         )
         dlg.add_response("cancel", "Cancelar")
         dlg.add_response("remove", "Remover")
@@ -444,7 +444,7 @@ class AlertsTab(Adw.Bin):
 
         if not self._history:
             row = Adw.ActionRow(title="Nenhum alerta disparado ainda")
-            row.set_subtitle("Disparos aparecem aqui quando uma regra e' ativada.")
+            row.set_subtitle("Disparos aparecem aqui quando uma regra é ativada.")
             row.add_css_class("dim-label")
             self._history_group.add(row)
             self._history_rows.append(row)

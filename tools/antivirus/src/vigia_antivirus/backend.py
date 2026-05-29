@@ -169,13 +169,13 @@ def db_age_days(info: DbInfo) -> int | None:
 def update_db_blocking() -> tuple[bool, str]:
     """`pkexec freshclam`. Atualiza base de assinaturas."""
     if not freshclam_installed():
-        return False, "freshclam nao instalado (pacote clamav-update)."
+        return False, "freshclam não instalado (pacote clamav-update)."
     if shutil.which("pkexec") is None:
-        return False, "pkexec nao encontrado."
+        return False, "pkexec não encontrado."
 
     rc, out, err = _run(["pkexec", "freshclam"], timeout=300)
     if rc in (126, 127):
-        return False, "Autenticacao cancelada."
+        return False, "Autenticação cancelada."
     # freshclam pode retornar 0 (atualizado) ou 1 (ja atualizado)
     if rc not in (0, 1):
         msg = (err or out).strip()
@@ -265,11 +265,11 @@ def scan_async(
         result.started_at = datetime.now().isoformat(timespec="seconds")
 
         if not clamav_installed():
-            result.error = "clamscan nao instalado."
+            result.error = "clamscan não instalado."
             on_done(result)
             return
         if not Path(path).exists():
-            result.error = f"Caminho nao existe: {path}"
+            result.error = f"Caminho não existe: {path}"
             on_done(result)
             return
 
@@ -303,7 +303,7 @@ def scan_async(
             for raw_line in proc.stdout or []:
                 if stop_flag is not None and stop_flag():
                     proc.terminate()
-                    result.error = "Scan cancelado pelo usuario."
+                    result.error = "Scan cancelado pelo usuário."
                     break
 
                 line = raw_line.rstrip()
@@ -347,7 +347,7 @@ def scan_async(
             and not result.error
             and result.scanned_files == 0
         ):
-            result.error = "ClamAV reportou erro de execucao (rc=2)."
+            result.error = "ClamAV reportou erro de execução (rc=2)."
 
         if not result.error:
             _save_report(result)

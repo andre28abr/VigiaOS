@@ -18,15 +18,15 @@ from .base import systemd_unit_toggle
 FIREWALLD = systemd_unit_toggle(
     unit="firewalld",
     name="Firewall (firewalld)",
-    description="Firewall padrao do Fedora. Quando OFF, todas as portas estao "
-    "abertas para conexoes recebidas. Mantenha ON em redes nao-confiaveis.",
+    description="Firewall padrão do Fedora. Quando OFF, todas as portas estão "
+    "abertas para conexões recebidas. Mantenha ON em redes não-confiáveis.",
     category="Rede",
 )
 
 SSHD = systemd_unit_toggle(
     unit="sshd",
     name="Servidor SSH (sshd)",
-    description="Permite conexoes SSH ENTRANTES. Mantenha OFF se voce nao "
+    description="Permite conexões SSH ENTRANTES. Mantenha OFF se você não "
     "precisa que outros computadores se conectem ao seu via SSH.",
     category="Rede",
 )
@@ -37,10 +37,10 @@ SSHD = systemd_unit_toggle(
 
 TOR = systemd_unit_toggle(
     unit="tor",
-    name="Servico Tor",
+    name="Serviço Tor",
     description="Roda o daemon Tor localmente (porta 9050). Apps podem usar "
-    "como proxy SOCKS para anonimizar trafego.",
-    category="Anonimizacao",
+    "como proxy SOCKS para anonimizar tráfego.",
+    category="Anonimização",
     # tor pode ter unit instalada mas binary faltando em algumas distros;
     # checa que o binario realmente esta no PATH
     extra_available_check=lambda: shutil.which("tor") is not None,

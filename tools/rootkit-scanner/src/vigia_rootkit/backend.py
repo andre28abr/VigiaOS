@@ -243,7 +243,7 @@ def _run_scan_streaming(
     start = time.time()
 
     if shutil.which("pkexec") is None:
-        result.error = "pkexec nao encontrado."
+        result.error = "pkexec não encontrado."
         on_done(result)
         return
 
@@ -265,7 +265,7 @@ def _run_scan_streaming(
             if stop_flag is not None and stop_flag():
                 proc.terminate()
                 result.cancelled = True
-                result.error = "Scan cancelado pelo usuario."
+                result.error = "Scan cancelado pelo usuário."
                 break
             line = raw_line.rstrip()
             on_line(line)
@@ -286,7 +286,7 @@ def _run_scan_streaming(
             result.error = f"Erro durante scan: {e}"
 
     if proc.returncode in (126, 127) and not result.cancelled:
-        result.error = "Autenticacao cancelada (pkexec)."
+        result.error = "Autenticação cancelada (pkexec)."
         result.cancelled = True
 
     result.elapsed_sec = round(time.time() - start, 2)
@@ -307,7 +307,7 @@ def scan_chkrootkit_async(
             r = ScanResult(
                 scanner="chkrootkit",
                 started_at=datetime.now().isoformat(timespec="seconds"),
-                error="chkrootkit nao instalado.",
+                error="chkrootkit não instalado.",
             )
             on_done(r)
             return
@@ -334,7 +334,7 @@ def scan_rkhunter_async(
             r = ScanResult(
                 scanner="rkhunter",
                 started_at=datetime.now().isoformat(timespec="seconds"),
-                error="rkhunter nao instalado.",
+                error="rkhunter não instalado.",
             )
             on_done(r)
             return

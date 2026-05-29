@@ -73,7 +73,7 @@ METRICS: dict[str, dict] = {
         "range": (0, 150),
     },
     "disk_pct_root": {
-        "label": "Uso de disco em /",
+        "label": "Uso de disco em /",  # path "/" intencional, sem diacritico
         "unit": "%",
         "default_threshold": 90.0,
         "default_op": "gt",
@@ -214,7 +214,7 @@ def _default_rules() -> list[AlertRule]:
             op="gt",
             duration_sec=30,
             cooldown_sec=600,
-            label="Memoria quase cheia",
+            label="Memória quase cheia",
             enabled=False,
         ),
         AlertRule(
@@ -224,7 +224,7 @@ def _default_rules() -> list[AlertRule]:
             op="gt",
             duration_sec=15,
             cooldown_sec=300,
-            label="Temperatura CPU critica",
+            label="Temperatura CPU crítica",
             enabled=False,
         ),
         AlertRule(

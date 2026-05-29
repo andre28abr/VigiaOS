@@ -251,7 +251,7 @@ class TestOperationsErrorHandling:
         with patch("vigia_deployments.backend.shutil.which", return_value="/usr/bin/pkexec"):
             ok, err = backend.pin_blocking(-1)
             assert not ok
-            assert "invalid" in err.lower() or "invalida" in err.lower()
+            assert "inválido" in err.lower()
 
     @patch("vigia_deployments.backend._run")
     @patch("vigia_deployments.backend.shutil.which")

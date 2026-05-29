@@ -87,7 +87,7 @@ def inspect_process_blocking(pid: int, duration: int = 5) -> InspectResult:
     """
     res = InspectResult(pid=pid)
     if not strace_installed():
-        res.error = "strace nao instalado. Instale pelo Vigia Instalador (categoria Monitoramento)."
+        res.error = "strace não instalado. Instale pelo Vigia Instalador (categoria Monitoramento)."
         return res
 
     # timeout -s INT: apos `duration`s manda SIGINT pro strace, que entao
@@ -106,14 +106,14 @@ def inspect_process_blocking(pid: int, duration: int = 5) -> InspectResult:
             cmd, capture_output=True, text=True, timeout=duration + 60
         )
     except subprocess.TimeoutExpired:
-        res.error = "Inspecao excedeu o tempo limite."
+        res.error = "Inspeção excedeu o tempo limite."
         return res
     except (FileNotFoundError, OSError):
-        res.error = "pkexec, timeout ou strace nao encontrado."
+        res.error = "pkexec, timeout ou strace não encontrado."
         return res
 
     if proc.returncode in (126, 127):
-        res.error = "Autenticacao cancelada."
+        res.error = "Autenticação cancelada."
         return res
 
     rows, total = parse_strace_summary(proc.stderr)
@@ -121,8 +121,8 @@ def inspect_process_blocking(pid: int, duration: int = 5) -> InspectResult:
         tail = (proc.stderr or "").strip().splitlines()
         last = tail[-1] if tail else ""
         res.error = (
-            "Sem dados de syscall. O processo pode ter terminado, nao fez "
-            "syscalls no periodo, ou o strace nao conseguiu anexar."
+            "Sem dados de syscall. O processo pode ter terminado, não fez "
+            "syscalls no período, ou o strace não conseguiu anexar."
             + (f"\n\n{last[:200]}" if last else "")
         )
         return res

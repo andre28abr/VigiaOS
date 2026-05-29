@@ -68,7 +68,7 @@ class OverviewTab(Adw.Bin):
         self._cpu_card = self._build_spark_card("CPU", COLOR_CPU, "%.0f%%")
         sparks_box.append(self._cpu_card["widget"])
 
-        self._ram_card = self._build_spark_card("Memoria", COLOR_RAM, "%.0f%%")
+        self._ram_card = self._build_spark_card("Memória", COLOR_RAM, "%.0f%%")
         sparks_box.append(self._ram_card["widget"])
 
         # Rede: RX + TX em sparklines paralelas
@@ -88,7 +88,7 @@ class OverviewTab(Adw.Bin):
         self._top_group = Adw.PreferencesGroup()
         self._top_group.set_margin_top(28)
         self._top_group.set_title("Top processos")
-        self._top_group.set_description("Top 3 por CPU + top 3 por memoria")
+        self._top_group.set_description("Top 3 por CPU + top 3 por memória")
         self._top_rows: list = []
 
         # ---- Layout ----

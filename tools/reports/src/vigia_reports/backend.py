@@ -41,8 +41,8 @@ class Period:
         delta = self.until - self.since
         days = max(1, int(delta.total_seconds() / 86400))
         if days == 1:
-            return "ultimas 24 horas"
-        return f"ultimos {days} dias"
+            return "últimas 24 horas"
+        return f"últimos {days} dias"
 
     def journalctl_since(self) -> str:
         return self.since.strftime("%Y-%m-%d %H:%M:%S")

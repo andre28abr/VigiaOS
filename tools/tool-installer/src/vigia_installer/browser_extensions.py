@@ -95,12 +95,12 @@ CATALOG: list[BrowserExtension] = [
         name="uBlock Origin",
         description="Ad/tracker blocker open source — o melhor do mercado.",
         why=(
-            "Bloqueia anuncios, trackers, malware e popups com filtros "
+            "Bloqueia anúncios, trackers, malware e popups com filtros "
             "atualizados pela comunidade (EasyList + outras). Esconde o "
             "elemento (sem buraco no layout), anti-anti-adblock, whitelist "
             "por site em 1 clique. Mantido pelo Raymond Hill, sem dono "
-            "comercial, sem versao paga. **Recomendado** pra todos os "
-            "usuarios."
+            "comercial, sem versão paga. **Recomendado** pra todos os "
+            "usuários."
         ),
         category="ad-blocker",
         license="GPL-3.0",
@@ -114,10 +114,10 @@ CATALOG: list[BrowserExtension] = [
         name="AdGuard AdBlocker",
         description="Alternativa ao uBlock — feita pela empresa AdGuard.",
         why=(
-            "Empresa AdGuard, listas proprias + EasyList. Feature-rich, "
-            "mas a empresa tambem vende produtos pagos (DNS, Family Mode). "
-            "A extensao em si e' GPL-3.0. Use se preferir o ecossistema "
-            "AdGuard, mas **uBlock Origin geralmente eh mais leve** e "
+            "Empresa AdGuard, listas próprias + EasyList. Feature-rich, "
+            "mas a empresa também vende produtos pagos (DNS, Family Mode). "
+            "A extensão em si é GPL-3.0. Use se preferir o ecossistema "
+            "AdGuard, mas **uBlock Origin geralmente é mais leve** e "
             "completamente independente."
         ),
         category="ad-blocker",
@@ -133,8 +133,8 @@ CATALOG: list[BrowserExtension] = [
         why=(
             "Da Electronic Frontier Foundation. Diferente de adblockers "
             "tradicionais, aprende com seu comportamento — bloqueia "
-            "trackers que seguem voce por 3+ sites. Bom **complemento** "
-            "ao uBlock (nao substitui)."
+            "trackers que seguem você por 3+ sites. Bom **complemento** "
+            "ao uBlock (não substitui)."
         ),
         category="tracker-blocker",
         license="GPL-3.0",
@@ -148,7 +148,7 @@ CATALOG: list[BrowserExtension] = [
         description="Remove tracking parameters das URLs.",
         why=(
             "Limpa `?utm_source=...`, `?fbclid=...`, `?gclid=...` e "
-            "centenas de outros parametros de tracking. Funciona em "
+            "centenas de outros parâmetros de tracking. Funciona em "
             "background, sem UI. Bom **complemento** ao uBlock."
         ),
         category="url-cleaner",
@@ -163,9 +163,9 @@ CATALOG: list[BrowserExtension] = [
         description="Redireciona YouTube/Twitter/Reddit pra alternativas privadas.",
         why=(
             "YouTube -> Invidious, Twitter -> Nitter, Reddit -> Redlib, "
-            "etc. As alternativas sao **frontends abertos** que nao usam "
-            "tracking, nao precisam de conta, e quebram ad-revenue dos "
-            "originais. Voce configura quais redirecionar."
+            "etc. As alternativas são **frontends abertos** que não usam "
+            "tracking, não precisam de conta, e quebram ad-revenue dos "
+            "originais. Você configura quais redirecionar."
         ),
         category="redirector",
         license="GPL-3.0",
@@ -177,9 +177,9 @@ CATALOG: list[BrowserExtension] = [
     BrowserExtension(
         id="cookie-autodelete",
         name="Cookie AutoDelete",
-        description="Apaga cookies de sites nao-whitelistados.",
+        description="Apaga cookies de sites não-whitelistados.",
         why=(
-            "Quando voce fecha uma aba, todos os cookies do site sao "
+            "Quando você fecha uma aba, todos os cookies do site são "
             "apagados — exceto sites na sua whitelist (gmail, banco, "
             "etc). Bom pra **quebrar persistent tracking** sem perder "
             "logins importantes."
@@ -196,8 +196,8 @@ CATALOG: list[BrowserExtension] = [
         description="Cache local de CDNs (jQuery, Google Fonts, etc.).",
         why=(
             "Quando um site carrega jQuery do Google CDN, o Google sabe "
-            "que voce visitou esse site. Decentraleyes serve esses "
-            "recursos do disco local — Google nao ve. **Privacy + "
+            "que você visitou esse site. Decentraleyes serve esses "
+            "recursos do disco local — Google não vê. **Privacy + "
             "velocidade**."
         ),
         category="cdn-cache",
@@ -363,7 +363,7 @@ def open_in_browser(ext: BrowserExtension, browser: BrowserInfo) -> tuple[bool, 
     """
     url = url_for(ext, browser)
     if url is None:
-        return False, f"Extensao nao disponivel pra {browser.label}."
+        return False, f"Extensão não disponível pra {browser.label}."
     try:
         subprocess.run(["xdg-open", url], timeout=5, check=False)
         return True, ""

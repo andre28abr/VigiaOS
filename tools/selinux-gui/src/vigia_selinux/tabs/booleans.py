@@ -28,7 +28,7 @@ class BooleansTab(Gtk.Box):
 
         self._search_entry = Gtk.SearchEntry()
         self._search_entry.set_placeholder_text(
-            "Filtrar por nome ou descricao (ex: apache, write, anonimo, ssh)"
+            "Filtrar por nome ou descrição (ex: apache, write, anônimo, ssh)"
         )
         self._search_entry.connect("search-changed", self._on_search_changed)
         inner.append(self._search_entry)
@@ -83,7 +83,7 @@ class BooleansTab(Gtk.Box):
             if not booleans:
                 empty = Adw.ActionRow()
                 empty.set_title("Nenhum boolean encontrado")
-                empty.set_subtitle("SELinux pode nao estar instalado ou sem policy carregada.")
+                empty.set_subtitle("SELinux pode não estar instalado ou sem policy carregada.")
                 self._list.append(empty)
                 return False
 

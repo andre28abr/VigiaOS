@@ -18,10 +18,10 @@ from ._helpers import make_clamp, show_error
 
 
 PERIOD_OPTIONS = [
-    ("ultimas 24 horas", 1),
-    ("ultimos 7 dias", 7),
-    ("ultimos 30 dias", 30),
-    ("ultimos 90 dias", 90),
+    ("últimas 24 horas", 1),
+    ("últimos 7 dias", 7),
+    ("últimos 30 dias", 30),
+    ("últimos 90 dias", 90),
 ]
 
 
@@ -37,8 +37,8 @@ class GenerateTab(Adw.Bin):
 
         # ---- Template group ---- #
         tpl_group = Adw.PreferencesGroup()
-        tpl_group.set_title("Modelo do relatorio")
-        tpl_group.set_description("Escolha o que sera consolidado no documento.")
+        tpl_group.set_title("Modelo do relatório")
+        tpl_group.set_description("Escolha o que será consolidado no documento.")
 
         tpl_strings = Gtk.StringList.new([f"{name}" for _, name, _ in self._templates])
         self._tpl_combo = Adw.ComboRow(title="Modelo")
@@ -56,7 +56,7 @@ class GenerateTab(Adw.Bin):
         # ---- Periodo group ---- #
         period_group = Adw.PreferencesGroup()
         period_group.set_margin_top(24)
-        period_group.set_title("Periodo")
+        period_group.set_title("Período")
         period_group.set_description("Janela de tempo a consolidar.")
 
         period_strings = Gtk.StringList.new([label for label, _ in PERIOD_OPTIONS])
@@ -70,13 +70,13 @@ class GenerateTab(Adw.Bin):
         collect_group.set_margin_top(24)
         collect_group.set_title("Coleta")
         collect_group.set_description(
-            "Modo admin usa pkexec para acessar journal do sistema e historico btmp "
+            "Modo admin usa pkexec para acessar journal do sistema e histórico btmp "
             "(logins falhados). Sem modo admin, alguns dados ficam incompletos."
         )
 
         self._admin_switch = Adw.SwitchRow(
             title="Modo admin",
-            subtitle="Usar pkexec para coleta completa (sera pedida a senha)",
+            subtitle="Usar pkexec para coleta completa (será pedida a senha)",
         )
         self._admin_switch.set_active(False)
         collect_group.add(self._admin_switch)
@@ -84,8 +84,8 @@ class GenerateTab(Adw.Bin):
         # ---- Action group ---- #
         action_group = Adw.PreferencesGroup()
         action_group.set_margin_top(24)
-        action_row = Adw.ActionRow(title="Gerar relatorio")
-        action_row.set_subtitle("HTML sera salvo em ~/.local/share/vigia-reports/")
+        action_row = Adw.ActionRow(title="Gerar relatório")
+        action_row.set_subtitle("HTML será salvo em ~/.local/share/vigia-reports/")
         self._generate_btn = Gtk.Button(label="Gerar")
         self._generate_btn.add_css_class("suggested-action")
         self._generate_btn.set_valign(Gtk.Align.CENTER)
@@ -156,7 +156,7 @@ class GenerateTab(Adw.Bin):
             elif template_id == "auth_events":
                 data = backend.collect_for_auth_events(period, elevated=elevated)
             else:
-                raise ValueError(f"Template nao suportado: {template_id}")
+                raise ValueError(f"Template não suportado: {template_id}")
 
             GLib.idle_add(self._update_progress, "Renderizando HTML...")
 
@@ -187,7 +187,7 @@ class GenerateTab(Adw.Bin):
 
     def _on_done_error(self, msg: str) -> bool:
         self._set_running(False)
-        show_error(self, "Falha ao gerar relatorio", msg)
+        show_error(self, "Falha ao gerar relatório", msg)
         return False
 
     def _set_running(self, running: bool, label: str = "Trabalhando...") -> None:

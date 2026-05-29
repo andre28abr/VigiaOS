@@ -67,6 +67,6 @@ def build_content() -> Gtk.Widget:
 class VigiaAntivirusWindow(Adw.ApplicationWindow):
     def __init__(self, app: Adw.Application):
         super().__init__(application=app)
-        self.set_title("Antivirus")
+        self.set_title("Antivírus")
         self.set_default_size(960, 720)
         self.set_content(build_content())
