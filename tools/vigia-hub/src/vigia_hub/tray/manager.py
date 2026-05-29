@@ -44,7 +44,7 @@ class TrayManager:
 
         cmd = self._resolve_command()
         if cmd is None:
-            return (False, "Executavel 'vigia-hub-tray' nao encontrado no PATH.")
+            return (False, "Executável 'vigia-hub-tray' não encontrado no PATH.")
 
         try:
             # start_new_session=True: novo grupo de processos.

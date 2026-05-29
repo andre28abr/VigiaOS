@@ -138,7 +138,7 @@ def main() -> int:
     indicator.set_icon_full(ICON_NAME, "Vigia Hub")
     indicator.set_status(AppIndicator.IndicatorStatus.ACTIVE)
     # Title tambem aparece como tooltip ao passar mouse no icone
-    indicator.set_title("Vigia Hub — Suite de seguranca LGPD")
+    indicator.set_title("Vigia Hub — Suite de segurança LGPD")
 
     menu = Gtk.Menu()
 
@@ -162,7 +162,7 @@ def main() -> int:
         ("File Integrity", "file-integrity"),
         ("Hardening Checks", "hardening-checks"),
     ]
-    modules_item = Gtk.MenuItem(label="Abrir modulo")
+    modules_item = Gtk.MenuItem(label="Abrir módulo")
     modules_menu = Gtk.Menu()
     for label, tool_id in QUICK_TOOLS:
         mi = Gtk.MenuItem(label=label)
@@ -175,7 +175,7 @@ def main() -> int:
     menu.append(modules_item)
 
     # Item: Configuracoes
-    settings_item = Gtk.MenuItem(label="Configuracoes")
+    settings_item = Gtk.MenuItem(label="Configurações")
     settings_item.connect("activate", lambda _: call_action("show-settings"))
     menu.append(settings_item)
 

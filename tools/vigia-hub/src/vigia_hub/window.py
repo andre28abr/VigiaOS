@@ -326,8 +326,8 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         intro_group = Adw.PreferencesGroup()
         intro_group.set_title("Manual do VigiaOS")
         intro_group.set_description(
-            "Resumo rapido de cada ferramenta. Para detalhes tecnicos ou "
-            "explicacao em linguagem simples, use as outras abas acima."
+            "Resumo rápido de cada ferramenta. Para detalhes técnicos ou "
+            "explicação em linguagem simples, use as outras abas acima."
         )
         page.add(intro_group)
 
@@ -679,13 +679,13 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         stack.add_titled_with_icon(
             self._build_settings_app_tab(),
             "app",
-            "Aplicacao",
+            "Aplicação",
             "system-run-symbolic",
         )
         stack.add_titled_with_icon(
             self._build_settings_security_tab(),
             "security",
-            "Seguranca",
+            "Segurança",
             "channel-secure-symbolic",
         )
         stack.add_titled_with_icon(
@@ -713,7 +713,7 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         page = Adw.PreferencesPage()
 
         init_group = Adw.PreferencesGroup()
-        init_group.set_title("Inicializacao")
+        init_group.set_title("Inicialização")
         init_group.set_description(
             "Como o Hub inicia junto com o sistema."
         )
@@ -722,7 +722,7 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         self._sw_autostart = Adw.SwitchRow()
         self._sw_autostart.set_title("Iniciar junto com o sistema")
         self._sw_autostart.set_subtitle(
-            "Cria ~/.config/autostart/vigia-hub.desktop (XDG padrao)."
+            "Cria ~/.config/autostart/vigia-hub.desktop (XDG padrão)."
         )
         self._sw_autostart.set_active(self._settings.autostart)
         self._sw_autostart.connect("notify::active", self._on_autostart_toggled)
@@ -730,10 +730,10 @@ class VigiaHubWindow(Adw.ApplicationWindow):
 
         # Switch: tray (FUNCIONAL — spawna subprocess GTK3)
         self._sw_tray = Adw.SwitchRow()
-        self._sw_tray.set_title("Mostrar icone na bandeja do sistema")
+        self._sw_tray.set_title("Mostrar ícone na bandeja do sistema")
         self._sw_tray.set_subtitle(
-            "Icone perto do menu do GNOME, com menu rapido (Abrir / "
-            "Configuracoes / Sair). Requer extensao AppIndicator."
+            "Ícone perto do menu do GNOME, com menu rápido (Abrir / "
+            "Configurações / Sair). Requer extensão AppIndicator."
         )
         self._sw_tray.set_active(self._settings.show_tray)
         self._sw_tray.connect("notify::active", self._on_tray_toggled)
@@ -743,8 +743,8 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         self._sw_minimized = Adw.SwitchRow()
         self._sw_minimized.set_title("Iniciar minimizado na bandeja")
         self._sw_minimized.set_subtitle(
-            "Inicia sem mostrar a janela — so o icone na bandeja. "
-            "Requer 'Mostrar icone na bandeja' habilitado."
+            "Inicia sem mostrar a janela — só o ícone na bandeja. "
+            "Requer 'Mostrar ícone na bandeja' habilitado."
         )
         self._sw_minimized.set_active(self._settings.start_minimized)
         self._sw_minimized.set_sensitive(self._settings.show_tray)
@@ -801,7 +801,7 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         sec_group = Adw.PreferencesGroup()
         sec_group.set_title("Acesso ao Hub")
         sec_group.set_description(
-            "Protecao adicional para o launcher e suas configuracoes."
+            "Proteção adicional para o launcher e suas configurações."
         )
 
         # Switch: password lock (FUNCIONAL — pkexec via Gio.Subprocess async)
@@ -818,9 +818,9 @@ class VigiaHubWindow(Adw.ApplicationWindow):
 
         # Auto-lock por inatividade — combo de minutos
         self._autolock_row = Adw.ComboRow()
-        self._autolock_row.set_title("Auto-bloquear apos inatividade")
+        self._autolock_row.set_title("Auto-bloquear após inatividade")
         self._autolock_row.set_subtitle(
-            "Esconde a janela e exige senha de novo na proxima abertura. "
+            "Esconde a janela e exige senha de novo na próxima abertura. "
             "Mede inatividade da janela do Hub."
         )
         autolock_model = Gtk.StringList.new([
@@ -851,7 +851,7 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         polkit_row = Adw.ActionRow()
         polkit_row.set_title("pkexec / Polkit")
         polkit_row.set_subtitle(
-            "Framework de autorizacao padrao do Linux. Reutiliza PAM e a "
+            "Framework de autorização padrão do Linux. Reutiliza PAM e a "
             "senha do sudo. Sem armazenamento local (LGPD compliant)."
         )
         polkit_row.add_prefix(
@@ -867,15 +867,15 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         page = Adw.PreferencesPage()
 
         info_group = Adw.PreferencesGroup()
-        info_group.set_title("Arquivos de configuracao")
+        info_group.set_title("Arquivos de configuração")
         info_group.set_description(
-            "Onde o Hub armazena as preferencias do usuario."
+            "Onde o Hub armazena as preferências do usuário."
         )
 
         info_row = Adw.ActionRow()
         info_row.set_title("Settings")
         info_row.set_subtitle(
-            "~/.config/vigia-hub/settings.json (permissao 0600)"
+            "~/.config/vigia-hub/settings.json (permissão 0600)"
         )
         info_row.add_prefix(
             Gtk.Image.new_from_icon_name("text-x-generic-symbolic")
@@ -901,7 +901,7 @@ class VigiaHubWindow(Adw.ApplicationWindow):
 
         ver_row = Adw.ActionRow()
         ver_row.set_title("Vigia Hub")
-        ver_row.set_subtitle(f"Versao {_ver}")
+        ver_row.set_subtitle(f"Versão {_ver}")
         ver_row.add_prefix(
             Gtk.Image.new_from_icon_name("preferences-system-symbolic")
         )
@@ -1046,8 +1046,8 @@ class VigiaHubWindow(Adw.ApplicationWindow):
             switch.set_active(not enabled)
             self._show_settings_error(
                 "Falha ao salvar autostart",
-                "Nao foi possivel escrever em ~/.config/autostart/. "
-                "Verifique permissoes da pasta.",
+                "Não foi possível escrever em ~/.config/autostart/. "
+                "Verifique permissões da pasta.",
             )
             return
         self._settings.autostart = enabled
@@ -1123,19 +1123,19 @@ class VigiaHubWindow(Adw.ApplicationWindow):
             body_parts.append("• <b>libayatana-appindicator-gtk3</b> (biblioteca)")
         if not check.has_extension:
             body_parts.append(
-                "• <b>gnome-shell-extension-appindicator</b> (extensao GNOME)"
+                "• <b>gnome-shell-extension-appindicator</b> (extensão GNOME)"
             )
         elif not check.ext_enabled:
             body_parts.append(
-                "• A extensao AppIndicator esta instalada mas <b>desativada</b>."
+                "• A extensão AppIndicator está instalada mas <b>desativada</b>."
             )
 
         if not check.has_lib or not check.has_extension:
-            body_parts.append("\n\nA instalacao requer <b>reboot</b> (Silverblue overlay).")
+            body_parts.append("\n\nA instalação requer <b>reboot</b> (Silverblue overlay).")
 
         body = "\n".join(body_parts)
 
-        dlg = Adw.AlertDialog(heading="Habilitar icone na bandeja")
+        dlg = Adw.AlertDialog(heading="Habilitar ícone na bandeja")
         dlg.set_body(body)
         dlg.set_body_use_markup(True)
         dlg.add_response("cancel", "Cancelar")
@@ -1144,7 +1144,7 @@ class VigiaHubWindow(Adw.ApplicationWindow):
             dlg.add_response("install", "Instalar agora (pkexec)")
             dlg.set_response_appearance("install", Adw.ResponseAppearance.SUGGESTED)
         elif check.has_extension and not check.ext_enabled:
-            dlg.add_response("enable", "Ativar extensao")
+            dlg.add_response("enable", "Ativar extensão")
             dlg.set_response_appearance("enable", Adw.ResponseAppearance.SUGGESTED)
 
         dlg.set_default_response("cancel")
@@ -1169,14 +1169,14 @@ class VigiaHubWindow(Adw.ApplicationWindow):
                 msg = (
                     "Acompanhe a senha de admin (pkexec). Ao terminar, "
                     "<b>reinicie o sistema</b> pra a biblioteca ficar "
-                    "disponivel. Depois ative a extensao e religue o switch."
+                    "disponível. Depois ative a extensão e religue o switch."
                 )
             else:
                 msg = (
                     "Acompanhe a senha de admin (pkexec). Ao terminar, ative "
-                    "a extensao AppIndicator e religue o switch (sem reboot)."
+                    "a extensão AppIndicator e religue o switch (sem reboot)."
                 )
-            self._show_settings_error("Instalacao iniciada", msg)
+            self._show_settings_error("Instalação iniciada", msg)
         except OSError as e:
             self._show_settings_error(
                 "Falha ao chamar pkexec",
@@ -1191,12 +1191,12 @@ class VigiaHubWindow(Adw.ApplicationWindow):
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=5)
             if result.returncode == 0:
                 self._show_settings_error(
-                    "Extensao ativada",
-                    "AppIndicator foi ativada. Religue o switch 'Mostrar icone'.",
+                    "Extensão ativada",
+                    "AppIndicator foi ativada. Religue o switch 'Mostrar ícone'.",
                 )
             else:
                 err = result.stderr.strip() or "Erro desconhecido."
-                self._show_settings_error("Falha ao ativar extensao", err)
+                self._show_settings_error("Falha ao ativar extensão", err)
         except (subprocess.SubprocessError, OSError) as e:
             self._show_settings_error("Falha ao executar gnome-extensions", str(e))
 
@@ -1238,16 +1238,16 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         if not pkexec_available():
             self._set_lock_switch_quietly(not target)
             self._show_settings_error(
-                "pkexec nao disponivel",
-                "O comando 'pkexec' nao foi encontrado no sistema. "
-                "Pacote: polkit (geralmente ja' vem instalado).",
+                "pkexec não disponível",
+                "O comando 'pkexec' não foi encontrado no sistema. "
+                "Pacote: polkit (geralmente já vem instalado).",
             )
             return
 
         # Feedback visual sutil enquanto async roda — sem dialog modal
         switch.set_sensitive(False)
         switch.set_subtitle(
-            "Aguardando autenticacao... (digite a senha admin no prompt)"
+            "Aguardando autenticação... (digite a senha admin no prompt)"
         )
 
         def on_result(ok: bool, err: str) -> None:
@@ -1259,9 +1259,9 @@ class VigiaHubWindow(Adw.ApplicationWindow):
                 # Reverte switch SEM disparar handler (anti-recursao)
                 self._set_lock_switch_quietly(not target)
                 self._show_settings_error(
-                    "Autenticacao falhou",
+                    "Autenticação falhou",
                     err or "Senha incorreta ou prompt cancelado. "
-                           "O bloqueio nao foi alterado.",
+                           "O bloqueio não foi alterado.",
                 )
                 return
 
@@ -1285,7 +1285,7 @@ class VigiaHubWindow(Adw.ApplicationWindow):
     def _lock_default_subtitle() -> str:
         return (
             "Pede senha admin (mesma do sudo) ao iniciar o Hub. Usa Polkit "
-            "do sistema — nenhuma senha e' armazenada pelo Vigia."
+            "do sistema — nenhuma senha é armazenada pelo Vigia."
         )
 
     # ------------- Auto-lock handler -------------
@@ -1559,7 +1559,7 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         builder = getattr(module, "build_content", None)
         if not callable(builder):
             raise RuntimeError(
-                f"{tool.embedded_module}.build_content() nao encontrado"
+                f"{tool.embedded_module}.build_content() não encontrado"
             )
 
         widget = builder()
@@ -1647,7 +1647,7 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         dot.add_css_class("success" if available else "error")
         status_box.append(dot)
         status_lbl = Gtk.Label(
-            label="Disponivel" if available else "Nao instalada"
+            label="Disponível" if available else "Não instalada"
         )
         status_lbl.add_css_class("dim-label")
         status_box.append(status_lbl)
@@ -1661,7 +1661,7 @@ class VigiaHubWindow(Adw.ApplicationWindow):
             btn.set_margin_bottom(16)
             btn.set_sensitive(available)
             if not available:
-                btn.set_label("Nao instalada")
+                btn.set_label("Não instalada")
             btn.connect("clicked", lambda _b, t=tool: self._on_launch(t))
             box.append(btn)
 
@@ -1704,7 +1704,7 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         page = Adw.StatusPage(
             title=f"Falha ao carregar '{tool.name}'",
             description=(
-                f"{error}\n\nVerifique se o pacote esta instalado:\n"
+                f"{error}\n\nVerifique se o pacote está instalado:\n"
                 f"pip install --user -e tools/{tool.id}/"
             ),
             icon_name="dialog-error-symbolic",
