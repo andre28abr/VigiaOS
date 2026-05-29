@@ -390,7 +390,6 @@ class BaselineTab(Adw.Bin):
             )
 
             use_btn = Gtk.Button(label="Usar")
-            use_btn.add_css_class("pill")
             use_btn.add_css_class("suggested-action")
             use_btn.set_valign(Gtk.Align.CENTER)
             file_path = b.get("_file", "")
