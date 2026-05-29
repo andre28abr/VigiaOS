@@ -61,7 +61,7 @@ desktop-file-validate %{buildroot}%{_datadir}/applications/br.com.vigia.*.deskto
 %doc tools/netmon-gui/README.md
 %{_bindir}/vigia-netmon
 %{python3_sitelib}/%{mod_name}/
-%{python3_sitelib}/%{pkg_name}-*.dist-info/
+%{python3_sitelib}/%{mod_name}-*.dist-info/
 %{_datadir}/applications/br.com.vigia.*.desktop
 %{_datadir}/icons/hicolor/scalable/apps/br.com.vigia.*.svg
 

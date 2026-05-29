@@ -60,7 +60,7 @@ desktop-file-validate %{buildroot}%{_datadir}/applications/br.com.vigia.*.deskto
 %doc tools/tool-installer/README.md
 %{_bindir}/vigia-installer
 %{python3_sitelib}/%{mod_name}/
-%{python3_sitelib}/%{pkg_name}-*.dist-info/
+%{python3_sitelib}/%{mod_name}-*.dist-info/
 %{_datadir}/applications/br.com.vigia.*.desktop
 %{_datadir}/icons/hicolor/scalable/apps/br.com.vigia.*.svg
 

@@ -70,7 +70,7 @@ vigia-privacy           # script criado pelo entry point
 ```
 
 Modo editable: mudancas em src/ refletem na proxima execucao sem precisar
-reinstalar. Para desinstalar: `pip uninstall vigia-privacy-controls`.
+reinstalar. Para desinstalar: `pip uninstall vigia-privacy`.
 
 ## Arquitetura
 

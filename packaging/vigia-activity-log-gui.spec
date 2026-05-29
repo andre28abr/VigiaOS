@@ -1,7 +1,13 @@
 # RPM spec para vigia-activity-log-gui (Vigia Suite)
 # Buildado via COPR (https://copr.fedorainfracloud.org/coprs/andre28abr/vigia/)
+#
+# NOTA: o pacote RPM se chama vigia-activity-log-gui (pareia com o core Rust
+# vigia-activity-log), mas o [project].name / binario do pyproject e' vigia-log-gui
+# (modulo vigia_log_gui). Por isso proj_name != pkg_name: o pip install usa
+# proj_name e o dist-info usa mod_name (vigia_log_gui-*.dist-info).
 
 %global pkg_name vigia-activity-log-gui
+%global proj_name vigia-log-gui
 %global mod_name vigia_log_gui
 
 Name:           %{pkg_name}
@@ -46,7 +52,7 @@ cd tools/activity-log-gui
 %install
 cd tools/activity-log-gui
 %{__python3} -m pip install --root=%{buildroot} --prefix=/usr \
-    --no-deps --no-index --find-links=../../dist %{pkg_name}
+    --no-deps --no-index --find-links=../../dist %{proj_name}
 
 # Desktop entry + icon
 install -Dpm 0644 data/br.com.vigia.*.desktop \
@@ -61,7 +67,7 @@ desktop-file-validate %{buildroot}%{_datadir}/applications/br.com.vigia.*.deskto
 %doc tools/activity-log-gui/README.md
 %{_bindir}/vigia-log-gui
 %{python3_sitelib}/%{mod_name}/
-%{python3_sitelib}/%{pkg_name}-*.dist-info/
+%{python3_sitelib}/%{mod_name}-*.dist-info/
 %{_datadir}/applications/br.com.vigia.*.desktop
 %{_datadir}/icons/hicolor/scalable/apps/br.com.vigia.*.svg
 

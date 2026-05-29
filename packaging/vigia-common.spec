@@ -50,7 +50,7 @@ cd tools/vigia-common
 %license LICENSE
 %doc tools/vigia-common/README.md
 %{python3_sitelib}/%{mod_name}/
-%{python3_sitelib}/%{pkg_name}-*.dist-info/
+%{python3_sitelib}/%{mod_name}-*.dist-info/
 
 %changelog
 * Mon May 26 2026 André Augusto Azarias de Souza <andre@vigia.local> - 0.1.0-1
