@@ -16,6 +16,8 @@ import subprocess
 import time
 from dataclasses import dataclass, field
 from datetime import datetime
+
+from vigia_common.platform import install_hint
 from pathlib import Path
 
 REPORT_PATH = Path("/var/log/lynis-report.dat")
@@ -217,9 +219,7 @@ def run_audit_blocking() -> tuple[bool, str]:
     if not lynis_installed():
         return False, (
             "Lynis nao esta instalado.\n\n"
-            "Em Fedora Silverblue:\n"
-            "rpm-ostree install lynis\n"
-            "systemctl reboot"
+            "Instale o Lynis:\n" + install_hint("lynis")
         )
 
     # Bug fix critico: Lynis roda como root via pkexec e gera

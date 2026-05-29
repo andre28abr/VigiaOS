@@ -41,3 +41,20 @@ def package_manager() -> str:
 def needs_reboot_to_apply() -> bool:
     """True se instalar/remover pacotes exige reboot (só em atômico)."""
     return is_atomic()
+
+
+def install_hint(*packages: str, reboot: bool = True) -> str:
+    """Sugestão de comando pra instalar pacotes, conforme a plataforma.
+
+    - Atômico:     ``rpm-ostree install <pkgs>`` (+ ``&& systemctl reboot``
+      quando ``reboot=True``).
+    - Workstation: ``sudo dnf install <pkgs>`` (aplica na hora, sem reboot).
+
+    Use em mensagens "instale o backend X" pra não mostrar o comando
+    errado pro usuário da outra plataforma.
+    """
+    pkgs = " ".join(packages)
+    if is_atomic():
+        cmd = f"rpm-ostree install {pkgs}"
+        return f"{cmd} && systemctl reboot" if reboot else cmd
+    return f"sudo dnf install {pkgs}"

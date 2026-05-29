@@ -19,6 +19,8 @@ import shutil
 import subprocess
 import time
 from dataclasses import dataclass, field
+
+from vigia_common.platform import install_hint
 from datetime import datetime
 from pathlib import Path
 
@@ -390,9 +392,7 @@ def run_init_blocking() -> tuple[bool, str]:
     if not aide_installed():
         return False, (
             "AIDE nao esta instalado.\n\n"
-            "Em Fedora Silverblue:\n"
-            "rpm-ostree install aide\n"
-            "systemctl reboot"
+            "Instale o AIDE:\n" + install_hint("aide")
         )
 
     conf = active_conf_path()
