@@ -26,12 +26,12 @@ from ._helpers import make_clamp, show_error
 
 
 HEADER_DESC = (
-    "<b>ClamAV</b> e' um antivirus open-source que detecta virus, trojans, "
+    "<b>ClamAV</b> é um antivírus open-source que detecta vírus, trojans, "
     "malware e ransomware por assinatura. O scan roda em background e o "
-    "progresso aparece em tempo real na <i>Saida do scan</i> — arquivos "
-    "limpos em verde, ameacas em vermelho.\n\n"
+    "progresso aparece em tempo real na <i>Saída do scan</i> — arquivos "
+    "limpos em verde, ameaças em vermelho.\n\n"
     "Sem pasta selecionada faz uma <b>varredura completa do sistema</b>. "
-    "Use o botao de pasta pra escanear so um diretorio. Mantenha a base de "
+    "Use o botão de pasta pra escanear só um diretório. Mantenha a base de "
     "assinaturas atualizada na aba <i>Base de dados</i> (recomendado "
     "1x/semana)."
 )
@@ -112,7 +112,7 @@ class ScanTab(Adw.Bin):
         # ------------------------------------------------------------
         kpis_group = Adw.PreferencesGroup()
         kpis_group.set_margin_top(8)
-        kpis_group.set_title("Estatisticas")
+        kpis_group.set_title("Estatísticas")
 
         self._row_scanned = Adw.ActionRow(title="Arquivos escaneados")
         self._row_scanned.add_css_class("property")
@@ -139,7 +139,7 @@ class ScanTab(Adw.Bin):
         # Saida do scan (terminal — streaming colorido + auto-scroll)
         # ------------------------------------------------------------
         log_expander = Adw.ExpanderRow()
-        log_expander.set_title("Saida do scan")
+        log_expander.set_title("Saída do scan")
         log_expander.set_subtitle("Output do clamscan em tempo real")
         log_expander.set_expanded(True)
 
@@ -246,7 +246,7 @@ class ScanTab(Adw.Bin):
     def _apply_status_banner(self, installed: bool, info, age) -> bool:
         if not installed:
             self._status_banner.set_title(
-                "ClamAV nao instalado. "
+                "ClamAV não instalado. "
                 "Instale via: " + install_hint("clamav", "clamav-update")
             )
             self._status_banner.set_revealed(True)
@@ -262,8 +262,8 @@ class ScanTab(Adw.Bin):
             self._status_banner.set_revealed(True)
         elif age > 14:
             self._status_banner.set_title(
-                f"Base de assinaturas desatualizada ha {age} dias. "
-                "Va a 'Base de dados' e atualize."
+                f"Base de assinaturas desatualizada há {age} dias. "
+                "Vá à 'Base de dados' e atualize."
             )
             self._status_banner.set_revealed(True)
         elif age > 7:
@@ -287,7 +287,7 @@ class ScanTab(Adw.Bin):
         if not backend.clamav_installed():
             show_error(
                 self,
-                "ClamAV nao instalado",
+                "ClamAV não instalado",
                 "Instale com: " + install_hint("clamav", "clamav-update"),
             )
             return
@@ -400,7 +400,7 @@ class ScanTab(Adw.Bin):
 
         if result.error:
             if "cancelad" in result.error.lower():
-                self._status_label.set_label("Scan cancelado pelo usuario.")
+                self._status_label.set_label("Scan cancelado pelo usuário.")
                 self._append_summary_line("\n══ Scan cancelado ══", self._tag_summary)
             else:
                 self._status_label.set_label(f"Erro: {result.error}")
@@ -411,26 +411,26 @@ class ScanTab(Adw.Bin):
 
         if infected > 0:
             self._status_label.set_label(
-                f"Scan concluido em {result.elapsed_sec}s. "
+                f"Scan concluído em {result.elapsed_sec}s. "
                 f"{scanned} arquivos escaneados, {infected} INFECTADO(S)."
             )
             self._append_summary_line(
                 f"\n══ {infected} INFECTADO(S) ══", self._tag_infected,
             )
             notify_if_unfocused(
-                f"Antivirus: {infected} infectado(s)",
+                f"Antivírus: {infected} infectado(s)",
                 f"{scanned} arquivos escaneados. Abra o Vigia pra ver os detalhes.",
                 notif_id="vigia-antivirus-scan",
                 priority=PRIORITY_HIGH,
             )
         else:
             self._status_label.set_label(
-                f"Scan concluido em {result.elapsed_sec}s. "
+                f"Scan concluído em {result.elapsed_sec}s. "
                 f"{scanned} arquivos escaneados, nada suspeito."
             )
             self._append_summary_line("\n══ Nada suspeito ══", self._tag_ok)
             notify_if_unfocused(
-                "Antivirus: nada suspeito",
+                "Antivírus: nada suspeito",
                 f"{scanned} arquivos escaneados em {result.elapsed_sec}s.",
                 notif_id="vigia-antivirus-scan",
             )

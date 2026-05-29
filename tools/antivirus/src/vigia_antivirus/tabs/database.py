@@ -37,9 +37,9 @@ class DatabaseTab(Adw.Bin):
 
         header_desc = Gtk.Label(
             label=(
-                "A base de dados contem as assinaturas de malware conhecido. "
+                "A base de dados contém as assinaturas de malware conhecido. "
                 "Atualize periodicamente — recomendado pelo menos 1x por "
-                "semana. ClamAV nao detecta zero-days, e' baseline."
+                "semana. ClamAV não detecta zero-days, é baseline."
             )
         )
         header_desc.add_css_class("dim-label")
@@ -59,14 +59,14 @@ class DatabaseTab(Adw.Bin):
         self._engine_row.add_suffix(self._engine_lbl)
         self._info_group.add(self._engine_row)
 
-        self._db_row = Adw.ActionRow(title="Versao da base")
+        self._db_row = Adw.ActionRow(title="Versão da base")
         self._db_row.add_css_class("property")
         self._db_lbl = Gtk.Label(label="—")
         self._db_lbl.add_css_class("monospace")
         self._db_row.add_suffix(self._db_lbl)
         self._info_group.add(self._db_row)
 
-        self._update_row = Adw.ActionRow(title="Ultimo update")
+        self._update_row = Adw.ActionRow(title="Último update")
         self._update_row.add_css_class("property")
         self._update_lbl = Gtk.Label(label="—")
         self._update_lbl.add_css_class("monospace")
@@ -88,7 +88,7 @@ class DatabaseTab(Adw.Bin):
         self._daemon_row.add_suffix(self._daemon_lbl)
         self._info_group.add(self._daemon_row)
 
-        self._dir_row = Adw.ActionRow(title="Diretorio da base")
+        self._dir_row = Adw.ActionRow(title="Diretório da base")
         self._dir_row.add_css_class("property")
         self._dir_lbl = Gtk.Label(label="—")
         self._dir_lbl.add_css_class("monospace")
@@ -120,18 +120,18 @@ class DatabaseTab(Adw.Bin):
         self._recent_group.set_margin_top(24)
         self._recent_group.set_title("Scans recentes")
         self._recent_group.set_description(
-            "Historico em ~/.local/share/vigia-antivirus/ (permissoes 0600)"
+            "Histórico em ~/.local/share/vigia-antivirus/ (permissões 0600)"
         )
         self._recent_group.set_margin_top(16)
         self._recent_rows: list = []
 
         # Hint group (manual references)
         hint_group = Adw.PreferencesGroup()
-        hint_group.set_title("Comandos manuais (referencia)")
+        hint_group.set_title("Comandos manuais (referência)")
         hint_group.set_margin_top(16)
         for cmd, desc in [
             ("freshclam", "Atualiza base. Roda como root."),
-            ("clamscan --version", "Imprime versao e data da base."),
+            ("clamscan --version", "Imprime versão e data da base."),
             ("clamscan -r ~/", "Escaneia o home recursivamente."),
             ("systemctl status clamav-freshclam", "Status do timer de update."),
         ]:
@@ -214,7 +214,7 @@ class DatabaseTab(Adw.Bin):
 
         if not recent:
             row = Adw.ActionRow(title="Nenhum scan realizado ainda")
-            row.set_subtitle("Va a aba 'Scan' para iniciar.")
+            row.set_subtitle("Vá à aba 'Scan' para iniciar.")
             row.add_css_class("dim-label")
             self._recent_group.add(row)
             self._recent_rows.append(row)

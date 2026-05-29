@@ -17,7 +17,7 @@ from ._helpers import escape_markup, make_clamp, risk_css
 RISK_FILTERS = [
     ("Todos os riscos", None),
     ("Apenas ALTO", "alto"),
-    ("Apenas MEDIO", "medio"),
+    ("Apenas MÉDIO", "medio"),
     ("Apenas BAIXO", "baixo"),
 ]
 
@@ -66,7 +66,7 @@ class BinariesTab(Adw.Bin):
 
         self._empty_state = Adw.StatusPage(
             title="Sem scan",
-            description="Va para a aba 'Visao Geral' e clique 'Escanear' para popular.",
+            description="Vá para a aba 'Visão Geral' e clique 'Escanear' para popular.",
             icon_name="dialog-information-symbolic",
         )
         self._empty_state.set_vexpand(True)
@@ -158,10 +158,10 @@ class BinariesTab(Adw.Bin):
         shown = len(visible)
         if shown == total:
             self._header_label.set_label(
-                f"{total} {'binario' if total == 1 else 'binarios'}"
+                f"{total} {'binário' if total == 1 else 'binários'}"
             )
         else:
-            self._header_label.set_label(f"{shown} de {total} binarios")
+            self._header_label.set_label(f"{shown} de {total} binários")
 
         # Contagem por risco
         risk_count = {"alto": 0, "medio": 0, "baixo": 0}
@@ -173,7 +173,7 @@ class BinariesTab(Adw.Bin):
         if risk_count["alto"]:
             parts.append(f"{risk_count['alto']} ALTO")
         if risk_count["medio"]:
-            parts.append(f"{risk_count['medio']} medio")
+            parts.append(f"{risk_count['medio']} médio")
         if risk_count["baixo"]:
             parts.append(f"{risk_count['baixo']} baixo")
         self._header_desc.set_label(" · ".join(parts) if parts else "")

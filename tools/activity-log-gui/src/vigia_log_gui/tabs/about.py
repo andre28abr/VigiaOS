@@ -13,55 +13,55 @@ from gi.repository import Adw, Gtk  # noqa: E402
 SECTIONS: list[tuple[str, str]] = [
     (
         "O que faz",
-        "Frontend GTK4 do <tt>vigia-log</tt> (parser Rust). Consolida tres "
-        "fontes de log do sistema numa <b>unica linha do tempo human-readable</b>:\n\n"
+        "Frontend GTK4 do <tt>vigia-log</tt> (parser Rust). Consolida três "
+        "fontes de log do sistema numa <b>única linha do tempo human-readable</b>:\n\n"
         "- <tt>/var/log/audit/audit.log</tt> — kernel/SELinux events\n"
         "- <tt>systemd journal</tt> — services\n"
-        "- <tt>/var/log/fail2ban.log</tt> — banimentos automaticos\n\n"
-        "Traduz formato cru para frases em portugues como <i>'fail2ban "
-        "baniu 192.0.2.42 apos 3 tentativas SSH em 10s'</i>."
+        "- <tt>/var/log/fail2ban.log</tt> — banimentos automáticos\n\n"
+        "Traduz formato cru para frases em português como <i>'fail2ban "
+        "baniu 192.0.2.42 após 3 tentativas SSH em 10s'</i>."
     ),
     (
         "Como usar",
-        "<b>1. Atualizar</b>: clique no botao refresh no header. Polkit "
+        "<b>1. Atualizar</b>: clique no botão refresh no header. Polkit "
         "pede senha 1x se <i>Modo admin</i> estiver ligado.\n\n"
-        "<b>2. Status</b>: visao geral de KPIs (total de eventos, suspicious "
+        "<b>2. Status</b>: visão geral de KPIs (total de eventos, suspicious "
         "vs interesting vs routine) e quais fontes foram coletadas.\n\n"
-        "<b>3. Timeline</b>: lista cronologica completa. Filtros:\n"
+        "<b>3. Timeline</b>: lista cronológica completa. Filtros:\n"
         "- Severidade (Suspicious / Interesting+ / Todas)\n"
         "- Fonte (audit / journal / fail2ban)\n"
         "- Busca por texto livre na narrativa\n"
         "- Click no evento expande mostrando o payload JSON cru\n\n"
-        "<b>4. Correlations</b>: padroes cross-source detectados (ex: "
+        "<b>4. Correlations</b>: padrões cross-source detectados (ex: "
         "<tt>fail2ban_burst</tt>, <tt>oom_kill</tt>, <tt>selinux_burst</tt>)."
     ),
     (
         "Conceitos importantes",
-        "<b>Severity classifier</b>: cada evento e' classificado em "
-        "<i>routine</i>, <i>interesting</i> ou <i>suspicious</i>. Reduz ruido "
-        "em ate 98% num audit.log tipico — voce so olha o que importa.\n\n"
-        "<b>Correlations cross-source</b>: padroes que so fazem sentido "
+        "<b>Severity classifier</b>: cada evento é classificado em "
+        "<i>routine</i>, <i>interesting</i> ou <i>suspicious</i>. Reduz ruído "
+        "em até 98% num audit.log típico — você só olha o que importa.\n\n"
+        "<b>Correlations cross-source</b>: padrões que só fazem sentido "
         "vendo eventos de FONTES DIFERENTES juntos. Ex: 3 falhas SSH no "
         "audit + 1 ban no fail2ban = correlation <tt>fail2ban_burst</tt> com "
         "narrativa sintetizada.\n\n"
-        "<b>Modo admin</b> via <tt>pkexec</tt>: necessario para ler audit.log "
+        "<b>Modo admin</b> via <tt>pkexec</tt>: necessário para ler audit.log "
         "(restrito a root) e journal do sistema. UM dialog cobre todas as "
         "fontes."
     ),
     (
-        "Limitacoes conhecidas",
-        "- Sem live tail (auto-refresh) — clique manual no botao Atualizar\n"
+        "Limitações conhecidas",
+        "- Sem live tail (auto-refresh) — clique manual no botão Atualizar\n"
         "- Limite default de 500 eventos POR fonte. Use CLI "
         "<tt>vigia-log --limit 5000</tt> para mais\n"
-        "- Filtro temporal (last hour, etc.) so via CLI por enquanto"
+        "- Filtro temporal (last hour, etc.) só via CLI por enquanto"
     ),
     (
         "Saiba mais",
         "- <tt>vigia-log --help</tt> — CLI do engine Rust\n"
         "- <tt>vigia-log --output json-bundle</tt> — formato consumido por "
-        "esta GUI (util para scripts)\n"
+        "esta GUI (útil para scripts)\n"
         "- <tt>man journalctl</tt>, <tt>man ausearch</tt> — fontes upstream\n"
-        "- Codigo: <tt>tools/activity-log/</tt> (Rust), "
+        "- Código: <tt>tools/activity-log/</tt> (Rust), "
         "<tt>tools/activity-log-gui/</tt> (Python)"
     ),
 ]

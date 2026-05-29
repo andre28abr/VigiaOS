@@ -125,7 +125,7 @@ def systemd_unit_toggle(
     def _set(value: bool) -> None:
         if shutil.which("pkexec") is None:
             raise RuntimeError(
-                "pkexec nao encontrado. Instale 'polkit' via rpm-ostree."
+                "pkexec não encontrado. Instale 'polkit' via rpm-ostree."
             )
         action = "enable" if value else "disable"
         result = subprocess.run(
@@ -138,7 +138,7 @@ def systemd_unit_toggle(
             # Distingue cancelamento (usuario nao deu senha) de outro erro
             stderr = result.stderr.strip() or result.stdout.strip()
             if "Request dismissed" in stderr or result.returncode == 126:
-                raise RuntimeError("Autenticacao cancelada pelo usuario.")
+                raise RuntimeError("Autenticação cancelada pelo usuário.")
             raise RuntimeError(f"systemctl {action} --now {unit} falhou: {stderr}")
 
     def _available() -> bool:

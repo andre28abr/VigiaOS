@@ -16,7 +16,7 @@ from ._helpers import escape_markup, make_clamp, risk_css
 RISK_FILTERS = [
     ("Todas", None),
     ("Apenas ALTO", "alto"),
-    ("Apenas MEDIO", "medio"),
+    ("Apenas MÉDIO", "medio"),
     ("Apenas BAIXO", "baixo"),
 ]
 
@@ -36,8 +36,8 @@ class CatalogTab(Adw.Bin):
 
         header_desc = Gtk.Label(
             label=(
-                "Referencia: cada capability + descricao + classe de risco. "
-                "Ordem: ALTO -> MEDIO -> BAIXO (mais perigoso primeiro)."
+                "Referência: cada capability + descrição + classe de risco. "
+                "Ordem: ALTO -> MÉDIO -> BAIXO (mais perigoso primeiro)."
             )
         )
         header_desc.add_css_class("dim-label")

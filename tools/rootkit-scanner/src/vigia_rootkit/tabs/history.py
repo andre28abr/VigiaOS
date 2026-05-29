@@ -23,12 +23,12 @@ class HistoryTab(Adw.Bin):
         self._rows: list = []
 
         self._page = Adw.PreferencesPage()
-        self._page.set_title("Historico de scans")
+        self._page.set_title("Histórico de scans")
 
         self._list_group = Adw.PreferencesGroup()
         self._list_group.set_title("Scans recentes")
         self._list_group.set_description(
-            "Cada scan eh salvo em ~/.local/share/vigia-rootkit/scans/ "
+            "Cada scan é salvo em ~/.local/share/vigia-rootkit/scans/ "
             "(mode 0600 — owner-only)."
         )
         self._page.add(self._list_group)

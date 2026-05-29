@@ -38,13 +38,13 @@ class CleanupTab(Adw.Bin):
         header_desc = Gtk.Label()
         header_desc.set_markup(
             "Limpa deployments antigos e cache de metadados pra liberar "
-            "espaco em <tt>/boot</tt> (partição pequena: ~600MB-1GB) e "
+            "espaço em <tt>/boot</tt> (partição pequena: ~600MB-1GB) e "
             "<tt>/var</tt>.\n\n"
-            "<b>O que sera limpo</b>:\n"
-            "  • <tt>-p</tt> Deployments pending (staged que ainda nao bootaram)\n"
+            "<b>O que será limpo</b>:\n"
+            "  • <tt>-p</tt> Deployments pending (staged que ainda não bootaram)\n"
             "  • <tt>-r</tt> Deployment de rollback (boot anterior)\n"
             "  • <tt>-m</tt> Cache de refspecs\n\n"
-            "<b>Nao sera afetado</b>: deployment ATIVO, deployments pinados."
+            "<b>Não será afetado</b>: deployment ATIVO, deployments pinados."
         )
         header_desc.add_css_class("dim-label")
         header_desc.set_halign(Gtk.Align.START)
@@ -54,8 +54,8 @@ class CleanupTab(Adw.Bin):
 
         # Espaco /boot
         boot_group = Adw.PreferencesGroup()
-        boot_group.set_title("Espaco em /boot")
-        boot_group.set_description("Particao pequena. Cuidado com acumulo de deployments.")
+        boot_group.set_title("Espaço em /boot")
+        boot_group.set_description("Partição pequena. Cuidado com acúmulo de deployments.")
 
         self._row_boot_total = Adw.ActionRow(title="Total")
         self._row_boot_total.add_css_class("property")
@@ -71,7 +71,7 @@ class CleanupTab(Adw.Bin):
         self._row_boot_used.add_suffix(self._lbl_boot_used)
         boot_group.add(self._row_boot_used)
 
-        self._row_boot_avail = Adw.ActionRow(title="Disponivel")
+        self._row_boot_avail = Adw.ActionRow(title="Disponível")
         self._row_boot_avail.add_css_class("property")
         self._lbl_boot_avail = Gtk.Label(label="—")
         self._lbl_boot_avail.add_css_class("monospace")
@@ -99,7 +99,7 @@ class CleanupTab(Adw.Bin):
 
         self._row_will_clean = Adw.ActionRow(title="Seriam limpos")
         self._row_will_clean.add_css_class("property")
-        self._row_will_clean.set_subtitle("Nao-ativos, nao-pinados, nao-staged")
+        self._row_will_clean.set_subtitle("Não-ativos, não-pinados, não-staged")
         self._lbl_will_clean = Gtk.Label(label="—")
         self._lbl_will_clean.add_css_class("monospace")
         self._row_will_clean.add_suffix(self._lbl_will_clean)
@@ -180,7 +180,7 @@ class CleanupTab(Adw.Bin):
             if usage.percent_used >= 85:
                 self._lbl_boot_used.add_css_class("error")
                 self._alert_banner.set_title(
-                    f"⚠ /boot esta {usage.percent_used}% cheio. "
+                    f"⚠ /boot está {usage.percent_used}% cheio. "
                     f"Limpe deployments antigos."
                 )
                 self._alert_banner.set_revealed(True)
@@ -191,7 +191,7 @@ class CleanupTab(Adw.Bin):
                 self._lbl_boot_used.add_css_class("success")
                 self._alert_banner.set_revealed(False)
         else:
-            self._lbl_boot_total.set_label("(nao montado)")
+            self._lbl_boot_total.set_label("(não montado)")
             self._lbl_boot_used.set_label("—")
             self._lbl_boot_avail.set_label("—")
             self._alert_banner.set_revealed(False)
@@ -229,13 +229,13 @@ class CleanupTab(Adw.Bin):
             heading="Limpar tudo (cleanup -p -r -m)?",
             body=(
                 "Vai executar <tt>pkexec rpm-ostree cleanup -p -r -m</tt> "
-                "num so call.\n\n"
-                "<b>O que sera removido</b>:\n"
-                "  • Deployments <b>pending</b> (staged que nao bootaram)\n"
+                "num só call.\n\n"
+                "<b>O que será removido</b>:\n"
+                "  • Deployments <b>pending</b> (staged que não bootaram)\n"
                 "  • Deployment de <b>rollback</b> (boot anterior)\n"
                 "  • <b>Cache de refspecs</b> (metadados antigos)\n\n"
                 "<b>Preservados</b>: deployment ATIVO + pinados.\n\n"
-                "Sera pedida senha admin (pkexec)."
+                "Será pedida senha admin (pkexec)."
             ),
         )
         dlg.set_body_use_markup(True)
@@ -257,7 +257,7 @@ class CleanupTab(Adw.Bin):
         try:
             ok, err = backend.cleanup_all_blocking()
         except Exception as e:  # pylint: disable=broad-except
-            ok, err = False, f"Excecao: {e}"
+            ok, err = False, f"Exceção: {e}"
         GLib.idle_add(self._on_cleanup_done, ok, err)
 
     def _on_cleanup_done(self, ok: bool, err: str) -> bool:
@@ -267,9 +267,9 @@ class CleanupTab(Adw.Bin):
             show_error(self, "Falha no cleanup", err)
         else:
             show_info(
-                self, "Cleanup concluido",
+                self, "Cleanup concluído",
                 "Pending, rollback e cached refs limpos. "
-                "Espaco em /boot liberado.",
+                "Espaço em /boot liberado.",
             )
             self.refresh()
             if self._on_changed:

@@ -186,13 +186,13 @@ def get_boot_usage() -> BootUsage:
 def rollback_blocking() -> tuple[bool, str]:
     """`pkexec rpm-ostree rollback`. Volta pro deployment anterior."""
     if shutil.which("pkexec") is None:
-        return False, "pkexec nao encontrado."
+        return False, "pkexec não encontrado."
     if not rpmostree_available():
-        return False, "rpm-ostree nao disponivel."
+        return False, "rpm-ostree não disponível."
 
     rc, _, err = _run(["pkexec", "rpm-ostree", "rollback"], timeout=60)
     if rc in (126, 127):
-        return False, "Autenticacao cancelada."
+        return False, "Autenticação cancelada."
     if rc != 0:
         return False, (err.strip() or "Falha no rollback.")[:500]
     return True, ""
@@ -201,16 +201,16 @@ def rollback_blocking() -> tuple[bool, str]:
 def pin_blocking(index: int) -> tuple[bool, str]:
     """`pkexec ostree admin pin <index>`. Protege deployment do cleanup."""
     if shutil.which("pkexec") is None:
-        return False, "pkexec nao encontrado."
+        return False, "pkexec não encontrado."
     if index < 0:
-        return False, "Indice invalido."
+        return False, "Índice inválido."
 
     rc, _, err = _run(
         ["pkexec", "ostree", "admin", "pin", str(index)],
         timeout=30,
     )
     if rc in (126, 127):
-        return False, "Autenticacao cancelada."
+        return False, "Autenticação cancelada."
     if rc != 0:
         return False, (err.strip() or "Falha ao pinnar.")[:500]
     return True, ""
@@ -219,16 +219,16 @@ def pin_blocking(index: int) -> tuple[bool, str]:
 def unpin_blocking(index: int) -> tuple[bool, str]:
     """`pkexec ostree admin pin --unpin <index>`."""
     if shutil.which("pkexec") is None:
-        return False, "pkexec nao encontrado."
+        return False, "pkexec não encontrado."
     if index < 0:
-        return False, "Indice invalido."
+        return False, "Índice inválido."
 
     rc, _, err = _run(
         ["pkexec", "ostree", "admin", "pin", "--unpin", str(index)],
         timeout=30,
     )
     if rc in (126, 127):
-        return False, "Autenticacao cancelada."
+        return False, "Autenticação cancelada."
     if rc != 0:
         return False, (err.strip() or "Falha ao despinnar.")[:500]
     return True, ""
@@ -243,14 +243,14 @@ def cleanup_all_blocking() -> tuple[bool, str]:
     -m (cached metadata): refspecs em cache
     """
     if shutil.which("pkexec") is None:
-        return False, "pkexec nao encontrado."
+        return False, "pkexec não encontrado."
 
     rc, out, err = _run(
         ["pkexec", "rpm-ostree", "cleanup", "-p", "-r", "-m"],
         timeout=120,
     )
     if rc in (126, 127):
-        return False, "Autenticacao cancelada."
+        return False, "Autenticação cancelada."
     if rc != 0:
         return False, (err.strip() or out.strip() or "Falha no cleanup.")[:500]
     return True, ""

@@ -56,19 +56,19 @@ class PendingTab(Adw.Bin):
 
         # Groups (added / removed)
         self._added_group = Adw.PreferencesGroup()
-        self._added_group.set_title("Sera instalado no proximo boot")
+        self._added_group.set_title("Será instalado no próximo boot")
 
         self._removed_group = Adw.PreferencesGroup()
 
         self._removed_group.set_margin_top(24)
-        self._removed_group.set_title("Sera removido no proximo boot")
+        self._removed_group.set_title("Será removido no próximo boot")
 
         # Current layered
         self._current_group = Adw.PreferencesGroup()
         self._current_group.set_margin_top(24)
         self._current_group.set_title("Atualmente instalados (camada rpm-ostree)")
         self._current_group.set_description(
-            "Pacotes que ja estao na camada atual (instalados antes do boot atual)."
+            "Pacotes que já estão na camada atual (instalados antes do boot atual)."
         )
 
         # Layout
@@ -117,26 +117,26 @@ class PendingTab(Adw.Bin):
             self._state_label.remove_css_class(cls)
 
         if pending.has_pending:
-            self._state_label.set_label("Mudancas pendentes")
+            self._state_label.set_label("Mudanças pendentes")
             self._state_label.add_css_class("warning")
             total = len(pending.pending_added) + len(pending.pending_removed)
             self._state_sub.set_label(
-                f"{total} pacote{'s' if total > 1 else ''} sera{'o' if total > 1 else ''} aplicado"
-                f"{'s' if total > 1 else ''} no proximo boot. Reinicie para concluir."
+                f"{total} pacote{'s' if total > 1 else ''} {'serão' if total > 1 else 'será'} aplicado"
+                f"{'s' if total > 1 else ''} no próximo boot. Reinicie para concluir."
             )
             self._reboot_btn.set_sensitive(True)
         elif pending.current_layered:
-            self._state_label.set_label("Sem mudancas pendentes")
+            self._state_label.set_label("Sem mudanças pendentes")
             self._state_label.add_css_class("success")
             self._state_sub.set_label(
                 f"{len(pending.current_layered)} pacote{'s' if len(pending.current_layered) > 1 else ''} "
-                "ja instalado(s) na camada atual."
+                "já instalado(s) na camada atual."
             )
             self._reboot_btn.set_sensitive(False)
         else:
             self._state_label.set_label("Sistema base")
             self._state_label.add_css_class("dim-label")
-            self._state_sub.set_label("Nenhum pacote layered. Use a aba 'Catalogo' para instalar.")
+            self._state_sub.set_label("Nenhum pacote layered. Use a aba 'Catálogo' para instalar.")
             self._reboot_btn.set_sensitive(False)
 
         # Limpa rows antigas
@@ -153,7 +153,7 @@ class PendingTab(Adw.Bin):
         if pending.pending_added:
             self._added_group.set_visible(True)
             for pkg in pending.pending_added:
-                row = self._build_pkg_row(pkg, suffix_text="Sera instalado", css="success")
+                row = self._build_pkg_row(pkg, suffix_text="Será instalado", css="success")
                 self._added_group.add(row)
                 self._row_refs.append(row)
         else:
@@ -163,7 +163,7 @@ class PendingTab(Adw.Bin):
         if pending.pending_removed:
             self._removed_group.set_visible(True)
             for pkg in pending.pending_removed:
-                row = self._build_pkg_row(pkg, suffix_text="Sera removido", css="error")
+                row = self._build_pkg_row(pkg, suffix_text="Será removido", css="error")
                 self._removed_group.add(row)
                 self._row_refs.append(row)
         else:
@@ -190,7 +190,7 @@ class PendingTab(Adw.Bin):
             row.set_subtitle(f"{entry.description}  ·  pacote: {package}")
         else:
             row.set_title(package)
-            row.set_subtitle("(fora do catalogo Vigia)")
+            row.set_subtitle("(fora do catálogo Vigia)")
 
         if suffix_text:
             badge = Gtk.Label(label=suffix_text)
@@ -209,7 +209,7 @@ class PendingTab(Adw.Bin):
         dlg = Adw.AlertDialog(
             heading="Reiniciar agora?",
             body=(
-                "O sistema vai reiniciar imediatamente para aplicar as mudancas "
+                "O sistema vai reiniciar imediatamente para aplicar as mudanças "
                 "pendentes. Salve seu trabalho antes de continuar."
             ),
         )

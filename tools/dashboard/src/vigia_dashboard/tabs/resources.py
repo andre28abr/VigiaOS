@@ -34,7 +34,7 @@ class ResourcesTab(Adw.Bin):
         # ============================================================
         cpu_group = Adw.PreferencesGroup()
         cpu_group.set_title("CPU")
-        cpu_group.set_description("Uso por core, frequencia, temperatura")
+        cpu_group.set_description("Uso por core, frequência, temperatura")
 
         # Chart container
         self._cpu_chart = LineChart(
@@ -53,7 +53,7 @@ class ResourcesTab(Adw.Bin):
         cpu_group.add(cpu_chart_row)
 
         # CPU info rows
-        self._cpu_freq_row = Adw.ActionRow(title="Frequencia atual")
+        self._cpu_freq_row = Adw.ActionRow(title="Frequência atual")
         self._cpu_freq_row.add_css_class("property")
         self._cpu_freq_lbl = Gtk.Label(label="—")
         self._cpu_freq_lbl.add_css_class("monospace")
@@ -73,7 +73,7 @@ class ResourcesTab(Adw.Bin):
         # ============================================================
         mem_group = Adw.PreferencesGroup()
         mem_group.set_margin_top(28)
-        mem_group.set_title("Memoria")
+        mem_group.set_title("Memória")
         mem_group.set_description("RAM e swap")
 
         # Stacked bar
@@ -106,7 +106,7 @@ class ResourcesTab(Adw.Bin):
 
         self._mem_cache_row = Adw.ActionRow(title="Cache + buffers")
         self._mem_cache_row.add_css_class("property")
-        self._mem_cache_row.set_subtitle("Memoria liberavel pelo kernel se necessario")
+        self._mem_cache_row.set_subtitle("Memória liberável pelo kernel se necessário")
         self._mem_cache_lbl = Gtk.Label(label="—")
         self._mem_cache_lbl.add_css_class("monospace")
         self._mem_cache_row.add_suffix(self._mem_cache_lbl)

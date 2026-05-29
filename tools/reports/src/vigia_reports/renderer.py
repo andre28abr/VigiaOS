@@ -19,11 +19,11 @@ from . import __version__
 TEMPLATES: dict[str, dict] = {
     "activity_overview": {
         "name": "Atividade geral",
-        "description": "Resumo do que aconteceu no periodo (SSH, sudo, fail2ban, logins). Bom para revisao mensal.",
+        "description": "Resumo do que aconteceu no período (SSH, sudo, fail2ban, logins). Bom para revisão mensal.",
         "file": "activity_overview.html",
     },
     "auth_events": {
-        "name": "Eventos de autenticacao",
+        "name": "Eventos de autenticação",
         "description": "Detalhamento de logins SSH, sudo, pkexec, logins falhados. Bom para auditoria LGPD.",
         "file": "auth_events.html",
     },

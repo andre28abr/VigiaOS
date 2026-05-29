@@ -31,17 +31,17 @@ CATEGORIES_ORDER = [
 CATEGORY_LABELS = {
     "auditoria": "Auditoria e hardening",
     "rede": "Rede",
-    "monitoramento": "Monitoramento e diagnostico",
+    "monitoramento": "Monitoramento e diagnóstico",
     "privacidade": "Privacidade e criptografia",
-    "forense": "Forense e analise",
+    "forense": "Forense e análise",
 }
 
 CATEGORY_DESCRIPTIONS = {
-    "auditoria": "Ferramentas para auditar postura de seguranca, integridade e procurar rootkits.",
-    "rede": "Scanners, sniffers e diagnostico de rede.",
-    "monitoramento": "O que esta acontecendo no sistema agora — processos, IO, arquivos abertos.",
+    "auditoria": "Ferramentas para auditar postura de segurança, integridade e procurar rootkits.",
+    "rede": "Scanners, sniffers e diagnóstico de rede.",
+    "monitoramento": "O que está acontecendo no sistema agora — processos, IO, arquivos abertos.",
     "privacidade": "Tor, VPN, DNS encriptado, criptografia.",
-    "forense": "Analise pos-incidente, antivirus, hashes e recuperacao.",
+    "forense": "Análise pós-incidente, antivírus, hashes e recuperação.",
 }
 
 
@@ -52,8 +52,8 @@ CATALOG: list[CatalogEntry] = [
         name="Lynis",
         description="Auditoria de hardening do sistema (~250 controles).",
         why=(
-            "Roda automaticamente checagens de seguranca em **kernel**, **boot**, "
-            "**autenticacao**, **firewall**, **MAC**, **logging** e gera um "
+            "Roda automaticamente checagens de segurança em **kernel**, **boot**, "
+            "**autenticação**, **firewall**, **MAC**, **logging** e gera um "
             "**Hardening Index** (0–100). Usado pela tool **Vigia Hardening Checks**."
         ),
         category="auditoria",
@@ -65,7 +65,7 @@ CATALOG: list[CatalogEntry] = [
         description="Monitor de integridade de arquivos (hash baseline + diff).",
         why=(
             "Cria um **snapshot** com hashes SHA256 dos arquivos do sistema. "
-            "Detecta quando algo critico foi modificado (`/usr/sbin/sshd`, "
+            "Detecta quando algo crítico foi modificado (`/usr/sbin/sshd`, "
             "`/etc/passwd`, etc.). Usado pela tool **Vigia File Integrity**."
         ),
         category="auditoria",
@@ -76,7 +76,7 @@ CATALOG: list[CatalogEntry] = [
         name="chkrootkit",
         description="Procura por sinais conhecidos de rootkits.",
         why=(
-            "Verifica binarios do sistema contra padroes conhecidos de rootkits "
+            "Verifica binários do sistema contra padrões conhecidos de rootkits "
             "(LKM rootkits, login trojans, etc.). Complementa o AIDE: AIDE diz "
             "*'algo mudou'*, chkrootkit diz *'parece com rootkit X'*."
         ),
@@ -104,10 +104,10 @@ CATALOG: list[CatalogEntry] = [
     CatalogEntry(
         package="mtr",
         name="MTR",
-        description="Traceroute moderno com estatisticas em tempo real.",
+        description="Traceroute moderno com estatísticas em tempo real.",
         why=(
             "Combina `ping` + `traceroute` em uma interface viva. **A melhor "
-            "ferramenta** para descobrir onde a latencia esta na sua rede."
+            "ferramenta** para descobrir onde a latência está na sua rede."
         ),
         category="rede",
         binary="mtr",
@@ -117,8 +117,8 @@ CATALOG: list[CatalogEntry] = [
         name="NetHogs",
         description="Largura de banda por processo (top-like).",
         why=(
-            "Mostra **qual processo** esta consumindo banda agora. Util para "
-            "achar daemons fofoqueiros ou suspeitar de exfiltracao."
+            "Mostra **qual processo** está consumindo banda agora. Útil para "
+            "achar daemons fofoqueiros ou suspeitar de exfiltração."
         ),
         category="rede",
         binary="nethogs",
@@ -126,10 +126,10 @@ CATALOG: list[CatalogEntry] = [
     CatalogEntry(
         package="iftop",
         name="iftop",
-        description="Largura de banda por conexao (host-to-host).",
+        description="Largura de banda por conexão (host-to-host).",
         why=(
             "Mostra **bandwidth por par origem→destino**. Complementa o "
-            "NetHogs: NetHogs e' por processo, iftop e' por conexao."
+            "NetHogs: NetHogs é por processo, iftop é por conexão."
         ),
         category="rede",
         binary="iftop",
@@ -147,7 +147,7 @@ CATALOG: list[CatalogEntry] = [
         name="lsof",
         description="Lista arquivos abertos (e sockets) por processo.",
         why=(
-            "Resolve perguntas tipo: **quem esta segurando** esse arquivo? "
+            "Resolve perguntas tipo: **quem está segurando** esse arquivo? "
             "Que processo abriu a porta 8080? (`lsof -i :8080`)."
         ),
         category="monitoramento",
@@ -156,11 +156,11 @@ CATALOG: list[CatalogEntry] = [
     CatalogEntry(
         package="strace",
         name="strace",
-        description="Tracador de syscalls (debug de processos).",
+        description="Traçador de syscalls (debug de processos).",
         why=(
             "Quando um processo trava sem log, `strace -p <pid>` mostra "
-            "**em qual syscall** ele esta parado (read, open, futex…). "
-            "Ferramenta classica de debug em Linux."
+            "**em qual syscall** ele está parado (read, open, futex…). "
+            "Ferramenta clássica de debug em Linux."
         ),
         category="monitoramento",
         binary="strace",
@@ -168,10 +168,10 @@ CATALOG: list[CatalogEntry] = [
     CatalogEntry(
         package="fail2ban",
         name="fail2ban",
-        description="Banimento automatico de IPs apos tentativas falhadas.",
+        description="Banimento automático de IPs após tentativas falhadas.",
         why=(
-            "Le os logs de SSH/HTTP/etc e **bane temporariamente IPs** que "
-            "tentam brute-force. Configuracao default ja protege SSH. "
+            "Lê os logs de SSH/HTTP/etc e **bane temporariamente IPs** que "
+            "tentam brute-force. Configuração default já protege SSH. "
             "Eventos aparecem na timeline do **Vigia Activity Log**."
         ),
         category="monitoramento",
@@ -184,8 +184,8 @@ CATALOG: list[CatalogEntry] = [
         name="Tor",
         description="Daemon do Tor (proxy de anonimato).",
         why=(
-            "Roda como servico local na porta `9050` (SOCKS5). Apos instalar: "
-            "`systemctl enable --now tor` e configure aplicacoes para usar o "
+            "Roda como serviço local na porta `9050` (SOCKS5). Após instalar: "
+            "`systemctl enable --now tor` e configure aplicações para usar o "
             "proxy. **Vigia Privacy Controls** tem toggle para iniciar/parar."
         ),
         category="privacidade",
@@ -194,10 +194,10 @@ CATALOG: list[CatalogEntry] = [
     CatalogEntry(
         package="torsocks",
         name="torsocks",
-        description="Wrapper para rodar comandos atraves do Tor.",
+        description="Wrapper para rodar comandos através do Tor.",
         why=(
             "`torsocks curl https://example.com` envia a request via Tor sem "
-            "precisar configurar proxy manualmente. Util para tests pontuais."
+            "precisar configurar proxy manualmente. Útil para tests pontuais."
         ),
         category="privacidade",
         binary="torsocks",
@@ -205,12 +205,12 @@ CATALOG: list[CatalogEntry] = [
     CatalogEntry(
         package="wireguard-tools",
         name="WireGuard",
-        description="VPN moderna e simples (chave publica/privada).",
+        description="VPN moderna e simples (chave pública/privada).",
         why=(
-            "VPN **muito mais simples e rapida** que OpenVPN. Config em "
-            "arquivo `.conf` curto. No GNOME, o **NetworkManager** ja "
-            "importa e gerencia tuneis WireGuard nativamente "
-            "(Configuracoes -> Rede -> VPN), sem precisar de tool dedicada."
+            "VPN **muito mais simples e rápida** que OpenVPN. Config em "
+            "arquivo `.conf` curto. No GNOME, o **NetworkManager** já "
+            "importa e gerencia túneis WireGuard nativamente "
+            "(Configurações -> Rede -> VPN), sem precisar de tool dedicada."
         ),
         category="privacidade",
         binary="wg",
@@ -220,12 +220,12 @@ CATALOG: list[CatalogEntry] = [
         name="dnscrypt-proxy",
         description="DNS over HTTPS/TLS local (backend do Vigia DNS Manager).",
         why=(
-            "**Encripta as queries DNS** que normalmente vao em texto puro. "
-            "Roda como servico local que substitui o resolver default, com "
+            "**Encripta as queries DNS** que normalmente vão em texto puro. "
+            "Roda como serviço local que substitui o resolver default, com "
             "suporte a **DoH/DoT** e servidores sem log.\n\n"
-            "*E' o backend do **Vigia DNS Manager** — instale por aqui e "
+            "*É o backend do **Vigia DNS Manager** — instale por aqui e "
             "gerencie tudo na tool (escolha do resolver, aplicar, status), "
-            "sem editar `/etc/dnscrypt-proxy/dnscrypt-proxy.toml` na mao.*"
+            "sem editar `/etc/dnscrypt-proxy/dnscrypt-proxy.toml` na mão.*"
         ),
         category="privacidade",
         binary="dnscrypt-proxy",
@@ -235,11 +235,11 @@ CATALOG: list[CatalogEntry] = [
     CatalogEntry(
         package="clamav",
         name="ClamAV",
-        description="Antivirus open-source com base de assinaturas grande.",
+        description="Antivírus open-source com base de assinaturas grande.",
         why=(
-            "Apesar de Linux ter poucos virus *para Linux*, ClamAV e' util "
+            "Apesar de Linux ter poucos vírus *para Linux*, ClamAV é útil "
             "para **escanear anexos de email** e **arquivos compartilhados** "
-            "que vao para Windows. Apos instalar, `freshclam` atualiza a DB."
+            "que vão para Windows. Após instalar, `freshclam` atualiza a DB."
         ),
         category="forense",
         binary="clamscan",
@@ -258,9 +258,9 @@ CATALOG: list[CatalogEntry] = [
         name="hashdeep",
         description="Computa hashes recursivamente + compara conjuntos.",
         why=(
-            "Quando voce quer hashear uma pasta inteira e depois verificar se "
-            "**algum arquivo mudou** sem precisar de baseline AIDE. Util para "
-            "cadeia de custodia em casos forenses.\n\n"
+            "Quando você quer hashear uma pasta inteira e depois verificar se "
+            "**algum arquivo mudou** sem precisar de baseline AIDE. Útil para "
+            "cadeia de custódia em casos forenses.\n\n"
             "*No Fedora vem no pacote **`md5deep`** (inclui `hashdeep`, "
             "`md5deep`, `sha256deep`). O **Vigia File Integrity** usa o "
             "`hashdeep` como motor opcional na aba Baseline.*"

@@ -142,13 +142,13 @@ def _run_pkg_cmd(cmd: list[str], timeout: int, label: str) -> tuple[bool, str]:
     except subprocess.TimeoutExpired:
         return False, f"{label} excedeu o tempo limite."
     except FileNotFoundError:
-        return False, "pkexec ou gerenciador de pacotes nao encontrado."
+        return False, "pkexec ou gerenciador de pacotes não encontrado."
 
     if result.returncode in (126, 127):
-        return False, "Autenticacao cancelada."
+        return False, "Autenticação cancelada."
     if result.returncode != 0:
         out = (result.stderr or result.stdout or "").strip()
-        return False, f"Falha (codigo {result.returncode}):\n\n{out[:800]}"
+        return False, f"Falha (código {result.returncode}):\n\n{out[:800]}"
 
     return True, result.stdout.strip()
 
@@ -189,10 +189,10 @@ def reboot_system() -> tuple[bool, str]:
     except subprocess.TimeoutExpired:
         return False, "systemctl reboot demorou demais."
     except FileNotFoundError:
-        return False, "pkexec ou systemctl nao encontrado."
+        return False, "pkexec ou systemctl não encontrado."
 
     if result.returncode in (126, 127):
-        return False, "Autenticacao cancelada."
+        return False, "Autenticação cancelada."
     if result.returncode != 0:
         return False, (result.stderr or "Falha desconhecida").strip()
     return True, ""

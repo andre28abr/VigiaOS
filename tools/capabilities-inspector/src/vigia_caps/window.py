@@ -45,8 +45,8 @@ class _CapsContent:
         self.overview_tab = OverviewTab(on_scan_done=self._on_scan_done)
 
         stack = Adw.ViewStack()
-        stack.add_titled_with_icon(self.overview_tab, "overview", "Visao Geral", "dialog-information-symbolic")
-        stack.add_titled_with_icon(self.binaries_tab, "binaries", "Binarios", "view-list-symbolic")
+        stack.add_titled_with_icon(self.overview_tab, "overview", "Visão Geral", "dialog-information-symbolic")
+        stack.add_titled_with_icon(self.binaries_tab, "binaries", "Binários", "view-list-symbolic")
         stack.add_titled_with_icon(self.catalog_tab, "catalog", "Capabilities", "system-search-symbolic")
         stack.add_titled_with_icon(self.about_tab, "about", "Sobre", "help-about-symbolic")
 

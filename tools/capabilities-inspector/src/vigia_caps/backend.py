@@ -130,7 +130,7 @@ def scan_binaries_user() -> list[BinaryWithCaps]:
 def scan_binaries_elevated() -> tuple[list[BinaryWithCaps], str]:
     """Scan completo via pkexec. UM dialog cobre todos os paths."""
     if not getcap_available():
-        return [], "getcap nao instalado (pacote libcap)."
+        return [], "getcap não instalado (pacote libcap)."
 
     # set +e: getcap retorna 1 quando encontra paths sem caps; nao queremos abortar
     paths_str = " ".join(SCAN_PATHS_FULL)
@@ -142,7 +142,7 @@ exit 0
 """
     rc, out, err = _run(["pkexec", "bash", "-c", script], timeout=120)
     if rc in (126, 127):
-        return [], "Autenticacao cancelada."
+        return [], "Autenticação cancelada."
     if rc != 0 and not out:
         return [], (err.strip() or "Falha no scan.")
 
@@ -152,11 +152,11 @@ exit 0
 def get_caps_for_path(path: str) -> tuple[list[str], str]:
     """Caps de um binario especifico. Funciona como user se o binario for legivel."""
     if not getcap_available():
-        return [], "getcap nao disponivel."
+        return [], "getcap não disponível."
 
     rc, out, err = _run(["getcap", path], timeout=5)
     if rc != 0:
-        return [], (err or "Sem capabilities ou path inacessivel.")
+        return [], (err or "Sem capabilities ou path inacessível.")
     out = out.strip()
     if not out:
         return [], "Sem capabilities."

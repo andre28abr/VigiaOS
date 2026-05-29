@@ -28,7 +28,7 @@ class NetworkTab(Gtk.Box):
         intro = Gtk.Label()
         intro.set_markup(
             "<b>Port mappings SELinux</b> — quais portas pertencem a qual contexto. "
-            "Ex: se voce roda Apache em porta 8000, precisa adicionar 8000 a "
+            "Ex: se você roda Apache em porta 8000, precisa adicionar 8000 a "
             "<tt>http_port_t</tt> via <tt>semanage port -a</tt> (escrita virá em v0.2)."
         )
         intro.set_wrap(True)
@@ -90,7 +90,7 @@ class NetworkTab(Gtk.Box):
             if not ports:
                 empty = Adw.ActionRow()
                 empty.set_title("Sem dados")
-                empty.set_subtitle("semanage nao disponivel ou retornou vazio.")
+                empty.set_subtitle("semanage não disponível ou retornou vazio.")
                 self._list.append(empty)
                 return False
 

@@ -51,9 +51,9 @@ class OverviewTab(Adw.Bin):
 
         # KPIs
         self._stats_group = Adw.PreferencesGroup()
-        self._stats_group.set_title("Ultimo scan")
+        self._stats_group.set_title("Último scan")
 
-        self._row_total = Adw.ActionRow(title="Binarios com capabilities")
+        self._row_total = Adw.ActionRow(title="Binários com capabilities")
         self._row_total.add_css_class("property")
         self._lbl_total = Gtk.Label(label="—")
         self._lbl_total.add_css_class("monospace")
@@ -68,7 +68,7 @@ class OverviewTab(Adw.Bin):
         self._row_alto.add_suffix(self._lbl_alto)
         self._stats_group.add(self._row_alto)
 
-        self._row_medio = Adw.ActionRow(title="Risco MEDIO")
+        self._row_medio = Adw.ActionRow(title="Risco MÉDIO")
         self._row_medio.set_subtitle("ex: cap_net_admin, cap_chown, cap_kill")
         self._row_medio.add_css_class("property")
         self._lbl_medio = Gtk.Label(label="—")
@@ -89,7 +89,7 @@ class OverviewTab(Adw.Bin):
         self._action_group.set_margin_top(24)
         self._action_group.set_title("Scan")
         self._action_group.set_description(
-            "Lista todos os binarios em /usr, /opt, /var, /srv com capabilities setadas. "
+            "Lista todos os binários em /usr, /opt, /var, /srv com capabilities setadas. "
             "Roda `getcap -r` via pkexec (1 dialog) — leva 5-30 segundos."
         )
 
@@ -103,7 +103,7 @@ class OverviewTab(Adw.Bin):
         self._action_group.add(scan_row)
 
         scan_user_row = Adw.ActionRow(title="Escanear (sem admin)")
-        scan_user_row.set_subtitle("So paths do user — cobertura parcial, sem pkexec")
+        scan_user_row.set_subtitle("Só paths do user — cobertura parcial, sem pkexec")
         self._scan_user_btn = Gtk.Button(label="Quick scan")
         self._scan_user_btn.set_valign(Gtk.Align.CENTER)
         self._scan_user_btn.connect("clicked", self._on_quick_scan_clicked)
@@ -162,26 +162,26 @@ class OverviewTab(Adw.Bin):
             self._state_label.set_label("0")
             self._state_label.add_css_class("success")
             self._state_sub.set_label(
-                "Nenhum binario com capabilities. Sistema limpo."
+                "Nenhum binário com capabilities. Sistema limpo."
             )
         elif risk_counts["alto"] > 0:
             self._state_label.set_label(str(risk_counts["alto"]))
             self._state_label.add_css_class("error")
             self._state_sub.set_label(
                 f"{risk_counts['alto']} capabilities de risco ALTO encontradas. "
-                "Veja a aba 'Binarios' filtrando por 'alto'."
+                "Veja a aba 'Binários' filtrando por 'alto'."
             )
         elif risk_counts["medio"] > 0:
             self._state_label.set_label(str(total))
             self._state_label.add_css_class("warning")
             self._state_sub.set_label(
-                f"{total} binarios com capabilities. Nenhuma de risco ALTO."
+                f"{total} binários com capabilities. Nenhuma de risco ALTO."
             )
         else:
             self._state_label.set_label(str(total))
             self._state_label.add_css_class("success")
             self._state_sub.set_label(
-                f"{total} binarios com capabilities, todas de risco baixo."
+                f"{total} binários com capabilities, todas de risco baixo."
             )
 
         # Stats
@@ -212,7 +212,7 @@ class OverviewTab(Adw.Bin):
         try:
             binaries, err = backend.scan_binaries_elevated()
         except Exception as e:  # pylint: disable=broad-except
-            binaries, err = [], f"Excecao: {e}"
+            binaries, err = [], f"Exceção: {e}"
         GLib.idle_add(self._on_scan_done_cb, binaries, err)
 
     def _on_quick_scan_clicked(self, _btn: Gtk.Button) -> None:
@@ -226,7 +226,7 @@ class OverviewTab(Adw.Bin):
             binaries = backend.scan_binaries_user()
             err = ""
         except Exception as e:  # pylint: disable=broad-except
-            binaries, err = [], f"Excecao: {e}"
+            binaries, err = [], f"Exceção: {e}"
         GLib.idle_add(self._on_scan_done_cb, binaries, err)
 
     def _on_scan_done_cb(self, binaries: list, err: str) -> bool:

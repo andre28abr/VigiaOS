@@ -43,11 +43,11 @@ class DeploymentsTab(Adw.Bin):
 
         header_desc = Gtk.Label()
         header_desc.set_markup(
-            "Cada <b>deployment</b> e um estado imutavel do sistema. "
-            "Aparecem no menu do <b>GRUB</b> ao bootar. Sao criados "
+            "Cada <b>deployment</b> é um estado imutável do sistema. "
+            "Aparecem no menu do <b>GRUB</b> ao bootar. São criados "
             "automaticamente em cada <tt>rpm-ostree install</tt> ou "
             "<tt>upgrade</tt>.\n\n"
-            "Voce pode <b>reverter</b> pro anterior, <b>pinnar</b> "
+            "Você pode <b>reverter</b> pro anterior, <b>pinnar</b> "
             "(protege do cleanup), ou adicionar <b>label/notas</b> "
             "pra documentar."
         )
@@ -119,7 +119,7 @@ class DeploymentsTab(Adw.Bin):
         # Banner
         if not available:
             self._banner.set_title(
-                "rpm-ostree nao encontrado. Esta tool requer Fedora Atomic "
+                "rpm-ostree não encontrado. Esta tool requer Fedora Atomic "
                 "(Silverblue, Kinoite, Bluefin, Bazzite)."
             )
             self._banner.set_revealed(True)
@@ -133,7 +133,7 @@ class DeploymentsTab(Adw.Bin):
 
         if not deployments:
             row = Adw.ActionRow(title="Nenhum deployment encontrado")
-            row.set_subtitle("Sistema nao atomic ou erro ao consultar rpm-ostree.")
+            row.set_subtitle("Sistema não atomic ou erro ao consultar rpm-ostree.")
             row.add_css_class("dim-label")
             self._list_group.add(row)
             self._deployment_rows.append(row)
@@ -169,9 +169,9 @@ class DeploymentsTab(Adw.Bin):
         # === Detalhes (expandidos) ===
 
         # Versao + origin
-        info_row = Adw.ActionRow(title="Versao")
+        info_row = Adw.ActionRow(title="Versão")
         info_row.add_css_class("property")
-        info_lbl = Gtk.Label(label=d.version or "(sem versao)")
+        info_lbl = Gtk.Label(label=d.version or "(sem versão)")
         info_lbl.add_css_class("monospace")
         info_lbl.add_css_class("caption")
         info_row.add_suffix(info_lbl)
@@ -201,7 +201,7 @@ class DeploymentsTab(Adw.Bin):
         label_row.set_subtitle("Apelido pra identificar este deployment")
         label_entry = Gtk.Entry()
         label_entry.set_text(custom_label)
-        label_entry.set_placeholder_text("ex: Pre instalacao do dnscrypt")
+        label_entry.set_placeholder_text("ex: Pré instalação do dnscrypt")
         label_entry.set_valign(Gtk.Align.CENTER)
         label_entry.set_hexpand(False)
         label_entry.set_width_chars(28)
@@ -368,7 +368,7 @@ class DeploymentsTab(Adw.Bin):
             else:
                 ok, err = backend.pin_blocking(index)
         except Exception as e:  # pylint: disable=broad-except
-            ok, err = False, f"Excecao: {e}"
+            ok, err = False, f"Exceção: {e}"
         GLib.idle_add(self._on_pin_done, ok, err, unpin)
 
     def _on_pin_done(self, ok: bool, err: str, was_unpin: bool) -> bool:
@@ -391,14 +391,14 @@ class DeploymentsTab(Adw.Bin):
             heading=f"Reverter pra deployment {d.base_commit}?",
             body=(
                 f"Vai trocar o deployment ATIVO pelo selecionado. "
-                f"Apos reboot, o sistema vai bootar a partir deste.\n\n"
+                f"Após reboot, o sistema vai bootar a partir deste.\n\n"
                 f"<b>Detalhes do deployment alvo:</b>\n"
-                f"  • Versao: {d.version or '(sem versao)'}\n"
+                f"  • Versão: {d.version or '(sem versão)'}\n"
                 f"  • Data: {d.timestamp_str}\n"
                 f"  • Commit: {d.base_commit}\n\n"
-                f"Nenhum dado de usuario sera perdido. <tt>/var</tt> e "
-                f"<tt>/home</tt> sao compartilhados entre deployments.\n\n"
-                f"Sera pedida senha admin (pkexec)."
+                f"Nenhum dado de usuário será perdido. <tt>/var</tt> e "
+                f"<tt>/home</tt> são compartilhados entre deployments.\n\n"
+                f"Será pedida senha admin (pkexec)."
             ),
         )
         dlg.set_body_use_markup(True)
@@ -419,7 +419,7 @@ class DeploymentsTab(Adw.Bin):
         try:
             ok, err = backend.rollback_blocking()
         except Exception as e:  # pylint: disable=broad-except
-            ok, err = False, f"Excecao: {e}"
+            ok, err = False, f"Exceção: {e}"
         GLib.idle_add(self._on_rollback_done, ok, err)
 
     def _on_rollback_done(self, ok: bool, err: str) -> bool:
@@ -430,7 +430,7 @@ class DeploymentsTab(Adw.Bin):
             show_info(
                 self, "Rollback feito",
                 "Reinicie o sistema para usar o deployment selecionado.\n\n"
-                "(O sistema atual continua rodando ate o reboot.)",
+                "(O sistema atual continua rodando até o reboot.)",
             )
             self.refresh()
             if self._on_changed:

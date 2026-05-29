@@ -880,16 +880,16 @@ def kill_process(pid: int, sig: int = _signal.SIGTERM) -> tuple[bool, str]:
     Retorna (ok, err_message).
     """
     if pid <= 0:
-        return False, "PID invalido."
+        return False, "PID inválido."
     try:
         os.kill(pid, sig)
         return True, ""
     except ProcessLookupError:
-        return False, "Processo nao existe mais."
+        return False, "Processo não existe mais."
     except PermissionError:
         # Tenta via pkexec
         if shutil.which("pkexec") is None:
-            return False, "Sem permissao e pkexec nao encontrado."
+            return False, "Sem permissão e pkexec não encontrado."
         sig_name = "TERM"
         if sig == _signal.SIGKILL:
             sig_name = "KILL"
@@ -901,7 +901,7 @@ def kill_process(pid: int, sig: int = _signal.SIGTERM) -> tuple[bool, str]:
                 capture_output=True, text=True, timeout=10,
             )
             if result.returncode in (126, 127):
-                return False, "Autenticacao cancelada."
+                return False, "Autenticação cancelada."
             if result.returncode != 0:
                 return False, (result.stderr or result.stdout).strip()[:300]
             return True, ""

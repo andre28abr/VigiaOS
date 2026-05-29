@@ -13,47 +13,47 @@ from gi.repository import Adw, Gtk  # noqa: E402
 SECTIONS: list[tuple[str, str]] = [
     (
         "O que faz",
-        "Centraliza <b>13 configuracoes de privacidade</b> do GNOME e do "
-        "sistema num so painel. Cada switch muda o estado <b>real</b> do "
+        "Centraliza <b>13 configurações de privacidade</b> do GNOME e do "
+        "sistema num só painel. Cada switch muda o estado <b>real</b> do "
         "sistema imediatamente.\n\n"
-        "Sem essa tool, voce precisaria editar manualmente <tt>dconf</tt>, "
+        "Sem essa tool, você precisaria editar manualmente <tt>dconf</tt>, "
         "<tt>/etc/selinux/config</tt>, <tt>systemctl</tt> e <tt>firewall-cmd</tt> "
-        "separadamente. Aqui, e' um clique."
+        "separadamente. Aqui, é um clique."
     ),
     (
         "Como usar",
-        "<b>Modo leigo</b>: a maioria dos toggles e' user-scope (sem senha). "
-        "Ligue/desligue conforme preferencia. Mudancas sincronizam com o "
+        "<b>Modo leigo</b>: a maioria dos toggles é user-scope (sem senha). "
+        "Ligue/desligue conforme preferência. Mudanças sincronizam com o "
         "GNOME Settings em tempo real.\n\n"
         "<b>Toggles que pedem senha</b> (admin via <tt>pkexec</tt>): "
-        "firewall, servidor SSH e Tor. Voce vera um dialog do polkit "
-        "antes da mudanca tomar efeito."
+        "firewall, servidor SSH e Tor. Você verá um dialog do polkit "
+        "antes da mudança tomar efeito."
     ),
     (
         "Conceitos importantes",
-        "<b>dconf</b> e' o sistema de configuracao do GNOME — equivalente "
+        "<b>dconf</b> é o sistema de configuração do GNOME — equivalente "
         "ao registry do Windows mas mais simples. Cada toggle aqui mapeia "
         "para uma chave <tt>dconf</tt>.\n\n"
-        "<b>User-scope vs system-scope</b>: user-scope altera so o seu "
+        "<b>User-scope vs system-scope</b>: user-scope altera só o seu "
         "perfil (no <tt>~/.config/dconf/user</tt>). System-scope altera "
-        "servicos do sistema todo (precisa root).\n\n"
-        "<b>Toggle indisponivel</b>: aparece dimmed quando o backend nao "
-        "esta presente (ex: bluetooth sem adaptador, firewall sem firewalld "
+        "serviços do sistema todo (precisa root).\n\n"
+        "<b>Toggle indisponível</b>: aparece dimmed quando o backend não "
+        "está presente (ex: bluetooth sem adaptador, firewall sem firewalld "
         "instalado)."
     ),
     (
-        "Limitacoes conhecidas",
-        "- Algumas mudancas (firewall, SSH) so persistem se voce ligar "
-        "<i>enable</i> tambem — esta tool faz <tt>--now</tt> (estado atual) "
-        "mas nao mexe em <i>enable/disable no boot</i>.\n"
+        "Limitações conhecidas",
+        "- Algumas mudanças (firewall, SSH) só persistem se você ligar "
+        "<i>enable</i> também — esta tool faz <tt>--now</tt> (estado atual) "
+        "mas não mexe em <i>enable/disable no boot</i>.\n"
         "- Bluetooth toggle requer <tt>bluetoothctl</tt> instalado.\n"
-        "- Tor toggle so funciona se o pacote <tt>tor</tt> estiver "
+        "- Tor toggle só funciona se o pacote <tt>tor</tt> estiver "
         "instalado via Tool Installer."
     ),
     (
         "Saiba mais",
-        "- <tt>man dconf</tt> — documentacao do dconf\n"
-        "- <tt>man systemctl</tt> — controle de servicos systemd\n"
+        "- <tt>man dconf</tt> — documentação do dconf\n"
+        "- <tt>man systemctl</tt> — controle de serviços systemd\n"
         "- <tt>man firewall-cmd</tt> — controle do firewalld\n"
         "- Wiki Fedora: https://docs.fedoraproject.org/en-US/quick-docs/firewalld/"
     ),

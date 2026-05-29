@@ -29,7 +29,7 @@ class ZonesTab(Gtk.Box):
         zone_group = Adw.PreferencesGroup()
         zone_group.set_title("Configurar uma zona")
         zone_group.set_description(
-            "Mudancas sao --permanent + --reload (persistem no boot e aplicam imediatamente)."
+            "Mudanças são --permanent + --reload (persistem no boot e aplicam imediatamente)."
         )
 
         self._zone_combo = Adw.ComboRow()
@@ -46,7 +46,7 @@ class ZonesTab(Gtk.Box):
         self._services_group.set_margin_top(24)
         self._services_group.set_title("Services permitidos nesta zona")
         self._services_group.set_description(
-            "Services pre-definidos do firewalld. Ex: ssh, http, https, dhcpv6-client."
+            "Services pré-definidos do firewalld. Ex: ssh, http, https, dhcpv6-client."
         )
 
         # Botao Add Service
@@ -202,7 +202,7 @@ class ZonesTab(Gtk.Box):
         current = set(backend.list_zone_services(zone))
         available = [s for s in backend.list_available_services() if s not in current]
         if not available:
-            show_error(self, "Nenhum service disponivel", "Todos ja estao permitidos nesta zona.")
+            show_error(self, "Nenhum service disponível", "Todos já estão permitidos nesta zona.")
             return
 
         # Cria dialog com combo
@@ -289,9 +289,9 @@ class ZonesTab(Gtk.Box):
         dlg = Adw.AlertDialog(
             heading=f"Remover '{service}' da zona '{zone}'?",
             body=(
-                "Esta acao remove o service do firewall (--permanent + --reload). "
-                "Outras conexoes desse service serao bloqueadas pela zona padrao "
-                "ate voce re-adicionar."
+                "Esta ação remove o service do firewall (--permanent + --reload). "
+                "Outras conexões desse service serão bloqueadas pela zona padrão "
+                "até você re-adicionar."
             ),
         )
         dlg.add_response("cancel", "Cancelar")
@@ -329,8 +329,8 @@ class ZonesTab(Gtk.Box):
         dlg = Adw.AlertDialog(
             heading=f"Remover porta {port}/{proto.upper()} da zona '{zone}'?",
             body=(
-                "Esta acao remove a porta do firewall (--permanent + --reload). "
-                "Conexoes nessa porta+protocolo deixarao de ser permitidas."
+                "Esta ação remove a porta do firewall (--permanent + --reload). "
+                "Conexões nessa porta+protocolo deixarão de ser permitidas."
             ),
         )
         dlg.add_response("cancel", "Cancelar")

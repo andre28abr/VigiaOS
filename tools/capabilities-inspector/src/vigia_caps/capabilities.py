@@ -30,7 +30,7 @@ CAPABILITIES: list[Capability] = [
         short="Configurar regras do audit subsystem",
         long=(
             "Permite habilitar/desabilitar o kernel audit, adicionar regras "
-            "e configurar limits. Util para daemons de auditoria (auditd); "
+            "e configurar limits. Útil para daemons de auditoria (auditd); "
             "perigoso se atacante puder desligar logging."
         ),
     ),
@@ -58,7 +58,7 @@ CAPABILITIES: list[Capability] = [
         short="Impedir suspend do sistema",
         long=(
             "Permite manter o sistema acordado (epoll EPOLLWAKEUP). Usado "
-            "por alguns daemons de notificacao."
+            "por alguns daemons de notificação."
         ),
     ),
     Capability(
@@ -66,9 +66,9 @@ CAPABILITIES: list[Capability] = [
         risk="medio",
         short="Carregar programas BPF",
         long=(
-            "Permite operacoes BPF privilegiadas (carregar programas, criar "
-            "maps). Necessario para ferramentas como bcc, bpftrace, cilium. "
-            "Atacante com cap_bpf pode injetar codigo no kernel."
+            "Permite operações BPF privilegiadas (carregar programas, criar "
+            "maps). Necessário para ferramentas como bcc, bpftrace, cilium. "
+            "Atacante com cap_bpf pode injetar código no kernel."
         ),
     ),
     Capability(
@@ -76,7 +76,7 @@ CAPABILITIES: list[Capability] = [
         risk="medio",
         short="Checkpoint/restore de processos (CRIU)",
         long=(
-            "Necessario para CRIU (Checkpoint/Restore in Userspace). "
+            "Necessário para CRIU (Checkpoint/Restore in Userspace). "
             "Permite congelar e restaurar processos com seu estado."
         ),
     ),
@@ -85,36 +85,36 @@ CAPABILITIES: list[Capability] = [
         risk="medio",
         short="Mudar UID/GID de qualquer arquivo",
         long=(
-            "Permite chown arbitrario. Tradicionalmente reservado pro root. "
-            "Atacante pode mudar dono de arquivos sensiveis (ex: /etc/passwd)."
+            "Permite chown arbitrário. Tradicionalmente reservado pro root. "
+            "Atacante pode mudar dono de arquivos sensíveis (ex: /etc/passwd)."
         ),
     ),
     Capability(
         name="cap_dac_override",
         risk="alto",
-        short="Bypass de permissoes discricionarias",
+        short="Bypass de permissões discricionárias",
         long=(
-            "Ignora as checagens normais de permissao (rwx). Equivale a "
+            "Ignora as checagens normais de permissão (rwx). Equivale a "
             "ler/escrever/executar qualquer arquivo. **Quase root** — "
-            "qualquer binario com isso e' SUSPEITO se nao for um daemon "
+            "qualquer binário com isso é SUSPEITO se não for um daemon "
             "conhecido."
         ),
     ),
     Capability(
         name="cap_dac_read_search",
         risk="medio",
-        short="Bypass de permissoes para LER",
+        short="Bypass de permissões para LER",
         long=(
-            "Versao reduzida do cap_dac_override: so leitura/listing, sem "
+            "Versão reduzida do cap_dac_override: só leitura/listing, sem "
             "escrita. Usado por daemons de backup (ex: rsync) e indexadores."
         ),
     ),
     Capability(
         name="cap_fowner",
         risk="medio",
-        short="Bypass de checagens 'owner' em operacoes de arquivo",
+        short="Bypass de checagens 'owner' em operações de arquivo",
         long=(
-            "Permite chmod, utimes, IS_IMMUTABLE em arquivos que nao sao "
+            "Permite chmod, utimes, IS_IMMUTABLE em arquivos que não são "
             "seus. Usado por backup tools que precisam preservar metadata."
         ),
     ),
@@ -123,16 +123,16 @@ CAPABILITIES: list[Capability] = [
         risk="baixo",
         short="Setar SUID/SGID em arquivos",
         long=(
-            "Permite manter SUID/SGID em arquivos apos chown/write. Usado "
-            "por package managers ao instalar binarios SUID."
+            "Permite manter SUID/SGID em arquivos após chown/write. Usado "
+            "por package managers ao instalar binários SUID."
         ),
     ),
     Capability(
         name="cap_ipc_lock",
         risk="baixo",
-        short="Lock memoria (mlock)",
+        short="Lock memória (mlock)",
         long=(
-            "Permite mlock(), mlockall() — manter paginas na RAM, prevenir "
+            "Permite mlock(), mlockall() — manter páginas na RAM, prevenir "
             "swap. Usado por GPG (proteger chaves), bancos de dados."
         ),
     ),
@@ -141,7 +141,7 @@ CAPABILITIES: list[Capability] = [
         risk="baixo",
         short="Bypass IPC ownership checks",
         long=(
-            "Permite operar em System V IPC objects de outros usuarios."
+            "Permite operar em System V IPC objects de outros usuários."
         ),
     ),
     Capability(
@@ -150,7 +150,7 @@ CAPABILITIES: list[Capability] = [
         short="Enviar sinais para qualquer processo",
         long=(
             "Bypass das checagens normais (UID precisa bater) para "
-            "signaling. Pode parar daemons criticos ou matar processos "
+            "signaling. Pode parar daemons críticos ou matar processos "
             "de outros users."
         ),
     ),
@@ -160,7 +160,7 @@ CAPABILITIES: list[Capability] = [
         short="Lease em arquivos",
         long=(
             "Permite estabelecer leases (file_lock F_SETLEASE). Usado por "
-            "Samba/NFS para notificar clientes de mudancas."
+            "Samba/NFS para notificar clientes de mudanças."
         ),
     ),
     Capability(
@@ -177,8 +177,8 @@ CAPABILITIES: list[Capability] = [
         risk="alto",
         short="Configurar MAC framework (AppArmor, SELinux)",
         long=(
-            "Permite manipular politicas do Mandatory Access Control. "
-            "Em SELinux/AppArmor isso e' altamente sensivel — atacante "
+            "Permite manipular políticas do Mandatory Access Control. "
+            "Em SELinux/AppArmor isso é altamente sensível — atacante "
             "pode desligar o MAC."
         ),
     ),
@@ -187,7 +187,7 @@ CAPABILITIES: list[Capability] = [
         risk="alto",
         short="Bypass de checagens MAC",
         long=(
-            "Ignora regras do AppArmor/SELinux. **Critico** — derruba "
+            "Ignora regras do AppArmor/SELinux. **Crítico** — derruba "
             "uma das principais camadas de defesa do sistema."
         ),
     ),
@@ -203,7 +203,7 @@ CAPABILITIES: list[Capability] = [
     Capability(
         name="cap_net_admin",
         risk="medio",
-        short="Administracao de rede",
+        short="Administração de rede",
         long=(
             "Configurar interfaces, firewall (iptables/nftables), routing, "
             "bind addresses, multicasting. Usado por NetworkManager, "
@@ -216,7 +216,7 @@ CAPABILITIES: list[Capability] = [
         short="Bind em portas privilegiadas (<1024)",
         long=(
             "Permite escutar em portas 1-1023 sem ser root. Usado por "
-            "httpd, sshd, postfix. **Baixo risco** — e' justamente o que "
+            "httpd, sshd, postfix. **Baixo risco** — é justamente o que "
             "capabilities foi feito pra resolver."
         ),
     ),
@@ -234,7 +234,7 @@ CAPABILITIES: list[Capability] = [
         risk="medio",
         short="Sockets RAW (ping, traceroute, tcpdump)",
         long=(
-            "Permite criar AF_PACKET e raw IP sockets. Necessario pra ping, "
+            "Permite criar AF_PACKET e raw IP sockets. Necessário pra ping, "
             "traceroute, sniffer (tcpdump). Atacante pode sniff/spoof "
             "pacotes."
         ),
@@ -244,9 +244,9 @@ CAPABILITIES: list[Capability] = [
         risk="medio",
         short="perf_event_open e profiling do kernel",
         long=(
-            "Permite usar perf events e bpf_trace_printk. Util para "
+            "Permite usar perf events e bpf_trace_printk. Útil para "
             "profiling/observability. Atacante com perfmon pode extrair "
-            "informacao do kernel."
+            "informação do kernel."
         ),
     ),
     Capability(
@@ -255,8 +255,8 @@ CAPABILITIES: list[Capability] = [
         short="Setar file capabilities (setcap)",
         long=(
             "Permite usar o `setcap` para adicionar capabilities em "
-            "outros binarios. Atacante pode escalar privilegios criando "
-            "um binario com cap_sys_admin."
+            "outros binários. Atacante pode escalar privilégios criando "
+            "um binário com cap_sys_admin."
         ),
     ),
     Capability(
@@ -264,8 +264,8 @@ CAPABILITIES: list[Capability] = [
         risk="alto",
         short="Mudar GID e supplementary groups",
         long=(
-            "setgid arbitrario. Permite virar membro do grupo `wheel`, "
-            "`root`, `disk`, etc. **Caminho classico pra root**."
+            "setgid arbitrário. Permite virar membro do grupo `wheel`, "
+            "`root`, `disk`, etc. **Caminho clássico pra root**."
         ),
     ),
     Capability(
@@ -275,17 +275,17 @@ CAPABILITIES: list[Capability] = [
         long=(
             "Permite remover capabilities do bounding set ou adicionar "
             "ao set permitido de outros processos. Pode ser usado pra "
-            "escalar privilegios."
+            "escalar privilégios."
         ),
     ),
     Capability(
         name="cap_setuid",
         risk="alto",
-        short="setuid arbitrario (virar qualquer usuario)",
+        short="setuid arbitrário (virar qualquer usuário)",
         long=(
-            "Permite setuid(0). **Equivalente a root**. Qualquer binario "
-            "com cap_setuid e' efetivamente SUID root — investigue se "
-            "nao e' um daemon conhecido."
+            "Permite setuid(0). **Equivalente a root**. Qualquer binário "
+            "com cap_setuid é efetivamente SUID root — investigue se "
+            "não é um daemon conhecido."
         ),
     ),
     Capability(
@@ -293,7 +293,7 @@ CAPABILITIES: list[Capability] = [
         risk="alto",
         short="Capability 'coringa' — quase root",
         long=(
-            "Inclui dezenas de operacoes: mount, umount, sethostname, "
+            "Inclui dezenas de operações: mount, umount, sethostname, "
             "swapon, ioperm, kexec, criar namespaces, manipular swap, "
             "etc. **Mais perigosa** das capabilities. Tem fama de ser "
             "'a new root' pelo poder agregado."
@@ -313,7 +313,7 @@ CAPABILITIES: list[Capability] = [
         risk="medio",
         short="chroot()",
         long=(
-            "Permite chroot. Util para sandboxes; atacante pode escapar "
+            "Permite chroot. Útil para sandboxes; atacante pode escapar "
             "chroot mal configurado pra ganhar mais acesso."
         ),
     ),
@@ -322,9 +322,9 @@ CAPABILITIES: list[Capability] = [
         risk="alto",
         short="Carregar/descarregar kernel modules",
         long=(
-            "insmod, rmmod. **Maxima criticidade** — atacante carrega "
-            "rootkit como modulo do kernel. Em sistemas hardened, esta "
-            "cap nao deveria estar disponivel."
+            "insmod, rmmod. **Máxima criticidade** — atacante carrega "
+            "rootkit como módulo do kernel. Em sistemas hardened, esta "
+            "cap não deveria estar disponível."
         ),
     ),
     Capability(
@@ -348,7 +348,7 @@ CAPABILITIES: list[Capability] = [
         short="ptrace de qualquer processo",
         long=(
             "Permite ptrace() em processos de outros users. Atacante "
-            "anexa em sshd e rouba senhas, ou injeta codigo em daemons "
+            "anexa em sshd e rouba senhas, ou injeta código em daemons "
             "privilegiados."
         ),
     ),
@@ -358,7 +358,7 @@ CAPABILITIES: list[Capability] = [
         short="Acesso direto a hardware (I/O ports, /dev/mem)",
         long=(
             "Permite ioperm, iopl, abrir /dev/mem, /dev/kmem. Atacante "
-            "pode ler memoria do kernel diretamente. Critico."
+            "pode ler memória do kernel diretamente. Crítico."
         ),
     ),
     Capability(
@@ -373,7 +373,7 @@ CAPABILITIES: list[Capability] = [
     Capability(
         name="cap_sys_time",
         risk="medio",
-        short="Mudar relogio do sistema",
+        short="Mudar relógio do sistema",
         long=(
             "settimeofday, adjtime, RTC. Atacante pode dessincronizar o "
             "tempo (quebra TLS cert validation, kerberos)."
@@ -383,7 +383,7 @@ CAPABILITIES: list[Capability] = [
         name="cap_sys_tty_config",
         risk="baixo",
         short="Configurar TTY (vhangup)",
-        long="Operacoes TTY privilegiadas (raras hoje em dia)."
+        long="Operações TTY privilegiadas (raras hoje em dia)."
     ),
     Capability(
         name="cap_syslog",

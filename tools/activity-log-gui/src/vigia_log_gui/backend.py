@@ -89,7 +89,7 @@ def run_bundle(
 
     if not vigia_log_installed():
         bundle.raw_error = (
-            "Binario `vigia-log` nao encontrado no PATH.\n\n"
+            "Binário `vigia-log` não encontrado no PATH.\n\n"
             "Instale com:\n"
             "  cd tools/activity-log\n"
             "  cargo build --release\n"
@@ -119,22 +119,22 @@ def run_bundle(
         bundle.raw_error = f"vigia-log demorou mais de {timeout}s. Tente reduzir --limit ou desligar sources."
         return bundle
     except FileNotFoundError:
-        bundle.raw_error = "pkexec ou vigia-log nao encontrado."
+        bundle.raw_error = "pkexec ou vigia-log não encontrado."
         return bundle
 
     if result.returncode in (126, 127):
-        bundle.raw_error = "Autenticacao cancelada."
+        bundle.raw_error = "Autenticação cancelada."
         return bundle
 
     if result.returncode != 0:
         stderr = (result.stderr or "").strip()
-        bundle.raw_error = f"vigia-log retornou codigo {result.returncode}:\n\n{stderr[:600]}"
+        bundle.raw_error = f"vigia-log retornou código {result.returncode}:\n\n{stderr[:600]}"
         return bundle
 
     try:
         data = json.loads(result.stdout)
     except json.JSONDecodeError as e:
-        bundle.raw_error = f"JSON invalido do vigia-log: {e}"
+        bundle.raw_error = f"JSON inválido do vigia-log: {e}"
         return bundle
 
     return _parse_bundle(data)

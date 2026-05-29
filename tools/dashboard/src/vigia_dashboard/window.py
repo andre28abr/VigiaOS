@@ -66,7 +66,7 @@ def build_content() -> Gtk.Widget:
     alerts_tab = AlertsTab()
 
     stack = Adw.ViewStack()
-    stack.add_titled_with_icon(overview_holder, "overview", "Visao Geral", "view-grid-symbolic")
+    stack.add_titled_with_icon(overview_holder, "overview", "Visão Geral", "view-grid-symbolic")
     stack.add_titled_with_icon(resources_holder, "resources", "Recursos", "view-statistics-symbolic")
     stack.add_titled_with_icon(processes_holder, "processes", "Processos", "view-list-symbolic")
     stack.add_titled_with_icon(alerts_tab, "alerts", "Alertas", "dialog-warning-symbolic")

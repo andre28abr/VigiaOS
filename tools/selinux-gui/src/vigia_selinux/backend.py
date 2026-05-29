@@ -85,7 +85,7 @@ def set_persistent_mode(mode: str) -> None:
     ('enforcing', 'permissive', 'disabled'). Disabled requer reboot
     para tomar efeito."""
     if mode not in ("enforcing", "permissive", "disabled"):
-        raise ValueError(f"Modo invalido: {mode}")
+        raise ValueError(f"Modo inválido: {mode}")
     _require_pkexec()
     # Usa sed via shell para reescrever a linha SELINUX=
     cmd = [
@@ -96,7 +96,7 @@ def set_persistent_mode(mode: str) -> None:
     if result.returncode != 0:
         stderr = (result.stderr or result.stdout).strip()
         if "Request dismissed" in stderr or result.returncode == 126:
-            raise RuntimeError("Autenticacao cancelada pelo usuario.")
+            raise RuntimeError("Autenticação cancelada pelo usuário.")
         raise RuntimeError(f"Falha ao editar /etc/selinux/config: {stderr}")
 
 
@@ -118,7 +118,7 @@ class Boolean:
             return custom
         if self.description:
             return self.description
-        return "Sem descricao disponivel."
+        return "Sem descrição disponível."
 
 
 def list_booleans() -> list[Boolean]:
@@ -221,7 +221,7 @@ def get_recent_denials(since: str = "today") -> list[Denial]:
     if result.returncode != 0:
         stderr = (result.stderr or result.stdout).strip()
         if "Request dismissed" in stderr or result.returncode == 126:
-            raise RuntimeError("Autenticacao cancelada pelo usuario.")
+            raise RuntimeError("Autenticação cancelada pelo usuário.")
         raise RuntimeError(f"ausearch falhou: {stderr}")
     return _parse_ausearch_avc(result.stdout)
 
@@ -266,7 +266,7 @@ def audit2allow_suggest(denial_raw: str) -> str:
     de policy module. Usa o binario 'audit2allow' que ja vem com
     policycoreutils-python-utils."""
     if shutil.which("audit2allow") is None:
-        return "audit2allow nao instalado. Instale 'policycoreutils-python-utils'."
+        return "audit2allow não instalado. Instale 'policycoreutils-python-utils'."
     try:
         result = subprocess.run(
             ["audit2allow"],
@@ -275,7 +275,7 @@ def audit2allow_suggest(denial_raw: str) -> str:
         )
         if result.returncode == 0 and result.stdout.strip():
             return result.stdout.strip()
-        return result.stderr.strip() or "(sem sugestao gerada)"
+        return result.stderr.strip() or "(sem sugestão gerada)"
     except subprocess.SubprocessError as e:
         return f"Erro ao rodar audit2allow: {e}"
 
@@ -300,7 +300,7 @@ def restorecon(path: str, recursive: bool = True, verbose: bool = True) -> str:
     if result.returncode != 0:
         stderr = (result.stderr or result.stdout).strip()
         if "Request dismissed" in stderr or result.returncode == 126:
-            raise RuntimeError("Autenticacao cancelada pelo usuario.")
+            raise RuntimeError("Autenticação cancelada pelo usuário.")
         raise RuntimeError(f"restorecon falhou: {stderr}")
     return result.stdout.strip() or "Nenhuma label precisava ser restaurada."
 
@@ -396,7 +396,7 @@ def is_selinux_available() -> bool:
 
 def _require_pkexec() -> None:
     if shutil.which("pkexec") is None:
-        raise RuntimeError("pkexec nao encontrado. Instale 'polkit' via rpm-ostree.")
+        raise RuntimeError("pkexec não encontrado. Instale 'polkit' via rpm-ostree.")
 
 
 def _run_pkexec(args: list[str], *, op: str) -> None:
@@ -408,5 +408,5 @@ def _run_pkexec(args: list[str], *, op: str) -> None:
     if result.returncode != 0:
         stderr = (result.stderr or result.stdout).strip()
         if "Request dismissed" in stderr or result.returncode == 126:
-            raise RuntimeError("Autenticacao cancelada pelo usuario.")
+            raise RuntimeError("Autenticação cancelada pelo usuário.")
         raise RuntimeError(f"{op} falhou: {stderr}")

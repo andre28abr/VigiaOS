@@ -15,11 +15,11 @@
   </div>
   <div class="kpi">
     <div class="kpi-value">{{ kpis.sudo_invocations }}</div>
-    <div class="kpi-label">Invocacoes sudo</div>
+    <div class="kpi-label">Invocações sudo</div>
   </div>
   <div class="kpi">
     <div class="kpi-value">{{ kpis.pkexec_invocations }}</div>
-    <div class="kpi-label">Invocacoes pkexec</div>
+    <div class="kpi-label">Invocações pkexec</div>
   </div>
   <div class="kpi {% if kpis.bans > 0 %}danger{% endif %}">
     <div class="kpi-value">{{ kpis.bans }}</div>
@@ -27,7 +27,7 @@
   </div>
   <div class="kpi">
     <div class="kpi-value">{{ kpis.logins }}</div>
-    <div class="kpi-label">Logins historicos</div>
+    <div class="kpi-label">Logins históricos</div>
   </div>
 </div>
 
@@ -47,9 +47,9 @@
 {% endif %}
 
 {% if top_sudo_users %}
-<h2>Top usuarios de sudo</h2>
+<h2>Top usuários de sudo</h2>
 <table>
-  <thead><tr><th>Usuario</th><th class="num">Invocacoes</th></tr></thead>
+  <thead><tr><th>Usuário</th><th class="num">Invocações</th></tr></thead>
   <tbody>
     {% for user, count in top_sudo_users %}
     <tr>
@@ -64,7 +64,7 @@
 <h2>SSH — logins aceitos</h2>
 {% if ssh_success %}
 <table>
-  <thead><tr><th>Quando</th><th>Usuario</th><th>De</th></tr></thead>
+  <thead><tr><th>Quando</th><th>Usuário</th><th>De</th></tr></thead>
   <tbody>
     {% for e in ssh_success %}
     <tr>
@@ -76,13 +76,13 @@
   </tbody>
 </table>
 {% else %}
-<div class="empty">Nenhum login SSH aceito no periodo.</div>
+<div class="empty">Nenhum login SSH aceito no período.</div>
 {% endif %}
 
 <h2>SSH — logins falhados</h2>
 {% if ssh_failed %}
 <table>
-  <thead><tr><th>Quando</th><th>Usuario</th><th>De</th></tr></thead>
+  <thead><tr><th>Quando</th><th>Usuário</th><th>De</th></tr></thead>
   <tbody>
     {% for e in ssh_failed %}
     <tr>
@@ -94,13 +94,13 @@
   </tbody>
 </table>
 {% else %}
-<div class="empty">Nenhuma tentativa SSH falhada no periodo.</div>
+<div class="empty">Nenhuma tentativa SSH falhada no período.</div>
 {% endif %}
 
 <h2>Sudo — comandos executados</h2>
 {% if sudo %}
 <table>
-  <thead><tr><th>Quando</th><th>Usuario</th><th>Comando</th></tr></thead>
+  <thead><tr><th>Quando</th><th>Usuário</th><th>Comando</th></tr></thead>
   <tbody>
     {% for s in sudo %}
     <tr>
@@ -112,13 +112,13 @@
   </tbody>
 </table>
 {% else %}
-<div class="empty">Nenhuma invocacao sudo no periodo.</div>
+<div class="empty">Nenhuma invocação sudo no período.</div>
 {% endif %}
 
 {% if pkexec %}
-<h2>pkexec — privilege escalation grafica</h2>
+<h2>pkexec — privilege escalation gráfica</h2>
 <table>
-  <thead><tr><th>Quando</th><th>Usuario</th><th>Comando</th></tr></thead>
+  <thead><tr><th>Quando</th><th>Usuário</th><th>Comando</th></tr></thead>
   <tbody>
     {% for p in pkexec %}
     <tr>

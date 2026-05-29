@@ -96,7 +96,7 @@ class TestInspectProcessBlocking:
     def test_not_installed(self, monkeypatch):
         monkeypatch.setattr(pi, "strace_installed", lambda: False)
         res = pi.inspect_process_blocking(1)
-        assert "strace nao instalado" in res.error
+        assert "strace não instalado" in res.error
 
     def test_auth_cancelled(self, monkeypatch):
         monkeypatch.setattr(pi, "strace_installed", lambda: True)

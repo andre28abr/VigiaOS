@@ -28,7 +28,7 @@ class ProcessesTab(Gtk.Box):
         intro = Gtk.Label()
         intro.set_markup(
             "<b>Contextos SELinux dos processos</b> — cada processo roda dentro de um "
-            "dominio SELinux. Util para entender que regras se aplicam a cada app."
+            "domínio SELinux. Útil para entender que regras se aplicam a cada app."
         )
         intro.set_wrap(True)
         intro.set_xalign(0)

@@ -31,7 +31,7 @@ class StatusTab(Adw.PreferencesPage):
         # ---- Banner para Disabled ----
         self._disabled_banner = Adw.Banner()
         self._disabled_banner.set_title(
-            "⚠ SELinux esta DISABLED. Sistema sem protecao MAC. "
+            "⚠ SELinux está DISABLED. Sistema sem proteção MAC. "
             "Para reativar: edite /etc/selinux/config (SELINUX=enforcing) e reinicie."
         )
         self._disabled_banner.add_css_class("error")
@@ -54,7 +54,7 @@ class StatusTab(Adw.PreferencesPage):
         self._persistent_row = Adw.ActionRow()
         self._persistent_row.set_title("Modo persistente")
         self._persistent_row.set_subtitle(
-            "Valor em /etc/selinux/config — aplicado no proximo reboot"
+            "Valor em /etc/selinux/config — aplicado no próximo reboot"
         )
         self._persistent_value = Gtk.Label()
         self._persistent_value.add_css_class("dim-label")
@@ -62,14 +62,14 @@ class StatusTab(Adw.PreferencesPage):
         overview.add(self._persistent_row)
 
         self._policy_row = Adw.ActionRow()
-        self._policy_row.set_title("Politica carregada")
+        self._policy_row.set_title("Política carregada")
         self._policy_value = Gtk.Label()
         self._policy_value.add_css_class("dim-label")
         self._policy_row.add_suffix(self._policy_value)
         overview.add(self._policy_row)
 
         self._version_row = Adw.ActionRow()
-        self._version_row.set_title("Versao da politica")
+        self._version_row.set_title("Versão da política")
         self._version_value = Gtk.Label()
         self._version_value.add_css_class("dim-label")
         self._version_row.add_suffix(self._version_value)
@@ -80,13 +80,13 @@ class StatusTab(Adw.PreferencesPage):
         # ---- Grupo acoes runtime ----
         runtime = Adw.PreferencesGroup()
         runtime.set_margin_top(24)
-        runtime.set_title("Acoes runtime")
-        runtime.set_description("Mudam o estado atual. NAO persistem no reboot.")
+        runtime.set_title("Ações runtime")
+        runtime.set_description("Mudam o estado atual. NÃO persistem no reboot.")
 
         self._enforcing_row = Adw.ActionRow()
         self._enforcing_row.set_title("Modo Enforcing")
         self._enforcing_row.set_subtitle(
-            "ON = SELinux bloqueia. OFF = permissive (so loga). "
+            "ON = SELinux bloqueia. OFF = permissive (só loga). "
             "Para mudar permanentemente, use o grupo abaixo."
         )
         self._enforcing_switch = Gtk.Switch()
@@ -103,11 +103,11 @@ class StatusTab(Adw.PreferencesPage):
         persistent.set_margin_top(24)
         persistent.set_title("Modo persistente (/etc/selinux/config)")
         persistent.set_description(
-            "Toma efeito no proximo boot. Disabled exige reboot para tomar efeito."
+            "Toma efeito no próximo boot. Disabled exige reboot para tomar efeito."
         )
 
         self._persistent_combo = Adw.ComboRow()
-        self._persistent_combo.set_title("Modo no proximo boot")
+        self._persistent_combo.set_title("Modo no próximo boot")
         self._persistent_combo.set_subtitle(
             "Edita /etc/selinux/config via pkexec. Sem reboot, modo runtime continua."
         )

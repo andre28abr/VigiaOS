@@ -42,7 +42,7 @@ class StatusTab(Adw.PreferencesPage):
 
         # Botoes Start / Stop (mostrados conforme estado)
         self._toggle_row = Adw.ActionRow()
-        self._toggle_row.set_title("Acao")
+        self._toggle_row.set_title("Ação")
         self._toggle_row.set_subtitle(
             "Liga/desliga o firewalld. Use Privacy Controls -> Rede para"
             " controlar 'habilitar no boot' (enable/disable)."
@@ -58,17 +58,17 @@ class StatusTab(Adw.PreferencesPage):
         # ============= Grupo zona default ============= #
         zonegrp = Adw.PreferencesGroup()
         zonegrp.set_margin_top(24)
-        zonegrp.set_title("Zona padrao")
+        zonegrp.set_title("Zona padrão")
         zonegrp.set_description(
-            "Zona aplicada a interfaces que nao tem zona explicita."
-            " Define o nivel de protecao default."
+            "Zona aplicada a interfaces que não têm zona explícita."
+            " Define o nível de proteção default."
         )
 
         self._default_zone_combo = Adw.ComboRow()
-        self._default_zone_combo.set_title("Zona padrao")
+        self._default_zone_combo.set_title("Zona padrão")
         self._default_zone_combo.set_subtitle(
             "Mais comuns: public (estrito, default Fedora), home (relaxado), "
-            "internal (mais relaxado), trusted (sem firewall na pratica), drop (bloqueia tudo)."
+            "internal (mais relaxado), trusted (sem firewall na prática), drop (bloqueia tudo)."
         )
         self._zone_model = Gtk.StringList()
         self._default_zone_combo.set_model(self._zone_model)
@@ -83,7 +83,7 @@ class StatusTab(Adw.PreferencesPage):
         active.set_margin_top(24)
         active.set_title("Zonas ativas")
         active.set_description(
-            "Quais zonas estao em uso por quais interfaces/sources."
+            "Quais zonas estão em uso por quais interfaces/sources."
         )
         self._active_group = active
         self._active_rows: list[Adw.ActionRow] = []
@@ -211,6 +211,6 @@ class StatusTab(Adw.PreferencesPage):
 
     def _on_default_zone_done(self, err: str | None) -> bool:
         if err is not None:
-            show_error(self, "Falha ao mudar zona padrao", err)
+            show_error(self, "Falha ao mudar zona padrão", err)
         self.refresh()
         return False

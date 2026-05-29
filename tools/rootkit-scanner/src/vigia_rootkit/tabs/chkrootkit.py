@@ -24,9 +24,9 @@ from ._helpers import make_clamp, show_error, show_info
 
 
 HEADER_DESC = (
-    "<b>chkrootkit</b> verifica binarios do sistema procurando assinaturas "
-    "conhecidas de rootkits. Rapido (~30s) e bom como primeiro pente-fino. "
-    "Eh complementar ao <b>Rootkit Hunter</b> — rode os dois pra "
+    "<b>chkrootkit</b> verifica binários do sistema procurando assinaturas "
+    "conhecidas de rootkits. Rápido (~30s) e bom como primeiro pente-fino. "
+    "É complementar ao <b>Rootkit Hunter</b> — rode os dois pra "
     "cobertura cruzada."
 )
 
@@ -94,7 +94,7 @@ class ChkrootkitTab(Adw.Bin):
         # ------------------------------------------------------------
         kpis_group = Adw.PreferencesGroup()
         kpis_group.set_margin_top(8)
-        kpis_group.set_title("Estatisticas")
+        kpis_group.set_title("Estatísticas")
 
         self._row_tests = Adw.ActionRow(title="Testes rodados")
         self._row_tests.add_css_class("property")
@@ -122,7 +122,7 @@ class ChkrootkitTab(Adw.Bin):
         # (pattern identico ao Antivirus log_group)
         # ------------------------------------------------------------
         log_expander = Adw.ExpanderRow()
-        log_expander.set_title("Saida do scan")
+        log_expander.set_title("Saída do scan")
         log_expander.set_subtitle("Output bruto (streaming em tempo real)")
         log_expander.set_expanded(True)
 
@@ -201,7 +201,7 @@ class ChkrootkitTab(Adw.Bin):
     def refresh(self) -> None:
         if not backend.chkrootkit_installed():
             self._banner.set_title(
-                "chkrootkit nao instalado. Instale via Vigia Tool Installer "
+                "chkrootkit não instalado. Instale via Vigia Tool Installer "
                 "(pacote chkrootkit)."
             )
             self._banner.set_revealed(True)
@@ -223,7 +223,7 @@ class ChkrootkitTab(Adw.Bin):
             body=(
                 "chkrootkit vai rodar como root via pkexec.\n\n"
                 "Tempo aproximado: ~30 segundos.\n\n"
-                "Voce pode parar a qualquer momento. Sera pedida senha admin."
+                "Você pode parar a qualquer momento. Será pedida senha admin."
             ),
         )
         dlg.add_response("cancel", "Cancelar")
@@ -319,9 +319,9 @@ class ChkrootkitTab(Adw.Bin):
             self._set_label_color(self._lbl_inf, "error")
 
         if result.cancelled:
-            self._status_label.set_label("Scan cancelado pelo usuario.")
+            self._status_label.set_label("Scan cancelado pelo usuário.")
             self._append_summary_line("\n══ Scan cancelado ══", self._tag_warning)
-            show_info(self, "Scan cancelado", "Scan interrompido pelo usuario.")
+            show_info(self, "Scan cancelado", "Scan interrompido pelo usuário.")
         elif result.error:
             self._status_label.set_label(f"Erro: {result.error[:120]}")
             self._append_summary_line(
@@ -338,12 +338,12 @@ class ChkrootkitTab(Adw.Bin):
             show_error(
                 self,
                 f"chkrootkit: {result.infected_count} infectado(s)",
-                "Revise a saida do scan e tome acoes apropriadas. "
-                "Resultado salvo no Historico.",
+                "Revise a saída do scan e tome ações apropriadas. "
+                "Resultado salvo no Histórico.",
             )
             notify_if_unfocused(
                 f"chkrootkit: {result.infected_count} infectado(s)",
-                "Possivel rootkit detectado. Abra o Vigia pra revisar.",
+                "Possível rootkit detectado. Abra o Vigia pra revisar.",
                 notif_id="vigia-rootkit-chkrootkit",
                 priority=PRIORITY_HIGH,
             )
@@ -357,11 +357,11 @@ class ChkrootkitTab(Adw.Bin):
             show_info(
                 self,
                 f"chkrootkit: {result.warnings_count} warning(s)",
-                "Sistema parece OK mas vale revisar. Resultado salvo no Historico.",
+                "Sistema parece OK mas vale revisar. Resultado salvo no Histórico.",
             )
             notify_if_unfocused(
                 f"chkrootkit: {result.warnings_count} warning(s)",
-                "Scan concluido — vale revisar os avisos no Vigia.",
+                "Scan concluído — vale revisar os avisos no Vigia.",
                 notif_id="vigia-rootkit-chkrootkit",
             )
         else:
@@ -370,7 +370,7 @@ class ChkrootkitTab(Adw.Bin):
             show_info(
                 self,
                 "chkrootkit: limpo",
-                "Nenhum sinal de rootkit detectado. Resultado salvo no Historico.",
+                "Nenhum sinal de rootkit detectado. Resultado salvo no Histórico.",
             )
             notify_if_unfocused(
                 "chkrootkit: limpo",

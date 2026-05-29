@@ -120,8 +120,8 @@ class _LogGuiContent:
         if not sources:
             show_error(
                 self._refresh_btn,
-                "Nenhuma fonte disponivel",
-                "Nao detectei audit, journal ou fail2ban neste sistema.",
+                "Nenhuma fonte disponível",
+                "Não detectei audit, journal ou fail2ban neste sistema.",
             )
             return
 
@@ -137,7 +137,7 @@ class _LogGuiContent:
             bundle = backend.run_bundle(sources=sources, elevated=elevated, limit=500)
         except Exception as e:  # pylint: disable=broad-except
             bundle = ActivityBundle()
-            bundle.raw_error = f"Excecao no worker: {e}"
+            bundle.raw_error = f"Exceção no worker: {e}"
         GLib.idle_add(self._on_done, bundle)
 
     def _on_done(self, bundle: ActivityBundle) -> bool:

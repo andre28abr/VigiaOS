@@ -29,7 +29,7 @@ class FilesTab(Gtk.Box):
         intro = Adw.PreferencesGroup()
         intro.set_title("Restaurar contextos SELinux (restorecon)")
         intro.set_description(
-            "Quando voce move/cria arquivos em diretorios protegidos pelo SELinux, "
+            "Quando você move/cria arquivos em diretórios protegidos pelo SELinux, "
             "as labels podem ficar erradas e o app que usa esses arquivos falha. "
             "Esta ferramenta restaura as labels conforme as regras de file context."
         )
@@ -47,7 +47,7 @@ class FilesTab(Gtk.Box):
 
         self._recursive_row = Adw.SwitchRow()
         self._recursive_row.set_title("Recursivo (-R)")
-        self._recursive_row.set_subtitle("Aplica em todos os arquivos dentro do diretorio")
+        self._recursive_row.set_subtitle("Aplica em todos os arquivos dentro do diretório")
         self._recursive_row.set_active(True)
         form_group.add(self._recursive_row)
 
@@ -71,7 +71,7 @@ class FilesTab(Gtk.Box):
         # Output area
         out_group = Adw.PreferencesGroup()
         out_group.set_margin_top(24)
-        out_group.set_title("Saida do comando")
+        out_group.set_title("Saída do comando")
         out_scroll = Gtk.ScrolledWindow()
         out_scroll.set_vexpand(True)
         out_scroll.set_min_content_height(180)

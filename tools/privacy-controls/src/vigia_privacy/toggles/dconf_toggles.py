@@ -18,10 +18,10 @@ from .base import dconf_toggle
 LOCATION = dconf_toggle(
     schema="org.gnome.system.location",
     key="enabled",
-    name="Servicos de localizacao",
-    description="Quando OFF, apps GNOME nao podem usar GPS, redes WiFi proximas "
-    "ou IP para inferir sua localizacao.",
-    category="Localizacao",
+    name="Serviços de localização",
+    description="Quando OFF, apps GNOME não podem usar GPS, redes WiFi próximas "
+    "ou IP para inferir sua localização.",
+    category="Localização",
 )
 
 # ============================================================================
@@ -31,9 +31,9 @@ LOCATION = dconf_toggle(
 TELEMETRY = dconf_toggle(
     schema="org.gnome.desktop.privacy",
     key="report-technical-problems",
-    name="Bloquear relatorios tecnicos do GNOME",
-    description="Quando ON, GNOME nao envia relatorios anonimos de crashes "
-    "ou estatisticas de uso. Equivalente a 'opt-out' de telemetria.",
+    name="Bloquear relatórios técnicos do GNOME",
+    description="Quando ON, GNOME não envia relatórios anônimos de crashes "
+    "ou estatísticas de uso. Equivalente a 'opt-out' de telemetria.",
     category="Telemetria",
     invert=True,
 )
@@ -45,20 +45,20 @@ TELEMETRY = dconf_toggle(
 RECENT_FILES = dconf_toggle(
     schema="org.gnome.desktop.privacy",
     key="remember-recent-files",
-    name="Nao lembrar arquivos recentes",
-    description="Quando ON, apps GNOME nao mostram historico de arquivos "
-    "abertos em 'Recent'. Util para uso em maquinas compartilhadas.",
-    category="Historico",
+    name="Não lembrar arquivos recentes",
+    description="Quando ON, apps GNOME não mostram histórico de arquivos "
+    "abertos em 'Recent'. Útil para uso em máquinas compartilhadas.",
+    category="Histórico",
     invert=True,
 )
 
 APP_USAGE = dconf_toggle(
     schema="org.gnome.desktop.privacy",
     key="remember-app-usage",
-    name="Nao lembrar uso de aplicativos",
-    description="Quando ON, GNOME nao registra estatisticas de quanto tempo "
-    "voce usa cada app (afeta sugestoes em Search e Activities).",
-    category="Historico",
+    name="Não lembrar uso de aplicativos",
+    description="Quando ON, GNOME não registra estatísticas de quanto tempo "
+    "você usa cada app (afeta sugestões em Search e Activities).",
+    category="Histórico",
     invert=True,
 )
 
@@ -68,7 +68,7 @@ HIDE_IDENTITY = dconf_toggle(
     name="Esconder identidade em arquivos compartilhados",
     description="Quando ON, remove metadados como nome e hostname ao "
     "compartilhar arquivos via apps GNOME.",
-    category="Historico",
+    category="Histórico",
 )
 
 # ============================================================================
@@ -79,7 +79,7 @@ LOCK_ENABLED = dconf_toggle(
     schema="org.gnome.desktop.screensaver",
     key="lock-enabled",
     name="Bloquear tela automaticamente",
-    description="Quando ON, a tela e' bloqueada apos o periodo idle "
+    description="Quando ON, a tela é bloqueada após o período idle "
     "configurado em GNOME Settings.",
     category="Lock Screen",
 )
@@ -87,9 +87,9 @@ LOCK_ENABLED = dconf_toggle(
 NOTIFICATIONS_IN_LOCK = dconf_toggle(
     schema="org.gnome.desktop.notifications",
     key="show-in-lock-screen",
-    name="Esconder previa de notificacoes na lock screen",
-    description="Quando ON, notificacoes aparecem na lock screen apenas como "
-    "'(N notificacoes novas)' sem conteudo legivel.",
+    name="Esconder prévia de notificações na lock screen",
+    description="Quando ON, notificações aparecem na lock screen apenas como "
+    "'(N notificações novas)' sem conteúdo legível.",
     category="Lock Screen",
     invert=True,
 )
@@ -102,16 +102,16 @@ CLEAN_TRASH = dconf_toggle(
     schema="org.gnome.desktop.privacy",
     key="remove-old-trash-files",
     name="Esvaziar lixeira automaticamente",
-    description="Quando ON, arquivos na lixeira sao apagados apos o periodo "
+    description="Quando ON, arquivos na lixeira são apagados após o período "
     "configurado em Settings (default: 30 dias). Evita acumular rastros.",
-    category="Limpeza Automatica",
+    category="Limpeza Automática",
 )
 
 CLEAN_TEMP = dconf_toggle(
     schema="org.gnome.desktop.privacy",
     key="remove-old-temp-files",
-    name="Limpar arquivos temporarios automaticamente",
-    description="Quando ON, arquivos em /tmp e similares sao limpos apos "
-    "o periodo configurado.",
-    category="Limpeza Automatica",
+    name="Limpar arquivos temporários automaticamente",
+    description="Quando ON, arquivos em /tmp e similares são limpos após "
+    "o período configurado.",
+    category="Limpeza Automática",
 )

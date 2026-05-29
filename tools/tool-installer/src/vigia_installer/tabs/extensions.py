@@ -36,13 +36,13 @@ def _md_to_pango(md: str) -> str:
 
 
 HEADER_DESC = (
-    "Extensoes <b>open source</b> recomendadas pra privacidade no navegador. "
+    "Extensões <b>open source</b> recomendadas pra privacidade no navegador. "
     "Bloqueio de ads e tracking funciona melhor aqui do que via DNS — "
-    "extensoes escondem o elemento (sem buraco no layout) e tem regras "
+    "extensões escondem o elemento (sem buraco no layout) e têm regras "
     "atualizadas.\n\n"
-    "Como a instalacao real eh feita pelo proprio navegador, ao clicar "
-    "<i>Abrir no Firefox</i> ou <i>Abrir no Chrome</i> a pagina da extensao "
-    "abre automaticamente — voce confirma com 1 clique la dentro."
+    "Como a instalação real é feita pelo próprio navegador, ao clicar "
+    "<i>Abrir no Firefox</i> ou <i>Abrir no Chrome</i> a página da extensão "
+    "abre automaticamente — você confirma com 1 clique lá dentro."
 )
 
 
@@ -55,7 +55,7 @@ class ExtensionsTab(Adw.Bin):
         self._ext_rows: dict[str, dict] = {}  # ext_id -> {row, browsers_box}
 
         # ===== Header =====
-        header_lbl = Gtk.Label(label="Extensoes de Navegador")
+        header_lbl = Gtk.Label(label="Extensões de Navegador")
         header_lbl.add_css_class("title-2")
         header_lbl.set_halign(Gtk.Align.START)
         header_lbl.set_margin_bottom(8)
@@ -76,7 +76,7 @@ class ExtensionsTab(Adw.Bin):
         self._browsers_group = Adw.PreferencesGroup()
         self._browsers_group.set_title("Navegadores detectados")
         self._browsers_group.set_description(
-            "Os botoes abaixo respeitam estes navegadores."
+            "Os botões abaixo respeitam estes navegadores."
         )
 
         # ===== Extensions list — agrupada por categoria =====
@@ -146,7 +146,7 @@ class ExtensionsTab(Adw.Bin):
             for b in browsers:
                 row = Adw.ActionRow(title=b.label)
                 row.add_css_class("property")
-                row.set_subtitle(f"familia: {b.family}")
+                row.set_subtitle(f"família: {b.family}")
                 self._browsers_group.add(row)
 
         # Categorias
@@ -241,7 +241,7 @@ class ExtensionsTab(Adw.Bin):
         self, ext: be.BrowserExtension, browser: be.BrowserInfo,
     ) -> Adw.ActionRow:
         b_row = Adw.ActionRow(title=browser.label)
-        b_row.set_subtitle("Abre a pagina oficial da extensao")
+        b_row.set_subtitle("Abre a página oficial da extensão")
 
         marked = be.is_marked_installed(ext.id, browser.id)
 
@@ -305,8 +305,8 @@ class ExtensionsTab(Adw.Bin):
         show_info(
             self,
             f"{ext.name} marcada",
-            f"Marcada como instalada em {browser.label}. Se voce ainda "
-            f"nao instalou, clique em 'Abrir' pra ir pra pagina oficial.",
+            f"Marcada como instalada em {browser.label}. Se você ainda "
+            f"não instalou, clique em 'Abrir' pra ir pra página oficial.",
         )
         self.refresh()
 
@@ -326,15 +326,15 @@ class ExtensionsTab(Adw.Bin):
         dlg = Adw.AlertDialog(
             heading=f"Substituir {conflict_str}?",
             body=(
-                f"Voce ja marcou <b>{conflict_str}</b> como instalada em "
+                f"Você já marcou <b>{conflict_str}</b> como instalada em "
                 f"<b>{browser.label}</b>.\n\n"
-                f"Categoria <b>{cat_label}</b> deve ter apenas 1 extensao "
+                f"Categoria <b>{cat_label}</b> deve ter apenas 1 extensão "
                 f"ativa por vez (conflito de regras causa performance ruim "
                 f"e bugs).\n\n"
                 f"Recomendamos:\n"
                 f"1. <b>Desinstalar {conflict_str} no {browser.label}</b> "
-                f"(pelo menu de extensoes do navegador)\n"
-                f"2. Confirmar abaixo pra trocar a marcacao no Vigia\n"
+                f"(pelo menu de extensões do navegador)\n"
+                f"2. Confirmar abaixo pra trocar a marcação no Vigia\n"
                 f"3. Clicar 'Abrir' pra instalar <b>{ext.name}</b>"
             ),
         )
@@ -362,7 +362,7 @@ class ExtensionsTab(Adw.Bin):
             self,
             f"{ext.name} marcada",
             f"Conflitantes desmarcadas. Clique 'Abrir' pra instalar "
-            f"{ext.name} no {browser.label}, e nao esqueca de DESINSTALAR "
+            f"{ext.name} no {browser.label}, e não esqueça de DESINSTALAR "
             f"as anteriores pelo menu do navegador.",
         )
         self.refresh()
