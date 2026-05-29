@@ -30,7 +30,7 @@ Em cima de cada ferramenta abrindo no painel, você vê uma faixa com pequenos *
 
 ### Tools (a parte principal)
 
-A lista das 14 ferramentas. Clica e ela abre. Pronto. As principais são **Dashboard** (monitor de sistema), **Activity Log** (logs traduzidos), **Privacy Controls** (toggles de privacidade), **Firewall**, **Antivirus**, **Reports** e algumas outras.
+A lista das ferramentas. Clica e ela abre. Pronto. As principais são **Dashboard** (monitor de sistema), **Activity Log** (logs traduzidos), **Privacy Controls** (toggles de privacidade), **Firewall**, **Antivirus**, **Reports** e algumas outras.
 
 ### Instalador
 
