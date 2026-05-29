@@ -64,17 +64,63 @@ A aba **Configurações** do Hub virou um centro real de preferências, com 3 su
 
 ## Instalação
 
-### Atual: `pip install --user -e .` (desenvolvimento)
+### Tudo de uma vez (recomendado)
 
-Por enquanto, as tools são instaladas via pip em editable mode.
-Roteiro completo em [DEVELOPMENT.md §8](DEVELOPMENT.md#8-setup-numa-máquina-nova-silverblue-limpa).
+Um comando — o instalador **detecta sozinho** se você está em Fedora
+Atomic (Silverblue, Kinoite, Bluefin, Bazzite, Aurora) ou Workstation, e
+usa `rpm-ostree` ou `dnf`:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/andre28abr/VigiaOS/main/install/bootstrap.sh | bash
+# Em sistema atômico, reinicie ao final:  systemctl reboot
+```
+
+Instala as 16 ferramentas + os backends que elas usam (`lynis`, `aide`,
+`clamav`, …), registra os atalhos no menu do GNOME e instala Flatpaks de
+privacidade (KeePassXC, Signal, Tor Browser…). **Não liga nenhum serviço**
+— `tor`/`fail2ban`/`dnscrypt-proxy` ficam off; você ativa cada um na
+ferramenta correspondente (*minimum surface area* / LGPD). Guias por
+plataforma: **[Silverblue / atomic](install/silverblue/)** ·
+**[Workstation](install/workstation/)**.
+
+### Instalar só um módulo (isolado)
+
+Não precisa da suíte inteira. Para usar **uma ferramenta só** (ex: só o
+Antivírus), use o helper — instala a tool no seu usuário (`pip --user`,
+**sem root**) e registra o atalho + ícone no GNOME. Funciona igual em
+Silverblue e Workstation:
 
 ```bash
 git clone https://github.com/andre28abr/VigiaOS.git ~/dev/VigiaOS
 cd ~/dev/VigiaOS
-# Instala vigia-common primeiro (dep das outras)
-(cd tools/vigia-common && pip install --user -e .)
-# Depois cada tool (16 tools no total + activity-log Rust separadamente)
+install/install-tool.sh --list          # ver módulos disponíveis
+install/install-tool.sh antivirus       # instala só o Antivírus
+```
+
+Cada módulo roda sozinho, sem depender do Vigia Hub. Quando o COPR estiver
+ativo: `rpm-ostree install vigia-antivirus` (atomic) ou `dnf install
+vigia-antivirus` (Workstation).
+
+### Compatibilidade por plataforma
+
+Quase tudo roda igual nos dois — as diferenças:
+
+| | Silverblue / Atomic | Workstation |
+|---|---|---|
+| Pacotes | `rpm-ostree` (+ reboot) | `dnf` (na hora) |
+| Deployments Manager | ✅ | ❌ (sem deployments rpm-ostree) |
+| Tool Installer → aba *Pendentes* | ✅ | ❌ (instala na hora) |
+| As outras 15 ferramentas | ✅ | ✅ |
+
+### Dev (editable)
+
+Para hackear no código, instale em editable mode (roteiro completo em
+[DEVELOPMENT.md §8](DEVELOPMENT.md#8-setup-numa-máquina-nova-silverblue-limpa)):
+
+```bash
+git clone https://github.com/andre28abr/VigiaOS.git ~/dev/VigiaOS
+cd ~/dev/VigiaOS
+(cd tools/vigia-common && pip install --user -e .)   # dep das outras, primeiro
 for d in vigia-hub privacy-controls selinux-gui firewall-gui netmon-gui \
          hardening-checks reports file-integrity tool-installer \
          dns-manager capabilities-inspector activity-log-gui \
@@ -84,52 +130,17 @@ done
 vigia-hub   # abre o launcher
 ```
 
-### Instalar só um módulo (isolado)
-
-Não precisa da suíte inteira. Para usar **uma ferramenta só** (ex: só o
-Antivírus), use o helper — ele instala a tool no seu usuário (`pip
---user`, **sem root**) e registra o atalho + ícone no menu do GNOME.
-Funciona igual em Silverblue e Workstation (tudo dentro de `~/.local`,
-sem `rpm-ostree`/`dnf`):
-
-```bash
-git clone https://github.com/andre28abr/VigiaOS.git ~/dev/VigiaOS
-cd ~/dev/VigiaOS
-install/install-tool.sh --list          # ver módulos disponíveis
-install/install-tool.sh antivirus       # instala só o Antivírus
-```
-
-Depois é só procurar **Vigia Antivirus** no menu do GNOME (tecle Super e
-digite) e clicar — cada módulo roda sozinho, sem depender do Vigia Hub.
-Quando o COPR estiver ativo, também dá pra instalar um módulo direto como
-pacote de sistema: `rpm-ostree install vigia-antivirus` (atomic) ou
-`dnf install vigia-antivirus` (Workstation).
-
 ### Futuro: via COPR (em preparação)
 
 As specs RPM estão prontas em [`packaging/`](packaging/), mas o **repo
-COPR ainda não foi ativado** (precisa criar conta, projeto e fazer
-build inicial — passos manuais em
-[`packaging/README.md`](packaging/README.md)).
-
-Quando ativo, em Silverblue/Kinoite/Bluefin/Bazzite/Aurora:
+COPR ainda não foi ativado** (passos em [`packaging/README.md`](packaging/README.md)).
+Quando ativo:
 
 ```bash
-# Habilita o repo COPR (download direto do .repo file)
 sudo wget -O /etc/yum.repos.d/_copr_andre28abr-vigia.repo \
   https://copr.fedorainfracloud.org/coprs/andre28abr/vigia/repo/fedora-$(rpm -E %fedora)/andre28abr-vigia-fedora-$(rpm -E %fedora).repo
-
-# Instala a suite completa (metapackage com as 17 tools)
-sudo rpm-ostree install vigia-suite
-sudo systemctl reboot
-```
-
-Em Fedora não-atomic: `sudo dnf copr enable andre28abr/vigia && sudo dnf install vigia-suite`.
-
-### Futuro alternativo: bootstrap.sh
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/andre28abr/VigiaOS/main/bootstrap.sh | bash
+sudo rpm-ostree install vigia-suite && sudo systemctl reboot   # atomic
+# Workstation: sudo dnf copr enable andre28abr/vigia && sudo dnf install vigia-suite
 ```
 
 ## Histórico
