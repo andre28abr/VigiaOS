@@ -136,31 +136,12 @@ CATALOG: list[CatalogEntry] = [
     ),
 
     # ===== MONITORAMENTO ===== #
-    CatalogEntry(
-        package="htop",
-        name="htop",
-        description="Top moderno com cores e arvores de processos.",
-        why=(
-            "**Substituto melhor do `top`**: barras coloridas de CPU/mem/swap, "
-            "tree view, kill com selecao. Use diariamente no terminal.\n\n"
-            "*Alternativa GUI nativa: **Vigia Dashboard** (ja incluso na suite).*"
-        ),
-        category="monitoramento",
-        binary="htop",
-    ),
-    CatalogEntry(
-        package="iotop",
-        name="iotop",
-        description="Top para uso de disco I/O (precisa root).",
-        why=(
-            "Quando algo esta deixando o disco lento, o iotop mostra **qual "
-            "processo** esta gerando o I/O. (`sudo iotop` ou `pkexec iotop`).\n\n"
-            "*Visualizacao agregada de I/O por device esta no **Vigia "
-            "Dashboard** (aba Recursos). Per-process I/O chega na v0.2 do Dashboard.*"
-        ),
-        category="monitoramento",
-        binary="iotop",
-    ),
+    # NOTA: htop e iotop removidos do catalogo (2026-05-30). O **Vigia
+    # Dashboard** (ja incluso na suite) cobre os dois em GUI nativa: a aba
+    # Processos ordena por CPU/mem e por I/O (read+write) por processo
+    # (le /proc/<pid>/io, v0.2) e tem kill — exatamente htop + iotop.
+    # Listar os CLIs aqui era redundante. lsof/strace ficam (nicho de
+    # debug que nenhuma GUI da suite cobre); fail2ban e' servico de defesa.
     CatalogEntry(
         package="lsof",
         name="lsof",
