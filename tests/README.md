@@ -19,7 +19,7 @@ pytest tests/                   # tudo
 pytest tests/dashboard/          # so dashboard
 pytest tests/common/             # so vigia-common
 pytest -v                        # verbose
-pytest -k "test_validate_target" # match por nome
+pytest -k "hash"                 # match por nome
 pytest --tb=long                 # tracebacks longos
 ```
 
@@ -38,23 +38,18 @@ pytest -m "integration"      # so tests com subprocess real
 tests/
 ├── conftest.py              # adiciona tools/*/src ao sys.path
 ├── pytest.ini               # config + markers
-├── common/                  # vigia_common (lib base)
-│   ├── test_markdown.py     # md_to_pango
-│   ├── test_helpers.py      # make_clamp args, file_picker (sem GTK)
-│   └── test_layout_constants.py
-├── dashboard/               # backend, alerts, graphs
-│   ├── test_backend_proc_parsers.py
-│   ├── test_alerts.py
-│   └── test_format_helpers.py
-├── vpn/                     # vigia_vpn.backend
-│   ├── test_validate_profile_name.py
-│   └── test_parse_wg_show.py
-├── dns/                     # vigia_dns
-├── netscan/                 # vigia_netscan (target validation, XML parse)
-├── hash/                    # vigia_hash (algoritmos, baseline diff)
-├── antivirus/               # vigia_antivirus (output parser)
-├── firmware/                # vigia_firmware (binwalk output)
-└── integrity/               # vigia_integrity (AIDE report parser)
+├── common/                  # vigia_common (lib base): markdown, helpers, layout
+├── hub/                     # vigia_hub: settings, status, backup, registry, tray
+├── dashboard/               # vigia_dashboard: /proc parsers, alerts, format helpers
+├── activity_log_gui/        # vigia_log_gui (parser/formatters da GUI)
+├── dns/                     # vigia_dns (dnscrypt backend, migration, servers)
+├── antivirus/               # vigia_antivirus (output parser ClamAV)
+├── rootkit/                 # vigia_rootkit (parsers chkrootkit + rkhunter)
+├── integrity/               # vigia_integrity (AIDE report parser)
+├── hash/                    # vigia_integrity.hash_backend (algoritmos, baseline diff)
+├── installer/               # vigia_installer (catálogo, extensões navegador)
+├── reports/                 # vigia_reports (geração LGPD)
+└── deployments/             # vigia_deployments (rpm-ostree state parser)
 ```
 
 ## Cobertura alvo
