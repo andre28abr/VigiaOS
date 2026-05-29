@@ -1796,6 +1796,32 @@ regressão); `print()` p/ erro em ~10 sites (cosmético, devia ser
 `logging`); `dnf` vs `dnf5` futuro (hoje `dnf` é symlink); mensagem
 fire-and-forget do install do tray.
 
+### 2026-05-30 — File Integrity v0.2.2: detecção de movido + hashdeep opcional
+
+Decisão com o André: como o hashdeep estava no catálogo só como CLI e o
+programa preza GUI sem terminal, trouxemos o valor dele pra dentro do
+**Vigia File Integrity** (em vez de criar um módulo redundante — a tool
+já cobre hash/verify/baseline desde o merge do Hash Tools, #68).
+
+- **Detecção de "movido"** na comparação de baseline — **Python puro**,
+  pra todos: um arquivo "removido" cujo hash reaparece num "adicionado" =
+  movido (`_detect_moves`). Some de added/removed, vira categoria própria
+  (badge MOVIDO). É o recurso mais valioso do hashdeep, e nem precisa
+  dele.
+- **Motor hashdeep opcional** (`use_hashdeep`): toggle na tab Baseline
+  (só aparece se hashdeep instalado) — usa hashdeep (C, multi-thread)
+  pra hashear mais rápido em árvores grandes; fallback automático pro
+  hashlib se ausente/algoritmo não-suportado (sha512) /erro. Hash
+  idêntico → engines intercambiáveis, baseline JSON uniforme.
+- Tab: header menciona "movido", status conta movidos, render com badge
+  accent, nota de engine ("motor: hashdeep"). Registry: `hashdeep` em
+  wrapped_packages + features atualizadas.
+- **+12 testes** (`tests/integrity/test_hash_baseline.py`): `_detect_moves`
+  (move puro / hash diferente / parcial / vazio), integração end-to-end
+  (movido + add/rem/mod), seleção de engine (python default, fallback sem
+  hashdeep, sha512→python, hashdeep mockado + parse, returncode≠0→fallback,
+  filename com vírgula). Suite **604→616**. file-integrity v0.2.2.
+
 ---
 
 ## 10. Roadmap

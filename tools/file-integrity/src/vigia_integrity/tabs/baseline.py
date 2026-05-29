@@ -34,7 +34,8 @@ class BaselineTab(Adw.Bin):
             label=(
                 "Cria um <b>baseline</b> (snapshot de hashes) de um diretorio. "
                 "Depois compara contra o estado atual e mostra arquivos "
-                "<i>adicionados</i>, <i>removidos</i> ou <i>modificados</i>.\n\n"
+                "<i>adicionados</i>, <i>removidos</i>, <i>modificados</i> ou "
+                "<i>movidos</i> (mesmo conteudo, outro caminho).\n\n"
                 "<b>Caso de uso</b>: voce tem o diretorio <tt>/etc/</tt> ou "
                 "pasta de configs critica de uma aplicacao. Cria baseline. "
                 "Apos algum tempo, roda comparativo — qualquer diff e' suspeito."
@@ -64,6 +65,18 @@ class BaselineTab(Adw.Bin):
         algo_row = Adw.ActionRow(title="Algoritmo")
         algo_row.add_suffix(self._create_algo)
         create_group.add(algo_row)
+
+        # Toggle hashdeep — so' aparece se instalado. Acelera arvores
+        # grandes (motor C multi-thread); hash identico ao hashlib.
+        self._hashdeep_switch = None
+        if backend.hashdeep_installed():
+            self._hashdeep_switch = Adw.SwitchRow()
+            self._hashdeep_switch.set_title("Usar hashdeep")
+            self._hashdeep_switch.set_subtitle(
+                "Mais rapido em pastas grandes (motor C). Hash identico — "
+                "aplica na criacao e na comparacao."
+            )
+            create_group.add(self._hashdeep_switch)
 
         # Create action — botao FORA do card pra ter espaco proprio
         create_btn_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
@@ -168,6 +181,14 @@ class BaselineTab(Adw.Bin):
     # Create
     # ============================================================
 
+    def _use_hashdeep(self) -> bool:
+        """True se o usuario ativou o motor hashdeep (switch so' existe
+        quando o hashdeep esta instalado)."""
+        return (
+            self._hashdeep_switch is not None
+            and self._hashdeep_switch.get_active()
+        )
+
     def _start_create(self) -> None:
         if self._running:
             return
@@ -184,10 +205,15 @@ class BaselineTab(Adw.Bin):
         self._create_spinner.start()
         self._create_status.set_label("Hashing arquivos... pode levar minutos em diretorio grande.")
 
-        threading.Thread(target=self._create_worker, args=(dirpath, algo), daemon=True).start()
+        use_hd = self._use_hashdeep()
+        threading.Thread(
+            target=self._create_worker, args=(dirpath, algo, use_hd), daemon=True
+        ).start()
 
-    def _create_worker(self, dirpath: str, algo: str) -> None:
-        result = backend.create_baseline_blocking(dirpath, None, algo)
+    def _create_worker(self, dirpath: str, algo: str, use_hd: bool) -> None:
+        result = backend.create_baseline_blocking(
+            dirpath, None, algo, use_hashdeep=use_hd
+        )
         GLib.idle_add(self._on_create_done, result)
 
     def _on_create_done(self, result: backend.BaselineResult) -> bool:
@@ -200,8 +226,9 @@ class BaselineTab(Adw.Bin):
             self._create_status.set_label(f"Erro: {result.error}")
             return False
 
+        engine_note = " · motor: hashdeep" if result.engine == "hashdeep" else ""
         self._create_status.set_label(
-            f"Baseline criado com {result.file_count} arquivos. "
+            f"Baseline criado com {result.file_count} arquivos{engine_note}. "
             f"Salvo em {result.output_file}"
         )
         # Auto-popula o campo de comparacao com este baseline
@@ -232,10 +259,15 @@ class BaselineTab(Adw.Bin):
         self._compare_spinner.start()
         self._compare_status.set_label("Comparando... pode levar minutos em diretorio grande.")
 
-        threading.Thread(target=self._compare_worker, args=(bf,), daemon=True).start()
+        use_hd = self._use_hashdeep()
+        threading.Thread(
+            target=self._compare_worker, args=(bf, use_hd), daemon=True
+        ).start()
 
-    def _compare_worker(self, baseline_file: str) -> None:
-        result = backend.compare_baseline_blocking(baseline_file, None, None)
+    def _compare_worker(self, baseline_file: str, use_hd: bool) -> None:
+        result = backend.compare_baseline_blocking(
+            baseline_file, None, None, use_hashdeep=use_hd
+        )
         GLib.idle_add(self._on_compare_done, result)
 
     def _on_compare_done(self, result: backend.CompareResult) -> bool:
@@ -251,7 +283,8 @@ class BaselineTab(Adw.Bin):
         n_added = len(result.added)
         n_removed = len(result.removed)
         n_modified = len(result.modified)
-        n_total_diff = n_added + n_removed + n_modified
+        n_moved = len(result.moved)
+        n_total_diff = n_added + n_removed + n_modified + n_moved
 
         if n_total_diff == 0:
             self._compare_status.set_label(
@@ -261,7 +294,7 @@ class BaselineTab(Adw.Bin):
             self._compare_status.set_label(
                 f"⚠ {n_total_diff} diferenca(s): "
                 f"{n_added} adicionado(s), {n_modified} modificado(s), "
-                f"{n_removed} removido(s). "
+                f"{n_removed} removido(s), {n_moved} movido(s). "
                 f"{result.unchanged} inalterado(s)."
             )
 
@@ -284,7 +317,8 @@ class BaselineTab(Adw.Bin):
 
         if (not self._last_compare.added and
             not self._last_compare.removed and
-            not self._last_compare.modified):
+            not self._last_compare.modified and
+            not self._last_compare.moved):
             row = Adw.ActionRow(title="Nenhuma diferenca")
             row.set_subtitle("Diretorio inalterado desde o baseline.")
             row.add_css_class("success")
@@ -314,6 +348,7 @@ class BaselineTab(Adw.Bin):
                 self._diff_rows.append(more)
 
         _add("MOD", "warning", self._last_compare.modified)
+        _add("MOVIDO", "accent", self._last_compare.moved)
         _add("ADD", "success", self._last_compare.added)
         _add("REM", "error", self._last_compare.removed)
 

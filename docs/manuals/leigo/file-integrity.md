@@ -53,8 +53,11 @@ padrao) e ele calcula. Pra usar isso, voce nao precisa de senha.
 exemplo) + escolhe o arquivo. Ele diz se confere ou nao.
 
 **Baseline**: snapshot de uma pasta inteira em formato JSON. Voce pode
-comparar depois. Bom pra evidenciar que uma pasta de processo nao foi
-mexida.
+comparar depois — ele aponta o que foi **adicionado, removido,
+modificado ou movido** (mesmo arquivo aparecendo em outro lugar). Bom
+pra evidenciar que uma pasta de processo nao foi mexida. Se voce tiver o
+`hashdeep` instalado, um botao deixa a comparacao mais rapida em pastas
+grandes (o resultado e' o mesmo).
 
 **Sobre**: explicacao detalhada.
 

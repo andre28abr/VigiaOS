@@ -24,14 +24,14 @@ usuario — duas escalas, mesma logica de "baseline + diff".
 ```
 vigia_integrity/
 |-- backend.py          # AIDE: init/check/update + parse_check_output + perfis
-|-- hash_backend.py     # hashlib: hash arquivo, verify, create/compare baseline JSON
+|-- hash_backend.py     # hashlib/hashdeep: hash, verify, create/compare baseline (detecta movido)
 |-- window.py           # build_content() — 6 tabs no Adw.ViewStack
 `-- tabs/
     |-- status.py       # Hero + acoes Criar/Verificar/Atualizar baseline
     |-- changes.py      # diff do ultimo aide --check (added/removed/changed)
     |-- hash_tab.py     # calcula hash de 1 arquivo (sha256/512/sha1/md5)
     |-- verify.py       # compara hash esperado vs computado
-    |-- baseline.py     # snapshot de diretorio em JSON + diff (sem root)
+    |-- baseline.py     # snapshot de diretorio em JSON + diff added/removido/modificado/movido (sem root)
     `-- about.py
 ```
 
