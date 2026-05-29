@@ -123,7 +123,12 @@ if [ "$ATOMIC" = "1" ]; then
     info "Atualizando o sistema (rpm-ostree)..."
     sudo rpm-ostree upgrade || warn "upgrade pulado (sem mudancas ou offline)."
     info "Layerando dependencias (uma transacao)..."
-    sudo rpm-ostree install --idempotent "${DEPS_CORE[@]}" "${DEPS_BACKENDS[@]}"
+    # --allow-inactive: nao falha se um pacote ja' vem na imagem base (ex:
+    # gtk4/libadwaita/python3-gobject no Silverblue/GNOME). Sem isso o
+    # rpm-ostree aborta com "already provided ... use --allow-inactive".
+    # --idempotent: nao falha se ja' estiver layered (re-run do bootstrap).
+    sudo rpm-ostree install --idempotent --allow-inactive \
+        "${DEPS_CORE[@]}" "${DEPS_BACKENDS[@]}"
 else
     info "Atualizando o sistema (dnf)..."
     sudo dnf -y upgrade || warn "upgrade pulado."
