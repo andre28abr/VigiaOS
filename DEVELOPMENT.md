@@ -1750,6 +1750,13 @@ Início da execução do backlog §10.6. Commits `0471e85`..`72ad85f`.
   README raiz. §8.3 corrigido (URL + descrição batem com o real agora).
   Tool Installer segue útil (extensões + add/remove), só não é mais a
   porta de entrada obrigatória.
+- **#94 — Hints de instalação dinâmicos (feito)**: novo
+  `vigia_common.platform.install_hint(*pkgs, reboot=)` → `rpm-ostree
+  install X && systemctl reboot` (atômico) ou `sudo dnf install X`
+  (Workstation). Trocados os 6 hints fixos "rpm-ostree install X" /
+  "Em Fedora Silverblue:" em antivirus/file-integrity/hardening (que
+  mostravam o comando errado no Workstation). +3 testes; vigia-common
+  v0.2.1. Fecha o último pendente do B3.
 
 ---
 
