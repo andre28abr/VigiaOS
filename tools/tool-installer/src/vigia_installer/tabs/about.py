@@ -13,7 +13,7 @@ from gi.repository import Adw, Gtk  # noqa: E402
 SECTIONS: list[tuple[str, str]] = [
     (
         "O que faz",
-        "Catalogo de <b>~22 ferramentas de seguranca</b> curadas para "
+        "Catalogo de <b>16 ferramentas de seguranca</b> curadas para "
         "Fedora Silverblue. Cada item tem descricao em pt-BR e um <i>por "
         "que voce quer isso</i> que da contexto pratico.\n\n"
         "Instala via <tt>rpm-ostree install</tt> com UM clique. Sem precisar "

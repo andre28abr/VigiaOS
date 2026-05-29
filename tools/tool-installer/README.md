@@ -6,7 +6,7 @@ Catalogo curado de **ferramentas de seguranca** para Fedora Silverblue, com **on
 
 Silverblue e' atomico: `dnf install` nao funciona — voce usa `rpm-ostree install` que cria uma camada e precisa de reboot. Os pacotes ficam pendentes ate reiniciar. Essa tool da:
 
-- **Catalogo curado** (~22 ferramentas) com descricao em pt-BR e contexto ("por que voce quer isso")
+- **Catalogo curado** (16 ferramentas) com descricao em pt-BR e contexto ("por que voce quer isso")
 - **Status visual** por item: disponivel / instalado / instalacao pendente / remocao pendente
 - **One-click**: clica *Instalar* → polkit pede senha 1x → rpm-ostree stages a mudanca → tab *Pendentes* mostra com botao *Reiniciar*
 - Sem precisar abrir terminal nem lembrar nomes de pacote
@@ -17,7 +17,7 @@ Silverblue e' atomico: `dnf install` nao funciona — voce usa `rpm-ostree insta
 |-----------|-------------|
 | **Auditoria** | lynis, aide, chkrootkit, rkhunter |
 | **Rede** | mtr, nethogs, iftop |
-| **Monitoramento** | htop, iotop, lsof, strace, fail2ban |
+| **Monitoramento** | lsof, strace, fail2ban |
 | **Privacidade** | tor, torsocks, wireguard-tools, dnscrypt-proxy |
 | **Forense** | clamav, hashdeep |
 

@@ -2,7 +2,7 @@
 
 ## Em uma frase
 
-Catalogo curado de ~22 ferramentas de seguranca instalaveis com 1 clique
+Catalogo curado de 16 ferramentas de seguranca instalaveis com 1 clique
 via `rpm-ostree` + catalogo de 8 extensoes FOSS para navegadores que
 abrem em AMO/Chrome Web Store via `xdg-open`.
 
@@ -22,7 +22,7 @@ abrem em AMO/Chrome Web Store via `xdg-open`.
 ```
 vigia_installer/
 |-- backend.py             # rpm-ostree install/uninstall/status/pending_changes
-|-- catalog.py             # CATALOG: 22 CatalogEntry em 5 categorias
+|-- catalog.py             # CATALOG: 16 CatalogEntry em 5 categorias
 |-- browser_extensions.py  # detect_installed_browsers + CATALOG extensoes + state
 |-- window.py              # 4 tabs no Adw.ViewStack
 `-- tabs/
@@ -38,7 +38,7 @@ vigia_installer/
 |---|---|
 | **Auditoria e hardening** | lynis, aide, chkrootkit, rkhunter |
 | **Rede** | mtr, nethogs, iftop |
-| **Monitoramento e diagnostico** | htop, iotop, lsof, strace, fail2ban |
+| **Monitoramento e diagnostico** | lsof, strace, fail2ban |
 | **Privacidade e criptografia** | tor, torsocks, wireguard-tools, dnscrypt-proxy |
 | **Forense e analise** | clamav, hashdeep |
 

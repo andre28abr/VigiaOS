@@ -7,7 +7,7 @@ adicionar mais ferramentas ao seu computador.
 
 Ao inves de voce ter que pesquisar "qual antivirus pra Linux?", "como
 instala o lynis?", "onde acho o uBlock Origin?", o Vigia ja te entrega
-uma lista **curada e segura** — sao 22 ferramentas selecionadas + 8
+uma lista **curada e segura** — sao 16 ferramentas selecionadas + 8
 extensoes de navegador.
 
 Tudo com 1 clique.
@@ -30,7 +30,7 @@ A janela tem **4 abas**:
 **Catalogo**: lista de ferramentas agrupadas em 5 categorias:
 - **Auditoria e hardening** (lynis, AIDE, chkrootkit, rkhunter)
 - **Rede** (mtr, nethogs, iftop)
-- **Monitoramento** (htop, iotop, lsof, strace, fail2ban)
+- **Monitoramento** (lsof, strace, fail2ban)
 - **Privacidade** (tor, torsocks, wireguard, dnscrypt-proxy)
 - **Forense** (clamav, hashdeep)
 

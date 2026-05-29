@@ -511,10 +511,10 @@ ClearURLs, LibRedirect) que abrem direto na AMO/Chrome Web Store.
 
 **Stack**: Python + PyGObject + GTK4 + libadwaita.
 
-**Categorias** (18 pacotes em `catalog.py`, 5 categorias):
+**Categorias** (16 pacotes em `catalog.py`, 5 categorias):
 - Auditoria e hardening — lynis, aide, chkrootkit, rkhunter
 - Rede — mtr, nethogs, iftop
-- Monitoramento e diagnóstico — htop, iotop, lsof, strace, fail2ban
+- Monitoramento e diagnóstico — lsof, strace, fail2ban
 - Privacidade e criptografia — tor, torsocks, wireguard-tools, dnscrypt-proxy
 - Forense e análise — clamav, hashdeep
 
@@ -1678,7 +1678,7 @@ decisão de escopo no Tool Installer. Commits `7a32a93`..`b38655b`.
   opt-in, sem UI") corrigidas, e o §5.11 (que descrevia um catálogo
   de ~30 ferramentas que não batia com o `catalog.py` real).
 
-### 2026-05-30 — B5 (rename → Vigia Hub) + B1 (instalação modular)
+### 2026-05-30 — B5 (rename) + B1 (instalação modular) + B4 (trim catálogo)
 
 Início da execução do backlog §10.6. Commits `0471e85`..`72ad85f`.
 
@@ -1709,6 +1709,15 @@ Início da execução do backlog §10.6. Commits `0471e85`..`72ad85f`.
   enumera os 16 módulos GUI. README ganhou seção "Instalar só um módulo".
   *Pendente futuro (fora do B1)*: ativar o COPR pro caminho
   `dnf/rpm-ostree install vigia-<tool>` (as specs por-tool já existem).
+- **B4 — Pente-fino de redundâncias (#91, feito)**: confirmado na fonte
+  (`dashboard/.../processes.py` + `backend.py`) que o **Dashboard v0.2**
+  cobre `htop` (aba Processos: CPU/mem, sort, kill, filtro) e `iotop`
+  (ordena por I/O read+write **por processo**, lê `/proc/<pid>/io`).
+  Ambos **removidos do catálogo** (18→16 pacotes; monitoramento 5→3).
+  Ficam `lsof`/`strace` (debug, sem GUI equivalente), `fail2ban`
+  (serviço de defesa, não monitor) e `mtr`/`nethogs`/`iftop` (Dashboard
+  só mostra banda **por interface**, não por processo/host). Contagens
+  stale "~22" espalhadas pelos docs corrigidas pra 16.
 
 ---
 
@@ -1993,7 +2002,7 @@ tradicional** (dnf), e fazer o mesmo script de instalação.
   (d) branch `dnf` no `bootstrap.sh`. **Item substancial** — escopo
   grande, fazer por etapas.
 
-#### B4 — Pente-fino de redundâncias (Dashboard ↔ catálogo) — #91
+#### B4 — Pente-fino de redundâncias (Dashboard ↔ catálogo) — #91 ✅ (ver §9 2026-05-30)
 
 André: revisar features/pacotes a manter ou retirar. Ex: o **Dashboard**
 já mostra monitor de sistema com processos — alguns pacotes de monitor
