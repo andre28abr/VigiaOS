@@ -20,7 +20,7 @@ do sistema-base sem complicação.
 | # | Componente | Stack | Status |
 |---|---|---|---|
 | 1 | `bootstrap.sh` | bash | 🟡 Em desenvolvimento |
-| 2 | **[Vigia Hub](tools/vigia-hub/)** v0.7.1 | Python + GTK4 | 🟢 3 painéis + autostart XDG + tray (quick actions) + lock Polkit + backup/restore + Ajuda (manuais MD) |
+| 2 | **[Vigia Hub](tools/vigia-hub/)** v0.7.3 | Python + GTK4 | 🟢 3 painéis + autostart XDG + tray (quick actions) + lock Polkit + backup/restore + Ajuda (manuais MD) |
 | 3 | **[Vigia Dashboard](tools/dashboard/)** v0.2.1 | Python + GTK4 + Cairo | 🟢 Sistema em tempo real + per-process I/O + alertas |
 | 4 | **[Vigia Activity Log](tools/activity-log/)** v0.7.1 (core) + [GUI](tools/activity-log-gui/) v0.1 | Rust + Python | 🟢 audit + journald + fail2ban + correlations |
 | 5 | **[Vigia Privacy Controls](tools/privacy-controls/)** v0.3.1 | Python + GTK4 | 🟢 13 toggles user+system scope |
@@ -83,6 +83,27 @@ for d in vigia-hub privacy-controls selinux-gui firewall-gui netmon-gui \
 done
 vigia-hub   # abre o launcher
 ```
+
+### Instalar só um módulo (isolado)
+
+Não precisa da suíte inteira. Para usar **uma ferramenta só** (ex: só o
+Antivírus), use o helper — ele instala a tool no seu usuário (`pip
+--user`, **sem root**) e registra o atalho + ícone no menu do GNOME.
+Funciona igual em Silverblue e Workstation (tudo dentro de `~/.local`,
+sem `rpm-ostree`/`dnf`):
+
+```bash
+git clone https://github.com/andre28abr/VigiaOS.git ~/dev/VigiaOS
+cd ~/dev/VigiaOS
+install/install-tool.sh --list          # ver módulos disponíveis
+install/install-tool.sh antivirus       # instala só o Antivírus
+```
+
+Depois é só procurar **Vigia Antivirus** no menu do GNOME (tecle Super e
+digite) e clicar — cada módulo roda sozinho, sem depender do Vigia Hub.
+Quando o COPR estiver ativo, também dá pra instalar um módulo direto como
+pacote de sistema: `rpm-ostree install vigia-antivirus` (atomic) ou
+`dnf install vigia-antivirus` (Workstation).
 
 ### Futuro: via COPR (em preparação)
 
