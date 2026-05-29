@@ -1678,6 +1678,38 @@ decisão de escopo no Tool Installer. Commits `7a32a93`..`b38655b`.
   opt-in, sem UI") corrigidas, e o §5.11 (que descrevia um catálogo
   de ~30 ferramentas que não batia com o `catalog.py` real).
 
+### 2026-05-30 — B5 (rename → Vigia Hub) + B1 (instalação modular)
+
+Início da execução do backlog §10.6. Commits `0471e85`..`72ad85f`.
+
+- **B5 — Polimento visual (#92, feito)**:
+  - *5a* — X de fechar duplicado na aba Ajuda. Causa: os manuais
+    (técnico/leigos) são um `NavigationSplitView` **dentro** da página
+    Ajuda, que já tem header com window-controls; os headers internos
+    (sidebar + content) mostravam um 2º X. Fix:
+    `set_show_start/end_title_buttons(False)` nos dois headers internos
+    (`window.py`).
+  - *5b* — rail (canto sup. esq.) `"VIGIA"` → `"Vigia Hub"`; header da
+    sidebar `"Vigia Suite / Toolkit"` → `"Ferramentas"` (nome legado +
+    redundante com o rail). Hub `v0.7.2`.
+  - *5c* — **rename global** "Vigia Suite" → em **64 arquivos**, com a
+    distinção decidida com o André: **app falando de si** → `Vigia Hub`
+    (título da janela, `.desktop Name`, CLI); **coleção/produto** →
+    `VigiaOS` (tagline das tools = "parte do VigiaOS", specs, status
+    report, docs). Concordância: "da Vigia Suite" → "do VigiaOS". Bulk
+    via `perl` article-aware + ajuste à mão dos casos semânticos; testes
+    `test_cli`/`test_status` atualizados. Único literal restante = 1
+    comentário histórico em `window.py`. Hub `v0.7.3`.
+- **B1 — Instalação modular (#88, feito o escopo "hoje")**: cada tool já
+  roda isolada (entry-point + `.desktop` + ícone próprios), mas `pip`
+  não instala os data-files. Criado **`install/install-tool.sh`**:
+  instala UM módulo via `pip --user` (+ `vigia-common`) e registra
+  `.desktop` + ícone em `~/.local/share` (espelha os paths do RPM, mas
+  user-level, sem root, igual em Silverblue e Workstation). `--list`
+  enumera os 16 módulos GUI. README ganhou seção "Instalar só um módulo".
+  *Pendente futuro (fora do B1)*: ativar o COPR pro caminho
+  `dnf/rpm-ostree install vigia-<tool>` (as specs por-tool já existem).
+
 ---
 
 ## 10. Roadmap
@@ -1897,7 +1929,7 @@ launcher central). **Vigia Red / Blue / Ops** serão apps *irmãos* dentro
 do mesmo ecossistema. Logo "Vigia Suite" é nome legado a aposentar em
 favor de "Vigia Hub" (app) + "VigiaOS" (ecossistema).
 
-#### B1 — Instalação modular (rodar 1 tool isolada) — #88
+#### B1 — Instalação modular (rodar 1 tool isolada) — #88 ✅ (ver §9 2026-05-30)
 
 André: o Hub é o switch completo, mas às vezes o user quer só **um
 módulo** (ex: só o Antivírus) — aparece no GNOME com ícone próprio,
@@ -1976,7 +2008,7 @@ podem ser redundantes. "Verificar com calma."
   `lsof`/`strace` são debug pontual (provável manter). Mapear
   sobreposição e decidir o que sai. **Sem ação imediata** — análise.
 
-#### B5 — Polimento visual (3 sub-itens) — #92
+#### B5 — Polimento visual (3 sub-itens) — #92 ✅ (ver §9 2026-05-30)
 
 - **5a · X de fechar duplicado na Ajuda (Markdown)**: tirar o X do
   visualizador, deixar só o da janela do Hub (que minimiza/fecha
