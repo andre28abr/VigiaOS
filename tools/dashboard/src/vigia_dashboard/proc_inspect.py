@@ -64,7 +64,8 @@ def parse_strace_summary(text: str) -> tuple[list[SyscallRow], int]:
         if parts[-1] in ("syscall", "total"):  # cabecalho / total
             continue
         try:
-            time_pct = float(parts[0])
+            # virgula decimal (locale pt-BR: "100,00") -> ponto, pro float()
+            time_pct = float(parts[0].replace(",", "."))
             calls = int(parts[3])
         except (ValueError, IndexError):
             continue  # separador "----", linha de ruido do pkexec, etc.
@@ -91,8 +92,13 @@ def inspect_process_blocking(pid: int, duration: int = 5) -> InspectResult:
 
     # timeout -s INT: apos `duration`s manda SIGINT pro strace, que entao
     # detacha do processo e imprime o resumo -c. (SIGTERM nao imprime.)
+    # env LC_ALL=C: forca o strace a usar PONTO decimal no resumo -c.
+    # Em locale pt-BR ele imprime "100,00" e o parser quebrava (bug
+    # reportado pelo Andre, 2026-05-29). pkexec sanitiza o ambiente, por
+    # isso o LC_ALL=C vai como argumento do `env`, nao via subprocess env=.
     cmd = [
-        "pkexec", "timeout", "-s", "INT", str(duration),
+        "pkexec", "env", "LC_ALL=C",
+        "timeout", "-s", "INT", str(duration),
         "strace", "-f", "-c", "-p", str(pid),
     ]
     try:
