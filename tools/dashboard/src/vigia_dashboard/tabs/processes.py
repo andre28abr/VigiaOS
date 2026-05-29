@@ -170,9 +170,21 @@ class ProcessesTab(Adw.Bin):
     # ============================================================
 
     def _refresh(self) -> bool:
+        # Se o usuario tem uma linha expandida, NAO reconstroi a lista —
+        # senao o rebuild (a cada 2s) colapsa a expansao e some com os
+        # detalhes/botao Inspecionar antes do clique. Retoma o refresh
+        # automaticamente quando tudo estiver fechado.
+        if self._any_expanded():
+            return True
         self._all_procs = backend.list_processes()
         self._render()
         return True
+
+    def _any_expanded(self) -> bool:
+        return any(
+            isinstance(r, Adw.ExpanderRow) and r.get_expanded()
+            for r in self._proc_rows
+        )
 
     def _render(self) -> None:
         for r in self._proc_rows:
