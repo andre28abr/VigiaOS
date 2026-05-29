@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import threading
+
 import gi
 
 gi.require_version("Gtk", "4.0")
@@ -9,7 +11,7 @@ gi.require_version("Adw", "1")
 
 from gi.repository import Adw, GLib, Gtk  # noqa: E402
 
-from .. import backend
+from .. import backend, proc_inspect
 from ._helpers import make_clamp, show_error, show_info
 
 
@@ -334,6 +336,17 @@ class ProcessesTab(Adw.Bin):
         kill_box.set_margin_top(4)
         kill_box.set_margin_bottom(4)
 
+        # Inspecionar (strace -c) — so' se o strace estiver instalado.
+        if proc_inspect.strace_installed():
+            inspect_btn = Gtk.Button(label="Inspecionar")
+            inspect_btn.set_tooltip_text(
+                "Rastreia as syscalls por ~5s e mostra um resumo (strace -c)"
+            )
+            inspect_btn.connect(
+                "clicked", lambda _b, pid=p.pid: self._do_inspect(pid)
+            )
+            kill_box.append(inspect_btn)
+
         term_btn = Gtk.Button(label="Terminar (SIGTERM)")
         term_btn.connect("clicked", lambda _b, pid=p.pid: self._do_kill(pid, term=True))
         kill_box.append(term_btn)
@@ -390,3 +403,73 @@ class ProcessesTab(Adw.Bin):
             self._refresh()
         else:
             show_error(self, "Falha", err or "Erro desconhecido.")
+
+    # ============================================================
+    # Inspect (strace -c)
+    # ============================================================
+
+    def _do_inspect(self, pid: int) -> None:
+        proc = next((p for p in self._all_procs if p.pid == pid), None)
+        label = f"{proc.comm} (PID {pid})" if proc else f"PID {pid}"
+        dlg = Adw.AlertDialog(
+            heading=f"Inspecionar {label}?",
+            body=(
+                "Rastreia as chamadas de sistema (syscalls) deste processo por "
+                "~5 segundos e mostra um resumo. Read-only — nao altera o "
+                "processo.\n\nPede senha de administrador (ptrace via pkexec)."
+            ),
+        )
+        dlg.add_response("cancel", "Cancelar")
+        dlg.add_response("go", "Inspecionar")
+        dlg.set_default_response("go")
+        dlg.connect(
+            "response", lambda _d, r: self._on_inspect_confirmed(r, pid, label)
+        )
+        dlg.present(self.get_root())
+
+    def _on_inspect_confirmed(self, response: str, pid: int, label: str) -> None:
+        if response != "go":
+            return
+        self._status_lbl.set_label(
+            f"Inspecionando {label} por ~5s (pode pedir senha)..."
+        )
+        threading.Thread(
+            target=self._inspect_worker, args=(pid, label), daemon=True
+        ).start()
+
+    def _inspect_worker(self, pid: int, label: str) -> None:
+        result = proc_inspect.inspect_process_blocking(pid)
+        GLib.idle_add(self._show_inspect_result, result, label)
+
+    def _show_inspect_result(self, result, label: str) -> bool:
+        if result.error:
+            show_error(self, "Inspecao falhou", result.error)
+            return False
+
+        dlg = Adw.AlertDialog(
+            heading=f"Syscalls — {label}",
+            body=f"{result.total_calls} chamada(s) em ~5s, por % de tempo:",
+        )
+        group = Adw.PreferencesGroup()
+        for r in result.rows[:20]:
+            arow = Adw.ActionRow(title=r.syscall)
+            arow.add_css_class("property")
+            sub = f"{r.calls} chamada(s)"
+            if r.errors:
+                sub += f" · {r.errors} erro(s)"
+            arow.set_subtitle(sub)
+            pct = Gtk.Label(label=f"{r.time_pct:.1f}%")
+            pct.add_css_class("monospace")
+            pct.add_css_class("caption-heading")
+            pct.set_valign(Gtk.Align.CENTER)
+            arow.add_suffix(pct)
+            group.add(arow)
+
+        scrolled = Gtk.ScrolledWindow()
+        scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        scrolled.set_min_content_height(360)
+        scrolled.set_child(group)
+        dlg.set_extra_child(scrolled)
+        dlg.add_response("close", "Fechar")
+        dlg.present(self.get_root())
+        return False

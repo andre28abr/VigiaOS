@@ -20,8 +20,8 @@ do sistema-base sem complicação.
 | # | Componente | Stack | Status |
 |---|---|---|---|
 | 1 | `bootstrap.sh` | bash | 🟡 Em desenvolvimento |
-| 2 | **[Vigia Hub](tools/vigia-hub/)** v0.7.3 | Python + GTK4 | 🟢 3 painéis + autostart XDG + tray (quick actions) + lock Polkit + backup/restore + Ajuda (manuais MD) |
-| 3 | **[Vigia Dashboard](tools/dashboard/)** v0.2.1 | Python + GTK4 + Cairo | 🟢 Sistema em tempo real + per-process I/O + alertas |
+| 2 | **[Vigia Hub](tools/vigia-hub/)** v0.7.4 | Python + GTK4 | 🟢 3 painéis + autostart XDG + tray (quick actions) + lock Polkit + backup/restore + Ajuda (manuais MD) |
+| 3 | **[Vigia Dashboard](tools/dashboard/)** v0.3.0 | Python + GTK4 + Cairo | 🟢 Sistema em tempo real + per-process I/O + alertas + inspetor de syscalls |
 | 4 | **[Vigia Activity Log](tools/activity-log/)** v0.7.1 (core) + [GUI](tools/activity-log-gui/) v0.1 | Rust + Python | 🟢 audit + journald + fail2ban + correlations |
 | 5 | **[Vigia Privacy Controls](tools/privacy-controls/)** v0.3.1 | Python + GTK4 | 🟢 13 toggles user+system scope |
 | 6 | **[Vigia SELinux GUI](tools/selinux-gui/)** v0.2 | Python + GTK4 | 🟢 6 tabs + pt-BR + audit2allow |
@@ -29,9 +29,9 @@ do sistema-base sem complicação.
 | 8 | **[Vigia Network Monitor](tools/netmon-gui/)** v0.1.1 | Python + GTK4 | 🟡 Conexões + modo admin opt-in |
 | 9 | **[Vigia Hardening Checks](tools/hardening-checks/)** v0.1.4 | Python + GTK4 | 🟢 Lynis wrapper + perfil Silverblue |
 | 10 | **[Vigia Reports](tools/reports/)** v0.1.1 | Python + Jinja2 + WeasyPrint | 🟢 PDF/HTML LGPD |
-| 11 | **[Vigia File Integrity](tools/file-integrity/)** v0.2.1 | Python + GTK4 | 🟢 AIDE (sistema) + Hash ad-hoc (user) — 6 tabs |
-| 12 | **[Vigia Tool Installer](tools/tool-installer/)** v0.2.0 | Python + GTK4 | 🟢 rpm-ostree + **extensões navegador open source** |
-| 13 | **[Vigia DNS Manager](tools/dns-manager/)** v0.4.1 | Python + GTK4 | 🟢 **dnscrypt-proxy** (DoH/DoT) com 11 servers curados |
+| 11 | **[Vigia File Integrity](tools/file-integrity/)** v0.2.4 | Python + GTK4 | 🟢 AIDE (sistema) + Hash ad-hoc (user) — 6 tabs |
+| 12 | **[Vigia Tool Installer](tools/tool-installer/)** v0.3.2 | Python + GTK4 | 🟢 rpm-ostree + **extensões navegador open source** |
+| 13 | **[Vigia DNS Manager](tools/dns-manager/)** v0.4.2 | Python + GTK4 | 🟢 **dnscrypt-proxy** (DoH/DoT) com 11 servers curados |
 | 14 | **[Vigia Capabilities Inspector](tools/capabilities-inspector/)** v0.1 | Python + GTK4 | 🟢 getcap audit + 41 caps pt-BR |
 | 15 | **[Vigia Antivirus](tools/antivirus/)** v0.1.1 | Python + GTK4 | 🟢 ClamAV wrapper (substitui clamtk) |
 | 16 | **[Vigia Rootkit Scanner](tools/rootkit-scanner/)** v0.2.0 | Python + GTK4 | 🟢 **chkrootkit + rkhunter** unificados |

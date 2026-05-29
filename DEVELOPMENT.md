@@ -1829,6 +1829,28 @@ já cobre hash/verify/baseline desde o merge do Hash Tools, #68).
   v0.3.2. *Lição: nome-de-pacote ≠ nome-de-binário só pega em teste real
   de repo — análise estática no mac não alcança.*
 
+### 2026-05-30 — Dashboard v0.3.0: inspetor de processo (strace -c)
+
+A pedido do André (o `strace` estava no catálogo só como CLI; o programa
+preza GUI sem terminal). Em vez de módulo novo redundante, a feature
+entrou no **Dashboard** (que já lista processos): botão **"Inspecionar"**
+por processo → roda `pkexec timeout -s INT 5 strace -f -c -p <pid>` e
+mostra o resumo de syscalls (tabela por %tempo) num diálogo. Read-only.
+
+- `proc_inspect.py`: `strace_installed`, `inspect_process_blocking`,
+  `parse_strace_summary` (robusto a versões — ignora cabeçalho/separador/
+  linha "total", recalcula total das rows, ordena por %tempo). **Não** se
+  chama `inspect.py` (colidiria com a stdlib).
+- **pkexec** porque ptrace de processo alheio exige root (yama
+  ptrace_scope=1) e ler syscalls é sensível (LGPD). Botão só aparece se
+  `strace` instalado.
+- `processes.py`: botão na linha de Ações + diálogo de confirmação +
+  worker thread + resultado em `AlertDialog` com tabela (top 20).
+- **+11 testes** (parser + dispatch mockado, sem precisar de strace/root).
+  Suite 616→627. Dashboard v0.3.0; `strace` em wrapped_packages.
+- Doc-sync: badges de versão do README sincronizados (hub/file-integrity/
+  tool-installer/dns/dashboard estavam stale dos commits do dia).
+
 ---
 
 ## 10. Roadmap
