@@ -147,6 +147,6 @@ def build_content() -> Gtk.Widget:
 class VigiaDashboardWindow(Adw.ApplicationWindow):
     def __init__(self, app: Adw.Application):
         super().__init__(application=app)
-        self.set_title("Dashboard")
+        self.set_title("Monitor do Sistema")
         self.set_default_size(1080, 760)
         self.set_content(build_content())

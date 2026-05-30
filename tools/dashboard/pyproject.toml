@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "vigia-dashboard"
-version = "0.3.2"
+version = "0.3.3"
 description = "Dashboard de sistema em tempo real (CPU, RAM, disco, rede, processos)"
 license = { text = "Apache-2.0" }
 readme = "README.md"

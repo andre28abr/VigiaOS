@@ -1,7 +1,7 @@
 [Desktop Entry]
 Type=Application
-Name=Vigia Dashboard
-GenericName=System Dashboard
+Name=Vigia Monitor do Sistema
+GenericName=System Monitor
 Comment=Dashboard de sistema em tempo real
 Exec=vigia-dashboard
 Icon=br.com.vigia.Dashboard
