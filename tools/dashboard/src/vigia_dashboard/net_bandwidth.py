@@ -138,8 +138,9 @@ def bandwidth_snapshot_blocking(
     rows = parse_nethogs_trace(proc.stdout)
     if not rows:
         res.error = (
-            "Sem tráfego por processo no período. Pode não ter havido "
-            "atividade de rede, ou o nethogs não conseguiu capturar."
+            "Sem tráfego no período (~4s) — o sistema estava ocioso. "
+            "Deixe um download ou stream rodando e clique em Medir de "
+            "novo: a medição precisa de rede ativa durante a janela."
         )
         return res
 
