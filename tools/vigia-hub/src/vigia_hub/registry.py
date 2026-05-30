@@ -108,7 +108,7 @@ def visible_tools() -> list[ToolEntry]:
 TOOLS: list[ToolEntry] = [
     ToolEntry(
         id="dashboard",
-        name="Dashboard",
+        name="Monitor do Sistema",
         description="Sistema em tempo real (CPU, RAM, disco, rede, processos).",
         long_description=(
             "Dashboard de sistema em tempo real — CPU, memória, disco I/O, "

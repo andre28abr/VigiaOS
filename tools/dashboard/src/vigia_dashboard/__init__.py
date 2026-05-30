@@ -1,6 +1,6 @@
 """Vigia Dashboard — sistema em tempo real (CPU, RAM, disco, rede, processos)."""
 
-__version__ = "0.3.2"
+__version__ = "0.3.3"
 __app_id__ = "br.com.vigia.Dashboard"
 
 # Sem deps externas — usa /proc do kernel.
