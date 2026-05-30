@@ -8,35 +8,35 @@ Monitor de sistema em tempo real (CPU/RAM/disco/rede/processos) que lê `/proc` 
 
 | Item | Valor |
 |---|---|
-| **Pacotes Linux** | `procfs` (interface do kernel — sempre presente) |
+| **Pacotes Linux** | `procfs` (kernel) + `strace`/`nethogs` opcionais (inspetor de processo e aba Rede) |
 | **Comando principal** | Leitura direta de `/proc/*` e `/sys/class/thermal/*` (sem subprocess) |
 | **Permissões** | user para leitura; **pkexec kill** apenas para matar processo de outro user |
 | **Stack** | Python 3.11, PyGObject, GTK4, libadwaita, Cairo (gráficos custom) |
 | **Path config** | `~/.config/vigia/dashboard-alerts.json` (mode `0600`) |
 | **Path dados** | Sem persistência — histórico em memória, perdido ao fechar |
 | **App ID** | `br.com.vigia.Dashboard` |
-| **Versão** | 0.2.1 |
+| **Versão** | 0.4.0 |
 
 ## Arquitetura interna
 
-5 tabs num `Adw.ViewStack` com **lazy construction** + pause/resume de timers.
+6 tabs num `Adw.ViewStack` com **lazy construction** + pause/resume de timers.
 
 - **Backend puro** em `backend.py`: dataclasses (`CpuTimes`, `CpuSnapshot`, `MemSnapshot`, `DiskSnapshot`, `NetSnapshot`, `ProcessInfo`) + funções que leem `/proc/stat`, `/proc/meminfo`, `/proc/diskstats`, `/proc/net/dev`, `/proc/<pid>/{stat,status,cmdline,io,fd}`. CPU/disk/net usam padrão **prev + atual** (delta calculado vs snapshot anterior).
 - **Gráficos** em `graphs.py`: `Sparkline`, `LineChart`, `StackedBar` desenhados em `Gtk.DrawingArea` com Cairo. Cores semânticas em `__init__.py` (`COLOR_CPU` emerald, `COLOR_RAM` amber, `COLOR_DISK` cyan, `COLOR_NET` violet).
 - **Alertas** em `alerts.py`: `AlertRule` persistido + `AlertState` em memória. Tracking de "X está acima do threshold há N segundos" com `duration_sec` e `cooldown_sec`.
 
-Lazy: somente `AlertsTab` é construída no startup (precisa rodar em background pra detectar disparos mesmo quando user está em outra tab). As outras 4 são construídas na primeira visita via `_build_if_needed(name)`. Cada tab implementa `pause_tick()` / `resume_tick()` — quando user troca de tab, os timers Cairo das tabs invisíveis são pausados (CPU reduzida).
+Lazy: somente `AlertsTab` é construída no startup (precisa rodar em background pra detectar disparos mesmo quando user está em outra tab). As outras 5 são construídas na primeira visita via `_build_if_needed(name)`. Cada tab implementa `pause_tick()` / `resume_tick()` — quando user troca de tab, os timers Cairo das tabs invisíveis são pausados (CPU reduzida).
 
 ## Comandos disparados
 
 ```bash
-# Unica chamada de subprocess de todo o app — apenas quando o user
-# tenta matar processo de outro user (EPERM em os.kill)
-pkexec kill -TERM 12345
-pkexec kill -KILL 12345
+# Subprocess via pkexec — sob demanda, NUNCA no loop de coleta:
+pkexec kill -TERM 12345                                   # matar processo de outro user
+pkexec env LC_ALL=C timeout -s INT 5 strace -f -c -p PID  # inspetor de syscalls (aba Processos)
+pkexec env LC_ALL=C nethogs -t -c 4 -d 1                  # banda por processo (aba Rede)
 ```
 
-Não usa `ps`, `top`, `iostat`, `vmstat` ou qualquer subprocess. Toda a coleta é leitura direta de file:
+A **coleta de métricas** não usa `ps`/`top`/`iostat`/`vmstat` — é 100% leitura direta de file (os 3 subprocess acima são ações pontuais opt-in, fora do loop de refresh):
 
 ```
 /proc/stat        -> CPU times por core
@@ -76,6 +76,16 @@ Top 30 processos com filtros:
 - Sort: CPU / Memória / I/O (read+write) / Conexões ativas / PID / Nome
 - Switch "Só meus" — filtra pelo UID atual
 - Botão **Kill** com confirmação (default `SIGTERM`, opção `SIGKILL`). Se `os.kill` retorna `PermissionError`, chama `pkexec kill` automaticamente.
+- Botão **Inspecionar** por processo: `pkexec … strace -f -c -p PID` (~5s) → resumo de syscalls (`proc_inspect.py`). Só aparece com `strace` instalado.
+
+### Rede (snapshot via pkexec)
+
+Banda **por processo** via `nethogs -t` (tracemode). Snapshot pontual (`pkexec env LC_ALL=C nethogs -t -c 4 -d 1`, ~4s) parseado em `net_bandwidth.py` → `ProcBandwidth(program, pid, sent_kbps, recv_kbps, attributed)`. Lazy: o `nethogs` só roda no clique de **Medir banda**.
+
+- **Atribuído** (`pid>0`): nethogs mapeou a conexão a um processo → `programa + PID`.
+- **Não-atribuído** (`pid 0`; conexão pré-existente que o nethogs não viu nascer): mostra o **endpoint remoto** (`ip:porta`) — ainda útil pra exfiltração. Cobre o caso do `iftop` (banda por conexão), por isso o iftop saiu do catálogo.
+
+`LC_ALL=C` força ponto decimal (locale pt-BR sairia com vírgula, quebrando o `float`). Tráfego zero é ignorado; dedup por (rótulo, pid) mantendo a última refresh.
 
 ### Alertas
 
