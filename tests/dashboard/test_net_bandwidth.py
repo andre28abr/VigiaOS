@@ -30,10 +30,41 @@ class TestParseNethogsTrace:
         totals = [r.sent_kbps + r.recv_kbps for r in rows]
         assert totals == sorted(totals, reverse=True)
 
-    def test_skips_pid_zero_unknown(self):
+    def test_attributed_flag(self):
         rows = nb.parse_nethogs_trace(SAMPLE)
-        assert all(r.pid > 0 for r in rows)
+        assert all(r.attributed for r in rows)  # firefox/curl têm pid real
+
+    def test_zero_traffic_lines_skipped(self):
+        # "unknown TCP/0/0  0  0" tem tráfego zero -> ignorado
+        rows = nb.parse_nethogs_trace(SAMPLE)
         assert "unknown TCP" not in [r.program for r in rows]
+        assert "desconhecido" not in [r.program for r in rows]
+
+    def test_unattributed_connection_shown_by_remote(self):
+        # nethogs nao atribuiu (pid 0) mas HA trafego -> mostra endpoint remoto
+        rows = nb.parse_nethogs_trace(
+            "192.168.15.4:35690-1.0.0.1:443/0/0\t0.04\t0.01\n"
+        )
+        assert len(rows) == 1
+        assert rows[0].pid == 0 and rows[0].attributed is False
+        assert rows[0].program == "1.0.0.1:443"
+
+    def test_real_nethogs_output(self):
+        # output REAL da VM (conexão DoH pré-existente não atribuída +
+        # cabeçalhos 'Adding local address' / 'Refreshing:').
+        real = (
+            "Adding local address: 192.168.15.4\n"
+            "Ethernet link detected\n"
+            "\n"
+            "Refreshing:\n"
+            "192.168.15.4:35690-1.0.0.1:443/0/0\t0.0433594\t0.0128906\n"
+            "unknown TCP/0/0\t0\t0\n"
+        )
+        rows = nb.parse_nethogs_trace(real)
+        assert len(rows) == 1
+        assert rows[0].program == "1.0.0.1:443"
+        assert rows[0].attributed is False
+        assert abs(rows[0].sent_kbps - 0.0433594) < 1e-6
 
     def test_dedupe_keeps_last_refresh(self):
         # 2 refreshes do mesmo processo => mantém a última (estado recente)
