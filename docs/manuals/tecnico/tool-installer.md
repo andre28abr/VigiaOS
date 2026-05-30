@@ -37,7 +37,7 @@ vigia_installer/
 | Categoria | Pacotes |
 |---|---|
 | **Auditoria e hardening** | lynis, aide, chkrootkit, rkhunter |
-| **Rede** | mtr, nethogs, iftop |
+| **Rede** | mtr, nethogs |
 | **Monitoramento e diagnóstico** | lsof, strace, fail2ban |
 | **Privacidade e criptografia** | tor, torsocks, wireguard-tools, dnscrypt-proxy |
 | **Forense e análise** | clamav, hashdeep |

@@ -7,7 +7,7 @@ abre AMO/Web Store, mantem state local de marcacao, lock por categoria
 (so 1 ad-blocker por browser).
 """
 
-__version__ = "0.3.2"
+__version__ = "0.3.3"
 __app_id__ = "br.com.vigia.ToolInstaller"
 
 WRAPPED_PACKAGES = ["rpm-ostree", "xdg-open"]

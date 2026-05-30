@@ -65,7 +65,7 @@ DEPS_CORE=(git python3-pip python3-gobject gtk4 libadwaita)
 DEPS_BACKENDS=(
     lynis aide chkrootkit rkhunter        # auditoria / rootkits
     clamav clamav-update                  # antivirus
-    mtr nethogs iftop                     # rede (diagnostico)
+    mtr nethogs                     # rede (diagnostico)
     lsof strace                           # debug
     fail2ban                              # defesa (servico — fica OFF)
     tor torsocks wireguard-tools          # privacidade (tor fica OFF)

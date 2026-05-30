@@ -16,7 +16,7 @@ Silverblue e' atomico: `dnf install` nao funciona — voce usa `rpm-ostree insta
 | Categoria | Ferramentas |
 |-----------|-------------|
 | **Auditoria** | lynis, aide, chkrootkit, rkhunter |
-| **Rede** | mtr, nethogs, iftop |
+| **Rede** | mtr, nethogs |
 | **Monitoramento** | lsof, strace, fail2ban |
 | **Privacidade** | tor, torsocks, wireguard-tools, dnscrypt-proxy |
 | **Forense** | clamav, hashdeep |
