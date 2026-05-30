@@ -123,17 +123,10 @@ CATALOG: list[CatalogEntry] = [
         category="rede",
         binary="nethogs",
     ),
-    CatalogEntry(
-        package="iftop",
-        name="iftop",
-        description="Largura de banda por conexão (host-to-host).",
-        why=(
-            "Mostra **bandwidth por par origem→destino**. Complementa o "
-            "NetHogs: NetHogs é por processo, iftop é por conexão."
-        ),
-        category="rede",
-        binary="iftop",
-    ),
+    # NOTA: iftop removido do catalogo (2026-05-30). Banda por conexao ja'
+    # aparece na aba Rede do Monitor do Sistema (nas linhas nao-atribuidas a
+    # processo, mostradas pelo endpoint remoto), entao iftop ficou
+    # redundante. O nethogs (acima) segue como backend dessa aba.
 
     # ===== MONITORAMENTO ===== #
     # NOTA: htop e iotop removidos do catalogo (2026-05-30). O **Vigia

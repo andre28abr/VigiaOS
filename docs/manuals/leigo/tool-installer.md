@@ -29,7 +29,7 @@ A janela tem **4 abas**:
 
 **Catálogo**: lista de ferramentas agrupadas em 5 categorias:
 - **Auditoria e hardening** (lynis, AIDE, chkrootkit, rkhunter)
-- **Rede** (mtr, nethogs, iftop)
+- **Rede** (mtr, nethogs)
 - **Monitoramento** (lsof, strace, fail2ban)
 - **Privacidade** (tor, torsocks, wireguard, dnscrypt-proxy)
 - **Forense** (clamav, hashdeep)

@@ -513,7 +513,7 @@ ClearURLs, LibRedirect) que abrem direto na AMO/Chrome Web Store.
 
 **Categorias** (16 pacotes em `catalog.py`, 5 categorias):
 - Auditoria e hardening — lynis, aide, chkrootkit, rkhunter
-- Rede — mtr, nethogs, iftop
+- Rede — mtr, nethogs
 - Monitoramento e diagnóstico — lsof, strace, fail2ban
 - Privacidade e criptografia — tor, torsocks, wireguard-tools, dnscrypt-proxy
 - Forense e análise — clamav, hashdeep
