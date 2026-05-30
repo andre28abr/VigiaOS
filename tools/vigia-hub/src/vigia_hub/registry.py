@@ -129,13 +129,14 @@ TOOLS: list[ToolEntry] = [
             "pra investigar o que um processo suspeito está fazendo."
         ),
         features=[
-            "**5 tabs**: Visão Geral, Recursos, Processos, Alertas, Sobre",
+            "**6 tabs**: Visão Geral, Recursos, Processos, Rede, Alertas, Sobre",
             "Sparklines de CPU, RAM, RX/TX (60s de histórico)",
             "Gráficos Cairo: CPU por core + StackedBar de RAM + linha de Disco/Rede",
             "Temperatura via `/sys/class/thermal` (sem deps externas)",
             "Top 30 processos com filtros (search, sort, 'só meus')",
             "Kill com confirmação + pkexec para processos do sistema",
             "**Inspecionar** syscalls de um processo via `strace -c` (opcional, pkexec)",
+            "**Banda por processo** (aba Rede) via `nethogs` — acha exfiltração (opcional, pkexec)",
             "**Sem persistencia** em disco — dados somem ao fechar",
         ],
         icon_path=_TOOLS_DIR / "dashboard" / "data" / "br.com.vigia.Dashboard.svg",
@@ -144,7 +145,7 @@ TOOLS: list[ToolEntry] = [
         available_fn=lambda: shutil.which("vigia-dashboard") is not None,
         embedded_module="vigia_dashboard.window",
         category="monitoramento",
-        wrapped_packages=["procfs", "strace"],
+        wrapped_packages=["procfs", "strace", "nethogs"],
     ),
     ToolEntry(
         id="activity-log",
