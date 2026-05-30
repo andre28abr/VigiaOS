@@ -21,7 +21,7 @@ do sistema-base sem complicação.
 |---|---|---|---|
 | 1 | `bootstrap.sh` | bash | 🟡 Em desenvolvimento |
 | 2 | **[Vigia Hub](tools/vigia-hub/)** v0.7.4 | Python + GTK4 | 🟢 3 painéis + autostart XDG + tray (quick actions) + lock Polkit + backup/restore + Ajuda (manuais MD) |
-| 3 | **[Vigia Monitor do Sistema](tools/dashboard/)** v0.3.3 | Python + GTK4 + Cairo | 🟢 Sistema em tempo real + per-process I/O + alertas + inspetor de syscalls |
+| 3 | **[Vigia Monitor do Sistema](tools/dashboard/)** v0.4.0 | Python + GTK4 + Cairo | 🟢 Sistema em tempo real + per-process I/O + alertas + inspetor syscalls + banda por processo |
 | 4 | **[Vigia Activity Log](tools/activity-log/)** v0.7.1 (core) + [GUI](tools/activity-log-gui/) v0.1 | Rust + Python | 🟢 audit + journald + fail2ban + correlations |
 | 5 | **[Vigia Privacy Controls](tools/privacy-controls/)** v0.3.1 | Python + GTK4 | 🟢 13 toggles user+system scope |
 | 6 | **[Vigia SELinux GUI](tools/selinux-gui/)** v0.2 | Python + GTK4 | 🟢 6 tabs + pt-BR + audit2allow |
@@ -30,7 +30,7 @@ do sistema-base sem complicação.
 | 9 | **[Vigia Hardening Checks](tools/hardening-checks/)** v0.1.4 | Python + GTK4 | 🟢 Lynis wrapper + perfil Silverblue |
 | 10 | **[Vigia Reports](tools/reports/)** v0.1.1 | Python + Jinja2 + WeasyPrint | 🟢 PDF/HTML LGPD |
 | 11 | **[Vigia File Integrity](tools/file-integrity/)** v0.2.4 | Python + GTK4 | 🟢 AIDE (sistema) + Hash ad-hoc (user) — 6 tabs |
-| 12 | **[Vigia Tool Installer](tools/tool-installer/)** v0.3.2 | Python + GTK4 | 🟢 rpm-ostree + **extensões navegador open source** |
+| 12 | **[Vigia Tool Installer](tools/tool-installer/)** v0.3.3 | Python + GTK4 | 🟢 rpm-ostree + **extensões navegador open source** |
 | 13 | **[Vigia DNS Manager](tools/dns-manager/)** v0.4.2 | Python + GTK4 | 🟢 **dnscrypt-proxy** (DoH/DoT) com 11 servers curados |
 | 14 | **[Vigia Capabilities Inspector](tools/capabilities-inspector/)** v0.1 | Python + GTK4 | 🟢 getcap audit + 41 caps pt-BR |
 | 15 | **[Vigia Antivirus](tools/antivirus/)** v0.1.1 | Python + GTK4 | 🟢 ClamAV wrapper (substitui clamtk) |
@@ -48,7 +48,7 @@ do sistema-base sem complicação.
 
 Além das **Configurações** (centro de preferências com 3 sub-abas, abaixo), as
 versões v0.6–v0.7 adicionaram a aba **Ajuda** (manuais em Markdown renderizados
-in-app), **ações rápidas na bandeja** (submenu "Abrir módulo" → Dashboard,
+in-app), **ações rápidas na bandeja** (submenu "Abrir módulo" → Monitor do Sistema,
 Antivírus, etc.) e **backup/restauração** da config em `.zip` (0600, LGPD).
 
 A aba **Configurações** do Hub virou um centro real de preferências, com 3 sub-abas:

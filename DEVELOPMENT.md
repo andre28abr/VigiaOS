@@ -1865,6 +1865,36 @@ mostra o resumo de syscalls (tabela por %tempo) num diálogo. Read-only.
   `float`. *Lição geral: subprocess cujo output tem número formatado
   deve rodar com `LC_ALL=C` — só pega em sistema com locale não-inglês.*
 
+### 2026-05-30 — Monitor do Sistema v0.4.0: rename + aba Rede (nethogs)
+
+Decisão de UX com o André: o Dashboard **é** a ferramenta de
+monitoramento, então (1) renomeado **"Dashboard" → "Monitor do Sistema"**
+(nome visível; `id`/módulo/pacote `dashboard`/`vigia_dashboard`/
+`br.com.vigia.Dashboard` seguem iguais) e (2) ganhou uma aba **Rede**.
+Decidimos **não** dividir em dois módulos (evitaria "Monitoramento ›
+Monitoramento" + fragmentação) e **não** mover Alertas pro Config do Hub
+(quebraria o standalone — Alertas é monitoramento ativo). Commits
+`046507e`..`853a4c2`.
+
+- **Aba Rede — banda por processo** (`net_bandwidth.py` + `tabs/network.py`):
+  fecha a lacuna que o próprio código admitia ("Bytes/s por PID = futuro/
+  eBPF"). Botão "Medir banda" → snapshot `pkexec env LC_ALL=C nethogs -t
+  -c 4 -d 1` (~4s, read-only, lazy) → tabela ↑/↓ por processo. Acha
+  exfiltração ("que processo manda dados pra fora?").
+- **Parser ajustado ao output REAL** (teste do André na VM): o campo do
+  `nethogs -t` é `caminho/pid/uid` quando atribui, mas a própria
+  **conexão** (`local-remoto`) com pid 0 quando NÃO consegue (conexão
+  pré-existente que ele não viu nascer). Não-atribuídos aparecem pelo
+  **endpoint remoto** (não somem). `LC_ALL=C` (lição do strace) + tolera
+  vírgula. Validado: firefox atribuído com PID + conexões soltas por
+  endpoint.
+- **iftop removido do catálogo** (16→15 pkgs): banda por conexão já é
+  coberta pelas linhas não-atribuídas da aba Rede → iftop redundante.
+  nethogs fica (é o backend). Tool Installer v0.3.3.
+- +12 testes do parser nethogs (incl. o output real travado como
+  regressão). Manuais leigo+técnico documentam a aba Rede + o inspetor
+  strace. Suite 643.
+
 ---
 
 ## 10. Roadmap
