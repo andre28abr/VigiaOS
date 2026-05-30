@@ -21,7 +21,7 @@ do sistema-base sem complicação.
 |---|---|---|---|
 | 1 | `bootstrap.sh` | bash | 🟡 Em desenvolvimento |
 | 2 | **[Vigia Hub](tools/vigia-hub/)** v0.7.4 | Python + GTK4 | 🟢 3 painéis + autostart XDG + tray (quick actions) + lock Polkit + backup/restore + Ajuda (manuais MD) |
-| 3 | **[Vigia Monitor do Sistema](tools/dashboard/)** v0.4.0 | Python + GTK4 + Cairo | 🟢 Sistema em tempo real + per-process I/O + alertas + inspetor syscalls + banda por processo |
+| 3 | **[Vigia Monitor do Sistema](tools/dashboard/)** v0.4.1 | Python + GTK4 + Cairo | 🟢 Sistema em tempo real + per-process I/O + alertas + inspetor syscalls + banda por processo + selo de plataforma |
 | 4 | **[Vigia Activity Log](tools/activity-log/)** v0.7.1 (core) + [GUI](tools/activity-log-gui/) v0.1 | Rust + Python | 🟢 audit + journald + fail2ban + correlations |
 | 5 | **[Vigia Privacy Controls](tools/privacy-controls/)** v0.3.1 | Python + GTK4 | 🟢 13 toggles user+system scope |
 | 6 | **[Vigia SELinux GUI](tools/selinux-gui/)** v0.2 | Python + GTK4 | 🟢 6 tabs + pt-BR + audit2allow |

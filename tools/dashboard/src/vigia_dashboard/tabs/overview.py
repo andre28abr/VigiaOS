@@ -9,7 +9,7 @@ import gi
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 
-from gi.repository import Adw, GLib, Gtk  # noqa: E402
+from gi.repository import Adw, Gdk, GLib, Gtk  # noqa: E402
 
 from .. import COLOR_CPU, COLOR_DIM, COLOR_DISK, COLOR_NET, COLOR_OK, COLOR_RAM, COLOR_WARN
 from .. import backend
@@ -18,6 +18,47 @@ from ._helpers import make_clamp
 
 
 REFRESH_MS = 1000  # 1Hz
+
+
+# Selo da plataforma no hero: pill verde (atomico) / azul (Workstation).
+# Usa cores nomeadas do libadwaita (theme-aware, dark/light).
+_PLATFORM_CSS = """
+.vigia-platform-badge {
+  border-radius: 999px;
+  padding: 3px 14px;
+  font-weight: bold;
+  font-size: 0.85em;
+}
+.vigia-platform-atomic {
+  background-color: @success_bg_color;
+  color: @success_fg_color;
+}
+.vigia-platform-workstation {
+  background-color: @accent_bg_color;
+  color: @accent_fg_color;
+}
+"""
+
+_CSS_LOADED = False
+
+
+def _ensure_platform_css() -> None:
+    """Carrega o CSS do selo uma unica vez no display padrao."""
+    global _CSS_LOADED
+    if _CSS_LOADED:
+        return
+    display = Gdk.Display.get_default()
+    if display is None:  # headless / sem display
+        return
+    provider = Gtk.CssProvider()
+    if hasattr(provider, "load_from_string"):  # GTK >= 4.12
+        provider.load_from_string(_PLATFORM_CSS)
+    else:  # pragma: no cover - GTK antigo
+        provider.load_from_data(_PLATFORM_CSS.encode("utf-8"))
+    Gtk.StyleContext.add_provider_for_display(
+        display, provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+    )
+    _CSS_LOADED = True
 
 
 class OverviewTab(Adw.Bin):
@@ -40,6 +81,22 @@ class OverviewTab(Adw.Bin):
         self._hostname_lbl.add_css_class("title-1")
         self._hostname_lbl.set_halign(Gtk.Align.CENTER)
         hero.append(self._hostname_lbl)
+
+        # Selo da plataforma (Silverblue vs Workstation). Identidade da
+        # maquina fica no hostname acima; aqui a cor (verde=atomico /
+        # azul=Workstation) deixa obvio qual sistema esta rodando. Estatico:
+        # setado uma vez (a plataforma nao muda em runtime).
+        _ensure_platform_css()
+        self._platform_lbl = Gtk.Label(label="")
+        self._platform_lbl.add_css_class("vigia-platform-badge")
+        self._platform_lbl.set_halign(Gtk.Align.CENTER)
+        self._platform_lbl.set_margin_top(2)
+        plat_label, plat_atomic = backend.get_platform_label()
+        self._platform_lbl.set_label(plat_label)
+        self._platform_lbl.add_css_class(
+            "vigia-platform-atomic" if plat_atomic else "vigia-platform-workstation"
+        )
+        hero.append(self._platform_lbl)
 
         self._sub_lbl = Gtk.Label(label="")
         self._sub_lbl.add_css_class("dim-label")
@@ -210,8 +267,10 @@ class OverviewTab(Adw.Bin):
         # Hero / system info
         info = backend.get_system_info()
         self._hostname_lbl.set_label(info.hostname)
+        # Tira o '(Silverblue)' do PRETTY_NAME — a variante ja' esta no selo.
+        distro_short = info.distro.split(" (")[0].strip()
         self._sub_lbl.set_label(
-            f"{info.distro} · kernel {info.kernel} · "
+            f"{distro_short} · kernel {info.kernel} · "
             f"uptime {backend.format_uptime(info.uptime_sec)} · "
             f"{info.n_cpus} CPU{'s' if info.n_cpus > 1 else ''}"
         )

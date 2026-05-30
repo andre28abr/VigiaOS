@@ -29,7 +29,7 @@ Quando você vê picos de uma cor específica, você sabe **na hora** qual área
 
 ### Aba 1 — Visão Geral
 
-A "página inicial". Mostra **nome do PC**, distribuição Linux, há quanto tempo está ligado, e **3 cartões de Load Average** (uma métrica que mostra se o sistema está sobrecarregado). Tem **gráficos mini** (sparklines) de CPU, RAM e Internet (download/upload). E uma lista de discos com **barras de uso** e os top 3 programas comendo mais CPU e RAM.
+A "página inicial". Mostra **nome do PC** e, logo abaixo, um **selo colorido com o seu sistema** — *verde* se for Fedora Silverblue (atômico), *azul* se for Fedora Workstation. Assim você sabe na hora qual versão do Fedora está rodando. Mostra também a distribuição Linux, há quanto tempo está ligado, e **3 cartões de Load Average** (uma métrica que mostra se o sistema está sobrecarregado). Tem **gráficos mini** (sparklines) de CPU, RAM e Internet (download/upload). E uma lista de discos com **barras de uso** e os top 3 programas comendo mais CPU e RAM.
 
 É o resumo de tudo numa tela só.
 

@@ -1895,6 +1895,31 @@ Monitoramento" + fragmentação) e **não** mover Alertas pro Config do Hub
   regressão). Manuais leigo+técnico documentam a aba Rede + o inspetor
   strace. Suite 643.
 
+### 2026-05-30 — Monitor do Sistema v0.4.1: selo de plataforma no hero
+
+Polimento de UX sugerido pelo André: o título grande do hero da Visão
+Geral era o **hostname** (`info.hostname`) — que numa instalação vanilla é
+o default `fedora`, sem valor. O que importa pro produto é a **plataforma**
+(Silverblue/atômico vs Workstation), porque o comportamento muda
+(`rpm-ostree` vs `dnf`, Deployments só no atômico). Avaliamos 2 designs
+(título = plataforma **vs** hostname + selo); o André escolheu o **selo**.
+
+- **Selo colorido** abaixo do hostname (mantém a identidade da máquina):
+  pill **verde** (`@success_bg_color`) p/ atômico-Silverblue, **azul**
+  (`@accent_bg_color`) p/ Workstation. Cor já grita qual sistema é. CSS
+  theme-aware via `Gtk.CssProvider` carregado 1x (`_ensure_platform_css`,
+  guard `load_from_string` GTK≥4.12 com fallback).
+- **`backend.get_platform_label() -> (str, bool)`** (cacheado): lê
+  `NAME`/`VARIANT` de `/etc/os-release` (`'Fedora Linux'→'Fedora'`,
+  `'Workstation Edition'→'Workstation'`) + `is_atomic()` p/ o qualificador
+  (`atômico`/`tradicional`, alinhado ao `bootstrap.sh`). Parser puro
+  `_parse_platform(text, atomic)` — testável sem GTK/root.
+- Subtítulo agora **tira o `(Silverblue)`** redundante do `PRETTY_NAME`
+  (a variante já está no selo): `info.distro.split(" (")[0]`.
+- +12 testes (`test_platform_label.py`: Silverblue/Workstation/Kinoite,
+  strip de `Edition`, fallback sem os-release, cache). Manuais leigo+técnico
+  atualizados. Suite **655** (+12).
+
 ---
 
 ## 10. Roadmap
