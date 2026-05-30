@@ -27,6 +27,12 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
+try:
+    from vigia_common.platform import is_atomic
+except Exception:  # pragma: no cover - fallback se vigia_common ausente
+    def is_atomic() -> bool:
+        return Path("/run/ostree-booted").exists()
+
 
 # ============================================================
 # Dataclasses
@@ -168,6 +174,48 @@ def _read_distro() -> str:
         pretty = "Linux"
     _DISTRO_CACHE = pretty or "Linux"
     return _DISTRO_CACHE
+
+
+_PLATFORM_CACHE: tuple[str, bool] | None = None
+
+
+def _parse_platform(osrelease: str, atomic: bool) -> str:
+    """Rotulo amigavel da plataforma a partir do conteudo de /etc/os-release.
+
+    Junta NAME ('Fedora Linux' -> 'Fedora') + VARIANT ('Workstation Edition'
+    -> 'Workstation') e qualifica pelo tipo de sistema (atomico vs
+    tradicional). Ex.: 'Fedora Silverblue · atomico' / 'Fedora Workstation
+    · tradicional'. O qualificador 'tradicional' segue o bootstrap.sh.
+    """
+    name, variant = "", ""
+    for line in osrelease.splitlines():
+        if line.startswith("NAME=") and not name:
+            name = line.split("=", 1)[1].strip().strip('"')
+        elif line.startswith("VARIANT=") and not variant:
+            variant = line.split("=", 1)[1].strip().strip('"')
+    name = (name or "Linux").replace(" Linux", "").strip()  # 'Fedora Linux' -> 'Fedora'
+    variant = variant.replace(" Edition", "").strip()        # 'Workstation Edition' -> 'Workstation'
+    base = f"{name} {variant}".strip() if variant else name
+    qualifier = "atômico" if atomic else "tradicional"
+    return f"{base} · {qualifier}"
+
+
+def get_platform_label() -> tuple[str, bool]:
+    """(rotulo amigavel, atomic?) — cacheado (plataforma nao muda em runtime).
+
+    Ex.: ('Fedora Silverblue · atômico', True) em Silverblue;
+         ('Fedora Workstation · tradicional', False) em Workstation.
+    """
+    global _PLATFORM_CACHE
+    if _PLATFORM_CACHE is not None:
+        return _PLATFORM_CACHE
+    atomic = is_atomic()
+    try:
+        text = Path("/etc/os-release").read_text(encoding="utf-8")
+    except OSError:
+        text = ""
+    _PLATFORM_CACHE = (_parse_platform(text, atomic), atomic)
+    return _PLATFORM_CACHE
 
 
 _USERS_LOGGED_CACHE: tuple[float, int] = (0.0, 0)

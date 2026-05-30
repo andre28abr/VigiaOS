@@ -15,7 +15,7 @@ Monitor de sistema em tempo real (CPU/RAM/disco/rede/processos) que lê `/proc` 
 | **Path config** | `~/.config/vigia/dashboard-alerts.json` (mode `0600`) |
 | **Path dados** | Sem persistência — histórico em memória, perdido ao fechar |
 | **App ID** | `br.com.vigia.Dashboard` |
-| **Versão** | 0.4.0 |
+| **Versão** | 0.4.1 |
 
 ## Arquitetura interna
 
@@ -58,7 +58,7 @@ A **coleta de métricas** não usa `ps`/`top`/`iostat`/`vmstat` — é 100% leit
 
 ### Visão Geral (1Hz)
 
-Hero com hostname + distro + uptime + load avg (3 KPI cards: 1min/5min/15min). Sparklines de **CPU**, **Memória**, **Rede ↓**, **Rede ↑** com 60s de histórico. Lista de discos com barras de uso e top 3 processos por CPU + top 3 por memória.
+Hero com hostname + **selo da plataforma** (pill colorido: verde p/ atômico-Silverblue, azul p/ Workstation; rótulo via `backend.get_platform_label()` lendo `NAME`/`VARIANT` de `/etc/os-release` + `is_atomic()`) + distro + uptime + load avg (3 KPI cards: 1min/5min/15min). Sparklines de **CPU**, **Memória**, **Rede ↓**, **Rede ↑** com 60s de histórico. Lista de discos com barras de uso e top 3 processos por CPU + top 3 por memória.
 
 ### Recursos (1Hz)
 
