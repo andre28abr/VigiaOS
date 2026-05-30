@@ -19,6 +19,15 @@ from .. import net_bandwidth as backend
 from ._helpers import make_clamp
 
 
+def _fmt_rate(kbps: float) -> str:
+    """KB/s -> unidade legível (B/s, KB/s, MB/s)."""
+    if kbps < 1:
+        return f"{kbps * 1024:.0f} B/s"
+    if kbps < 1024:
+        return f"{kbps:.1f} KB/s"
+    return f"{kbps / 1024:.1f} MB/s"
+
+
 class NetworkTab(Adw.Bin):
     """Mede banda por processo via nethogs (snapshot via pkexec)."""
 
@@ -126,9 +135,12 @@ class NetworkTab(Adw.Bin):
         )
         for pb in result.rows[:40]:
             row = Adw.ActionRow(title=pb.program or "?")
-            row.set_subtitle(f"PID {pb.pid}")
+            row.set_subtitle(
+                f"PID {pb.pid}" if pb.attributed
+                else "não atribuído a processo"
+            )
             rate = Gtk.Label(
-                label=f"↑ {pb.sent_kbps:.1f}   ↓ {pb.recv_kbps:.1f} KB/s"
+                label=f"↑ {_fmt_rate(pb.sent_kbps)}   ↓ {_fmt_rate(pb.recv_kbps)}"
             )
             rate.add_css_class("monospace")
             rate.add_css_class("caption")

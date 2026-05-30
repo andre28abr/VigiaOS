@@ -23,10 +23,11 @@ from dataclasses import dataclass, field
 
 @dataclass
 class ProcBandwidth:
-    program: str
-    pid: int
+    program: str           # programa, ou endpoint remoto se nao-atribuido
+    pid: int               # 0 = nethogs nao mapeou pra um processo
     sent_kbps: float       # KB/s enviado
     recv_kbps: float       # KB/s recebido
+    attributed: bool = True
 
 
 @dataclass
@@ -39,13 +40,28 @@ def nethogs_installed() -> bool:
     return shutil.which("nethogs") is not None
 
 
+def _unattributed_label(head: str) -> str:
+    """Trafego sem processo (pid 0): mostra o endpoint REMOTO da conexao
+    (`local:porta-remoto:porta`) — ainda util pra exfiltracao (voce ve
+    pra onde vai). Sem '-' (ex: 'unknown TCP') -> 'desconhecido'."""
+    if "-" in head:
+        return head.rsplit("-", 1)[-1].strip() or head
+    return "desconhecido"
+
+
 def parse_nethogs_trace(text: str) -> list[ProcBandwidth]:
     """Parseia a saida do `nethogs -t` (tracemode).
 
-    Cada linha de dado:  ``<caminho>/<pid>/<uid>\\t<enviado>\\t<recebido>``
-    (KB/s). Como ``-c N`` gera varias refreshes, deduplica por
-    (programa, pid) mantendo a ULTIMA ocorrencia (estado mais recente).
-    Ignora cabecalhos e linhas 'unknown' (pid 0). Ordena por total desc.
+    Cada linha de dado: ``<campo>/<pid>/<uid>\\t<enviado>\\t<recebido>``
+    (KB/s). O ``<campo>`` e' o CAMINHO do programa quando o nethogs
+    atribui a conexao a um processo (ex: `/usr/lib/firefox/firefox`), OU
+    a propria CONEXAO (`local:porta-remoto:porta`) com pid 0 quando NAO
+    consegue (conexao pre-existente, kernel, etc.).
+
+    - pid > 0  -> atribuido: programa = basename do caminho.
+    - pid == 0 -> nao-atribuido: mostra o endpoint remoto.
+    Linhas sem trafego (0/0) sao ignoradas. Dedup por (rotulo, pid)
+    mantendo a ultima refresh; ordena por total (enviado+recebido) desc.
     """
     by_key: dict[tuple[str, int], ProcBandwidth] = {}
     for line in text.splitlines():
@@ -56,11 +72,10 @@ def parse_nethogs_trace(text: str) -> list[ProcBandwidth]:
             continue
         name_field = parts[0].strip()
         sent_s, recv_s = parts[-2].strip(), parts[-1].strip()
-        # name_field = "/caminho/do/programa/PID/UID"
         bits = name_field.rsplit("/", 2)
         if len(bits) != 3:
             continue
-        prog_path, pid_s, _uid_s = bits
+        head, pid_s, _uid_s = bits
         try:
             pid = int(pid_s)
             # LC_ALL=C ja' forca ponto, mas tolera virgula por seguranca
@@ -68,10 +83,17 @@ def parse_nethogs_trace(text: str) -> list[ProcBandwidth]:
             recv = float(recv_s.replace(",", "."))
         except ValueError:
             continue
-        if pid <= 0:
-            continue  # "unknown TCP/0/0" e ruido nao-atribuido
-        program = prog_path.rsplit("/", 1)[-1] or prog_path
-        by_key[(program, pid)] = ProcBandwidth(program, pid, sent, recv)
+        if sent == 0.0 and recv == 0.0:
+            continue  # sem trafego no periodo (ruido)
+        if pid > 0:
+            program = head.rsplit("/", 1)[-1] or head
+            attributed = True
+        else:
+            program = _unattributed_label(head)
+            attributed = False
+        by_key[(program, pid)] = ProcBandwidth(
+            program, pid, sent, recv, attributed
+        )
     return sorted(
         by_key.values(),
         key=lambda r: r.sent_kbps + r.recv_kbps,
