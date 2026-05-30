@@ -1,6 +1,6 @@
-"""Janela principal — orquestra 5 tabs (v0.2: +Alertas).
+"""Janela principal — orquestra 6 tabs (v0.4: +Rede).
 
-Visao Geral + Recursos + Processos + Alertas + Sobre.
+Visao Geral + Recursos + Processos + Rede + Alertas + Sobre.
 """
 
 from __future__ import annotations
@@ -13,7 +13,14 @@ gi.require_version("Adw", "1")
 from gi.repository import Adw, Gtk  # noqa: E402
 
 from . import WRAPPED_PACKAGES
-from .tabs import AboutTab, AlertsTab, OverviewTab, ProcessesTab, ResourcesTab
+from .tabs import (
+    AboutTab,
+    AlertsTab,
+    NetworkTab,
+    OverviewTab,
+    ProcessesTab,
+    ResourcesTab,
+)
 
 
 def _make_pkg_badges_bar() -> Gtk.Widget:
@@ -60,6 +67,7 @@ def build_content() -> Gtk.Widget:
     overview_holder = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
     resources_holder = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
     processes_holder = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+    network_holder = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
     about_holder = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
 
     # AlertsTab e' eager — precisa rodar em background sempre
@@ -69,6 +77,7 @@ def build_content() -> Gtk.Widget:
     stack.add_titled_with_icon(overview_holder, "overview", "Visão Geral", "view-grid-symbolic")
     stack.add_titled_with_icon(resources_holder, "resources", "Recursos", "view-statistics-symbolic")
     stack.add_titled_with_icon(processes_holder, "processes", "Processos", "view-list-symbolic")
+    stack.add_titled_with_icon(network_holder, "network", "Rede", "network-wireless-symbolic")
     stack.add_titled_with_icon(alerts_tab, "alerts", "Alertas", "dialog-warning-symbolic")
     stack.add_titled_with_icon(about_holder, "about", "Sobre", "help-about-symbolic")
 
@@ -77,6 +86,7 @@ def build_content() -> Gtk.Widget:
         "overview": None,
         "resources": None,
         "processes": None,
+        "network": None,
         "alerts": alerts_tab,  # ja construida
         "about": None,
     }
@@ -85,6 +95,7 @@ def build_content() -> Gtk.Widget:
         "overview": overview_holder,
         "resources": resources_holder,
         "processes": processes_holder,
+        "network": network_holder,
         "about": about_holder,
     }
 
@@ -92,6 +103,7 @@ def build_content() -> Gtk.Widget:
         "overview": OverviewTab,
         "resources": ResourcesTab,
         "processes": ProcessesTab,
+        "network": NetworkTab,
         "about": AboutTab,
     }
 

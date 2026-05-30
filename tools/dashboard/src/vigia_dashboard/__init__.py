@@ -1,10 +1,10 @@
 """Vigia Dashboard — sistema em tempo real (CPU, RAM, disco, rede, processos)."""
 
-__version__ = "0.3.3"
+__version__ = "0.4.0"
 __app_id__ = "br.com.vigia.Dashboard"
 
 # Sem deps externas — usa /proc do kernel.
-WRAPPED_PACKAGES = ["procfs"]
+WRAPPED_PACKAGES = ["procfs", "strace", "nethogs"]
 
 
 # Cores semanticas para os graficos (multi-cor — feedback do user)
