@@ -510,11 +510,11 @@ ClearURLs, LibRedirect) que abrem direto na AMO/Chrome Web Store.
 
 **Stack**: Python + PyGObject + GTK4 + libadwaita.
 
-**Categorias** (13 pacotes em `catalog.py`, 5 categorias):
+**Categorias** (12 pacotes em `catalog.py`, 5 categorias):
 - Auditoria e hardening — lynis, aide, chkrootkit, rkhunter
 - Rede — mtr, nethogs
 - Monitoramento e diagnóstico — lsof, strace, fail2ban
-- Privacidade e criptografia — wireguard-tools, dnscrypt-proxy
+- Privacidade e criptografia — dnscrypt-proxy
 - Forense e análise — clamav, hashdeep
 
 Recon ativo e RE (`nmap`, `tcpdump`, `binwalk`) ficam **fora de
@@ -1944,6 +1944,25 @@ justamente do `torsocks`, terminal-only (público é sem-terminal). E o toggle
 - +7 testes (`test_catalog.py`: tor/torsocks ausentes, lock de 13 pacotes).
   Manuais + READMEs + spec + registry sincronizados (incl. drift do iftop:
   16→13). Suite **662**.
+
+### 2026-05-30 — `wireguard-tools` removido (VPN fica com NetworkManager / app)
+
+Pente-fino do catálogo, parte 2. O André (e o público advogado) usa VPN
+**comercial** (NordVPN-style). Pra esse caso o `wireguard-tools` (`wg`/
+`wg-quick`) não serve: o app do provedor traz a própria stack (NordLynx) e o
+caminho no-terminal na Silverblue é importar o `.conf`/`.ovpn` no
+**NetworkManager** (GNOME Settings → Rede → VPN), que já tem WireGuard
+embutido e **não precisa** do pacote. O próprio `why` da entrada já admitia
+"NM importa e gerencia nativamente, sem tool dedicada" — mesma razão da
+remoção do VPN Manager.
+
+- **Tool Installer v0.3.5**: `wireguard-tools` fora do `catalog.py`
+  (**13→12 pacotes**); categoria *privacidade* = só `dnscrypt-proxy`,
+  descrição sem "VPN". Fora do `bootstrap.sh` também.
+- `test_catalog.py` atualizado (lock 12, wireguard ausente). Manuais +
+  README + DEVELOPMENT sincronizados. Suite **662**.
+- **Mantido**: menção a "wireguard" no Capabilities Inspector (exemplo de uso
+  de capability, não o pacote).
 
 ---
 
