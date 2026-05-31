@@ -155,6 +155,10 @@ class GenerateTab(Adw.Bin):
                 data = backend.collect_for_activity_overview(period, elevated=elevated)
             elif template_id == "auth_events":
                 data = backend.collect_for_auth_events(period, elevated=elevated)
+            elif template_id == "executive_summary":
+                data = backend.collect_for_executive_summary(period, elevated=elevated)
+            elif template_id == "admin_access":
+                data = backend.collect_for_admin_access(period, elevated=elevated)
             else:
                 raise ValueError(f"Template não suportado: {template_id}")
 

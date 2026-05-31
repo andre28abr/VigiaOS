@@ -25,8 +25,9 @@ A janela tem **3 abas**:
 
 **Gerar**: você escolhe o que entra no relatório e clica em "Gerar".
 Algumas opções:
-- Modelo: "Atividade geral" (panorama) ou "Eventos de autenticação"
-  (focado em quem entrou)
+- Modelo: "Atividade geral" (panorama), "Eventos de autenticação"
+  (quem entrou), "Resumo executivo" (1 página pra mostrar pra alguém)
+  ou "Acesso administrativo" (quem usou senha de admin)
 - Período: 24 horas, 7 dias, 30 dias, ou 90 dias
 - **Modo admin** (interruptor): liga pra pegar dados completos (vai
   pedir sua senha 1x)
@@ -48,6 +49,12 @@ ver onde os arquivos estão.
 - **Eventos de autenticação**: detalha cada login, cada uso de senha
   de administrador, cada tentativa falhada. Bom pra auditoria LGPD
   formal.
+- **Resumo executivo**: a versão de **uma página** — o selo de status, o
+  resumo em português, os gráficos e os destaques, sem as tabelas longas.
+  É o que você imprime e entrega pro cliente ou auditor.
+- **Acesso administrativo**: foca em **quem usou senha de administrador**
+  (sudo/pkexec) — cada comando de admin, quando e por quem. Se mais de uma
+  pessoa tem admin, ele avisa (importante pra LGPD).
 - **Modo admin**: quando ligado, a ferramenta consegue ver também as
   **tentativas de login que falharam** (importante!) e o registro
   completo do sistema. Sem isso, vai faltar parte da história.

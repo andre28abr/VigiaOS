@@ -83,3 +83,47 @@ class TestBuildSummary:
         text = backend.build_summary(kpis, self._p(), backend.build_status(kpis))
         assert "não houve atividade" in text
         assert "Nenhuma anomalia" in text
+
+
+class TestBuildHighlights:
+    def test_quiet_period_single_bullet(self):
+        out = backend.build_highlights(
+            {"ssh_success": 0, "ssh_failed": 0, "sudo_invocations": 0, "pkexec_invocations": 0, "bans": 0}
+        )
+        assert len(out) == 1
+        assert "tranquilo" in out[0]
+
+    def test_busy_period(self):
+        out = backend.build_highlights(
+            {"ssh_success": 3, "ssh_failed": 142, "sudo_invocations": 10, "pkexec_invocations": 2, "bans": 5}
+        )
+        joined = " ".join(out)
+        assert "fail2ban" in joined
+        assert "142" in joined
+        assert "12" in joined  # 10 sudo + 2 pkexec
+
+
+class TestAdminStatusAndSummary:
+    def _p(self):
+        return backend.Period(since=datetime(2026, 5, 24), until=datetime(2026, 5, 31))
+
+    def test_status_levels(self):
+        assert backend.build_admin_status(0)["level"] == "ok"
+        assert backend.build_admin_status(1)["level"] == "ok"
+        assert backend.build_admin_status(3)["level"] == "warn"
+        assert "3" in backend.build_admin_status(3)["label"]
+
+    def test_summary_no_activity(self):
+        text = backend.build_admin_summary(
+            {"sudo_invocations": 0, "pkexec_invocations": 0, "admin_total": 0, "admin_users": 0},
+            self._p(),
+        )
+        assert "nenhum comando administrativo" in text
+
+    def test_summary_multi_user_lgpd_note(self):
+        text = backend.build_admin_summary(
+            {"sudo_invocations": 10, "pkexec_invocations": 2, "admin_total": 12, "admin_users": 2},
+            self._p(),
+        )
+        assert "12" in text
+        assert "menor privilégio" in text

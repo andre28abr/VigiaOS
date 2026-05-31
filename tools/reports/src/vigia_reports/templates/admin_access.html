@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>Panorama</h2>
+<p class="explainer">Todo uso de privilégio administrativo (sudo + pkexec) no período — a trilha de "quem rodou comando de administrador", relevante para LGPD.</p>
+
+<div class="kpi-grid">
+  <div class="kpi">
+    <div class="kpi-value">{{ kpis.sudo_invocations }}</div>
+    <div class="kpi-label">Comandos sudo</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-value">{{ kpis.pkexec_invocations }}</div>
+    <div class="kpi-label">Comandos pkexec</div>
+  </div>
+  <div class="kpi accent">
+    <div class="kpi-value">{{ kpis.admin_total }}</div>
+    <div class="kpi-label">Total administrativo</div>
+  </div>
+  <div class="kpi {% if kpis.admin_users > 1 %}warn{% endif %}">
+    <div class="kpi-value">{{ kpis.admin_users }}</div>
+    <div class="kpi-label">Administradores</div>
+  </div>
+</div>
+
+<div class="chart-grid">
+  <div class="chart-card">
+    <div class="chart-title">Ações administrativas por dia</div>
+    {{ bar_chart(admin_by_day, color="#059669") | safe }}
+  </div>
+  {% if top_admin_users %}
+  <div class="chart-card">
+    <div class="chart-title">Quem mais usou privilégio</div>
+    {{ hbar_chart(top_admin_users, color="#059669") | safe }}
+  </div>
+  {% endif %}
+</div>
+
+<h2>Comandos sudo</h2>
+<p class="explainer">Cada comando executado com <code>sudo</code>, com o usuário que pediu e o alvo.</p>
+{% if sudo %}
+<table>
+  <thead><tr><th>Quando</th><th>Usuário</th><th>Como</th><th>Comando</th></tr></thead>
+  <tbody>
+    {% for s in sudo %}
+    <tr>
+      <td class="mono">{{ s.timestamp }}</td>
+      <td>{{ s.user }}</td>
+      <td><span class="tag">→ {{ s.target_user }}</span></td>
+      <td class="mono">{{ s.command }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty">Nenhum comando sudo no período.</div>
+{% endif %}
+
+<h2>Comandos pkexec</h2>
+<p class="explainer">Escalações de privilégio pela interface gráfica (diálogo do polkit).</p>
+{% if pkexec %}
+<table>
+  <thead><tr><th>Quando</th><th>Usuário</th><th>Como</th><th>Comando</th></tr></thead>
+  <tbody>
+    {% for p in pkexec %}
+    <tr>
+      <td class="mono">{{ p.timestamp }}</td>
+      <td>{{ p.user }}</td>
+      <td><span class="tag">→ {{ p.target_user }}</span></td>
+      <td class="mono">{{ p.command }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty">Nenhum comando pkexec no período.</div>
+{% endif %}
+
+{% endblock %}

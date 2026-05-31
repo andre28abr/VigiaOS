@@ -27,6 +27,16 @@ TEMPLATES: dict[str, dict] = {
         "description": "Detalhamento de logins SSH, sudo, pkexec, logins falhados. Bom para auditoria LGPD.",
         "file": "auth_events.html",
     },
+    "executive_summary": {
+        "name": "Resumo executivo",
+        "description": "Uma página visual com o panorama do período — ideal para cliente, auditor ou arquivo mensal.",
+        "file": "executive_summary.html",
+    },
+    "admin_access": {
+        "name": "Acesso administrativo",
+        "description": "Trilha de comandos com privilégio (sudo + pkexec): quem rodou o quê, quando. Foco LGPD.",
+        "file": "admin_access.html",
+    },
 }
 
 
