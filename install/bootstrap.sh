@@ -11,7 +11,7 @@
 #     atalhos + ícones no menu do GNOME.
 #   - Instala Flatpaks de privacidade (KeePassXC, Signal, Tor Browser…).
 #
-# **NÃO liga nenhum serviço.** tor, fail2ban e dnscrypt-proxy ficam
+# **NÃO liga nenhum serviço.** fail2ban e dnscrypt-proxy ficam
 # DESLIGADOS — você ativa cada um na ferramenta correspondente quando
 # quiser (princípio de minimum surface area / LGPD).
 #
@@ -61,14 +61,14 @@ BANNER
 DEPS_CORE=(git python3-pip python3-gobject gtk4 libadwaita)
 
 # Backends CLI que as ferramentas Vigia wrappam. INSTALA, mas NAO LIGA
-# servico nenhum (tor/fail2ban/dnscrypt ficam off — opt-in nas tools).
+# servico nenhum (fail2ban/dnscrypt ficam off — opt-in nas tools).
 DEPS_BACKENDS=(
     lynis aide chkrootkit rkhunter        # auditoria / rootkits
     clamav clamav-update                  # antivirus
     mtr nethogs                     # rede (diagnostico)
     lsof strace                           # debug
     fail2ban                              # defesa (servico — fica OFF)
-    tor torsocks wireguard-tools          # privacidade (tor fica OFF)
+    wireguard-tools                       # VPN (config via NetworkManager)
     dnscrypt-proxy                        # DNS encriptado (fica OFF)
     md5deep                               # forense (binarios hashdeep/sha256deep)
 )
@@ -109,7 +109,7 @@ echo "  ${DIM}backends:${NC} ${DEPS_BACKENDS[*]}"
 echo "  ${DIM}tools:${NC}    ${#VIGIA_TOOLS[@]} ferramentas Vigia (pip --user) + atalhos no GNOME"
 echo "  ${DIM}flatpaks:${NC} ${FLATPAKS[*]}"
 echo
-warn "Nenhum servico sera LIGADO (tor/fail2ban/dnscrypt off — opt-in nas tools)."
+warn "Nenhum servico sera LIGADO (fail2ban/dnscrypt off — opt-in nas tools)."
 if [ "$ATOMIC" = "1" ]; then
     warn "Sistema atomico: os pacotes ficam layered e exigem REBOOT no fim."
 fi
@@ -203,7 +203,7 @@ hr
 info "Bootstrap concluido."
 echo
 echo "${DIM}Nenhum servico foi ligado. Ative o que quiser nas ferramentas:${NC}"
-echo "${DIM}  • Tor / fail2ban → Privacy Controls    • DNS encriptado → DNS Manager${NC}"
+echo "${DIM}  • fail2ban → Privacy Controls    • DNS encriptado → DNS Manager${NC}"
 echo
 if [ "$ATOMIC" = "1" ]; then
     echo "${BOLD}Reinicie para ativar os pacotes layered:${NC}"

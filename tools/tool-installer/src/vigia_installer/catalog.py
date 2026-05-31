@@ -40,7 +40,7 @@ CATEGORY_DESCRIPTIONS = {
     "auditoria": "Ferramentas para auditar postura de segurança, integridade e procurar rootkits.",
     "rede": "Scanners, sniffers e diagnóstico de rede.",
     "monitoramento": "O que está acontecendo no sistema agora — processos, IO, arquivos abertos.",
-    "privacidade": "Tor, VPN, DNS encriptado, criptografia.",
+    "privacidade": "VPN, DNS encriptado, criptografia.",
     "forense": "Análise pós-incidente, antivírus, hashes e recuperação.",
 }
 
@@ -172,29 +172,6 @@ CATALOG: list[CatalogEntry] = [
     ),
 
     # ===== PRIVACIDADE ===== #
-    CatalogEntry(
-        package="tor",
-        name="Tor",
-        description="Daemon do Tor (proxy de anonimato).",
-        why=(
-            "Roda como serviço local na porta `9050` (SOCKS5). Após instalar: "
-            "`systemctl enable --now tor` e configure aplicações para usar o "
-            "proxy. **Vigia Privacy Controls** tem toggle para iniciar/parar."
-        ),
-        category="privacidade",
-        binary="tor",
-    ),
-    CatalogEntry(
-        package="torsocks",
-        name="torsocks",
-        description="Wrapper para rodar comandos através do Tor.",
-        why=(
-            "`torsocks curl https://example.com` envia a request via Tor sem "
-            "precisar configurar proxy manualmente. Útil para tests pontuais."
-        ),
-        category="privacidade",
-        binary="torsocks",
-    ),
     CatalogEntry(
         package="wireguard-tools",
         name="WireGuard",

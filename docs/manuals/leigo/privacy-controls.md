@@ -26,7 +26,6 @@ Uma **lista de interruptores** organizados em **grupos**:
 - **Lock Screen** (bloqueio automático, prévia de notificações)
 - **Limpeza Automática** (lixeira e arquivos temporários)
 - **Rede** (firewall, servidor SSH)
-- **Anonimização** (serviço Tor)
 - **Dispositivos** (Bluetooth)
 
 Cada interruptor tem um **nome** em cima e uma **explicação** embaixo dizendo **o que muda quando você liga ou desliga**.
@@ -40,7 +39,7 @@ Se algum interruptor estiver **acinzentado**, significa que ele **não funciona*
 A tela principal com todos os interruptores. Você **clica** num interruptor pra mudar o estado. As mudanças **acontecem na hora**:
 
 - Pros **toggles do GNOME** (localização, telemetria, etc) — muda direto, sem pedir senha
-- Pros **toggles de Rede e Tor** — pede sua **senha de admin** antes de mexer (porque mudar firewall ou ligar SSH afeta o sistema inteiro)
+- Pros **toggles de Rede** — pede sua **senha de admin** antes de mexer (porque mudar firewall ou ligar SSH afeta o sistema inteiro)
 
 Quando você desliga "Serviços de localização", **na mesma hora** apps GNOME perdem acesso a GPS, redes Wi-Fi próximas e geolocalização por IP. Você pode abrir o Settings do GNOME ao lado e ver os switches mudando juntos.
 
@@ -53,7 +52,6 @@ Versão do programa e onde ficam as configurações salvas.
 - **Telemetria** — relatórios automáticos que o GNOME envia pros desenvolvedores sobre crashes e uso. Desligar = privacidade aumenta, GNOME não fica sabendo.
 - **Firewall (firewalld)** — o "porteiro" do seu PC. Quando ligado, ele decide quais conexões de fora podem entrar. Quando desligado, qualquer um na sua rede pode tentar.
 - **SSH** — protocolo pra acessar seu PC de outro computador via terminal. **Desligado por padrão** é o mais seguro.
-- **Tor** — rede pra navegação anônima. Quando você liga, um programa fica rodando em segundo plano servindo como proxy SOCKS na porta 9050.
 - **dconf** — banco de dados onde o GNOME guarda suas preferências. Os toggles do GNOME aqui escrevem direto lá.
 
 ## Posso quebrar alguma coisa?

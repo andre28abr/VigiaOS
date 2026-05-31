@@ -15,7 +15,7 @@ sistema tradicional. Ele:
   via `dnf`;
 - clona o repo e instala as 16 ferramentas (`pip --user`) + atalhos no GNOME;
 - instala Flatpaks de privacidade (KeePassXC, Signal, Tor Browser, …);
-- **não liga nenhum serviço** — `tor`/`fail2ban`/`dnscrypt-proxy` ficam
+- **não liga nenhum serviço** — `fail2ban`/`dnscrypt-proxy` ficam
   desligados; opt-in nas ferramentas.
 
 **Sem reboot** — o `dnf` aplica na hora. Abra o **Vigia Hub** pelo menu

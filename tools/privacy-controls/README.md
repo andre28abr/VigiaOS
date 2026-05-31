@@ -6,7 +6,7 @@
 
 ## Estado
 
-🟢 **v0.3** — 13 toggles em 8 categorias (10 user-scope + 3 system-scope via pkexec).
+🟢 **v0.3** — 12 toggles em 7 categorias (10 user-scope + 2 system-scope via pkexec).
 
 | Toggle | Categoria | Mecanismo | Escopo |
 |---|---|---|---|
@@ -21,7 +21,6 @@
 | Limpar temp files automaticamente | Limpeza Automática | dconf | user |
 | **Firewall (firewalld)** | **Rede** | `pkexec systemctl enable/disable --now` | **system** |
 | **Servidor SSH (sshd)** | **Rede** | `pkexec systemctl enable/disable --now` | **system** |
-| **Serviço Tor** | **Anonimização** | `pkexec systemctl enable/disable --now` | **system** |
 | Bluetooth | Dispositivos | `bluetoothctl power on/off` | user |
 
 ### Helpers em `base.py`
@@ -33,7 +32,7 @@
 
 ### Toggles system-scope (v0.3): comportamento
 
-Quando você flipa um toggle de **Rede** ou **Anonimização**:
+Quando você flipa um toggle de **Rede**:
 1. Diálogo polkit do GNOME abre pedindo senha admin
 2. Se autenticar: `systemctl enable/disable --now <unit>` roda como root
 3. Estado refletido: unit start/stop + enable/disable (persiste no boot)
@@ -122,7 +121,6 @@ Toggles previstos para v0.2:
 - Firewall (firewalld zone trusted vs strict)
 - DNS over TLS (`/etc/systemd/resolved.conf`)
 - SSH server (`systemctl enable/disable ssh`)
-- Tor (`systemctl start/stop tor`)
 
 ## Por que Python + PyGObject?
 

@@ -32,7 +32,7 @@
 **VigiaOS** é uma **suite de ferramentas** para Fedora Silverblue, focada em:
 
 - **Segurança**: scan, audit, IDS, forensics
-- **Privacidade**: toggles centrais, Tor, DNS over TLS
+- **Privacidade**: toggles centrais, Tor Browser, DNS over TLS
 - **LGPD/Compliance**: audit log + relatórios em PDF
 - **Network insight**: monitor de conexões, VPN, DNS
 - **Integridade**: AIDE, hardening checks (Lynis), capabilities audit
@@ -349,7 +349,6 @@ Python.
 | Lock Screen | Auto-lock, Prévia notificações |
 | Limpeza Automática | Lixeira, Temp files |
 | Rede (system) | Firewall (firewalld), SSH |
-| Anonimização (system) | Serviço Tor |
 | Dispositivos | Bluetooth |
 
 **System-scope** usa `pkexec systemctl enable/disable --now <unit>`.
@@ -511,11 +510,11 @@ ClearURLs, LibRedirect) que abrem direto na AMO/Chrome Web Store.
 
 **Stack**: Python + PyGObject + GTK4 + libadwaita.
 
-**Categorias** (16 pacotes em `catalog.py`, 5 categorias):
+**Categorias** (13 pacotes em `catalog.py`, 5 categorias):
 - Auditoria e hardening — lynis, aide, chkrootkit, rkhunter
 - Rede — mtr, nethogs
 - Monitoramento e diagnóstico — lsof, strace, fail2ban
-- Privacidade e criptografia — tor, torsocks, wireguard-tools, dnscrypt-proxy
+- Privacidade e criptografia — wireguard-tools, dnscrypt-proxy
 - Forense e análise — clamav, hashdeep
 
 Recon ativo e RE (`nmap`, `tcpdump`, `binwalk`) ficam **fora de
@@ -1920,6 +1919,32 @@ o default `fedora`, sem valor. O que importa pro produto é a **plataforma**
   strip de `Edition`, fallback sem os-release, cache). Manuais leigo+técnico
   atualizados. Suite **655** (+12).
 
+### 2026-05-30 — Remoção do Tor de sistema (Tor Browser vira único caminho)
+
+Pente-fino do catálogo com o André: `tor` (daemon) + `torsocks` (wrapper
+CLI) saíram. Raciocínio: o **Tor Browser** (Flatpak `torbrowser-launcher`,
+já no bootstrap) traz o **próprio** tor embutido (porta isolada ~9150) e é o
+caminho seguro/leigo de navegação anônima. O `tor` de **sistema** (porta
+9050) servia só pra rotear *outros* apps — cenário power-user que dependia
+justamente do `torsocks`, terminal-only (público é sem-terminal). E o toggle
+"Serviço Tor" do Privacy Controls passava **falsa sensação de segurança**
+(ligar o daemon ≠ navegador anônimo). Decisão: Tor Browser como único Tor.
+
+- **Privacy Controls v0.3.2**: removido o toggle `TOR` (`systemd_toggles.py`
+  + `ALL_TOGGLES`); a categoria *Anonimização* sumiu (**13→12 toggles**,
+  8→7 categorias, 3→2 system-scope). `import shutil` órfão removido; notas
+  no Sobre + docstring do `extra_available_check` (hook genérico, mantido).
+- **Tool Installer v0.3.4**: `tor` + `torsocks` fora do `catalog.py`
+  (**15→13 pacotes**); descrição da categoria *privacidade* sem "Tor".
+- **bootstrap.sh**: `tor torsocks` fora do `DEPS_BACKENDS`; hints de "serviços
+  off" sem tor. Tor Browser (Flatpak) **permanece**.
+- **Mantido de propósito**: Tor Browser (Flatpak); booleanos SELinux `tor_*`
+  (política do kernel, independem do pacote); analogia "similar ao Tor" do
+  DNS Manager.
+- +7 testes (`test_catalog.py`: tor/torsocks ausentes, lock de 13 pacotes).
+  Manuais + READMEs + spec + registry sincronizados (incl. drift do iftop:
+  16→13). Suite **662**.
+
 ---
 
 ## 10. Roadmap
@@ -2182,7 +2207,7 @@ shell script que roda **antes**: atualiza o sistema + instala tudo.
 - **Tensão a resolver**: instalar TUDO de cara contraria o princípio
   **minimum surface area** (LGPD/escritório — abrir só o necessário).
   Provável meio-termo: instalar deps das tools *core*, mas serviços
-  (tor, fail2ban, dnscrypt-proxy) ficam **opt-in** via Installer.
+  (fail2ban, dnscrypt-proxy) ficam **opt-in** via Installer.
 
 #### B3 — Compatibilidade Fedora Workstation (não-atômico) — #90 ✅ runtime (ver §9 2026-05-30; bootstrap dnf fica no B2/B6)
 

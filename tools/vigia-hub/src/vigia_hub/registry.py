@@ -194,12 +194,12 @@ TOOLS: list[ToolEntry] = [
             "de arquivos recentes, uso de apps, identidade em arquivos, "
             "lock screen automático, prévia de notificações na lock, limpeza "
             "automática de lixeira/temp, Bluetooth.\n\n"
-            "**System-scope** (pede senha admin via polkit): firewall on/off, "
-            "servidor SSH, serviço Tor."
+            "**System-scope** (pede senha admin via polkit): firewall on/off "
+            "e servidor SSH."
         ),
         features=[
             "**10 toggles user-scope** via `dconf` (sem senha)",
-            "**3 toggles system-scope** via `pkexec` (firewall, SSH, Tor)",
+            "**2 toggles system-scope** via `pkexec` (firewall, SSH)",
             "Toggle indisponível detectado e exibido *dimmed* (ex: bluetooth sem adapter)",
             "Mudanças sincronizadas com **GNOME Settings** em tempo real",
         ],
