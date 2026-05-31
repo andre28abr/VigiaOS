@@ -2,7 +2,8 @@
 
 {% block content %}
 
-<h2>Resumo</h2>
+<h2>Panorama</h2>
+<p class="explainer">Os números do período num relance — acessos, comandos administrativos e bloqueios.</p>
 
 <div class="kpi-grid">
   <div class="kpi accent">
@@ -15,15 +16,15 @@
   </div>
   <div class="kpi">
     <div class="kpi-value">{{ kpis.sudo_invocations }}</div>
-    <div class="kpi-label">Invocações sudo</div>
+    <div class="kpi-label">Comandos sudo</div>
   </div>
   <div class="kpi">
     <div class="kpi-value">{{ kpis.pkexec_invocations }}</div>
-    <div class="kpi-label">Invocações pkexec</div>
+    <div class="kpi-label">Comandos pkexec</div>
   </div>
   <div class="kpi {% if kpis.bans > 0 %}danger{% endif %}">
     <div class="kpi-value">{{ kpis.bans }}</div>
-    <div class="kpi-label">Bans (fail2ban)</div>
+    <div class="kpi-label">IPs banidos</div>
   </div>
   <div class="kpi">
     <div class="kpi-value">{{ kpis.logins }}</div>
@@ -31,37 +32,39 @@
   </div>
 </div>
 
-{% if top_banned_ips %}
-<h2>IPs mais banidos</h2>
-<table>
-  <thead><tr><th>IP</th><th class="num">Bans</th></tr></thead>
-  <tbody>
-    {% for ip, count in top_banned_ips %}
-    <tr>
-      <td class="mono">{{ ip }}</td>
-      <td class="num">{{ count }}</td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
-{% endif %}
+<div class="chart-grid">
+  <div class="chart-card">
+    <div class="chart-title">Tentativas SSH falhadas por dia</div>
+    {{ bar_chart(ssh_fails_by_day, color="#dc2626") | safe }}
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">Acessos SSH: aceitos × falhados</div>
+    <div class="donut-row">
+      {{ donut(ssh_donut) | safe }}
+      <ul class="donut-legend">
+        <li><span class="dot" style="background:#059669"></span> Aceitos <b>{{ kpis.ssh_success }}</b></li>
+        <li><span class="dot" style="background:#dc2626"></span> Falhados <b>{{ kpis.ssh_failed }}</b></li>
+      </ul>
+    </div>
+  </div>
+  {% if top_banned_ips %}
+  <div class="chart-card full">
+    <div class="chart-title">IPs mais banidos pelo fail2ban</div>
+    {{ hbar_chart(top_banned_ips, color="#dc2626") | safe }}
+  </div>
+  {% endif %}
+  {% if top_sudo_users %}
+  <div class="chart-card full">
+    <div class="chart-title">Usuários que mais usaram sudo</div>
+    {{ hbar_chart(top_sudo_users, color="#059669") | safe }}
+  </div>
+  {% endif %}
+</div>
 
-{% if top_sudo_users %}
-<h2>Top usuários de sudo</h2>
-<table>
-  <thead><tr><th>Usuário</th><th class="num">Invocações</th></tr></thead>
-  <tbody>
-    {% for user, count in top_sudo_users %}
-    <tr>
-      <td class="mono">{{ user }}</td>
-      <td class="num">{{ count }}</td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
-{% endif %}
+<h2>Detalhamento</h2>
+<p class="explainer">Tabelas completas de cada tipo de evento (até 50 linhas por seção).</p>
 
-<h2>SSH — logins aceitos</h2>
+<h3>SSH — logins aceitos</h3>
 {% if ssh_success %}
 <table>
   <thead><tr><th>Quando</th><th>Usuário</th><th>De</th></tr></thead>
@@ -79,7 +82,7 @@
 <div class="empty">Nenhum login SSH aceito no período.</div>
 {% endif %}
 
-<h2>SSH — logins falhados</h2>
+<h3>SSH — logins falhados</h3>
 {% if ssh_failed %}
 <table>
   <thead><tr><th>Quando</th><th>Usuário</th><th>De</th></tr></thead>
@@ -97,7 +100,7 @@
 <div class="empty">Nenhuma tentativa SSH falhada no período.</div>
 {% endif %}
 
-<h2>Sudo — comandos executados</h2>
+<h3>Sudo — comandos executados</h3>
 {% if sudo %}
 <table>
   <thead><tr><th>Quando</th><th>Usuário</th><th>Comando</th></tr></thead>
@@ -116,7 +119,7 @@
 {% endif %}
 
 {% if pkexec %}
-<h2>pkexec — privilege escalation gráfica</h2>
+<h3>pkexec — escalação de privilégio gráfica</h3>
 <table>
   <thead><tr><th>Quando</th><th>Usuário</th><th>Comando</th></tr></thead>
   <tbody>
@@ -132,7 +135,7 @@
 {% endif %}
 
 {% if bans %}
-<h2>fail2ban — bans aplicados</h2>
+<h3>fail2ban — bans aplicados</h3>
 <table>
   <thead><tr><th>Quando</th><th>Jail</th><th>IP banido</th></tr></thead>
   <tbody>

@@ -2,7 +2,8 @@
 
 {% block content %}
 
-<h2>Visão geral</h2>
+<h2>Panorama</h2>
+<p class="explainer">Contagem dos eventos de autenticação coletados no período.</p>
 
 <div class="kpi-grid">
   <div class="kpi accent">
@@ -31,7 +32,27 @@
   </div>
 </div>
 
-<h2>SSH — aceitos</h2>
+<div class="chart-grid">
+  <div class="chart-card">
+    <div class="chart-title">Tentativas SSH falhadas por dia</div>
+    {{ bar_chart(ssh_fails_by_day, color="#dc2626") | safe }}
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">Acessos SSH: aceitos × falhados</div>
+    <div class="donut-row">
+      {{ donut(ssh_donut) | safe }}
+      <ul class="donut-legend">
+        <li><span class="dot" style="background:#059669"></span> Aceitos <b>{{ ssh_success|length }}</b></li>
+        <li><span class="dot" style="background:#dc2626"></span> Falhados <b>{{ ssh_failed|length }}</b></li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<h2>Detalhamento</h2>
+<p class="explainer">Cada evento de autenticação registrado, em ordem cronológica.</p>
+
+<h3>SSH — aceitos</h3>
 {% if ssh_success %}
 <table>
   <thead><tr><th>Quando</th><th>Usuário</th><th>De</th></tr></thead>
@@ -49,7 +70,7 @@
 <div class="empty">Nenhum login SSH aceito no período.</div>
 {% endif %}
 
-<h2>SSH — falhados</h2>
+<h3>SSH — falhados</h3>
 {% if ssh_failed %}
 <table>
   <thead><tr><th>Quando</th><th>Usuário</th><th>De</th></tr></thead>
@@ -67,7 +88,7 @@
 <div class="empty">Nenhuma tentativa SSH falhada no período.</div>
 {% endif %}
 
-<h2>Sudo</h2>
+<h3>Sudo</h3>
 {% if sudo %}
 <table>
   <thead><tr><th>Quando</th><th>Usuário</th><th>TTY</th><th>Como</th><th>Comando</th></tr></thead>
@@ -87,7 +108,7 @@
 <div class="empty">Nenhuma invocação sudo no período.</div>
 {% endif %}
 
-<h2>pkexec</h2>
+<h3>pkexec</h3>
 {% if pkexec %}
 <table>
   <thead><tr><th>Quando</th><th>Usuário</th><th>Comando</th></tr></thead>
@@ -105,7 +126,7 @@
 <div class="empty">Nenhuma invocação pkexec no período.</div>
 {% endif %}
 
-<h2>Logins recentes (last)</h2>
+<h3>Logins recentes (last)</h3>
 {% if logins %}
 <table>
   <thead><tr><th>Usuário</th><th>TTY</th><th>De</th><th>Quando</th></tr></thead>
@@ -125,7 +146,7 @@
 {% endif %}
 
 {% if failed_logins %}
-<h2>Tentativas de login falhadas (lastb)</h2>
+<h3>Tentativas de login falhadas (lastb)</h3>
 <table>
   <thead><tr><th>Usuário</th><th>TTY</th><th>De</th><th>Quando</th></tr></thead>
   <tbody>

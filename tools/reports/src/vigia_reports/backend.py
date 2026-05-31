@@ -400,6 +400,105 @@ def _gather(period: Period, elevated: bool) -> dict:
     }
 
 
+# ============================================================
+# Agregacoes para graficos + resumo executivo (overhaul visual)
+# ============================================================
+
+
+def events_by_day(events: list[dict], period: Period) -> list[tuple[str, int]]:
+    """Conta eventos por dia no periodo → [(dd/mm, n), ...] cronologico.
+
+    Cria um bucket para CADA dia entre since e until (dias sem evento = 0),
+    pra serie temporal continua no grafico de barras.
+    """
+    counts: dict[str, int] = {}
+    for e in events:
+        day = str(e.get("timestamp", ""))[:10]  # 'YYYY-MM-DD'
+        if len(day) == 10:
+            counts[day] = counts.get(day, 0) + 1
+
+    buckets: list[tuple[str, int]] = []
+    cur = period.since.date()
+    end = period.until.date()
+    guard = 0
+    while cur <= end and guard < 366:  # guard: evita loop gigante
+        buckets.append((cur.strftime("%d/%m"), counts.get(cur.isoformat(), 0)))
+        cur += timedelta(days=1)
+        guard += 1
+    return buckets
+
+
+def _plural(n: int, singular: str, plural: str) -> str:
+    return singular if n == 1 else plural
+
+
+def build_status(kpis: dict) -> dict:
+    """Classifica o periodo em ok/warn/danger — heuristica simples e honesta.
+
+    - ok     : poucas falhas, sem bans.
+    - warn   : muitas tentativas falhadas e/ou IPs banidos (varredura/ataque
+               sendo bloqueado — informativo, sob controle).
+    - danger : acesso SSH bem-sucedido EM MEIO a muitas tentativas falhadas
+               (sucesso no meio de brute-force — vale revisar a origem).
+    """
+    failed = int(kpis.get("ssh_failed", 0))
+    success = int(kpis.get("ssh_success", 0))
+    bans = int(kpis.get("bans", 0))
+
+    if success > 0 and failed >= 50:
+        return {"level": "danger", "label": "Revisar"}
+    if failed >= 20 or bans > 0:
+        return {"level": "warn", "label": "Atenção"}
+    return {"level": "ok", "label": "Sem anomalias"}
+
+
+def build_summary(kpis: dict, period: Period, status: dict) -> str:
+    """Paragrafo em pt-BR gerado dos numeros — pro leigo entender em 5s."""
+    success = int(kpis.get("ssh_success", 0))
+    failed = int(kpis.get("ssh_failed", 0))
+    sudo = int(kpis.get("sudo_invocations", 0))
+    pkexec = int(kpis.get("pkexec_invocations", 0))
+    bans = int(kpis.get("bans", 0))
+
+    parts = [f"Nos {period.label}, "]
+    if success or failed:
+        seg = (
+            f"houve {success} "
+            f"{_plural(success, 'acesso SSH bem-sucedido', 'acessos SSH bem-sucedidos')}"
+        )
+        if failed:
+            blocked = " (bloqueadas pelo fail2ban)" if bans else ""
+            seg += (
+                f" e {failed} "
+                f"{_plural(failed, 'tentativa falhada', 'tentativas falhadas')}{blocked}"
+            )
+        parts.append(seg + ". ")
+    else:
+        parts.append("não houve atividade de SSH. ")
+
+    admin = []
+    if sudo:
+        admin.append(f"{sudo} {_plural(sudo, 'comando com sudo', 'comandos com sudo')}")
+    if pkexec:
+        admin.append(f"{pkexec} via pkexec")
+    if admin:
+        parts.append("Foram registrados " + " e ".join(admin) + ". ")
+
+    if status["level"] == "ok":
+        parts.append("Nenhuma anomalia detectada no período.")
+    elif status["level"] == "warn":
+        parts.append(
+            "As tentativas falhadas indicam varredura/ataque automatizado — "
+            "comum na internet e, aqui, sob controle."
+        )
+    else:
+        parts.append(
+            "Houve acesso bem-sucedido em meio a muitas tentativas falhadas — "
+            "vale revisar de onde veio o login aceito."
+        )
+    return "".join(parts)
+
+
 def collect_for_activity_overview(period: Period, elevated: bool = False) -> dict:
     """Dados para template activity_overview."""
     raw = _gather(period, elevated)
@@ -418,17 +517,27 @@ def collect_for_activity_overview(period: Period, elevated: bool = False) -> dic
         sudo_user_counts[s.get("user", "?")] = sudo_user_counts.get(s.get("user", "?"), 0) + 1
     top_sudo_users = sorted(sudo_user_counts.items(), key=lambda kv: -kv[1])[:10]
 
+    kpis = {
+        "ssh_success": len(ssh_success),
+        "ssh_failed": len(ssh_failed),
+        "sudo_invocations": len(raw["sudo"]),
+        "pkexec_invocations": len(raw["pkexec"]),
+        "bans": len(bans_only),
+        "logins": len(raw["last"]),
+    }
+    status = build_status(kpis)
+
     return {
         "period": period,
         "elevated_mode": elevated,
-        "kpis": {
-            "ssh_success": len(ssh_success),
-            "ssh_failed": len(ssh_failed),
-            "sudo_invocations": len(raw["sudo"]),
-            "pkexec_invocations": len(raw["pkexec"]),
-            "bans": len(bans_only),
-            "logins": len(raw["last"]),
-        },
+        "status": status,
+        "summary": build_summary(kpis, period, status),
+        "kpis": kpis,
+        "ssh_fails_by_day": events_by_day(ssh_failed, period),
+        "ssh_donut": [
+            ("Aceitos", len(ssh_success), "#059669"),
+            ("Falhados", len(ssh_failed), "#dc2626"),
+        ],
         "ssh_success": ssh_success[:50],
         "ssh_failed": ssh_failed[:50],
         "sudo": raw["sudo"][:50],
@@ -443,11 +552,30 @@ def collect_for_activity_overview(period: Period, elevated: bool = False) -> dic
 def collect_for_auth_events(period: Period, elevated: bool = False) -> dict:
     """Dados para template auth_events."""
     raw = _gather(period, elevated)
+    ssh_success = [e for e in raw["ssh"] if e["type"] == "ssh_accept"]
+    ssh_failed = [e for e in raw["ssh"] if e["type"] == "ssh_fail"]
+    bans = [e for e in raw["fail2ban"] if e["type"] == "ban"]
+    kpis = {
+        "ssh_success": len(ssh_success),
+        "ssh_failed": len(ssh_failed),
+        "sudo_invocations": len(raw["sudo"]),
+        "pkexec_invocations": len(raw["pkexec"]),
+        "bans": len(bans),
+    }
+    status = build_status(kpis)
     return {
         "period": period,
         "elevated_mode": elevated,
-        "ssh_success": [e for e in raw["ssh"] if e["type"] == "ssh_accept"],
-        "ssh_failed": [e for e in raw["ssh"] if e["type"] == "ssh_fail"],
+        "status": status,
+        "summary": build_summary(kpis, period, status),
+        "kpis": kpis,
+        "ssh_fails_by_day": events_by_day(ssh_failed, period),
+        "ssh_donut": [
+            ("Aceitos", len(ssh_success), "#059669"),
+            ("Falhados", len(ssh_failed), "#dc2626"),
+        ],
+        "ssh_success": ssh_success,
+        "ssh_failed": ssh_failed,
         "sudo": raw["sudo"],
         "pkexec": raw["pkexec"],
         "logins": raw["last"],

@@ -12,7 +12,7 @@ from pathlib import Path
 
 from jinja2 import Environment, PackageLoader, select_autoescape
 
-from . import __version__
+from . import __version__, charts
 
 
 # Mapping id -> arquivo de template
@@ -54,12 +54,17 @@ def system_metadata() -> dict:
 
 
 def _make_env() -> Environment:
-    return Environment(
+    env = Environment(
         loader=PackageLoader("vigia_reports", "templates"),
         autoescape=select_autoescape(["html"]),
         trim_blocks=True,
         lstrip_blocks=True,
     )
+    # Geradores de grafico SVG disponiveis nos templates (usar com | safe).
+    env.globals["bar_chart"] = charts.bar_chart
+    env.globals["hbar_chart"] = charts.hbar_chart
+    env.globals["donut"] = charts.donut
+    return env
 
 
 def render_html(template_id: str, data: dict) -> str:

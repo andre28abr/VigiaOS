@@ -1969,6 +1969,31 @@ remoção do VPN Manager.
   Rede → VPN e ligar pela barra. Troca uma CLI que o público não usa por uma
   GUI que usa. Fica no catálogo (opt-in), **não** no bootstrap.
 
+### 2026-05-31 — Reports v0.2.0: overhaul visual (gráficos SVG + resumo + status)
+
+Pedido do André: deixar o relatório gerado mais bonito e fácil pro usuário
+médio. Mantida a filosofia "stack leve" (HTML + imprimir→PDF do navegador,
+**sem** WeasyPrint). Quatro frentes:
+
+- **Gráficos SVG nativos** (`charts.py`, novo): `bar_chart` (falhas por dia),
+  `hbar_chart` (top IPs banidos / usuários sudo) e `donut` (aceitos ×
+  falhados). SVG inline gerado em Python — **sem JS, sem CDN, sem rede**
+  (offline/LGPD), vetorial no print, **zero dependência nova**. Registrados
+  como globals do Jinja em `renderer._make_env()`; dado do usuário escapado.
+- **Resumo executivo + selo de status** (`backend.build_status` /
+  `build_summary` / `events_by_day`): parágrafo em pt-BR + selo 🟢/🟡/🔴 por
+  heurística honesta (`danger` = sucesso SSH em meio a ≥50 falhas; `warn` =
+  ≥20 falhas ou algum ban). Renderizados no `base.html` pros 2 modelos
+  automaticamente.
+- **Tipografia/layout**: stack de fonte refinado (`tabular-nums` nos KPIs),
+  cabeçalho com selo, caixa de resumo, cards de gráfico, zebra nas tabelas e
+  CSS de impressão (A4, page-breaks, `print-color-adjust`).
+- **+28 testes** (`test_charts.py`, `test_summary.py` e o `test_render.py` —
+  smoke de render ponta-a-ponta que **não existia**). Corrigido o drift do
+  badge (dizia "Jinja2 + WeasyPrint", mas WeasyPrint nunca foi ligado →
+  "Jinja2 + SVG"). Suite **690**. *Próximo (sugerido): novos modelos —
+  Resumo Executivo 1-página, Acesso Administrativo.*
+
 ---
 
 ## 10. Roadmap
