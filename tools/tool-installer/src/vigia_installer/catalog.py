@@ -40,7 +40,7 @@ CATEGORY_DESCRIPTIONS = {
     "auditoria": "Ferramentas para auditar postura de segurança, integridade e procurar rootkits.",
     "rede": "Scanners, sniffers e diagnóstico de rede.",
     "monitoramento": "O que está acontecendo no sistema agora — processos, IO, arquivos abertos.",
-    "privacidade": "DNS encriptado, criptografia.",
+    "privacidade": "VPN, DNS encriptado, criptografia.",
     "forense": "Análise pós-incidente, antivírus, hashes e recuperação.",
 }
 
@@ -172,6 +172,22 @@ CATALOG: list[CatalogEntry] = [
     ),
 
     # ===== PRIVACIDADE ===== #
+    CatalogEntry(
+        package="NetworkManager-openvpn-gnome",
+        name="VPN OpenVPN (GNOME)",
+        description="Importa VPN .ovpn (NordVPN, etc.) no GNOME — sem terminal.",
+        why=(
+            "Plugin de **VPN OpenVPN** para o **NetworkManager**. Com ele você "
+            "baixa o arquivo `.ovpn` do seu provedor (NordVPN, Proton, "
+            "Mullvad…), importa em **Configurações → Rede → VPN → Importar** e "
+            "liga/desliga pela **barra superior** do GNOME — *zero terminal*. "
+            "Puxa o `openvpn` junto.\n\n"
+            "*WireGuard já é nativo do NetworkManager (não precisa de plugin); "
+            "este cobre o caminho OpenVPN, padrão na configuração manual da "
+            "maioria das VPNs comerciais.*"
+        ),
+        category="privacidade",
+    ),
     CatalogEntry(
         package="dnscrypt-proxy",
         name="dnscrypt-proxy",

@@ -510,11 +510,11 @@ ClearURLs, LibRedirect) que abrem direto na AMO/Chrome Web Store.
 
 **Stack**: Python + PyGObject + GTK4 + libadwaita.
 
-**Categorias** (12 pacotes em `catalog.py`, 5 categorias):
+**Categorias** (13 pacotes em `catalog.py`, 5 categorias):
 - Auditoria e hardening — lynis, aide, chkrootkit, rkhunter
 - Rede — mtr, nethogs
 - Monitoramento e diagnóstico — lsof, strace, fail2ban
-- Privacidade e criptografia — dnscrypt-proxy
+- Privacidade e criptografia — NetworkManager-openvpn-gnome, dnscrypt-proxy
 - Forense e análise — clamav, hashdeep
 
 Recon ativo e RE (`nmap`, `tcpdump`, `binwalk`) ficam **fora de
@@ -1963,6 +1963,11 @@ remoção do VPN Manager.
   README + DEVELOPMENT sincronizados. Suite **662**.
 - **Mantido**: menção a "wireguard" no Capabilities Inspector (exemplo de uso
   de capability, não o pacote).
+- **+ v0.3.6 (mesmo dia)**: adicionado `NetworkManager-openvpn-gnome` ao
+  catálogo (opt-in, **12→13 pacotes**) como o enabler certo do caminho
+  no-terminal — importar `.ovpn` (NordVPN/Proton/Mullvad) em GNOME Settings →
+  Rede → VPN e ligar pela barra. Troca uma CLI que o público não usa por uma
+  GUI que usa. Fica no catálogo (opt-in), **não** no bootstrap.
 
 ---
 
