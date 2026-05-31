@@ -171,3 +171,38 @@ class TestRenderLgpdCompliance:
         assert "5/8" in html or "5/" in html  # KPI do score
         assert "conforme" in html and "pendente" in html  # tags de estado
         assert "crítico" in html            # marcador de item crítico
+
+
+def _health_data():
+    return {
+        "period": _period(),
+        "elevated_mode": True,
+        "status": {"level": "danger", "label": "Ação necessária"},
+        "summary": "3 de 4 verificações de segurança executadas. Requer atenção: Antivírus (ClamAV).",
+        "score": {"total": 4, "ran": 3, "ok": 2, "issues": 1, "missing": 1},
+        "entries": [
+            {"tool": "hardening", "label": "Hardening (Lynis)", "state": "ok",
+             "headline": "Índice de robustez: 78/100", "detail": "Auditoria de ~250 controles.",
+             "ran_at": "2026-05-30 10:00:00"},
+            {"tool": "antivirus", "label": "Antivírus (ClamAV)", "state": "danger",
+             "headline": "2 arquivo(s) infectado(s)", "detail": "1200 arquivos verificados.",
+             "ran_at": "2026-05-30 09:00:00"},
+            {"tool": "integrity", "label": "Integridade de arquivos (AIDE)", "state": "ok",
+             "headline": "Nenhuma alteração desde o baseline", "detail": "900 arquivos monitorados.",
+             "ran_at": "2026-05-29 22:00:00"},
+            {"tool": "rootkit", "label": "Rootkits (chkrootkit/rkhunter)", "state": "missing",
+             "headline": "Nunca executada", "detail": "Esta verificação ainda não foi executada.",
+             "ran_at": "—"},
+        ],
+    }
+
+
+class TestRenderSystemHealth:
+    def test_renders_with_entries_and_donut(self):
+        html = renderer.render_html("system_health", _health_data())
+        assert html.rstrip().endswith("</html>")
+        assert "status-badge danger" in html
+        assert "<svg" in html                       # rosca de panorama
+        assert "Índice de robustez: 78/100" in html  # headline do Lynis
+        assert "2 arquivo(s) infectado(s)" in html   # headline do antivírus
+        assert "não executada" in html               # tag do item missing

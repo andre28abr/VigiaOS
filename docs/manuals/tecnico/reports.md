@@ -10,7 +10,7 @@ a partir de `journalctl`, `last` e `lastb` — pensado para auditoria LGPD.
 
 | Item | Valor |
 |---|---|
-| **Pacote** | `vigia-reports` (versão 0.2.2) |
+| **Pacote** | `vigia-reports` (versão 0.2.3) |
 | **App ID** | `br.com.vigia.Reports` |
 | **Pacotes wrapped** | `journalctl`, `last`, `lastb` |
 | **Templating** | Jinja2 (`PackageLoader("vigia_reports", "templates")`) |
@@ -101,7 +101,7 @@ senha derretem UX e treinam o usuário a clicar sem ler.
 
 | Tab | Descrição |
 |---|---|
-| **Gerar** | `ComboRow` modelo (Atividade geral, Eventos de autenticação, Resumo executivo, Acesso administrativo, Conformidade LGPD) + `ComboRow` período (24h, 7d, 30d, 90d) + `SwitchRow` modo admin + botão `Gerar`. Progress bar pulsante. Abre HTML no navegador via `Gio.AppInfo.launch_default_for_uri`. |
+| **Gerar** | `ComboRow` modelo (Atividade geral, Eventos de autenticação, Resumo executivo, Acesso administrativo, Conformidade LGPD, Saúde do sistema) + `ComboRow` período (24h, 7d, 30d, 90d) + `SwitchRow` modo admin + botão `Gerar`. Progress bar pulsante. Abre HTML no navegador via `Gio.AppInfo.launch_default_for_uri`. |
 | **Biblioteca** | Lista HTMLs ordenados por mtime desc. Cada row tem `Abrir` + `Excluir` (com `Adw.AlertDialog`). Botão "Abrir pasta" lança file manager. |
 | **Sobre** | `Adw.PreferencesPage` com 5 seções markup-formatted. |
 
@@ -155,6 +155,16 @@ Dois modelos novos, ambos a partir dos dados já coletados:
   `compliance_score` ignora *unknown*; `compliance_status` → *danger* se item
   **crítico** (firewall/disco) falha. Interpretação em funções puras
   (`_state_*`) testáveis sem subprocess.
+- **Saúde do Sistema** (`system_health.html` / `collect_for_system_health`):
+  consolida o **último resultado** que cada tool de segurança persistiu —
+  **lendo os arquivos direto, sem importar o código delas** (Reports fica
+  desacoplado). `system_health.py` lê: Lynis (`/var/log/lynis-report.dat`,
+  `hardening_index`), ClamAV (`~/.local/share/vigia-antivirus/scan-*.json`,
+  `infected_files`), AIDE (`~/.config/vigia/file-integrity.json`, `last_check`)
+  e rootkits (`~/.local/share/vigia-rootkit/scans/*.json`, `infected_count`).
+  Cada um vira `{tool, label, state, headline, detail, ran_at}` (`state` ∈
+  ok/warn/danger/**missing**). Tool nunca rodada → *missing* (não conta no
+  score). Interpretadores puros (`_interpret_*`) testáveis sem I/O.
 
 ## Quando usar
 
@@ -167,7 +177,7 @@ Dois modelos novos, ambos a partir dos dados já coletados:
 
 ## Limitações conhecidas
 
-- 5 modelos prontos (sem editor visual de modelo na UI).
+- 6 modelos prontos (sem editor visual de modelo na UI).
 - Sem agendamento automático (sem systemd timer).
 - Templates fixos — personalização requer editar `templates/*.html`.
 - `lastb` só com modo admin; sem ele `failed_logins` fica vazio.

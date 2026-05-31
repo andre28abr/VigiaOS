@@ -161,6 +161,8 @@ class GenerateTab(Adw.Bin):
                 data = backend.collect_for_admin_access(period, elevated=elevated)
             elif template_id == "lgpd_compliance":
                 data = backend.collect_for_lgpd_compliance(period, elevated=elevated)
+            elif template_id == "system_health":
+                data = backend.collect_for_system_health(period, elevated=elevated)
             else:
                 raise ValueError(f"Template não suportado: {template_id}")
 

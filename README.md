@@ -28,7 +28,7 @@ do sistema-base sem complicação.
 | 7 | **[Vigia Firewall GUI](tools/firewall-gui/)** v0.1 | Python + GTK4 | 🟡 Status + zones CRUD |
 | 8 | **[Vigia Network Monitor](tools/netmon-gui/)** v0.1.1 | Python + GTK4 | 🟡 Conexões + modo admin opt-in |
 | 9 | **[Vigia Hardening Checks](tools/hardening-checks/)** v0.1.4 | Python + GTK4 | 🟢 Lynis wrapper + perfil Silverblue |
-| 10 | **[Vigia Reports](tools/reports/)** v0.2.2 | Python + Jinja2 + SVG | 🟢 HTML/PDF LGPD + gráficos + 5 modelos (inclui Conformidade LGPD) |
+| 10 | **[Vigia Reports](tools/reports/)** v0.2.3 | Python + Jinja2 + SVG | 🟢 HTML/PDF LGPD + gráficos + 6 modelos (Conformidade LGPD + Saúde do Sistema) |
 | 11 | **[Vigia File Integrity](tools/file-integrity/)** v0.2.4 | Python + GTK4 | 🟢 AIDE (sistema) + Hash ad-hoc (user) — 6 tabs |
 | 12 | **[Vigia Tool Installer](tools/tool-installer/)** v0.3.3 | Python + GTK4 | 🟢 rpm-ostree + **extensões navegador open source** |
 | 13 | **[Vigia DNS Manager](tools/dns-manager/)** v0.4.2 | Python + GTK4 | 🟢 **dnscrypt-proxy** (DoH/DoT) com 11 servers curados |
