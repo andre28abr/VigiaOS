@@ -37,6 +37,11 @@ TEMPLATES: dict[str, dict] = {
         "description": "Trilha de comandos com privilégio (sudo + pkexec): quem rodou o quê, quando. Foco LGPD.",
         "file": "admin_access.html",
     },
+    "lgpd_compliance": {
+        "name": "Conformidade LGPD",
+        "description": "Postura de segurança/privacidade da máquina agora (firewall, disco cifrado, DNS, telemetria…) — o documento para o auditor.",
+        "file": "lgpd_compliance.html",
+    },
 }
 
 

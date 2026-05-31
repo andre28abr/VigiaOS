@@ -10,7 +10,7 @@ a partir de `journalctl`, `last` e `lastb` — pensado para auditoria LGPD.
 
 | Item | Valor |
 |---|---|
-| **Pacote** | `vigia-reports` (versão 0.2.1) |
+| **Pacote** | `vigia-reports` (versão 0.2.2) |
 | **App ID** | `br.com.vigia.Reports` |
 | **Pacotes wrapped** | `journalctl`, `last`, `lastb` |
 | **Templating** | Jinja2 (`PackageLoader("vigia_reports", "templates")`) |
@@ -101,7 +101,7 @@ senha derretem UX e treinam o usuário a clicar sem ler.
 
 | Tab | Descrição |
 |---|---|
-| **Gerar** | `ComboRow` modelo (Atividade geral, Eventos de autenticação, Resumo executivo, Acesso administrativo) + `ComboRow` período (24h, 7d, 30d, 90d) + `SwitchRow` modo admin + botão `Gerar`. Progress bar pulsante. Abre HTML no navegador via `Gio.AppInfo.launch_default_for_uri`. |
+| **Gerar** | `ComboRow` modelo (Atividade geral, Eventos de autenticação, Resumo executivo, Acesso administrativo, Conformidade LGPD) + `ComboRow` período (24h, 7d, 30d, 90d) + `SwitchRow` modo admin + botão `Gerar`. Progress bar pulsante. Abre HTML no navegador via `Gio.AppInfo.launch_default_for_uri`. |
 | **Biblioteca** | Lista HTMLs ordenados por mtime desc. Cada row tem `Abrir` + `Excluir` (com `Adw.AlertDialog`). Botão "Abrir pasta" lança file manager. |
 | **Sobre** | `Adw.PreferencesPage` com 5 seções markup-formatted. |
 
@@ -146,6 +146,15 @@ Dois modelos novos, ambos a partir dos dados já coletados:
   `admin_by_day` e nº de administradores distintos; selo via
   `build_admin_status` (≥2 admins → *warn*, nota LGPD do menor privilégio) e
   texto via `build_admin_summary`.
+- **Conformidade LGPD** (`lgpd_compliance.html` / `collect_for_lgpd_compliance`):
+  snapshot de **postura**, não de logs. `compliance.py` (novo) roda 9 checagens
+  **user-readable** (`systemctl is-active`, `getenforce`, `gsettings get`,
+  `lsblk` — sem pkexec): firewall, disco LUKS, SELinux, SSH, DNS encriptado,
+  fail2ban, telemetria, localização, lock screen. Cada uma vira
+  `{label, state, value, detail, critical}` (`state` ∈ ok/warn/off/unknown).
+  `compliance_score` ignora *unknown*; `compliance_status` → *danger* se item
+  **crítico** (firewall/disco) falha. Interpretação em funções puras
+  (`_state_*`) testáveis sem subprocess.
 
 ## Quando usar
 
@@ -158,7 +167,7 @@ Dois modelos novos, ambos a partir dos dados já coletados:
 
 ## Limitações conhecidas
 
-- 4 modelos prontos (sem editor visual de modelo na UI).
+- 5 modelos prontos (sem editor visual de modelo na UI).
 - Sem agendamento automático (sem systemd timer).
 - Templates fixos — personalização requer editar `templates/*.html`.
 - `lastb` só com modo admin; sem ele `failed_logins` fica vazio.

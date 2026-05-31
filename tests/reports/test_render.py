@@ -138,3 +138,36 @@ class TestRenderAdminAccess:
         })
         html = renderer.render_html("admin_access", d)
         assert "empty" in html  # tabelas vazias → blocos .empty
+
+
+def _lgpd_data():
+    return {
+        "period": _period(),
+        "elevated_mode": True,
+        "status": {"level": "danger", "label": "Pendências críticas"},
+        "summary": "5 de 8 itens de postura em conformidade (62%). Pendências: Firewall, DNS encriptado.",
+        "score": {"ok": 5, "total": 8, "pct": 62, "unknown": 1},
+        "checks": [
+            {"label": "Firewall (firewalld)", "state": "off", "value": "desligado",
+             "detail": "Bloqueia conexões de entrada.", "critical": True},
+            {"label": "Disco criptografado (LUKS)", "state": "ok", "value": "cifrado (LUKS)",
+             "detail": "Dados em repouso cifrados.", "critical": True},
+            {"label": "DNS encriptado", "state": "off", "value": "desligado",
+             "detail": "Consultas DNS cifradas.", "critical": False},
+            {"label": "Telemetria do GNOME desligada", "state": "ok", "value": "desligado",
+             "detail": "Sem relatórios automáticos.", "critical": False},
+            {"label": "SELinux (modo)", "state": "unknown", "value": "desconhecido",
+             "detail": "Confinamento de processos.", "critical": False},
+        ],
+    }
+
+
+class TestRenderLgpdCompliance:
+    def test_renders_with_score_and_donut(self):
+        html = renderer.render_html("lgpd_compliance", _lgpd_data())
+        assert html.rstrip().endswith("</html>")
+        assert "status-badge danger" in html
+        assert "<svg" in html               # rosca de conformidade
+        assert "5/8" in html or "5/" in html  # KPI do score
+        assert "conforme" in html and "pendente" in html  # tags de estado
+        assert "crítico" in html            # marcador de item crítico
