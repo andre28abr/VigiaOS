@@ -2033,6 +2033,29 @@ valioso pro escritório (prova de medidas técnicas, LGPD art. 46).
   hardening-checks ainda a confirmar — talvez exija modo admin pra ler
   `/var/log/lynis-report.dat`).
 
+### 2026-05-31 — Reports v0.2.3: modelo Saúde do Sistema (consolidados, parte 2)
+
+Segundo (e último planejado) dos consolidados — fecha a frente "documentar
+tudo": um doc que junta o estado das **4 defesas** da suíte.
+
+- **`system_health.py`** (novo): lê o **último resultado** que cada tool
+  persistiu, **sem importar o código delas** (Reports desacoplado — só lê
+  arquivo): Lynis (`/var/log/lynis-report.dat` → `hardening_index`, legível
+  pós-chown do Hardening), ClamAV (`scan-*.json` → `infected_files`), AIDE
+  (`file-integrity.json` → `last_check`), rootkits (`scans/*.json` →
+  `infected_count`). Cada defesa → `{state: ok/warn/danger/missing, headline,
+  ran_at}`; tool nunca rodada = *missing* (não conta no score). Interpretadores
+  puros (`_interpret_*`) testáveis sem I/O.
+- **`collect_for_system_health`** + `system_health.html`: KPIs (saudáveis /
+  atenção / não-executadas), rosca de panorama, tabela defesa×estado×resultado
+  ×data. Modelo nº **6** no combo.
+- +21 testes (`test_system_health.py` + render). Suite **733**.
+
+Com isso os 2 consolidados pedidos pelo André estão **prontos**. Próximas
+ideias da frente "documentação" (quando quiser): 🥇 agendamento automático
+(timer systemd + modo headless) e 🥉 selo de integridade (SHA-256) + pacote de
+auditoria `.zip`.
+
 ---
 
 ## 10. Roadmap

@@ -42,6 +42,11 @@ TEMPLATES: dict[str, dict] = {
         "description": "Postura de segurança/privacidade da máquina agora (firewall, disco cifrado, DNS, telemetria…) — o documento para o auditor.",
         "file": "lgpd_compliance.html",
     },
+    "system_health": {
+        "name": "Saúde do sistema",
+        "description": "Consolida o último resultado de Hardening (Lynis), Antivírus, Integridade (AIDE) e Rootkits num só documento.",
+        "file": "system_health.html",
+    },
 }
 
 

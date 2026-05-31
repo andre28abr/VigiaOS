@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="kpi-grid">
+  <div class="kpi accent">
+    <div class="kpi-value">{{ score.ok }}</div>
+    <div class="kpi-label">Defesas saudáveis</div>
+  </div>
+  <div class="kpi {% if score.issues > 0 %}danger{% endif %}">
+    <div class="kpi-value">{{ score.issues }}</div>
+    <div class="kpi-label">Requerem atenção</div>
+  </div>
+  <div class="kpi {% if score.missing > 0 %}warn{% endif %}">
+    <div class="kpi-value">{{ score.missing }}</div>
+    <div class="kpi-label">Não executadas</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-value">{{ score.ran }}/{{ score.total }}</div>
+    <div class="kpi-label">Verificações feitas</div>
+  </div>
+</div>
+
+<div class="chart-grid">
+  <div class="chart-card">
+    <div class="chart-title">Panorama das defesas</div>
+    <div class="donut-row">
+      {{ donut([("Saudável", score.ok, "#059669"), ("Atenção", score.issues, "#dc2626"), ("Não executada", score.missing, "#a1a1aa")]) | safe }}
+      <ul class="donut-legend">
+        <li><span class="dot" style="background:#059669"></span> Saudável <b>{{ score.ok }}</b></li>
+        <li><span class="dot" style="background:#dc2626"></span> Atenção <b>{{ score.issues }}</b></li>
+        <li><span class="dot" style="background:#a1a1aa"></span> Não executada <b>{{ score.missing }}</b></li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<h2>Estado das defesas</h2>
+<p class="explainer">O último resultado de cada ferramenta de segurança da suíte. Rode a ferramenta correspondente para atualizar um item ou preencher um "não executada".</p>
+<table>
+  <thead><tr><th>Defesa</th><th>Estado</th><th>Resultado</th><th>Última execução</th></tr></thead>
+  <tbody>
+    {% for e in entries %}
+    <tr>
+      <td>
+        <strong>{{ e.label }}</strong>
+        <br><span style="color:var(--text-dim);font-size:12px">{{ e.detail }}</span>
+      </td>
+      <td>
+        {% if e.state == 'ok' %}<span class="tag ok">saudável</span>
+        {% elif e.state == 'warn' %}<span class="tag warn">atenção</span>
+        {% elif e.state == 'danger' %}<span class="tag danger">ação</span>
+        {% else %}<span class="tag">não executada</span>{% endif %}
+      </td>
+      <td>{{ e.headline }}</td>
+      <td class="mono">{{ e.ran_at }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<p class="explainer" style="margin-top:20px">
+  Itens <span class="tag warn">atenção</span> ou <span class="tag danger">ação</span>
+  pedem investigação na ferramenta correspondente (Hardening Checks, Antivírus,
+  File Integrity, Rootkit Scanner). Itens <span class="tag">não executada</span>
+  ainda não têm scan registrado — rode-os ao menos uma vez para o documento
+  ficar completo.
+</p>
+
+{% endblock %}

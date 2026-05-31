@@ -20,7 +20,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from . import compliance
+from . import compliance, system_health
 
 
 # LGPD CRITICAL: reports tem PII (IPs, usernames, comandos sudo, lastb).
@@ -716,4 +716,22 @@ def collect_for_lgpd_compliance(period: Period, elevated: bool = False) -> dict:
         "summary": compliance.compliance_summary(checks),
         "score": compliance.compliance_score(checks),
         "checks": checks,
+    }
+
+
+def collect_for_system_health(period: Period, elevated: bool = False) -> dict:
+    """Dados para o relatório Saúde do Sistema.
+
+    Consolida o ÚLTIMO resultado persistido por Hardening (Lynis), Antivírus
+    (ClamAV), Integridade (AIDE) e Rootkits — lendo os arquivos das tools
+    direto (sem importar o código delas). `elevated` é ignorado.
+    """
+    entries = system_health.collect_health()
+    return {
+        "period": period,
+        "elevated_mode": True,
+        "status": system_health.health_status(entries),
+        "summary": system_health.health_summary(entries),
+        "score": system_health.health_score(entries),
+        "entries": entries,
     }
