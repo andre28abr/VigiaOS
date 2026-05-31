@@ -85,3 +85,56 @@ class TestRenderAuthEvents:
         html = renderer.render_html("auth_events", _auth_data())
         assert "status-badge ok" in html
         assert "empty" in html  # listas vazias → blocos .empty, sem crash
+
+
+def _exec_data():
+    d = _activity_data()
+    d["highlights"] = [
+        "5 IPs bloqueados automaticamente pelo fail2ban — proteção ativa.",
+        "3 acessos SSH bem-sucedidos.",
+    ]
+    return d
+
+
+def _admin_data():
+    return {
+        "period": _period(),
+        "elevated_mode": True,
+        "status": {"level": "warn", "label": "2 administradores"},
+        "summary": "Trilha administrativa de teste.",
+        "kpis": {"sudo_invocations": 10, "pkexec_invocations": 2, "admin_total": 12, "admin_users": 2},
+        "admin_by_day": [("24/05", 3), ("25/05", 9)],
+        "top_admin_users": [("andre", 10), ("root", 2)],
+        "sudo": [{"timestamp": "2026-05-30 12:00:00", "user": "andre", "target_user": "root", "command": "dnf update"}],
+        "pkexec": [{"timestamp": "2026-05-30 13:00:00", "user": "andre", "target_user": "root", "command": "setenforce 1"}],
+    }
+
+
+class TestRenderExecutiveSummary:
+    def test_renders_with_highlights_and_charts(self):
+        html = renderer.render_html("executive_summary", _exec_data())
+        assert html.rstrip().endswith("</html>")
+        assert "highlights" in html
+        assert "proteção ativa" in html
+        assert html.count("<svg") >= 2
+
+
+class TestRenderAdminAccess:
+    def test_renders_with_commands(self):
+        html = renderer.render_html("admin_access", _admin_data())
+        assert html.rstrip().endswith("</html>")
+        assert "status-badge warn" in html
+        assert "dnf update" in html      # comando sudo
+        assert "setenforce 1" in html    # comando pkexec
+        assert html.count("<svg") >= 2   # barras/dia + hbar de admins
+
+    def test_empty_admin_no_crash(self):
+        d = _admin_data()
+        d.update({
+            "sudo": [], "pkexec": [], "top_admin_users": [],
+            "admin_by_day": [("24/05", 0)],
+            "status": {"level": "ok", "label": "Sem atividade"},
+            "kpis": {"sudo_invocations": 0, "pkexec_invocations": 0, "admin_total": 0, "admin_users": 0},
+        })
+        html = renderer.render_html("admin_access", d)
+        assert "empty" in html  # tabelas vazias → blocos .empty

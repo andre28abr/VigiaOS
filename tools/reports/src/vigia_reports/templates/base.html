@@ -122,6 +122,21 @@
   }
   .summary p { margin: 0; font-size: 15px; line-height: 1.65; }
 
+  /* Lista de destaques (Resumo Executivo) */
+  .highlights { margin: 8px 0 24px; padding: 0; list-style: none; }
+  .highlights li {
+    position: relative;
+    padding: 9px 0 9px 26px;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+  }
+  .highlights li:last-child { border-bottom: none; }
+  .highlights li::before {
+    content: "›";
+    position: absolute; left: 8px; top: 8px;
+    color: var(--accent); font-weight: 700;
+  }
+
   /* Sections */
   h2 {
     font-size: 19px;

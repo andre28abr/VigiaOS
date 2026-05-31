@@ -499,6 +499,78 @@ def build_summary(kpis: dict, period: Period, status: dict) -> str:
     return "".join(parts)
 
 
+def build_highlights(kpis: dict) -> list[str]:
+    """Bullets concretos pro Resumo Executivo (1 página)."""
+    ss = int(kpis.get("ssh_success", 0))
+    sf = int(kpis.get("ssh_failed", 0))
+    bans = int(kpis.get("bans", 0))
+    admin = int(kpis.get("sudo_invocations", 0)) + int(kpis.get("pkexec_invocations", 0))
+
+    out: list[str] = []
+    if bans:
+        out.append(
+            f"{bans} {_plural(bans, 'IP bloqueado', 'IPs bloqueados')} "
+            "automaticamente pelo fail2ban — proteção ativa."
+        )
+    if sf:
+        out.append(
+            f"{sf} {_plural(sf, 'tentativa de acesso falhada', 'tentativas de acesso falhadas')} "
+            "(varredura/brute-force, sem sucesso)."
+        )
+    if ss:
+        out.append(
+            f"{ss} {_plural(ss, 'acesso SSH bem-sucedido', 'acessos SSH bem-sucedidos')}."
+        )
+    if admin:
+        out.append(
+            f"{admin} {_plural(admin, 'comando administrativo', 'comandos administrativos')} "
+            "(sudo/pkexec) executados."
+        )
+    if not out:
+        out.append("Período tranquilo — nenhuma ocorrência relevante de segurança.")
+    return out
+
+
+def build_admin_status(distinct_users: int) -> dict:
+    """Selo do relatório de Acesso Administrativo — foco no nº de admins (LGPD)."""
+    if distinct_users == 0:
+        return {"level": "ok", "label": "Sem atividade"}
+    if distinct_users == 1:
+        return {"level": "ok", "label": "1 administrador"}
+    return {"level": "warn", "label": f"{distinct_users} administradores"}
+
+
+def build_admin_summary(kpis: dict, period: Period) -> str:
+    """Parágrafo pt-BR do relatório de Acesso Administrativo."""
+    sudo = int(kpis.get("sudo_invocations", 0))
+    pkexec = int(kpis.get("pkexec_invocations", 0))
+    total = int(kpis.get("admin_total", 0))
+    users = int(kpis.get("admin_users", 0))
+
+    if total == 0:
+        return (
+            f"Nos {period.label}, nenhum comando administrativo "
+            "(sudo ou pkexec) foi executado."
+        )
+    parts = [
+        f"Nos {period.label}, foram executados {total} "
+        f"{_plural(total, 'comando administrativo', 'comandos administrativos')} "
+        f"({sudo} via sudo, {pkexec} via pkexec) por {users} "
+        f"{_plural(users, 'usuário', 'usuários distintos')}. "
+    ]
+    if users > 1:
+        parts.append(
+            "Mais de um usuário com privilégio — revise se todos devem ter "
+            "acesso administrativo (LGPD: princípio do menor privilégio)."
+        )
+    else:
+        parts.append(
+            "Trilha completa do uso de privilégio, útil como evidência de "
+            "controle de acesso (LGPD)."
+        )
+    return "".join(parts)
+
+
 def collect_for_activity_overview(period: Period, elevated: bool = False) -> dict:
     """Dados para template activity_overview."""
     raw = _gather(period, elevated)
@@ -580,4 +652,49 @@ def collect_for_auth_events(period: Period, elevated: bool = False) -> dict:
         "pkexec": raw["pkexec"],
         "logins": raw["last"],
         "failed_logins": raw["lastb"],
+    }
+
+
+def collect_for_executive_summary(period: Period, elevated: bool = False) -> dict:
+    """Dados para o Resumo Executivo (1 página).
+
+    Reaproveita os dados do activity_overview (status, resumo, KPIs, gráficos,
+    rankings) e acrescenta bullets de destaque. O template renderiza compacto,
+    sem as tabelas longas de evento.
+    """
+    data = collect_for_activity_overview(period, elevated=elevated)
+    data["highlights"] = build_highlights(data["kpis"])
+    return data
+
+
+def collect_for_admin_access(period: Period, elevated: bool = False) -> dict:
+    """Dados para o relatório de Acesso Administrativo (sudo + pkexec)."""
+    raw = _gather(period, elevated)
+    sudo = raw["sudo"]
+    pkexec = raw["pkexec"]
+
+    user_counts: dict[str, int] = {}
+    for e in sudo + pkexec:
+        u = e.get("user", "?")
+        user_counts[u] = user_counts.get(u, 0) + 1
+    top_admin_users = sorted(user_counts.items(), key=lambda kv: -kv[1])[:10]
+
+    kpis = {
+        "sudo_invocations": len(sudo),
+        "pkexec_invocations": len(pkexec),
+        "admin_total": len(sudo) + len(pkexec),
+        "admin_users": len(user_counts),
+    }
+    status = build_admin_status(len(user_counts))
+
+    return {
+        "period": period,
+        "elevated_mode": elevated,
+        "status": status,
+        "summary": build_admin_summary(kpis, period),
+        "kpis": kpis,
+        "admin_by_day": events_by_day(sudo + pkexec, period),
+        "top_admin_users": top_admin_users,
+        "sudo": sudo,
+        "pkexec": pkexec,
     }

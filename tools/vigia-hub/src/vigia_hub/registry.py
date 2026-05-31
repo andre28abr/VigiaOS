@@ -396,7 +396,7 @@ TOOLS: list[ToolEntry] = [
             "de logins falhados (`lastb` precisa de root)."
         ),
         features=[
-            "**2 modelos**: *atividade geral* + *eventos de autenticação*",
+            "**4 modelos**: atividade geral, eventos de autenticação, **resumo executivo** (1 página) e **acesso administrativo** (sudo/pkexec, LGPD)",
             "**Resumo executivo** em pt-BR + **selo de status** (🟢/🟡/🔴) no topo",
             "**Gráficos SVG nativos** (falhas por dia, top IPs/usuários, rosca) — sem JS, offline, imprime vetorial",
             "KPI cards + tabelas detalhadas com tags coloridas (*aceito*, *falha*)",

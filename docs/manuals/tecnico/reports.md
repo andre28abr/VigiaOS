@@ -10,7 +10,7 @@ a partir de `journalctl`, `last` e `lastb` — pensado para auditoria LGPD.
 
 | Item | Valor |
 |---|---|
-| **Pacote** | `vigia-reports` (versão 0.2.0) |
+| **Pacote** | `vigia-reports` (versão 0.2.1) |
 | **App ID** | `br.com.vigia.Reports` |
 | **Pacotes wrapped** | `journalctl`, `last`, `lastb` |
 | **Templating** | Jinja2 (`PackageLoader("vigia_reports", "templates")`) |
@@ -101,7 +101,7 @@ senha derretem UX e treinam o usuário a clicar sem ler.
 
 | Tab | Descrição |
 |---|---|
-| **Gerar** | `ComboRow` template (Atividade geral, Eventos de autenticação) + `ComboRow` período (24h, 7d, 30d, 90d) + `SwitchRow` modo admin + botão `Gerar`. Progress bar pulsante. Abre HTML no navegador via `Gio.AppInfo.launch_default_for_uri`. |
+| **Gerar** | `ComboRow` modelo (Atividade geral, Eventos de autenticação, Resumo executivo, Acesso administrativo) + `ComboRow` período (24h, 7d, 30d, 90d) + `SwitchRow` modo admin + botão `Gerar`. Progress bar pulsante. Abre HTML no navegador via `Gio.AppInfo.launch_default_for_uri`. |
 | **Biblioteca** | Lista HTMLs ordenados por mtime desc. Cada row tem `Abrir` + `Excluir` (com `Adw.AlertDialog`). Botão "Abrir pasta" lança file manager. |
 | **Sobre** | `Adw.PreferencesPage` com 5 seções markup-formatted. |
 
@@ -132,6 +132,21 @@ Ambos os modelos ganham, acima das tabelas:
   sem CDN, sem rede (offline/LGPD) e vetorial no print. Texto de dado do
   usuário passa por `html.escape`; usados no template com `| safe`.
 
+### Modelos extras (v0.2.1)
+
+Dois modelos novos, ambos a partir dos dados já coletados:
+
+- **Resumo executivo** (`executive_summary.html` /
+  `collect_for_executive_summary`): reaproveita o `activity_overview` e
+  acrescenta `build_highlights(kpis)` (bullets concretos). Template compacto —
+  status + resumo + KPIs + gráficos + destaques, **sem** as tabelas longas de
+  evento. Pensado pra 1 página (cliente/auditor).
+- **Acesso administrativo** (`admin_access.html` / `collect_for_admin_access`):
+  foco em `sudo` + `pkexec` — quem rodou o quê. Agrega `top_admin_users`,
+  `admin_by_day` e nº de administradores distintos; selo via
+  `build_admin_status` (≥2 admins → *warn*, nota LGPD do menor privilégio) e
+  texto via `build_admin_summary`.
+
 ## Quando usar
 
 - **Revisão mensal de atividade**: `activity_overview` últimos 30 dias,
@@ -143,7 +158,7 @@ Ambos os modelos ganham, acima das tabelas:
 
 ## Limitações conhecidas
 
-- Apenas 2 modelos (Atividade geral, Eventos de autenticação).
+- 4 modelos prontos (sem editor visual de modelo na UI).
 - Sem agendamento automático (sem systemd timer).
 - Templates fixos — personalização requer editar `templates/*.html`.
 - `lastb` só com modo admin; sem ele `failed_logins` fica vazio.

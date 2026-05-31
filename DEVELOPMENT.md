@@ -1994,6 +1994,22 @@ médio. Mantida a filosofia "stack leve" (HTML + imprimir→PDF do navegador,
   "Jinja2 + SVG"). Suite **690**. *Próximo (sugerido): novos modelos —
   Resumo Executivo 1-página, Acesso Administrativo.*
 
+### 2026-05-31 — Reports v0.2.1: +2 modelos (Resumo Executivo, Acesso Administrativo)
+
+Frente 4 do overhaul (os "novos modelos" sugeridos acima), ambos a partir dos
+dados **já coletados** — zero coletor novo de sistema:
+
+- **Resumo Executivo** (`executive_summary`): 1 página visual — reaproveita o
+  `activity_overview` + `build_highlights()` (bullets concretos), **sem** as
+  tabelas longas de evento. Pra entregar a cliente/auditor.
+- **Acesso Administrativo** (`admin_access`): trilha de `sudo`+`pkexec` — quem
+  rodou comando de root, quando. `top_admin_users` + `admin_by_day` + selo por
+  nº de admins (`build_admin_status`: ≥2 → *warn* com nota LGPD do menor
+  privilégio); texto via `build_admin_summary`.
+- Registrados em `renderer.TEMPLATES` + dispatch no `generate.py` (o combo da UI
+  lista **4** modelos agora). +8 testes (highlights, admin status/resumo,
+  render dos 2). Manuais + registry + README. Suite **698**.
+
 ---
 
 ## 10. Roadmap

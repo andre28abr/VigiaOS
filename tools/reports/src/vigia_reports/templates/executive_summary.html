@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="kpi-grid">
+  <div class="kpi accent">
+    <div class="kpi-value">{{ kpis.ssh_success }}</div>
+    <div class="kpi-label">Acessos SSH</div>
+  </div>
+  <div class="kpi {% if kpis.ssh_failed > 10 %}danger{% else %}warn{% endif %}">
+    <div class="kpi-value">{{ kpis.ssh_failed }}</div>
+    <div class="kpi-label">Tentativas falhadas</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-value">{{ kpis.sudo_invocations + kpis.pkexec_invocations }}</div>
+    <div class="kpi-label">Comandos admin</div>
+  </div>
+  <div class="kpi {% if kpis.bans > 0 %}danger{% endif %}">
+    <div class="kpi-value">{{ kpis.bans }}</div>
+    <div class="kpi-label">IPs banidos</div>
+  </div>
+</div>
+
+{% if highlights %}
+<h2>Pontos de destaque</h2>
+<ul class="highlights">
+  {% for h in highlights %}
+  <li>{{ h }}</li>
+  {% endfor %}
+</ul>
+{% endif %}
+
+<h2>Visão visual</h2>
+<div class="chart-grid">
+  <div class="chart-card">
+    <div class="chart-title">Tentativas SSH falhadas por dia</div>
+    {{ bar_chart(ssh_fails_by_day, color="#dc2626") | safe }}
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">Acessos SSH: aceitos × falhados</div>
+    <div class="donut-row">
+      {{ donut(ssh_donut) | safe }}
+      <ul class="donut-legend">
+        <li><span class="dot" style="background:#059669"></span> Aceitos <b>{{ kpis.ssh_success }}</b></li>
+        <li><span class="dot" style="background:#dc2626"></span> Falhados <b>{{ kpis.ssh_failed }}</b></li>
+      </ul>
+    </div>
+  </div>
+  {% if top_banned_ips %}
+  <div class="chart-card full">
+    <div class="chart-title">IPs mais banidos pelo fail2ban</div>
+    {{ hbar_chart(top_banned_ips, color="#dc2626") | safe }}
+  </div>
+  {% endif %}
+  {% if top_sudo_users %}
+  <div class="chart-card full">
+    <div class="chart-title">Usuários que mais usaram sudo</div>
+    {{ hbar_chart(top_sudo_users, color="#059669") | safe }}
+  </div>
+  {% endif %}
+</div>
+
+<p class="explainer" style="margin-top:24px">
+  Este é o resumo de uma página. Para o detalhamento completo evento a evento,
+  gere o relatório <em>Atividade geral</em> ou <em>Eventos de autenticação</em>.
+</p>
+
+{% endblock %}
