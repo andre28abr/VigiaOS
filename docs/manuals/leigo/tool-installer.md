@@ -31,7 +31,7 @@ A janela tem **4 abas**:
 - **Auditoria e hardening** (lynis, AIDE, chkrootkit, rkhunter)
 - **Rede** (mtr, nethogs)
 - **Monitoramento** (lsof, strace, fail2ban)
-- **Privacidade** (wireguard, dnscrypt-proxy)
+- **Privacidade** (dnscrypt-proxy)
 - **Forense** (clamav, hashdeep)
 
 Cada item tem um botão "Instalar" (ou "Remover" se já tiver). Tem busca

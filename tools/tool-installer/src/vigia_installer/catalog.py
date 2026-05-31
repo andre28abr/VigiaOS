@@ -40,7 +40,7 @@ CATEGORY_DESCRIPTIONS = {
     "auditoria": "Ferramentas para auditar postura de segurança, integridade e procurar rootkits.",
     "rede": "Scanners, sniffers e diagnóstico de rede.",
     "monitoramento": "O que está acontecendo no sistema agora — processos, IO, arquivos abertos.",
-    "privacidade": "VPN, DNS encriptado, criptografia.",
+    "privacidade": "DNS encriptado, criptografia.",
     "forense": "Análise pós-incidente, antivírus, hashes e recuperação.",
 }
 
@@ -172,19 +172,6 @@ CATALOG: list[CatalogEntry] = [
     ),
 
     # ===== PRIVACIDADE ===== #
-    CatalogEntry(
-        package="wireguard-tools",
-        name="WireGuard",
-        description="VPN moderna e simples (chave pública/privada).",
-        why=(
-            "VPN **muito mais simples e rápida** que OpenVPN. Config em "
-            "arquivo `.conf` curto. No GNOME, o **NetworkManager** já "
-            "importa e gerencia túneis WireGuard nativamente "
-            "(Configurações -> Rede -> VPN), sem precisar de tool dedicada."
-        ),
-        category="privacidade",
-        binary="wg",
-    ),
     CatalogEntry(
         package="dnscrypt-proxy",
         name="dnscrypt-proxy",

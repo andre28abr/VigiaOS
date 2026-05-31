@@ -68,7 +68,6 @@ DEPS_BACKENDS=(
     mtr nethogs                     # rede (diagnostico)
     lsof strace                           # debug
     fail2ban                              # defesa (servico — fica OFF)
-    wireguard-tools                       # VPN (config via NetworkManager)
     dnscrypt-proxy                        # DNS encriptado (fica OFF)
     md5deep                               # forense (binarios hashdeep/sha256deep)
 )
