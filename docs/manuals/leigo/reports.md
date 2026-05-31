@@ -52,6 +52,22 @@ ver onde os arquivos estão.
   **tentativas de login que falharam** (importante!) e o registro
   completo do sistema. Sem isso, vai faltar parte da história.
 
+### Como o relatório fica
+
+No **topo** do relatório, pra você entender tudo em 10 segundos:
+
+- Um **selo colorido** com o veredito: 🟢 *"Sem anomalias"*, 🟡 *"Atenção"*
+  ou 🔴 *"Revisar"*.
+- Um **resumo em português**, de um parágrafo — o que aconteceu no período,
+  sem termo técnico. Ex: *"Nos últimos 7 dias houve 3 acessos bem-sucedidos
+  e 142 tentativas falhadas (todas bloqueadas). Nenhuma anomalia."*
+- **Gráficos**: barras de tentativas falhadas por dia, um ranking dos IPs
+  mais bloqueados, e uma "rosca" mostrando acessos certos × errados.
+
+Aí **embaixo** vêm os cartões com os números e as tabelas com cada evento,
+caso você precise do detalhe completo. A ideia é: o topo conta a história,
+o resto é a prova.
+
 ### Como virar PDF
 
 O relatório abre no Firefox. Pra salvar como PDF:

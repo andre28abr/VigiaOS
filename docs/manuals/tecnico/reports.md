@@ -10,7 +10,7 @@ a partir de `journalctl`, `last` e `lastb` — pensado para auditoria LGPD.
 
 | Item | Valor |
 |---|---|
-| **Pacote** | `vigia-reports` (versão 0.1.1) |
+| **Pacote** | `vigia-reports` (versão 0.2.0) |
 | **App ID** | `br.com.vigia.Reports` |
 | **Pacotes wrapped** | `journalctl`, `last`, `lastb` |
 | **Templating** | Jinja2 (`PackageLoader("vigia_reports", "templates")`) |
@@ -28,8 +28,9 @@ a partir de `journalctl`, `last` e `lastb` — pensado para auditoria LGPD.
 
 ```
 vigia_reports/
-|-- backend.py           # coletores (journalctl/last/lastb) + parsers + agregadores
-|-- renderer.py          # Jinja2 PackageLoader + write_report (chmod 0600)
+|-- backend.py           # coletores + parsers + agregadores + status/resumo + buckets/dia
+|-- charts.py            # geradores de grafico SVG (barras, hbar, rosca) — puro, sem deps
+|-- renderer.py          # Jinja2 PackageLoader + globals de grafico + write_report (0600)
 |-- window.py            # build_content() — Adw.ToolbarView + ViewStack
 |-- app.py / __main__.py # standalone entrypoint
 |-- tabs/
@@ -114,6 +115,23 @@ senha derretem UX e treinam o usuário a clicar sem ler.
 `ssh_success`, `ssh_failed`, `sudo` completo, `pkexec` completo,
 `logins` (last) e `failed_logins` (lastb — só com modo admin).
 
+### Camada visual (v0.2)
+
+Ambos os modelos ganham, acima das tabelas:
+
+- **Selo de status** + **resumo executivo** — `backend.build_status(kpis)`
+  classifica o período em `ok`/`warn`/`danger` (heurística: `danger` = acesso
+  SSH bem-sucedido em meio a ≥50 falhas; `warn` = ≥20 falhas ou algum ban) e
+  `backend.build_summary()` gera um parágrafo em pt-BR. Renderizados no
+  `base.html` (selo no cabeçalho, caixa de resumo) para todo relatório que os
+  forneça.
+- **Gráficos SVG** (`charts.py`) registrados como globals do Jinja em
+  `renderer._make_env()` — `bar_chart` (falhas por dia, via
+  `backend.events_by_day`), `hbar_chart` (top IPs banidos / usuários sudo) e
+  `donut` (aceitos × falhados). São **SVG inline gerado em Python**: sem JS,
+  sem CDN, sem rede (offline/LGPD) e vetorial no print. Texto de dado do
+  usuário passa por `html.escape`; usados no template com `| safe`.
+
 ## Quando usar
 
 - **Revisão mensal de atividade**: `activity_overview` últimos 30 dias,
@@ -125,7 +143,7 @@ senha derretem UX e treinam o usuário a clicar sem ler.
 
 ## Limitações conhecidas
 
-- Apenas 2 templates na v0.1.
+- Apenas 2 modelos (Atividade geral, Eventos de autenticação).
 - Sem agendamento automático (sem systemd timer).
 - Templates fixos — personalização requer editar `templates/*.html`.
 - `lastb` só com modo admin; sem ele `failed_logins` fica vazio.

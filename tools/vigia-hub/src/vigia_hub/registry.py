@@ -386,18 +386,20 @@ TOOLS: list[ToolEntry] = [
             "**fail2ban**) e do `last`/`lastb` em **relatórios HTML** prontos "
             "para impressão em PDF via Firefox/Chromium. Templates pré-definidos "
             "com **paleta zinc + emerald** e layout pensado para auditoria.\n\n"
-            "Cada relatório inclui KPIs no topo (cards com número grande) seguido "
-            "de tabelas detalhadas. Útil para *reviews mensais*, *compliance "
-            "LGPD* e *resposta a incidentes*.\n\n"
+            "Cada relatório abre com um **resumo executivo** em português e um "
+            "**selo de status** (sem anomalias / atenção / revisar), seguido de "
+            "**gráficos** (SVG nativo, sem rede), KPIs e tabelas detalhadas. Útil "
+            "para *reviews mensais*, *compliance LGPD* e *resposta a incidentes*.\n\n"
             "Os HTMLs são salvos em `~/.local/share/vigia-reports/` e listados na aba "
             "**Biblioteca** com botões *Abrir* e *Excluir*. **Modo admin** "
             "opt-in via `pkexec` revela dados do journal do sistema e histórico "
             "de logins falhados (`lastb` precisa de root)."
         ),
         features=[
-            "**2 templates** v0.1: *atividade geral* + *eventos de autenticação*",
+            "**2 modelos**: *atividade geral* + *eventos de autenticação*",
+            "**Resumo executivo** em pt-BR + **selo de status** (🟢/🟡/🔴) no topo",
+            "**Gráficos SVG nativos** (falhas por dia, top IPs/usuários, rosca) — sem JS, offline, imprime vetorial",
             "KPI cards + tabelas detalhadas com tags coloridas (*aceito*, *falha*)",
-            "Paleta visual idêntica ao restante da suite (zinc + emerald)",
             "Auto-abre no navegador após gerar — `Ctrl+P` para PDF",
             "Biblioteca lista relatórios salvos com **Abrir** / **Excluir**",
         ],
