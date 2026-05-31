@@ -18,7 +18,7 @@ Silverblue e' atomico: `dnf install` nao funciona — voce usa `rpm-ostree insta
 | **Auditoria** | lynis, aide, chkrootkit, rkhunter |
 | **Rede** | mtr, nethogs |
 | **Monitoramento** | lsof, strace, fail2ban |
-| **Privacidade** | dnscrypt-proxy |
+| **Privacidade** | NetworkManager-openvpn-gnome, dnscrypt-proxy |
 | **Forense** | clamav, hashdeep |
 
 A lista esta em `src/vigia_installer/catalog.py` — adicionar uma tool nova e' apenas instanciar um `CatalogEntry`.

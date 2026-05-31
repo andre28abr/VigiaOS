@@ -38,15 +38,17 @@ class TestTorRemovido:
 
 
 class TestCatalogoIntacto:
-    def test_privacidade_so_dnscrypt(self):
+    def test_privacidade_openvpn_e_dnscrypt(self):
         pkgs = _packages()
         assert "dnscrypt-proxy" in pkgs
-        # wireguard-tools removido: VPN fica com NetworkManager / app do provedor
+        # VPN = plugin OpenVPN do NetworkManager (importa .ovpn no GNOME)
+        assert "NetworkManager-openvpn-gnome" in pkgs
+        # wireguard-tools removido (NM tem WireGuard nativo + app do provedor)
         assert "wireguard-tools" not in pkgs
 
-    def test_total_12_pacotes(self):
-        # lock: 15 -> 13 (tor+torsocks) -> 12 (wireguard-tools)
-        assert len(CATALOG) == 12
+    def test_total_13_pacotes(self):
+        # 15 -> 13 (tor+torsocks) -> 12 (wireguard) -> 13 (+ openvpn plugin)
+        assert len(CATALOG) == 13
 
     def test_sem_pacotes_duplicados(self):
         pkgs = [e.package for e in CATALOG]
