@@ -82,7 +82,7 @@ separação em subprocess.
 - **Network Monitor** — Conexões TCP/UDP em tempo real
 
 ### 🔒 Privacidade
-- **Privacy Controls** — 13 toggles GNOME (location, telemetria, etc)
+- **Privacy Controls** — 12 toggles GNOME (location, telemetria, etc)
 - **DNS Manager** — `dnscrypt-proxy` (DoH/DoT) com servidores curados
 
 ### 🛡️ Defesa & Hardening

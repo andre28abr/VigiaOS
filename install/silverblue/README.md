@@ -17,7 +17,7 @@ sistema atômico. Ele:
   via `rpm-ostree`;
 - clona o repo e instala as 16 ferramentas (`pip --user`) + atalhos no GNOME;
 - instala Flatpaks de privacidade (KeePassXC, Signal, Tor Browser, …);
-- **não liga nenhum serviço** — `tor`/`fail2ban`/`dnscrypt-proxy` ficam
+- **não liga nenhum serviço** — `fail2ban`/`dnscrypt-proxy` ficam
   desligados; você ativa cada um na ferramenta correspondente quando quiser.
 
 Como é sistema atômico, **reinicie no fim** pra os pacotes layered

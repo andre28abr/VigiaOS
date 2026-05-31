@@ -2,7 +2,7 @@
 
 ## Em uma frase
 
-Painel com 13 toggles de privacidade que mapeiam direto pra chaves `dconf`, units `systemd` e `bluetoothctl`, eliminando a necessidade de editar `gsettings`, `/etc/selinux/config` ou `systemctl` manualmente.
+Painel com 12 toggles de privacidade que mapeiam direto pra chaves `dconf`, units `systemd` e `bluetoothctl`, eliminando a necessidade de editar `gsettings`, `/etc/selinux/config` ou `systemctl` manualmente.
 
 ## O que envolve
 
@@ -10,12 +10,12 @@ Painel com 13 toggles de privacidade que mapeiam direto pra chaves `dconf`, unit
 |---|---|
 | **Pacotes Linux** | `dconf` + `glib2` (Gio.Settings), `systemctl` (systemd), `bluez` (bluetoothctl) opcional |
 | **Comando principal** | `Gio.Settings.new(schema).set_boolean(key, value)` + `pkexec systemctl enable/disable --now <unit>` |
-| **Permissões** | user para dconf (10 toggles); **pkexec** para systemd (3 toggles) |
+| **Permissões** | user para dconf (10 toggles); **pkexec** para systemd (2 toggles) |
 | **Stack** | Python 3.11, PyGObject, GTK4, libadwaita |
 | **Path config** | Nenhum config próprio — estado vive no dconf do usuário e no systemd |
 | **Path dados** | `~/.config/dconf/user` (binário gerenciado pelo sistema) |
 | **App ID** | `br.com.vigia.PrivacyControls` |
-| **Versão** | 0.3.1 |
+| **Versão** | 0.3.2 |
 
 ## Arquitetura interna
 
@@ -26,9 +26,9 @@ Padrão **Toggle factory**:
 - `systemd_unit_toggle(unit, ...)` cria toggle system-scope. Leitura via `systemctl is-active <unit>` (sem privilégio). Escrita via `pkexec systemctl enable/disable --now <unit>.service`.
 - `bluetooth.py` cria toggle ad-hoc via `bluetoothctl power on|off`.
 
-`ALL_TOGGLES` em `toggles/__init__.py` lista os 13 toggles na ordem visual. A janela agrupa por `category` em `Adw.PreferencesGroup`s.
+`ALL_TOGGLES` em `toggles/__init__.py` lista os 12 toggles na ordem visual. A janela agrupa por `category` em `Adw.PreferencesGroup`s.
 
-A coleta de estado inicial roda em **`threading.Thread`** por toggle (paraleliza `systemctl is-active` x3 + `bluetoothctl show` sem bloquear UI thread no startup). Switches começam `sensitive=False` até o worker terminar e chamar `GLib.idle_add(_apply_toggle_state, ...)`.
+A coleta de estado inicial roda em **`threading.Thread`** por toggle (paraleliza `systemctl is-active` x2 + `bluetoothctl show` sem bloquear UI thread no startup). Switches começam `sensitive=False` até o worker terminar e chamar `GLib.idle_add(_apply_toggle_state, ...)`.
 
 ## Comandos disparados
 
@@ -42,7 +42,6 @@ gsettings set org.gnome.desktop.privacy report-technical-problems false
 # System-scope (1 dialog pkexec por toggle)
 pkexec systemctl enable  --now firewalld.service
 pkexec systemctl disable --now sshd.service
-pkexec systemctl enable  --now tor.service
 
 # Bluetooth (sem pkexec — bluetoothctl tem polkit proprio)
 bluetoothctl power on
@@ -78,15 +77,12 @@ Apenas 2 tabs (`ViewSwitcher`): **Toggles** e **Sobre**.
 - `Firewall (firewalld)` — `pkexec systemctl enable/disable --now firewalld.service`
 - `Servidor SSH (sshd)` — `pkexec systemctl ... sshd.service`
 
-**Anonimização** (system-scope, **pkexec**)
-- `Serviço Tor` — `pkexec systemctl ... tor.service` (só aparece se `which tor`)
-
 **Dispositivos**
 - `Bluetooth` — `bluetoothctl power on/off` (só aparece se `bluetoothctl list` retorna controller)
 
 ### Indisponibilidade
 
-Toggles cuja `available_fn()` retorna `False` ficam `set_sensitive(False)` com subtitle `[indisponivel neste sistema]`. Casos comuns: schema dconf não instalado (KDE), unit `tor.service` instalada mas binário `tor` ausente, máquina sem adapter Bluetooth.
+Toggles cuja `available_fn()` retorna `False` ficam `set_sensitive(False)` com subtitle `[indisponivel neste sistema]`. Casos comuns: schema dconf não instalado (KDE), unit `sshd.service` ausente, máquina sem adapter Bluetooth.
 
 ### Sobre
 
@@ -104,7 +100,6 @@ Versão + lista de pacotes wrappados (`dconf`, `systemctl`) + onde ficam os dado
 - Mudanças em dconf são sincronizadas com GNOME Settings em tempo real — abrir os dois ao mesmo tempo dá pra ver os switches mudando juntos.
 - Toggles system-scope pedem senha **a cada mudança** (sem persistência de auth).
 - Em GNOME mais novo (45+), algumas chaves foram movidas/renomeadas. `available_fn` checa via `SettingsSchemaSource.lookup(schema).has_key(key)` e dimma o switch se não existir.
-- Toggle Tor liga apenas o `tor.service` (proxy SOCKS em 9050). Não **roteia** o sistema pelo Tor — pra isso precisa configurar apps individualmente ou usar Tor Browser.
 - Bluetooth depende de `bluetoothctl` — se o sistema usa apenas o stack do GNOME Settings via D-Bus, pode haver delay de 1-2s pra ver o switch.
 
 ## Trecho de código relevante

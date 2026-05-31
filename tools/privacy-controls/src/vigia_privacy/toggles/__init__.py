@@ -15,7 +15,7 @@ from .dconf_toggles import (
     RECENT_FILES,
     TELEMETRY,
 )
-from .systemd_toggles import FIREWALLD, SSHD, TOR
+from .systemd_toggles import FIREWALLD, SSHD
 
 # Ordem importa — controla a ordem visual e agrupamento por category.
 # Toggles da mesma category aparecem juntos no painel.
@@ -37,8 +37,6 @@ ALL_TOGGLES = [
     # Rede (system-scope, pkexec)
     FIREWALLD,
     SSHD,
-    # Anonimizacao (system-scope, pkexec)
-    TOR,
     # Dispositivos
     BLUETOOTH,
 ]

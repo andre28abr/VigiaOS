@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "vigia-privacy"
-version = "0.3.1"
+version = "0.3.2"
 description = "Painel central de controles de privacidade para Fedora Silverblue (VigiaOS)"
 license = { text = "Apache-2.0" }
 readme = "README.md"

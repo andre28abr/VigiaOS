@@ -109,8 +109,8 @@ def systemd_unit_toggle(
       (--now = enable+start ou disable+stop em uma chamada).
       pkexec abre o dialogo grafico do polkit pedindo senha admin.
 
-    `extra_available_check` permite condicoes adicionais (ex: 'tor' so' aparece
-    se o binario tor estiver instalado, alem da unit existir).
+    `extra_available_check` permite condicoes adicionais (ex: so' mostrar o
+    toggle se um binario auxiliar estiver no PATH, alem da unit existir).
     """
 
     def _get() -> bool:

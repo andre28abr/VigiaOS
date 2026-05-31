@@ -26,7 +26,7 @@ SECTIONS: list[tuple[str, str]] = [
         "Ligue/desligue conforme preferência. Mudanças sincronizam com o "
         "GNOME Settings em tempo real.\n\n"
         "<b>Toggles que pedem senha</b> (admin via <tt>pkexec</tt>): "
-        "firewall, servidor SSH e Tor. Você verá um dialog do polkit "
+        "firewall e servidor SSH. Você verá um dialog do polkit "
         "antes da mudança tomar efeito."
     ),
     (
@@ -46,9 +46,7 @@ SECTIONS: list[tuple[str, str]] = [
         "- Algumas mudanças (firewall, SSH) só persistem se você ligar "
         "<i>enable</i> também — esta tool faz <tt>--now</tt> (estado atual) "
         "mas não mexe em <i>enable/disable no boot</i>.\n"
-        "- Bluetooth toggle requer <tt>bluetoothctl</tt> instalado.\n"
-        "- Tor toggle só funciona se o pacote <tt>tor</tt> estiver "
-        "instalado via Tool Installer."
+        "- Bluetooth toggle requer <tt>bluetoothctl</tt> instalado."
     ),
     (
         "Saiba mais",

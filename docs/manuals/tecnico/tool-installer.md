@@ -39,7 +39,7 @@ vigia_installer/
 | **Auditoria e hardening** | lynis, aide, chkrootkit, rkhunter |
 | **Rede** | mtr, nethogs |
 | **Monitoramento e diagnóstico** | lsof, strace, fail2ban |
-| **Privacidade e criptografia** | tor, torsocks, wireguard-tools, dnscrypt-proxy |
+| **Privacidade e criptografia** | wireguard-tools, dnscrypt-proxy |
 | **Forense e análise** | clamav, hashdeep |
 
 Cada `CatalogEntry` tem `package`, `name`, `description` (1 linha),
