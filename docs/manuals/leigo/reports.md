@@ -26,8 +26,9 @@ A janela tem **3 abas**:
 **Gerar**: você escolhe o que entra no relatório e clica em "Gerar".
 Algumas opções:
 - Modelo: "Atividade geral" (panorama), "Eventos de autenticação"
-  (quem entrou), "Resumo executivo" (1 página pra mostrar pra alguém)
-  ou "Acesso administrativo" (quem usou senha de admin)
+  (quem entrou), "Resumo executivo" (1 página pra mostrar pra alguém),
+  "Acesso administrativo" (quem usou senha de admin) ou
+  "Conformidade LGPD" (o checklist de segurança da máquina)
 - Período: 24 horas, 7 dias, 30 dias, ou 90 dias
 - **Modo admin** (interruptor): liga pra pegar dados completos (vai
   pedir sua senha 1x)
@@ -55,6 +56,11 @@ ver onde os arquivos estão.
 - **Acesso administrativo**: foca em **quem usou senha de administrador**
   (sudo/pkexec) — cada comando de admin, quando e por quem. Se mais de uma
   pessoa tem admin, ele avisa (importante pra LGPD).
+- **Conformidade LGPD**: um **checklist** da segurança da máquina **agora** —
+  firewall ligado? disco criptografado? DNS protegido? telemetria desligada?
+  Cada item vem com ✅ "conforme" ou ⚠️ "pendente" e uma explicação do porquê
+  importa. É **o documento que você mostra pro auditor** ("quais medidas de
+  proteção vocês têm?") e dá uma nota (ex: "7 de 9 itens em conformidade").
 - **Modo admin**: quando ligado, a ferramenta consegue ver também as
   **tentativas de login que falharam** (importante!) e o registro
   completo do sistema. Sem isso, vai faltar parte da história.

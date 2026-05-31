@@ -2010,6 +2010,29 @@ dados **já coletados** — zero coletor novo de sistema:
   lista **4** modelos agora). +8 testes (highlights, admin status/resumo,
   render dos 2). Manuais + registry + README. Suite **698**.
 
+### 2026-05-31 — Reports v0.2.2: modelo Conformidade LGPD (1º consolidado)
+
+Primeiro dos "relatórios consolidados" pedidos pelo André — e o documento mais
+valioso pro escritório (prova de medidas técnicas, LGPD art. 46).
+
+- **`compliance.py`** (novo): 9 checagens de postura **user-readable** (sem
+  pkexec) — firewall, disco LUKS, SELinux, SSH, DNS encriptado, fail2ban,
+  telemetria, localização, lock screen. Interpretação em funções puras
+  (`_state_service/_selinux/_gsettings/_disk`) + `compliance_score/status/
+  summary`. `status` = *danger* se item **crítico** (firewall/disco) falha.
+  Degrada com elegância: backend ausente → *não aplicável* (não conta no índice).
+- **`collect_for_lgpd_compliance`** + `lgpd_compliance.html`: KPIs (X/N + %),
+  rosca conforme×pendente, tabela com cada medida + tag de estado + "por que
+  importa" + marcador *crítico*. É o modelo nº **5** no combo da UI.
+- +14 testes (`test_compliance.py`: interpretadores/score/status/smoke +
+  render). Manuais + registry + README. Suite **712**.
+- **Próxima etapa (consolidados, parte 2):** *Saúde do Sistema* — juntar Lynis
+  + AIDE + ClamAV + Rootkit num doc. Fontes user-readable já mapeadas:
+  `~/.config/vigia/file-integrity.json`, `~/.local/share/vigia-antivirus/
+  scan-*.json`, `~/.local/share/vigia-rootkit/scans/*.json` (a do Lynis/
+  hardening-checks ainda a confirmar — talvez exija modo admin pra ler
+  `/var/log/lynis-report.dat`).
+
 ---
 
 ## 10. Roadmap

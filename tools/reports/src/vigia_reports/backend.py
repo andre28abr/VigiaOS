@@ -20,6 +20,8 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
 
+from . import compliance
+
 
 # LGPD CRITICAL: reports tem PII (IPs, usernames, comandos sudo, lastb).
 # NAO usar ~/Documents (sync cloud Dropbox/OneDrive/iCloud por default).
@@ -697,4 +699,21 @@ def collect_for_admin_access(period: Period, elevated: bool = False) -> dict:
         "top_admin_users": top_admin_users,
         "sudo": sudo,
         "pkexec": pkexec,
+    }
+
+
+def collect_for_lgpd_compliance(period: Period, elevated: bool = False) -> dict:
+    """Dados para o relatório de Conformidade LGPD (snapshot de postura).
+
+    Todas as checagens são user-readable; `elevated` é ignorado (nenhum dado
+    depende de root), por isso suprimimos o aviso de "dados incompletos".
+    """
+    checks = compliance.run_compliance_checks()
+    return {
+        "period": period,
+        "elevated_mode": True,  # tudo user-readable → sem aviso de coleta incompleta
+        "status": compliance.compliance_status(checks),
+        "summary": compliance.compliance_summary(checks),
+        "score": compliance.compliance_score(checks),
+        "checks": checks,
     }

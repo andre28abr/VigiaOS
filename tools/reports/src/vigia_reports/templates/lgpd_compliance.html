@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="kpi-grid">
+  <div class="kpi accent">
+    <div class="kpi-value">{{ score.ok }}/{{ score.total }}</div>
+    <div class="kpi-label">Em conformidade</div>
+  </div>
+  <div class="kpi {% if score.ok < score.total %}warn{% endif %}">
+    <div class="kpi-value">{{ score.total - score.ok }}</div>
+    <div class="kpi-label">Pendências</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-value">{{ score.pct }}%</div>
+    <div class="kpi-label">Índice de conformidade</div>
+  </div>
+</div>
+
+<div class="chart-grid">
+  <div class="chart-card">
+    <div class="chart-title">Índice de conformidade</div>
+    <div class="donut-row">
+      {{ donut([("Conforme", score.ok, "#059669"), ("Pendente", score.total - score.ok, "#dc2626")]) | safe }}
+      <ul class="donut-legend">
+        <li><span class="dot" style="background:#059669"></span> Conforme <b>{{ score.ok }}</b></li>
+        <li><span class="dot" style="background:#dc2626"></span> Pendente <b>{{ score.total - score.ok }}</b></li>
+        {% if score.unknown %}
+        <li><span class="dot" style="background:#e4e4e7"></span> Não aplicável <b>{{ score.unknown }}</b></li>
+        {% endif %}
+      </ul>
+    </div>
+  </div>
+</div>
+
+<h2>Medidas verificadas</h2>
+<p class="explainer">Cada item é uma medida técnica relevante para a LGPD (art. 46 — segurança dos dados pessoais), conferida no momento da geração deste documento.</p>
+<table>
+  <thead><tr><th>Medida</th><th>Estado</th><th>Por que importa</th></tr></thead>
+  <tbody>
+    {% for c in checks %}
+    <tr>
+      <td>
+        <strong>{{ c.label }}</strong>{% if c.critical %} <span class="tag danger">crítico</span>{% endif %}
+        <br><span class="mono" style="color:var(--text-dim)">{{ c.value }}</span>
+      </td>
+      <td>
+        {% if c.state == 'ok' %}<span class="tag ok">conforme</span>
+        {% elif c.state == 'warn' %}<span class="tag warn">atenção</span>
+        {% elif c.state == 'off' %}<span class="tag danger">pendente</span>
+        {% else %}<span class="tag">não aplicável</span>{% endif %}
+      </td>
+      <td>{{ c.detail }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<p class="explainer" style="margin-top:20px">
+  Itens <span class="tag danger">pendente</span> ou <span class="tag warn">atenção</span>
+  são oportunidades de fortalecer a postura. Ajuste-os nas ferramentas
+  correspondentes (Privacy Controls, DNS Manager, Firewall GUI…) e gere o
+  relatório novamente para registrar a correção — a comparação dos dois
+  documentos vira evidência de melhoria contínua.
+</p>
+
+{% endblock %}
