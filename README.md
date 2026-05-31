@@ -78,7 +78,7 @@ curl -fsSL https://raw.githubusercontent.com/andre28abr/VigiaOS/main/install/boo
 Instala as 16 ferramentas + os backends que elas usam (`lynis`, `aide`,
 `clamav`, …), registra os atalhos no menu do GNOME e instala Flatpaks de
 privacidade (KeePassXC, Signal, Tor Browser…). **Não liga nenhum serviço**
-— `tor`/`fail2ban`/`dnscrypt-proxy` ficam off; você ativa cada um na
+— `fail2ban`/`dnscrypt-proxy` ficam off; você ativa cada um na
 ferramenta correspondente (*minimum surface area* / LGPD). Guias por
 plataforma: **[Silverblue / atomic](install/silverblue/)** ·
 **[Workstation](install/workstation/)**.
