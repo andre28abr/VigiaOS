@@ -40,7 +40,7 @@ usado por times de segurança pra **caçar ameaças** (*threat hunting*).
 
 ## As regras
 
-O Vigia YARA já vem com regras de partida em dois grupos:
+O Vigia YARA já vem com regras de partida em **três conjuntos**:
 
 - **Malware** — arquivo de teste EICAR, heurísticas de *webshell* PHP e de
   *reverse shell*.
@@ -48,6 +48,12 @@ O Vigia YARA já vem com regras de partida em dois grupos:
   CPF, CNPJ, e-mail, telefone e número de cartão. Útil pro escritório saber
   *"quais arquivos têm dados de clientes?"*. (É um **alerta para revisão**: o
   YARA reconhece o *formato* do CPF, não confirma se é um CPF real.)
+- **Credenciais & segredos** — chaves privadas, tokens de nuvem e senhas em
+  texto que não deveriam estar soltos por aí.
+
+No **Scan**, no campo **Conjunto**, você **escolhe o que procurar**: *Tudo*
+(busca geral), ou só um conjunto (ex: só LGPD, ou só Malware) — quando você quer
+focar numa coisa específica em vez de varrer tudo.
 
 Você pode adicionar as suas regras (ou conjuntos da comunidade) na pasta
 `~/.local/share/vigia-yara/rules/` — quando houver regras suas ali, elas têm

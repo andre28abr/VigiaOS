@@ -21,8 +21,9 @@ tools/vigia-blue/
 │       ├── backend.py          # wrapper + parser + relatórios (PURO/testável)
 │       └── page.py             # GUI: build_content() → abas Scan/Histórico/Sobre
 └── data/yara-rules/
-    ├── starter.yar             # malware: EICAR + webshell + reverse shell
-    └── lgpd.yar                # LGPD/PII: CPF, CNPJ, e-mail, telefone, cartão
+    ├── starter.yar             # conjunto "Malware": EICAR + webshell + revshell
+    ├── lgpd.yar                # conjunto "LGPD": CPF, CNPJ, e-mail, telefone, cartão
+    └── secrets.yar             # conjunto "Credenciais": chave privada, AWS, senhas
 
 tests/blue/test_yara_backend.py # 22 testes (parser, cmd, regras, scan, report)
 ```
@@ -84,9 +85,19 @@ Relatórios (padrão Antivírus, via `vigia_common.state`):
 > Dados** (VigiaHub), que extrai o texto antes de casar os padrões. Também é
 > *match por formato*, não validação (um CPF inválido casa o padrão).
 
-Não é ruleset de produção — é ponto de partida. O usuário sobrepõe/estende em
-`~/.local/share/vigia-yara/rules/` (têm prioridade). `count_rules()` conta as
-declarações `rule X` (a UI mostra "N regras", não nº de arquivos).
+**`secrets.yar` — credenciais & segredos:**
+- `Secret_Private_Key` (alto) — chaves SSH/TLS/PGP em texto; `Secret_AWS_Access_Key`
+  (alto) — `AKIA…`; `Secret_Generic_Password` (suspeito) — `password=/secret=/token=`.
+
+**Conjuntos selecionáveis** (`rulesets() -> list[Ruleset]`): cada arquivo `.yar` é
+um conjunto (rótulo amigável em `RULESET_INFO` por *stem*), mais o "Tudo".
+`effective_rules()` é a **união** de empacotadas + usuário (estas vencem por nome
+de arquivo) — base do "Tudo". A GUI (`ComboRow`) passa `ruleset.files` pro
+`scan(rules=…)`; sem seleção, o scan usa `effective_rules()`.
+
+Não é ruleset de produção — é ponto de partida. O usuário estende em
+`~/.local/share/vigia-yara/rules/`. `count_rules()` conta as declarações `rule X`
+(a UI mostra "N regras", não nº de arquivos).
 
 ## Privilégio / LGPD
 
@@ -101,7 +112,9 @@ declarações `rule X` (a UI mostra "N regras", não nº de arquivos).
 `Adw.ViewSwitcher` + `Adw.ViewStack`):
 
 - **Scan** (`_ScanView`): seletor de pasta (`Gtk.FileDialog.select_folder`),
-  info de regras (+ botão "Pasta de regras"), botão **Escanear** (fora de card),
+  **seletor de conjunto** (`Adw.ComboRow` populado por `backend.rulesets()`:
+  Tudo / Malware / LGPD / Credenciais / conjuntos do usuário) + botão "Pasta de
+  regras", botão **Escanear** (fora de card),
   banner de estado (yara instalado? via `install_hint`). O scan roda em
   `threading.Thread` → `GLib.idle_add` (não trava a UI) e salva o relatório.
   **Cada alerta é um `Adw.ExpanderRow`** (clicável): recolhido mostra nome do

@@ -103,27 +103,29 @@ class _ScanView(Gtk.Box):
         g_target.add(self._target_row)
         page.add(g_target)
 
-        # --- Regras ---
+        # --- Regras (seletor de conjunto) ---
         g_rules = Adw.PreferencesGroup()
         g_rules.set_title("Regras")
-        rules = backend.effective_rules()
-        using_user = bool(backend.list_rules(backend.RULES_DIR))
-        n_rules = backend.count_rules(rules)
-        rules_row = Adw.ActionRow()
-        rules_row.set_title(f"{n_rules} regra(s)")
-        rules_row.set_subtitle(
-            "Suas regras (em ~/.local/share/vigia-yara/rules/)"
-            if using_user
-            else "Regras de partida: malware (webshell/revshell) + LGPD (CPF, e-mail…)"
-        )
-        rules_row.set_subtitle_lines(0)
-        rules_row.add_prefix(Gtk.Image.new_from_icon_name("text-x-generic-symbolic"))
+        g_rules.set_description("Escolha o que procurar neste scan.")
+        self._rulesets = backend.rulesets()
+        combo = Adw.ComboRow()
+        combo.set_title("Conjunto")
+        combo.add_prefix(Gtk.Image.new_from_icon_name("text-x-generic-symbolic"))
+        model = Gtk.StringList()
+        for rs in self._rulesets:
+            model.append(f"{rs.label} · {rs.rule_count} regra(s)")
+        combo.set_model(model)
+        combo.set_selected(0)   # "Tudo"
+        combo.connect("notify::selected", self._on_ruleset_changed)
         open_rules = Gtk.Button(label="Pasta de regras")
         open_rules.set_valign(Gtk.Align.CENTER)
+        open_rules.add_css_class("flat")
         open_rules.connect("clicked", self._on_open_rules)
-        rules_row.add_suffix(open_rules)
-        g_rules.add(rules_row)
+        combo.add_suffix(open_rules)
+        self._rules_combo = combo
+        g_rules.add(combo)
         page.add(g_rules)
+        self._on_ruleset_changed(combo, None)   # subtítulo inicial
 
         # --- Ação (botão fora de card, padrão do projeto) ---
         g_action = Adw.PreferencesGroup()
@@ -254,21 +256,32 @@ class _ScanView(Gtk.Box):
         _open_path(str(backend.RULES_DIR))
 
     # -- scan --
+    def _on_ruleset_changed(self, combo: Adw.ComboRow, _param) -> None:
+        idx = combo.get_selected()
+        if 0 <= idx < len(self._rulesets):
+            combo.set_subtitle(self._rulesets[idx].description)
+
     def _on_scan(self, _btn: Gtk.Button) -> None:
         if self._scanning:
             return
         if not self._target:
             self._set_results_empty("Selecione um alvo antes de escanear.")
             return
+        idx = self._rules_combo.get_selected()
+        rules = (
+            list(self._rulesets[idx].files)
+            if 0 <= idx < len(self._rulesets) else None
+        )
         self._scanning = True
         self._scan_btn.set_sensitive(False)
         self._spinner.start()
         self._set_results_empty("Escaneando…")
-        target = self._target
-        threading.Thread(target=self._worker, args=(target,), daemon=True).start()
+        threading.Thread(
+            target=self._worker, args=(self._target, rules), daemon=True
+        ).start()
 
-    def _worker(self, target: str) -> None:
-        result = backend.scan(target)
+    def _worker(self, target: str, rules) -> None:
+        result = backend.scan(target, rules=rules)
         backend.save_report(result)
         GLib.idle_add(self._apply_results, result)
 

@@ -114,11 +114,14 @@ class TestRulesDiscovery:
         b = backend.bundled_rules()
         assert any(p.name == "starter.yar" for p in b)
 
-    def test_effective_usa_user_se_houver(self, tmp_path, monkeypatch):
+    def test_effective_inclui_user_e_bundled(self, tmp_path, monkeypatch):
+        # effective_rules = UNIÃO (empacotadas + usuário), não mais "usuário OU".
         (tmp_path / "user.yar").write_text("rule u {condition: true}")
         monkeypatch.setattr(backend, "RULES_DIR", tmp_path)
-        eff = backend.effective_rules()
-        assert [p.name for p in eff] == ["user.yar"]
+        names = {p.name for p in backend.effective_rules()}
+        assert "user.yar" in names         # do usuário
+        assert "starter.yar" in names      # e as empacotadas continuam
+        assert "lgpd.yar" in names
 
     def test_effective_cai_no_bundled_sem_user(self, tmp_path, monkeypatch):
         monkeypatch.setattr(backend, "RULES_DIR", tmp_path / "vazio")
@@ -247,3 +250,22 @@ class TestLgpdRules:
         assert "CPF" in meta["LGPD_CPF"]["description"]
         assert meta["LGPD_CPF"]["severity"] == "suspeito"
         assert meta["LGPD_Cartao_Credito"]["severity"] == "alto"
+
+
+class TestRulesets:
+    def test_all_primeiro_e_inclui_bundled(self):
+        rs = backend.rulesets()
+        ids = [r.id for r in rs]
+        assert ids[0] == "all"
+        assert "starter" in ids and "lgpd" in ids and "secrets" in ids
+
+    def test_labels_amigaveis_e_contagem(self):
+        by_id = {r.id: r for r in backend.rulesets()}
+        assert by_id["lgpd"].label == "LGPD — dados pessoais"
+        assert by_id["secrets"].label == "Credenciais & segredos"
+        assert by_id["all"].rule_count >= 11   # 3 malware + 5 lgpd + 3 secrets
+
+    def test_cada_conjunto_tem_arquivos(self):
+        for r in backend.rulesets():
+            assert r.files
+            assert r.rule_count >= 1
