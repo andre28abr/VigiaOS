@@ -5,7 +5,7 @@
 %global mod_name vigia_common
 
 Name:           %{pkg_name}
-Version:        0.2.4
+Version:        0.2.5
 Release:        1%{?dist}
 Summary:        Helpers compartilhados entre as ferramentas do VigiaOS
 License:        Apache-2.0
@@ -53,6 +53,10 @@ cd tools/vigia-common
 %{python3_sitelib}/%{mod_name}-*.dist-info/
 
 %changelog
+* Mon Jun 01 2026 André Augusto Azarias de Souza <andre@vigia.local> - 0.2.5-1
+- shell: branding do produto no rail menor (caption-heading) + header
+  'Ferramentas' na coluna do meio — alinhando com o Vigia Hub.
+
 * Mon Jun 01 2026 André Augusto Azarias de Souza <andre@vigia.local> - 0.2.4-1
 - shell: carrega icone colorido do modulo via arquivo (padrao Hub) com
   fallback pro icon-name do tema.
