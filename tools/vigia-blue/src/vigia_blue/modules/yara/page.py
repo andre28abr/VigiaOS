@@ -288,7 +288,7 @@ class _ScanView(Gtk.Box):
         files = len({m.path for m in result.matches})
         if n == 0:
             self._results.set_description(
-                f"Nada suspeito. {result.rules_count} regra(s) · "
+                f"Nada suspeito. {result.rules_count} conjunto(s) de regras · "
                 f"{result.elapsed_sec:.1f}s."
             )
             row = Adw.ActionRow()
@@ -299,7 +299,7 @@ class _ScanView(Gtk.Box):
             return False
 
         self._results.set_description(
-            f"{n} alerta(s) em {files} arquivo(s) · {result.rules_count} regra(s) · "
+            f"{n} alerta(s) em {files} arquivo(s) · {result.rules_count} conjunto(s) de regras · "
             f"{result.elapsed_sec:.1f}s. Clique num alerta para ver o que é."
         )
         for m in result.matches:
