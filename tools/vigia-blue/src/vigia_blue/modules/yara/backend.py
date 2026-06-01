@@ -94,9 +94,45 @@ def bundled_rules() -> list[Path]:
 
 
 def effective_rules() -> list[Path]:
-    """Regras do usuário (RULES_DIR) se existirem; senão as empacotadas."""
-    user = list_rules(RULES_DIR)
-    return user or bundled_rules()
+    """TODAS as regras disponíveis: empacotadas + as do usuário (estas sobrepõem
+    por nome de arquivo). É a base do conjunto "Tudo" do seletor."""
+    by_name: dict[str, Path] = {p.name: p for p in bundled_rules()}
+    for p in list_rules(RULES_DIR):
+        by_name[p.name] = p   # regra do usuário com mesmo nome vence
+    return [by_name[k] for k in sorted(by_name)]
+
+
+@dataclass
+class Ruleset:
+    """Um conjunto de regras selecionável no scan (Tudo / Malware / LGPD / …)."""
+
+    id: str               # "all" | stem do arquivo (ex: "lgpd")
+    label: str
+    description: str
+    files: list[Path]
+    rule_count: int
+
+
+# Rótulos amigáveis dos conjuntos empacotados (por stem do arquivo).
+RULESET_INFO = {
+    "starter": ("Malware", "Webshell, reverse shell e EICAR (teste)"),
+    "lgpd": ("LGPD — dados pessoais", "CPF, CNPJ, e-mail, telefone, cartão"),
+    "secrets": ("Credenciais & segredos", "Chaves privadas, tokens e senhas em texto"),
+}
+
+
+def rulesets() -> list[Ruleset]:
+    """Conjuntos selecionáveis: 'Tudo' + um por arquivo de regra disponível."""
+    files = effective_rules()
+    out = [Ruleset("all", "Tudo (todas as regras)",
+                   "Malware + LGPD + credenciais + o que mais houver",
+                   files, count_rules(files))]
+    for f in files:
+        label, desc = RULESET_INFO.get(
+            f.stem, (f.stem, "Conjunto de regras personalizado")
+        )
+        out.append(Ruleset(f.stem, label, desc, [f], count_rules([f])))
+    return out
 
 
 # ============================================================

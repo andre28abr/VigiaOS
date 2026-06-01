@@ -2377,6 +2377,23 @@ extrai texto antes e combina com checagens de local/permissão.
 
 ---
 
+### 2026-06-01 — Vigia YARA: seletor de conjuntos de regras + conjunto de segredos
+
+Pedido do André: poder **escolher o que procurar** (não só busca geral).
+- **`rulesets()`** (backend): cada arquivo `.yar` vira um conjunto selecionável
+  (rótulo amigável em `RULESET_INFO`) + um "Tudo". `effective_rules()` virou
+  **união** (empacotadas + usuário; usuário vence por nome) — base do "Tudo".
+- **GUI**: a linha de regras virou um **`Adw.ComboRow`** (Tudo / Malware / LGPD /
+  Credenciais / conjuntos do usuário); o scan usa só o conjunto escolhido.
+- **Conjunto novo `secrets.yar`** (Credenciais & segredos): chave privada
+  (SSH/TLS/PGP), AWS `AKIA…`, e `password=/secret=/token=` em texto.
+- +3 testes (rulesets) + ajuste do teste de effective_rules. Suite 993.
+  Manuais leigo/técnico. blue 0.0.9.
+
+Conjuntos de partida: Malware (3) + LGPD (5) + Credenciais (3) = 11 regras.
+
+---
+
 ## 10. Roadmap
 
 ### 10.1 Próximas iterações por ferramenta
