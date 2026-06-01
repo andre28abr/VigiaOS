@@ -1,47 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <!-- Vigia Hub — o "olho vigia" como marca do produto VigiaHub.
+       Sem wordmark gravado de proposito: nome vem do .desktop, e texto em
+       icone nao escala bem nem envelhece (era o que gravava "VIGIA SUITE"). -->
   <defs>
     <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#18181b"/>
       <stop offset="100%" stop-color="#09090b"/>
     </linearGradient>
-    <radialGradient id="glow" cx="50%" cy="50%" r="40%">
-      <stop offset="0%" stop-color="#34d399" stop-opacity="0.20"/>
+    <radialGradient id="glow" cx="50%" cy="50%" r="45%">
+      <stop offset="0%" stop-color="#34d399" stop-opacity="0.22"/>
       <stop offset="100%" stop-color="#34d399" stop-opacity="0"/>
     </radialGradient>
   </defs>
   <rect width="256" height="256" rx="48" fill="url(#bg)"/>
   <rect width="256" height="256" rx="48" fill="url(#glow)"/>
 
-  <!-- Central watcher eye (motivo Vigia, menor que outros para deixar espaco
-       para os tools-dots ao redor) -->
-  <g transform="translate(128 124)">
-    <ellipse rx="50" ry="30" fill="none" stroke="#fafafa" stroke-width="4"/>
-    <circle r="18" fill="#fafafa"/>
-    <circle r="7" fill="#34d399"/>
-  </g>
-
-  <!-- 4 satellite dots representando as ferramentas da suite -->
-  <g fill="#34d399">
-    <circle cx="50" cy="50" r="8"/>     <!-- top-left -->
-    <circle cx="206" cy="50" r="8"/>    <!-- top-right -->
-    <circle cx="50" cy="200" r="8"/>    <!-- bottom-left -->
-    <circle cx="206" cy="200" r="8"/>   <!-- bottom-right -->
-  </g>
-
-  <!-- Linhas conectando o center aos satellites (subtle) -->
-  <g stroke="#34d399" stroke-width="1.5" opacity="0.35">
-    <line x1="128" y1="124" x2="50"  y2="50"/>
-    <line x1="128" y1="124" x2="206" y2="50"/>
-    <line x1="128" y1="124" x2="50"  y2="200"/>
-    <line x1="128" y1="124" x2="206" y2="200"/>
-  </g>
-
-  <!-- Wordmark -->
-  <g transform="translate(128 226)" text-anchor="middle"
-     font-family="JetBrains Mono, ui-monospace, monospace"
-     font-weight="700" font-size="18" letter-spacing="8"
-     fill="#fafafa" opacity="0.9">
-    <text>VIGIA<tspan fill="#34d399">·</tspan>SUITE</text>
+  <!-- Watcher eye centralizado (motivo Vigia) -->
+  <g transform="translate(128 128)">
+    <ellipse rx="94" ry="56" fill="none" stroke="#fafafa" stroke-width="7"/>
+    <circle r="35" fill="#fafafa"/>
+    <circle r="15" fill="#34d399"/>
+    <circle cx="-6" cy="-6" r="4.5" fill="#ffffff" opacity="0.85"/>
   </g>
 </svg>

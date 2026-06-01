@@ -1,12 +1,13 @@
-# VigiaOS — Suite de segurança, privacidade e LGPD para Fedora
+# VigiaOS — ecossistema Vigia de segurança, privacidade e LGPD
 
-> **VigiaOS não é uma distro Linux.** É uma coleção de **15 ferramentas
-> gráficas** (GTK4 + libadwaita) + um Hub launcher que transformam uma
-> instalação **vanilla** de Fedora Silverblue/Workstation numa estação de
-> trabalho voltada para **segurança, privacidade, auditoria e conformidade
-> com a LGPD** — pensada para o advogado, o profissional liberal e o
-> escritório pequeno que lida com dados sensíveis de clientes. Tudo em
-> português, com interface moderna.
+> **VigiaOS** é o ecossistema (este monorepo) dos produtos **Vigia**. O produto
+> disponível hoje é o **VigiaHub** — uma suíte de **15 ferramentas gráficas**
+> (GTK4 + libadwaita) + um launcher que transformam um Fedora
+> Silverblue/Workstation **vanilla** numa estação de trabalho de **segurança,
+> privacidade, auditoria e conformidade com a LGPD**, para o advogado, o
+> profissional liberal e o escritório pequeno que lida com dados sensíveis de
+> clientes. Tudo em português — **não é uma distro**, são ferramentas sobre o
+> Fedora vanilla. Em breve: **VigiaRed** (pentest) e **VigiaBlue** (SOC).
 
 ![Status](https://img.shields.io/badge/status-v0.x%20ativo%20%C2%B7%20auditado-success)
 ![Python](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white)
@@ -25,13 +26,13 @@
 
 Profissional com mais de 18 anos de experiência em **gestão administrativa, compliance, governança da informação e proteção de dados pessoais**, com formação dupla em **Direito (Anhanguera)** e **Análise e Desenvolvimento de Sistemas (Mackenzie)**. Atuou por quase duas décadas como **Gerente Administrativo e Encarregado de Dados (DPO)** em organização do setor de saúde suplementar, com foco em adequação à LGPD, governança documental e interface com áreas técnicas.
 
-Atualmente em **transição de carreira, com disponibilidade imediata**, conduziu o VigiaOS como **product owner técnico, com auxílio de assistentes de IA generativa para a etapa de codificação** — exercitando a tradução de exigências regulatórias (LGPD) e conceitos de hardening, auditoria e privacidade em uma suíte funcional, demonstrando fluência técnica suficiente para dialogar com times de engenharia, segurança e operações.
+Atualmente em **transição de carreira, com disponibilidade imediata**, conduziu o VigiaHub como **product owner técnico, com auxílio de assistentes de IA generativa para a etapa de codificação** — exercitando a tradução de exigências regulatórias (LGPD) e conceitos de hardening, auditoria e privacidade em uma suíte funcional, demonstrando fluência técnica suficiente para dialogar com times de engenharia, segurança e operações.
 
 → **[Bio completa: AUTHOR.md](AUTHOR.md)** · [LinkedIn](https://linkedin.com/in/andreaugusto-azariasdesouza) · [GitHub Profile](https://github.com/andre28abr)
 
 ### 📂 Outros projetos do autor
 
-**[SentinelBR](https://github.com/andre28abr/SentinelBR-platform)** — Plataforma open-source de **SIEM + LGPD** para PMEs brasileiras. Onde o VigiaOS cuida da *estação de trabalho*, o SentinelBR cuida da *infraestrutura*: agente Go (gRPC mTLS), detecção em tempo real (Sigma-style + YARA + OSV.dev), resposta automatizada (SOAR-lite) e compliance LGPD nativa, multi-tenant. Stack: Python 3.12 / FastAPI / Go 1.25 / React 19 / PostgreSQL / Loki.
+**[SentinelBR](https://github.com/andre28abr/SentinelBR-platform)** — Plataforma open-source de **SIEM + LGPD** para PMEs brasileiras. Onde o VigiaHub cuida da *estação de trabalho*, o SentinelBR cuida da *infraestrutura*: agente Go (gRPC mTLS), detecção em tempo real (Sigma-style + YARA + OSV.dev), resposta automatizada (SOAR-lite) e compliance LGPD nativa, multi-tenant. Stack: Python 3.12 / FastAPI / Go 1.25 / React 19 / PostgreSQL / Loki.
 
 **SC Platform** *(privado, sob NDA — disponível para apresentação em entrevistas mediante solicitação)* — SaaS multi-tenant pra gestão de licitações públicas (PNCP, simulador da Lei 14.133, robô de lances, extração de PDF com IA local, CRM). 75k+ linhas, 420 testes.
 
@@ -39,20 +40,21 @@ Atualmente em **transição de carreira, com disponibilidade imediata**, conduzi
 
 ## 🛡️ Ecossistema Vigia
 
-O VigiaOS é o **primeiro de quatro produtos** planejados. Em vez de inflar uma
-única ferramenta com tudo (single-host + multi-host + pentest + SOC), o
-ecossistema separa por audiência, compartilhando a biblioteca `vigia-common`,
-a identidade visual (zinc + emerald) e os padrões de UI (GTK4 + libadwaita).
+**VigiaOS** é o ecossistema (este monorepo) que reúne os produtos **Vigia**. Em
+vez de inflar uma única ferramenta com tudo (single-host + multi-host + pentest
++ SOC), cada produto é separado por audiência, compartilhando a biblioteca
+`vigia-common`, a identidade visual (zinc + emerald) e os padrões de UI (GTK4 +
+libadwaita). O **VigiaHub** é o produto atual; os demais estão no roadmap.
 
 | Produto | Audiência | Escopo | Status |
 |---|---|---|---|
-| **VigiaOS** *(este repo)* | Advogado, profissional liberal, escritório LGPD | Segurança + privacidade + hardening + auditoria **single-host** | 🟢 **Ativo** (v0.x, 15 ferramentas) |
+| **VigiaHub** *(produto atual)* | Advogado, profissional liberal, escritório LGPD | Segurança + privacidade + hardening + auditoria **single-host** | 🟢 **Ativo** (v0.x, 15 ferramentas) |
 | **VigiaOps** | Sysadmin, MSP, gestor de TI | Orquestração **multi-host** via SSH (inventário, fan-out, audit log de comandos remotos) | 🔜 Planejado |
 | **VigiaRed** | Pentester, red team | Ferramentas **ofensivas** com GUI (scanner, vuln, OSINT, web app) + termo de uso (Lei 12.737/12) | 🔜 Planejado |
 | **VigiaBlue** | Blue team, analista de SOC | **Detecção e resposta** (SIEM-lite, IDS, YARA hunting, forense de memória, threat intel) | 🔜 Planejado |
 
-- **VigiaOps** *(o próximo da fila)* leva as ferramentas do VigiaOS para **vários servidores ao mesmo tempo** — rodar um Hardening Check em 30 hosts via SSH, com pool de conexões persistente e trilha de auditoria assinada dos comandos remotos.
-- **VigiaRed** trará o que foi deliberadamente *removido* do VigiaOS (scanner de rede, etc.) — mas no produto certo, com aviso ético/legal na primeira execução.
+- **VigiaOps** *(o próximo da fila)* leva as ferramentas do VigiaHub para **vários servidores ao mesmo tempo** — rodar um Hardening Check em 30 hosts via SSH, com pool de conexões persistente e trilha de auditoria assinada dos comandos remotos.
+- **VigiaRed** trará o que foi deliberadamente *removido* do VigiaHub (scanner de rede, etc.) — mas no produto certo, com aviso ético/legal na primeira execução.
 - **VigiaBlue** aproveita o **core do Activity Log (Rust)**, que já tem potencial de SIEM-lite: agregação de logs, correlação, threat hunting e playbooks de resposta a incidentes.
 
 > Os quatro são **produtos distintos** (distribuição separada), não um monólito.
@@ -74,7 +76,7 @@ atualizações automáticas do sistema-base sem complicação.
 
 ## 🚀 O Vigia Hub
 
-O **Vigia Hub** é o coração do VigiaOS: um *launcher* central que reúne as 15
+O **Vigia Hub** é o coração do VigiaHub: um *launcher* central que reúne as 15
 ferramentas numa única janela, em layout **master-detail-content** (3 painéis:
 categorias → lista de ferramentas → conteúdo). As ferramentas rodam
 **embarcadas dentro do Hub** (modo *embedded*), então é tudo uma experiência só
@@ -101,9 +103,9 @@ depender do Hub (veja *Instalar só um módulo*).
 | # | Componente | Stack | Status |
 |---|---|---|---|
 | 1 | `bootstrap.sh` | bash | 🟡 Em desenvolvimento |
-| 2 | **[Vigia Hub](tools/vigia-hub/)** v0.7.5 | Python + GTK4 | 🟢 3 painéis + autostart XDG + tray (quick actions) + lock Polkit + backup/restore + Ajuda (manuais MD) |
+| 2 | **[Vigia Hub](tools/vigia-hub/)** v0.7.6 | Python + GTK4 | 🟢 3 painéis + autostart XDG + tray (quick actions) + lock Polkit + backup/restore + Ajuda (manuais MD) |
 | 3 | **[Vigia Monitor do Sistema](tools/dashboard/)** v0.4.2 | Python + GTK4 + Cairo | 🟢 Sistema em tempo real + per-process I/O + alertas + inspetor syscalls + banda por processo + selo de plataforma |
-| 4 | **[Vigia Activity Log](tools/activity-log/)** v0.7.1 (core) + [GUI](tools/activity-log-gui/) v0.1.1 | Rust + Python | 🟢 audit + journald + fail2ban + correlations |
+| 4 | **[Vigia Activity Log](tools/activity-log/)** v0.7.1 (core) + [GUI](tools/activity-log-gui/) v0.1.2 | Rust + Python | 🟢 audit + journald + fail2ban + correlations |
 | 5 | **[Vigia Privacy Controls](tools/privacy-controls/)** v0.3.2 | Python + GTK4 | 🟢 12 toggles user+system scope |
 | 6 | **[Vigia SELinux GUI](tools/selinux-gui/)** v0.2.1 | Python + GTK4 | 🟢 6 tabs + pt-BR + audit2allow |
 | 7 | **[Vigia Firewall GUI](tools/firewall-gui/)** v0.1 | Python + GTK4 | 🟡 Status + zones CRUD |

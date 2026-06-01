@@ -1,6 +1,6 @@
 """Vigia Activity Log GUI — frontend GTK4 do vigia-log (Rust engine)."""
 
-__version__ = "0.1.1"
+__version__ = "0.1.2"
 __app_id__ = "br.com.vigia.ActivityLog"
 
 # Pacotes originais que esta tool envelopa (mostrado como badge no header).

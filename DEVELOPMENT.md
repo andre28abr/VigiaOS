@@ -57,9 +57,9 @@ Em 2026-05-28 adicionada **Deployments Manager** (rpm-ostree GUI).
 
 | # | Ferramenta | Versão | Stack | Status |
 |---|---|---|---|---|
-| 1 | **Vigia Hub** | v0.7.5 | Python + GTK4 + libadwaita | 🟢 3 painéis + autostart XDG + tray (quick actions, subprocess GTK3) + lock Polkit + Ajuda (manuais MD) |
+| 1 | **Vigia Hub** | v0.7.6 | Python + GTK4 + libadwaita | 🟢 3 painéis + autostart XDG + tray (quick actions, subprocess GTK3) + lock Polkit + Ajuda (manuais MD) |
 | 2 | **Activity Log (core)** | v0.7.1 (Rust) | Rust + Ratatui + Crossterm | 🟢 3 sources + correlations + JsonBundle |
-| 3 | **Activity Log (GUI)** | v0.1.1 | Python + GTK4 | 🟢 Frontend do core Rust via JSON |
+| 3 | **Activity Log (GUI)** | v0.1.2 | Python + GTK4 | 🟢 Frontend do core Rust via JSON |
 | 4 | **Privacy Controls** | v0.3.2 | Python + GTK4 | 🟢 12 toggles user+system scope |
 | 5 | **SELinux Manager** | v0.2.1 | Python + GTK4 | 🟢 6 tabs + pt-BR + audit2allow + lazy tabs |
 | 6 | **Firewall Manager** | v0.1.0 | Python + GTK4 | 🟡 Status + zones CRUD |
@@ -218,7 +218,7 @@ build system (`pyproject.toml`, `Cargo.toml`). Versionam separadamente.
 
 ## 5. Catálogo de ferramentas — estado atual
 
-### 5.1 Vigia Hub (`tools/vigia-hub/`, v0.7.5)
+### 5.1 Vigia Hub (`tools/vigia-hub/`, v0.7.6)
 
 **Função**: Launcher mestre. Um único ícone no menu GNOME que abre tudo.
 
@@ -315,7 +315,7 @@ pronto para COPR. Tag `v0.7.0` criada no GitHub.
 
 ---
 
-### 5.3 Vigia Activity Log — GUI (`tools/activity-log-gui/`, v0.1.1)
+### 5.3 Vigia Activity Log — GUI (`tools/activity-log-gui/`, v0.1.2)
 
 **Função**: Frontend GTK4 do core Rust. Roda `vigia-log --output json-bundle`
 em background, parseia e renderiza visualmente.
@@ -2224,6 +2224,28 @@ só "Arquivos de configuração" + versão; agora tem 3 grupos:
 
 Sem rede no boot (só abre URL quando o user clica). Mesmo texto-base do README/
 AUTHOR.md, condensado pra um pane de settings.
+
+---
+
+### 2026-06-01 — Marca: VigiaHub = produto, VigiaOS = ecossistema + ícones limpos
+
+O André definiu o modelo de nomes (o repo continua **VigiaOS**, sem rename):
+
+- **VigiaOS** = o ecossistema / monorepo (guarda-chuva). URLs do GitHub intactas.
+- **VigiaHub** = o produto atual (a suíte de 15 ferramentas + launcher).
+- **VigiaRed / VigiaBlue** (e VigiaOps) = produtos futuros no mesmo guarda-chuva.
+
+Resolve o atrito histórico do "OS dá ideia de distro": agora "OS" é só o nome
+da família. README/AUTHOR reposicionados (VigiaOS umbrella, VigiaHub produto);
+repo, specs e install URLs seguem `VigiaOS`.
+
+**Ícones (sem texto gravado)** — a causa do dock mostrar "Vigia Suite" era o
+wordmark `VIGIA·SUITE` desenhado dentro do SVG. Removido. `br.com.vigia.Hub.svg`
+virou o olho-vigia limpo e centralizado (o desenho que era do Activity Log);
+`br.com.vigia.ActivityLog.svg` ganhou ícone próprio (olho + linhas de log). O
+`.desktop` do Hub já era `Name=Vigia Hub` — o rótulo velho na VM é `.desktop`
+instalado desatualizado; basta reinstalar (`install/install-tool.sh vigia-hub`).
+Hub 0.7.6, activity-log-gui 0.1.2.
 
 ---
 
