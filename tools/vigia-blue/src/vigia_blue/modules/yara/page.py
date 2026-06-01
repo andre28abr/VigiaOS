@@ -113,19 +113,14 @@ class _ScanView(Gtk.Box):
         combo.add_prefix(Gtk.Image.new_from_icon_name("text-x-generic-symbolic"))
         model = Gtk.StringList()
         for rs in self._rulesets:
-            model.append(f"{rs.label} · {rs.rule_count} regra(s)")
+            model.append(rs.label)          # só o nome (curto) no dropdown
         combo.set_model(model)
         combo.set_selected(0)   # "Tudo"
         combo.connect("notify::selected", self._on_ruleset_changed)
-        open_rules = Gtk.Button(label="Pasta de regras")
-        open_rules.set_valign(Gtk.Align.CENTER)
-        open_rules.add_css_class("flat")
-        open_rules.connect("clicked", self._on_open_rules)
-        combo.add_suffix(open_rules)
         self._rules_combo = combo
         g_rules.add(combo)
         page.add(g_rules)
-        self._on_ruleset_changed(combo, None)   # subtítulo inicial
+        self._on_ruleset_changed(combo, None)   # subtítulo inicial (contagem + descrição)
 
         # --- Ação (botão fora de card, padrão do projeto) ---
         g_action = Adw.PreferencesGroup()
@@ -251,15 +246,12 @@ class _ScanView(Gtk.Box):
         self._target_row.set_title(folder.get_basename() or self._target)
         self._target_row.set_subtitle(self._target)
 
-    def _on_open_rules(self, _btn: Gtk.Button) -> None:
-        backend.RULES_DIR.mkdir(parents=True, exist_ok=True)
-        _open_path(str(backend.RULES_DIR))
-
     # -- scan --
     def _on_ruleset_changed(self, combo: Adw.ComboRow, _param) -> None:
         idx = combo.get_selected()
         if 0 <= idx < len(self._rulesets):
-            combo.set_subtitle(self._rulesets[idx].description)
+            rs = self._rulesets[idx]
+            combo.set_subtitle(f"{rs.rule_count} regra(s) · {rs.description}")
 
     def _on_scan(self, _btn: Gtk.Button) -> None:
         if self._scanning:
@@ -392,10 +384,18 @@ def _build_about() -> Gtk.Widget:
     row.add_prefix(Gtk.Image.new_from_icon_name("application-x-executable-symbolic"))
     g.add(row)
     rules_row = Adw.ActionRow()
-    rules_row.set_title("Suas regras")
-    rules_row.set_subtitle(str(backend.RULES_DIR))
+    rules_row.set_title("Pasta de regras")
+    rules_row.set_subtitle(str(backend.RULES_DIR) + " — clique para abrir e adicionar as suas")
     rules_row.set_subtitle_lines(0)
     rules_row.add_prefix(Gtk.Image.new_from_icon_name("folder-symbolic"))
+    rules_row.add_suffix(Gtk.Image.new_from_icon_name("adw-external-link-symbolic"))
+    rules_row.set_activatable(True)
+
+    def _open_rules_dir(_r):
+        backend.RULES_DIR.mkdir(parents=True, exist_ok=True)
+        _open_path(str(backend.RULES_DIR))
+
+    rules_row.connect("activated", _open_rules_dir)
     g.add(rules_row)
     page.add(g)
     return page
