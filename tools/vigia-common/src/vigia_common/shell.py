@@ -310,7 +310,7 @@ def run_product(meta: ProductMeta, modules: list[Module],
             rail.set_margin_bottom(10)
 
             title = Gtk.Label(label=meta.name)
-            title.add_css_class("title-4")
+            title.add_css_class("caption-heading")  # pequeno, igual o Vigia Hub
             title.set_margin_bottom(8)
             title.set_wrap(True)
             title.set_justify(Gtk.Justification.CENTER)
@@ -382,12 +382,24 @@ def run_product(meta: ProductMeta, modules: list[Module],
             scroller = Gtk.ScrolledWindow()
             scroller.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
             scroller.set_child(sidebar)
-            scroller.set_size_request(300, -1)
 
             self._sidebar = sidebar
 
+            # Coluna do meio com header "Ferramentas" (igual o Vigia Hub).
+            # Sem botões de janela aqui — o X fica no header do conteúdo.
+            sidebar_tv = Adw.ToolbarView()
+            sb_header = Adw.HeaderBar()
+            sb_header.set_show_start_title_buttons(False)
+            sb_header.set_show_end_title_buttons(False)
+            sb_header.set_title_widget(
+                Adw.WindowTitle(title="Ferramentas", subtitle="")
+            )
+            sidebar_tv.add_top_bar(sb_header)
+            sidebar_tv.set_content(scroller)
+            sidebar_tv.set_size_request(300, -1)
+
             split = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
-            split.append(scroller)
+            split.append(sidebar_tv)
             split.append(Gtk.Separator(orientation=Gtk.Orientation.VERTICAL))
             self._content_bin.set_hexpand(True)
             split.append(self._content_bin)
