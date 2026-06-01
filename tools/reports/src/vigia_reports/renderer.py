@@ -16,7 +16,7 @@ from pathlib import Path
 
 from jinja2 import Environment, PackageLoader, select_autoescape
 
-from . import __version__, charts
+from . import __version__, charts, config
 
 
 # Mapping id -> arquivo de template
@@ -120,7 +120,8 @@ def render_html(template_id: str, data: dict) -> str:
     ctx = dict(data)
     ctx["meta"] = system_metadata()
     ctx["report_name"] = TEMPLATES[template_id]["name"]
-    ctx["doc_seal"] = _doc_seal(ctx)  # computado antes de entrar no ctx
+    ctx["org"] = config.org_context()  # identidade do escritório (cabeçalho/rodapé)
+    ctx["doc_seal"] = _doc_seal(ctx)  # selo cobre conteúdo + org, computado por último
     return template.render(**ctx)
 
 

@@ -21,7 +21,7 @@ fez login, quem usou senha de administrador, quais IPs foram bloqueados.
 
 ## O que você vai ver
 
-A janela tem **3 abas**:
+A janela tem **4 abas**:
 
 **Gerar**: você escolhe o que entra no relatório e clica em "Gerar".
 Algumas opções:
@@ -41,6 +41,12 @@ tem botões "Abrir" e "Excluir". Tem também "Abrir pasta" e o botão
 **"Pacote de auditoria (.zip)"** — junta todos os relatórios num arquivo
 só, com os selos de verificação e um passo a passo, pronto pra entregar
 ao auditor ou guardar.
+
+**Identidade**: aqui você coloca o **nome do seu escritório**, um subtítulo
+(ex: OAB e cidade), o **responsável técnico** e até o **logo**. A partir daí,
+todo relatório sai com o cabeçalho do **seu escritório** em vez do nome
+genérico da ferramenta — vira um documento profissional seu, pronto pra
+entregar a cliente ou auditor. Preencha uma vez; vale pra todos os relatórios.
 
 **Sobre**: explicação da ferramenta com mais detalhes.
 

@@ -13,7 +13,7 @@ gi.require_version("Adw", "1")
 from gi.repository import Adw, Gtk  # noqa: E402
 
 from . import WRAPPED_PACKAGES
-from .tabs import AboutTab, GenerateTab, LibraryTab
+from .tabs import AboutTab, GenerateTab, LibraryTab, SettingsTab
 
 
 def _make_pkg_badges_bar() -> Gtk.Widget:
@@ -40,11 +40,13 @@ class _ReportsContent:
     def __init__(self) -> None:
         self.library = LibraryTab()
         self.generate = GenerateTab(on_report_generated=self.library.refresh)
+        self.settings = SettingsTab()
         self.about = AboutTab()
 
         stack = Adw.ViewStack()
         stack.add_titled_with_icon(self.generate, "generate", "Gerar", "document-new-symbolic")
         stack.add_titled_with_icon(self.library, "library", "Biblioteca", "view-list-symbolic")
+        stack.add_titled_with_icon(self.settings, "settings", "Identidade", "avatar-default-symbolic")
         stack.add_titled_with_icon(self.about, "about", "Sobre", "help-about-symbolic")
 
         switcher = Adw.ViewSwitcher()

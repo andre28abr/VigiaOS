@@ -10,7 +10,7 @@ a partir de `journalctl`, `last` e `lastb` — pensado para auditoria LGPD.
 
 | Item | Valor |
 |---|---|
-| **Pacote** | `vigia-reports` (versão 0.2.4) |
+| **Pacote** | `vigia-reports` (versão 0.2.5) |
 | **App ID** | `br.com.vigia.Reports` |
 | **Pacotes wrapped** | `journalctl`, `last`, `lastb` |
 | **Templating** | Jinja2 (`PackageLoader("vigia_reports", "templates")`) |
@@ -103,6 +103,7 @@ senha derretem UX e treinam o usuário a clicar sem ler.
 |---|---|
 | **Gerar** | `ComboRow` modelo (Atividade geral, Eventos de autenticação, Resumo executivo, Acesso administrativo, Conformidade LGPD, Saúde do sistema) + `ComboRow` período (24h, 7d, 30d, 90d) + `SwitchRow` modo admin + botão `Gerar`. Progress bar pulsante. Abre HTML no navegador via `Gio.AppInfo.launch_default_for_uri`. |
 | **Biblioteca** | Lista HTMLs ordenados por mtime desc. Cada row tem `Abrir` + `Excluir` (com `Adw.AlertDialog`). Toolbar: "Abrir pasta", **"Pacote de auditoria (.zip)"** (`build_audit_package`) e atualizar. |
+| **Identidade** | `Adw.PreferencesPage` com `EntryRow`s (nome, subtítulo, responsável) + `Gtk.FileDialog` p/ logo. Auto-salva em `~/.config/vigia/reports.json` (0600) a cada mudança. |
 | **Sobre** | `Adw.PreferencesPage` com 5 seções markup-formatted. |
 
 ### KPIs do template `activity_overview`
@@ -181,6 +182,16 @@ Dois modelos novos, ambos a partir dos dados já coletados:
   todos os `.html` + os `.sha256` + um `MANIFEST.txt` (lista de hashes) + um
   `LEIA-ME.txt` (passo a passo). Saída `auditoria-<ts>.zip` (0600); botão na
   aba **Biblioteca**.
+
+### Identidade do escritório (branding) — v0.2.5
+
+`config.py` persiste `~/.config/vigia/reports.json` (0600): `org_name`,
+`org_subtitle`, `responsible`, `logo_path`. `org_context()` monta o dict pro
+template (logo vira **data-URI base64** via `logo_data_uri` — PNG/JPG/SVG até
+512 KB, relatório self-contained). `renderer.render_html` injeta `ctx["org"]`
+**antes** do selo (a identidade entra no hash). O `base.html` usa `org.name`/
+`logo_uri` no cabeçalho (fallback "VIGIA · REPORTS") e `org.responsible` no
+rodapé. Editável na aba **Identidade**.
 
 ## Quando usar
 
