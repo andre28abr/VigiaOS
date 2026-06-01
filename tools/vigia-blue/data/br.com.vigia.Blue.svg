@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <!-- VigiaBlue — olho-vigia com pupila azul dentro de um escudo (blue team / defesa). -->
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#18181b"/>
+      <stop offset="100%" stop-color="#09090b"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="46%" r="45%">
+      <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#3b82f6" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="256" height="256" rx="48" fill="url(#bg)"/>
+  <rect width="256" height="256" rx="48" fill="url(#glow)"/>
+
+  <!-- Shield -->
+  <path d="M128 36 L196 60 L196 122 C196 168 166 200 128 218 C90 200 60 168 60 122 L60 60 Z"
+        fill="none" stroke="#3b82f6" stroke-width="7" stroke-linejoin="round" opacity="0.9"/>
+
+  <!-- Eye com pupila azul -->
+  <g transform="translate(128 124)">
+    <ellipse rx="58" ry="34" fill="none" stroke="#fafafa" stroke-width="6"/>
+    <circle r="22" fill="#fafafa"/>
+    <circle r="9" fill="#3b82f6"/>
+    <circle cx="-4" cy="-4" r="3" fill="#ffffff" opacity="0.85"/>
+  </g>
+</svg>

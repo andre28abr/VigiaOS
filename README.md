@@ -50,8 +50,8 @@ libadwaita). O **VigiaHub** é o produto atual; os demais estão no roadmap.
 |---|---|---|---|
 | **VigiaHub** *(produto atual)* | Advogado, profissional liberal, escritório LGPD | Segurança + privacidade + hardening + auditoria **single-host** | 🟢 **Ativo** (v0.x, 15 ferramentas) |
 | **VigiaOps** | Sysadmin, MSP, gestor de TI | Orquestração **multi-host** via SSH (inventário, fan-out, audit log de comandos remotos) | 🔜 Planejado |
-| **VigiaRed** | Pentester, red team | Ferramentas **ofensivas** com GUI (scanner, vuln, OSINT, web app) + termo de uso (Lei 12.737/12) | 🔜 Planejado |
-| **VigiaBlue** | Blue team, analista de SOC | **Detecção e resposta** (SIEM-lite, IDS, YARA hunting, forense de memória, threat intel) | 🔜 Planejado |
+| **VigiaRed** | Pentester, red team | Ferramentas **ofensivas** com GUI (scanner, vuln, OSINT, web app) + termo de uso (Lei 12.737/12) | 🟡 Esqueleto (GUI) — 7 módulos |
+| **VigiaBlue** | Blue team, analista de SOC | **Detecção e resposta** (SIEM-lite, IDS, YARA hunting, forense de memória, threat intel) | 🟡 Esqueleto (GUI) — 7 módulos |
 
 - **VigiaOps** *(o próximo da fila)* leva as ferramentas do VigiaHub para **vários servidores ao mesmo tempo** — rodar um Hardening Check em 30 hosts via SSH, com pool de conexões persistente e trilha de auditoria assinada dos comandos remotos.
 - **VigiaRed** trará o que foi deliberadamente *removido* do VigiaHub (scanner de rede, etc.) — mas no produto certo, com aviso ético/legal na primeira execução.

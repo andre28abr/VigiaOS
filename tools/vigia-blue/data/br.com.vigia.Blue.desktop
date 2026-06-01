@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=VigiaBlue
+Comment=Suíte defensiva (blue team / SOC) — ecossistema VigiaOS
+Exec=vigia-blue
+Icon=br.com.vigia.Blue
+Terminal=false
+Categories=Security;System;
+Keywords=blueteam;soc;siem;forensics;security;vigia;

@@ -5,7 +5,7 @@
 %global mod_name vigia_common
 
 Name:           %{pkg_name}
-Version:        0.2.2
+Version:        0.2.3
 Release:        1%{?dist}
 Summary:        Helpers compartilhados entre as ferramentas do VigiaOS
 License:        Apache-2.0
@@ -53,6 +53,10 @@ cd tools/vigia-common
 %{python3_sitelib}/%{mod_name}-*.dist-info/
 
 %changelog
+* Mon Jun 01 2026 André Augusto Azarias de Souza <andre@vigia.local> - 0.2.3-1
+- Novo: vigia_common.shell — casca de produto reutilizavel (rail + sidebar +
+  conteudo) usada pelos esqueletos VigiaRed e VigiaBlue.
+
 * Sun May 31 2026 André Augusto Azarias de Souza <andre@vigia.local> - 0.2.2-1
 - Alinha versao do spec com a tool (auditoria 100%): 0.2.1 -> 0.2.2.
 

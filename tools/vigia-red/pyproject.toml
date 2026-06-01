@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vigia-red"
+version = "0.0.1"
+description = "VigiaRed — Suíte ofensiva (pentest / red team) — ecossistema VigiaOS (esqueleto)"
+license = { text = "Apache-2.0" }
+requires-python = ">=3.11"
+authors = [{ name = "André Augusto Azarias de Souza" }]
+dependencies = ["vigia-common"]
+
+[project.scripts]
+vigia-red = "vigia_red.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
