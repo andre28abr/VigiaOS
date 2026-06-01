@@ -735,3 +735,21 @@ def collect_for_system_health(period: Period, elevated: bool = False) -> dict:
         "score": system_health.health_score(entries),
         "entries": entries,
     }
+
+
+# Despachante modelo -> coletor (usado pela aba Gerar E pelo modo headless/cli).
+COLLECTORS = {
+    "activity_overview": collect_for_activity_overview,
+    "auth_events": collect_for_auth_events,
+    "executive_summary": collect_for_executive_summary,
+    "admin_access": collect_for_admin_access,
+    "lgpd_compliance": collect_for_lgpd_compliance,
+    "system_health": collect_for_system_health,
+}
+
+
+def collect_for(template_id: str, period: Period, elevated: bool = False) -> dict:
+    fn = COLLECTORS.get(template_id)
+    if fn is None:
+        raise ValueError(f"Modelo desconhecido: {template_id}")
+    return fn(period, elevated=elevated)

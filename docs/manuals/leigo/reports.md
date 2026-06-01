@@ -42,11 +42,18 @@ tem botões "Abrir" e "Excluir". Tem também "Abrir pasta" e o botão
 só, com os selos de verificação e um passo a passo, pronto pra entregar
 ao auditor ou guardar.
 
-**Identidade**: aqui você coloca o **nome do seu escritório**, um subtítulo
-(ex: OAB e cidade), o **responsável técnico** e até o **logo**. A partir daí,
-todo relatório sai com o cabeçalho do **seu escritório** em vez do nome
-genérico da ferramenta — vira um documento profissional seu, pronto pra
-entregar a cliente ou auditor. Preencha uma vez; vale pra todos os relatórios.
+**Configurações**: tem duas partes.
+
+- **Identidade**: você coloca o **nome do seu escritório**, um subtítulo (ex:
+  OAB e cidade), o **responsável técnico** e até o **logo**. A partir daí, todo
+  relatório sai com o cabeçalho do **seu escritório** em vez do nome genérico
+  da ferramenta — vira um documento profissional seu, pronto pra entregar a
+  cliente ou auditor. Preencha uma vez; vale pra todos os relatórios.
+- **Agendamento automático**: um interruptor que, quando ligado, faz o programa
+  **gerar um relatório sozinho todo mês** (dia 1) e salvar na Biblioteca. Você
+  escolhe qual modelo. Assim, sua trilha de auditoria se monta sozinha — em 1
+  ano você tem 12 relatórios mensais sem precisar lembrar de nada. (Use um
+  modelo que não peça senha: Conformidade LGPD ou Saúde do sistema.)
 
 **Sobre**: explicação da ferramenta com mais detalhes.
 

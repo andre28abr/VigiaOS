@@ -2092,6 +2092,30 @@ fazer o relatório virar documento **do escritório**, não saída genérica.
 - +10 testes (`test_config.py`: load/save, logo data-URI, render com branding).
   Manuais + registry + README. Suite **753**.
 
+### 2026-05-31 — Reports v0.2.6: agendamento automático (headless + systemd timer)
+
+Última frente de "documentação" — fecha o "sempre documentar tudo": o relatório
+se gera sozinho.
+
+- **Modo headless** (`cli.py`): `vigia-reports --generate <modelo> [--period N]`
+  coleta + renderiza + salva (com selo) e imprime o caminho. `__main__` roteia
+  pra cá quando vê `--generate`, **importando GTK só no caminho GUI** → headless
+  roda sem display (essencial pra timer). `backend.collect_for` + dict
+  `backend.COLLECTORS` (a aba Gerar passou a usar o mesmo despachante — fim do
+  if/elif de 6 ramos). Validado ponta-a-ponta com `HOME` temporário:
+  gerou HTML+`.sha256`, `shasum -c` → **OK**.
+- **Agendamento** (`scheduler.py`): escreve `~/.config/systemd/user/
+  vigia-reports.{service,timer}` (oneshot + `OnCalendar=*-*-01 09:00` +
+  `Persistent`), habilita via `systemctl --user` — **escopo do usuário, sem
+  root**. Construtores de unit puros/testáveis.
+- **Aba renomeada Identidade → Configurações** (`tabs/settings.py`): ganhou
+  grupo *Agendamento* (`SwitchRow` + `ComboRow`).
+- +9 testes (`test_cli.py` dispatch/headless, `test_scheduler.py` units).
+  Manuais + registry + README. Suite **762**.
+
+Com isso, **as 3 frentes que o André pediu ("pode fazer tudo") estão prontas**:
+branding (v0.2.5) + agendamento + responsável. Reports = carro-chefe completo.
+
 ---
 
 ## 10. Roadmap
