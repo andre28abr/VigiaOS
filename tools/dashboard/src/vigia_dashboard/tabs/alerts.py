@@ -105,7 +105,8 @@ class AlertsTab(Adw.Bin):
         self._render_rules()
         self._render_history()
 
-        # Tick de avaliacao
+        # Tick de avaliacao (coleta vai pra worker thread — ver _on_tick)
+        self._collecting = False
         self._tick_id = GLib.timeout_add(REFRESH_MS, self._on_tick)
         self.connect("destroy", self._on_destroy)
 
@@ -158,14 +159,32 @@ class AlertsTab(Adw.Bin):
     # ============================================================
 
     def _on_tick(self) -> bool:
+        # PERF: a coleta le /proc + /sys (2 globs) + os.statvfs por mountpoint —
+        # statvfs pode BLOQUEAR em filesystem de rede. Como esta tab roda sempre
+        # (monitor de background, nao pausa), tiramos a coleta do main loop pra
+        # uma thread; a avaliacao/notificacao volta ao main loop.
+        if self._collecting:
+            return True  # coleta anterior ainda em andamento (fs lento)
+        self._collecting = True
+        threading.Thread(target=self._collect_worker, daemon=True).start()
+        return True
+
+    def _collect_worker(self) -> None:
         try:
             metrics = self._collect_metrics()
-            events = self._manager.check(metrics)
-            for ev in events:
-                self._on_alert_fired(ev)
         except Exception:  # pylint: disable=broad-except
-            pass
-        return True
+            metrics = None
+        GLib.idle_add(self._process_metrics, metrics)
+
+    def _process_metrics(self, metrics: dict | None) -> bool:
+        self._collecting = False
+        if metrics:
+            try:
+                for ev in self._manager.check(metrics):
+                    self._on_alert_fired(ev)
+            except Exception:  # pylint: disable=broad-except
+                pass
+        return False  # GLib.idle_add: nao repete
 
     def _on_alert_fired(self, event: alerts_mod.AlertEvent) -> None:
         """Dispara notificacao desktop nativa + adiciona ao historico."""

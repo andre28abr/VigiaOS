@@ -153,6 +153,26 @@ def build_content() -> Gtk.Widget:
     if WRAPPED_PACKAGES:
         toolbar.add_top_bar(_make_pkg_badges_bar())
     toolbar.set_content(stack)
+
+    # PERF: quando o dashboard INTEIRO fica invisivel (Hub minimiza pra bandeja
+    # ou troca de tool), o notify::visible-child interno NAO dispara — entao os
+    # timers da tab visivel (Overview 1Hz iterando todos os PIDs, etc.) seguiam
+    # sondando /proc e /sys 24/7. Conectamos map/unmap no root pra pausar as
+    # tabs VISUAIS (a AlertsTab segue rodando — e' o monitor de background, por
+    # design). Padrao espelhado da NetMon (connections.py:139).
+    def _pause_visual_tabs() -> None:
+        for name, tab in tabs.items():
+            if tab is not None and name != "alerts" and hasattr(tab, "pause_tick"):
+                tab.pause_tick()
+
+    def _resume_visible_tab() -> None:
+        vis = stack.get_visible_child_name()
+        tab = tabs.get(vis) if vis else None
+        if tab is not None and vis != "alerts" and hasattr(tab, "resume_tick"):
+            tab.resume_tick()
+
+    toolbar.connect("map", lambda _w: _resume_visible_tab())
+    toolbar.connect("unmap", lambda _w: _pause_visual_tabs())
     return toolbar
 
 
