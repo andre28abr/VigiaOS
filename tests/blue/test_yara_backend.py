@@ -81,8 +81,8 @@ class TestBuildCmd:
         assert cmd[0] == "yara"
         assert "-r" in cmd
         assert "-w" in cmd
-        assert cmd[-1] == "/alvo"
-        assert cmd[-2] == "--"          # fim das opções antes do alvo
+        assert cmd[-1] == "/alvo"        # alvo por último
+        assert "--" not in cmd          # yara não entende '--' (trata como arquivo)
 
     def test_nao_recursivo(self):
         cmd = backend.build_scan_cmd(["/r/rules.yar"], "/alvo", recursive=False)

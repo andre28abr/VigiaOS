@@ -41,9 +41,9 @@ Partes **puras** (testadas sem `yara` nem gi):
   strings casadas (`-s`, que começam com offset hex `0x...` ou indentadas).
   `Match(rule, path, tags)`.
 - **`build_scan_cmd(rules, target, recursive=True) -> list[str]`** — monta o
-  argv: `yara -w [-r] REGRA... -- ALVO`. **Lista, nunca shell string** (convenção
-  de segurança). O `--` separa opções do alvo (anti flag-injection). `-w`
-  silencia warnings de regra (reduz ruído no parse).
+  argv: `yara -w [-r] REGRA... ALVO`. **Lista, nunca shell string** (convenção
+  de segurança). **Sem `--`**: o parser do `yara` não o reconhece (tentaria
+  abrir `--` como arquivo). `-w` silencia warnings de regra (reduz ruído).
 - **Descoberta de regras**: `list_rules(dir)` (*.yar/*.yara ordenados),
   `bundled_rules()` (as empacotadas em `data/yara-rules/`), `effective_rules()`
   (regras do usuário em `RULES_DIR` se houver; senão as empacotadas).
