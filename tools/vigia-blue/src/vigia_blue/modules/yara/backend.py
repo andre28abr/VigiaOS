@@ -203,6 +203,18 @@ def rule_meta(rules: list[Path | str]) -> dict[str, dict[str, str]]:
     return out
 
 
+def count_rules(rules: list[Path | str]) -> int:
+    """Nº de regras (declarações `rule X`) somando todos os arquivos."""
+    total = 0
+    for rf in rules:
+        try:
+            text = Path(rf).read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+        total += len(_RULE_RE.findall(text))
+    return total
+
+
 # ============================================================
 # Scan (toca o sistema via proc.run)
 # ============================================================
@@ -222,7 +234,7 @@ def scan(
     result = ScanResult(
         target=str(target),
         started_at=datetime.now().isoformat(timespec="seconds"),
-        rules_count=len(rules),
+        rules_count=count_rules(rules),   # nº de REGRAS, não de arquivos
     )
     if not rules:
         result.error = "Nenhum conjunto de regras YARA encontrado."

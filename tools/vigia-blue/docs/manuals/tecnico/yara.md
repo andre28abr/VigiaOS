@@ -21,7 +21,8 @@ tools/vigia-blue/
 │       ├── backend.py          # wrapper + parser + relatórios (PURO/testável)
 │       └── page.py             # GUI: build_content() → abas Scan/Histórico/Sobre
 └── data/yara-rules/
-    └── starter.yar             # regras de partida (EICAR + webshell + revshell)
+    ├── starter.yar             # malware: EICAR + webshell + reverse shell
+    └── lgpd.yar                # LGPD/PII: CPF, CNPJ, e-mail, telefone, cartão
 
 tests/blue/test_yara_backend.py # 22 testes (parser, cmd, regras, scan, report)
 ```
@@ -62,17 +63,30 @@ Relatórios (padrão Antivírus, via `vigia_common.state`):
   atômica `0600` (LGPD — pode conter paths sensíveis).
 - **`list_recent_reports(limit)`** → mais novos primeiro, descarta corrompidos.
 
-## Regras de partida (`data/yara-rules/starter.yar`)
+## Regras de partida
 
-Conjunto mínimo e **seguro** (nenhum malware real):
+**`starter.yar` — malware** (seguro, nenhum malware real):
 - `EICAR_Test_File` — arquivo-teste padrão de antivírus (valida o scanner).
 - `Suspicious_PHP_Webshell` — heurística de webshell (execução dinâmica +
   ofuscação + entrada do usuário).
 - `Linux_Reverse_Shell_OneLiner` — padrões de reverse shell (`/dev/tcp/`, `nc -e`,
   socket+subprocess).
 
-Não é ruleset de produção — é ponto de partida/demo. O usuário sobrepõe com as
-suas em `~/.local/share/vigia-yara/rules/`.
+**`lgpd.yar` — dados pessoais (LGPD/PII)**, regex sobre o conteúdo:
+- `LGPD_CPF` (suspeito), `LGPD_CNPJ` (baixo), `LGPD_Email` (baixo),
+  `LGPD_Telefone_BR` (baixo), `LGPD_Cartao_Credito` (alto). Cada uma com
+  `description`/`severity` pt-BR → vira alerta amigável na UI.
+
+> **Limite (importante):** o YARA casa sobre os **bytes** do arquivo. Em texto
+> puro (`.txt`/`.csv`/`.log`/`.eml`/código) acha o PII bem. Em `.docx`/`.xlsx`
+> (ZIP) e muitos `.pdf` o texto está **comprimido** → o YARA NÃO enxerga. A
+> extração desses formatos fica para o futuro módulo **Vigia LGPD / Higiene de
+> Dados** (VigiaHub), que extrai o texto antes de casar os padrões. Também é
+> *match por formato*, não validação (um CPF inválido casa o padrão).
+
+Não é ruleset de produção — é ponto de partida. O usuário sobrepõe/estende em
+`~/.local/share/vigia-yara/rules/` (têm prioridade). `count_rules()` conta as
+declarações `rule X` (a UI mostra "N regras", não nº de arquivos).
 
 ## Privilégio / LGPD
 
