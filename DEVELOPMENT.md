@@ -2249,6 +2249,28 @@ Hub 0.7.6, activity-log-gui 0.1.2.
 
 ---
 
+### 2026-06-01 — Esqueletos VigiaRed + VigiaBlue (casca compartilhada)
+
+Início dos próximos produtos do ecossistema, com a **interface gráfica antes
+dos backends** (o André ajusta a GUI primeiro; módulos entram depois um a um).
+
+- **`vigia_common.shell`** (novo): casca de produto reutilizável — rail
+  (Módulos / Instalador / Ajuda / Sobre) + sidebar de módulos por categoria +
+  conteúdo. Parte de dados pura (`Module` / `ProductMeta` / agrupamento),
+  testável headless; GTK só é importado em `run_product`. vigia-common 0.2.3.
+- **`tools/vigia-red/`** (0.0.1): 7 módulos (Recon, Network Scanner, Vuln,
+  Web, Wireless, Exploit, Cracker) em 6 categorias. Ícone vermelho (olho +
+  crosshair). Aviso legal (Lei 12.737/12) na casca.
+- **`tools/vigia-blue/`** (0.0.1): 7 módulos (SIEM, IDS, YARA, Memory,
+  Timeline, Intel, Playbooks) em 5 categorias. Ícone azul (olho + escudo).
+- Cada módulo abre uma página "Planejado — em breve" com descrição, recursos
+  previstos e ferramentas que vai integrar. +17 testes (dados puros). Suite 959.
+- Auto-descobertos pelo `install/install-tool.sh` (têm pyproject + .desktop).
+  Falta (pente-fino futuro): backends de cada módulo, manuais, specs COPR,
+  app-switcher entre produtos.
+
+---
+
 ## 10. Roadmap
 
 ### 10.1 Próximas iterações por ferramenta

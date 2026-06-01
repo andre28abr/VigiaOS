@@ -47,6 +47,8 @@ TOOLS = [
     "dashboard",
     "rootkit-scanner",
     "deployments-manager",
+    "vigia-red",
+    "vigia-blue",
 ]
 
 for tool in TOOLS:

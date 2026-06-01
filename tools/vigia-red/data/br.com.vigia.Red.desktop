@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=VigiaRed
+Comment=Suíte ofensiva (pentest / red team) — ecossistema VigiaOS
+Exec=vigia-red
+Icon=br.com.vigia.Red
+Terminal=false
+Categories=Security;System;
+Keywords=pentest;redteam;security;vigia;
