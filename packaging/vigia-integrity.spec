@@ -5,7 +5,7 @@
 %global mod_name vigia_integrity
 
 Name:           %{pkg_name}
-Version:        0.1.3
+Version:        0.2.4
 Release:        1%{?dist}
 Summary:        Wrapper de AIDE com perfil Silverblue customizado
 License:        Apache-2.0
@@ -80,5 +80,8 @@ fi
 /usr/bin/gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 
 %changelog
+* Sun May 31 2026 André Augusto Azarias de Souza <andre@vigia.local> - 0.2.4-1
+- Alinha a versao do spec com a tool (0.1.3 -> 0.2.4).
+
 * Mon May 26 2026 André Augusto Azarias de Souza <andre@vigia.local> - 0.1.3-1
 - Initial release in COPR

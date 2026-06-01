@@ -5,9 +5,9 @@
 %global mod_name vigia_privacy
 
 Name:           %{pkg_name}
-Version:        0.3.0
+Version:        0.3.2
 Release:        1%{?dist}
-Summary:        13 toggles de privacidade user+system scope
+Summary:        12 toggles de privacidade user+system scope
 License:        Apache-2.0
 URL:            https://github.com/andre28abr/VigiaOS
 Source0:        %{url}/archive/v%{version}.tar.gz#/VigiaOS-%{version}.tar.gz
@@ -79,5 +79,8 @@ fi
 /usr/bin/gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 
 %changelog
+* Sun May 31 2026 André Augusto Azarias de Souza <andre@vigia.local> - 0.3.2-1
+- Alinha a versao do spec com a tool (0.3.0 -> 0.3.2).
+
 * Mon May 26 2026 André Augusto Azarias de Souza <andre@vigia.local> - 0.3.0-1
 - Initial release in COPR
