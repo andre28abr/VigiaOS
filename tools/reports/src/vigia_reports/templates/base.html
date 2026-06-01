@@ -54,6 +54,8 @@
     align-items: flex-start;
     gap: 24px;
   }
+  .doc-brand-block { display: flex; align-items: center; gap: 16px; }
+  .doc-logo { height: 52px; width: auto; max-width: 220px; object-fit: contain; }
   .doc-brand {
     font-family: var(--mono);
     font-size: 12px;
@@ -340,9 +342,18 @@
 
   <header class="doc-header">
     <div class="doc-header-row">
-      <div>
-        <div class="doc-brand">VIGIA <span>·</span> REPORTS</div>
-        <h1 class="doc-title">{{ report_name }}</h1>
+      <div class="doc-brand-block">
+        {% if org and org.logo_uri %}
+        <img class="doc-logo" src="{{ org.logo_uri }}" alt="logo">
+        {% endif %}
+        <div>
+          {% if org and org.name %}
+          <div class="doc-brand">{{ org.name }}{% if org.subtitle %} <span>·</span> {{ org.subtitle }}{% endif %}</div>
+          {% else %}
+          <div class="doc-brand">VIGIA <span>·</span> REPORTS</div>
+          {% endif %}
+          <h1 class="doc-title">{{ report_name }}</h1>
+        </div>
       </div>
       {% if status %}
       <div class="status-badge {{ status.level }}">{{ status.label }}</div>
@@ -372,6 +383,7 @@
 
   <footer class="doc-footer">
     <div>
+      {% if org and org.responsible %}Responsável técnico: <strong>{{ org.responsible }}</strong><br>{% endif %}
       Gerado em <span class="mono">{{ meta.generated_at }}</span><br>
       Host: <span class="mono">{{ meta.hostname }}</span>
     </div>

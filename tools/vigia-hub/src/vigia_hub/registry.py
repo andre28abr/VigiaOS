@@ -400,6 +400,7 @@ TOOLS: list[ToolEntry] = [
             "**Resumo executivo** em pt-BR + **selo de status** (🟢/🟡/🔴) no topo",
             "**Gráficos SVG nativos** (falhas por dia, top IPs/usuários, rosca) — sem JS, offline, imprime vetorial",
             "KPI cards + tabelas detalhadas com tags coloridas (*aceito*, *falha*)",
+            "**Identidade do escritório** (aba *Identidade*): nome, subtítulo, logo e responsável técnico no cabeçalho/rodapé — o relatório vira documento do escritório",
             "**Selo de integridade** SHA-256 em cada relatório + sidecar `.sha256` (à prova de adulteração, verificável com `sha256sum -c`)",
             "Auto-abre no navegador após gerar — `Ctrl+P` para PDF",
             "Biblioteca lista relatórios salvos (**Abrir** / **Excluir**) + **pacote de auditoria** `.zip` (relatórios + selos + manifesto pro auditor)",

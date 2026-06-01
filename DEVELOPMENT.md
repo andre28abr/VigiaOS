@@ -2075,6 +2075,23 @@ A frente 🥉 — dá **valor de prova** aos documentos (anti-adulteração, LGP
   arquivo, zip com manifesto/sidecars). Manuais + registry + README. Suite
   **743**.
 
+### 2026-05-31 — Reports v0.2.5: identidade do escritório (branding)
+
+O André levantou que o Reports é o **carro-chefe** (é a camada que traduz
+segurança técnica em valor jurídico pro cliente/auditor). Frente "branding":
+fazer o relatório virar documento **do escritório**, não saída genérica.
+
+- **`config.py`** (novo): `~/.config/vigia/reports.json` (0600) com `org_name`,
+  `org_subtitle`, `responsible`, `logo_path`. `logo_data_uri` embute a imagem
+  (PNG/JPG/SVG ≤512 KB) como **data-URI base64** → relatório self-contained.
+- **`renderer`** injeta `ctx["org"]` (antes do selo → entra no hash); o
+  `base.html` usa nome/logo no cabeçalho (fallback "VIGIA · REPORTS") e
+  responsável no rodapé.
+- **Aba "Identidade"** (`tabs/settings.py`): `EntryRow`s + `Gtk.FileDialog`
+  pro logo, auto-salva. Registrada na `window` (4 abas).
+- +10 testes (`test_config.py`: load/save, logo data-URI, render com branding).
+  Manuais + registry + README. Suite **753**.
+
 ---
 
 ## 10. Roadmap
