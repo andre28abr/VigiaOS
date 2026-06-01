@@ -292,7 +292,7 @@ def run_product(meta: ProductMeta, modules: list[Module],
         def __init__(self, app: Adw.Application) -> None:
             super().__init__(application=app)
             self.set_title(meta.name)
-            self.set_default_size(1040, 720)
+            self.set_default_size(1340, 820)   # mesmo tamanho do Vigia Hub
 
             self._content_bin = Adw.Bin()
             self._grouped = modules_by_category(modules, order)
