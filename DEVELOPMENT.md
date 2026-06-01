@@ -57,7 +57,7 @@ Em 2026-05-28 adicionada **Deployments Manager** (rpm-ostree GUI).
 
 | # | Ferramenta | Versão | Stack | Status |
 |---|---|---|---|---|
-| 1 | **Vigia Hub** | v0.7.4 | Python + GTK4 + libadwaita | 🟢 3 painéis + autostart XDG + tray (quick actions, subprocess GTK3) + lock Polkit + Ajuda (manuais MD) |
+| 1 | **Vigia Hub** | v0.7.5 | Python + GTK4 + libadwaita | 🟢 3 painéis + autostart XDG + tray (quick actions, subprocess GTK3) + lock Polkit + Ajuda (manuais MD) |
 | 2 | **Activity Log (core)** | v0.7.1 (Rust) | Rust + Ratatui + Crossterm | 🟢 3 sources + correlations + JsonBundle |
 | 3 | **Activity Log (GUI)** | v0.1.1 | Python + GTK4 | 🟢 Frontend do core Rust via JSON |
 | 4 | **Privacy Controls** | v0.3.2 | Python + GTK4 | 🟢 12 toggles user+system scope |
@@ -218,7 +218,7 @@ build system (`pyproject.toml`, `Cargo.toml`). Versionam separadamente.
 
 ## 5. Catálogo de ferramentas — estado atual
 
-### 5.1 Vigia Hub (`tools/vigia-hub/`, v0.7.4)
+### 5.1 Vigia Hub (`tools/vigia-hub/`, v0.7.5)
 
 **Função**: Launcher mestre. Um único ícone no menu GNOME que abre tudo.
 
@@ -2206,6 +2206,24 @@ rodava normal (engine 1.4.4, 200k+ arquivos, base carregada).
 ganhou parâmetro `db_dirs=` (testável) + helper `_newest_db_mtime`. A string
 de versão ainda dá engine/db version. +3 testes (incl. regressão de locale).
 Suite 942.
+
+---
+
+### 2026-06-01 — Hub v0.7.5: cartão do Autor na aba Sobre
+
+A pedido do André, a sub-aba **Configurações → Sobre** ganhou identidade. Era
+só "Arquivos de configuração" + versão; agora tem 3 grupos:
+
+1. **Sobre o Vigia Hub** — resumo de 1 parágrafo (launcher 3-painéis, embedded,
+   autostart/tray/lock/backup) + a versão.
+2. **Autor** — bio condensada (DPO/Compliance, 18+ anos, formação dupla,
+   product owner do VigiaOS) + cartão nome/cargo + linhas clicáveis de
+   **LinkedIn** e **GitHub** (`adw-external-link-symbolic`, abrem no navegador
+   via `Gio.AppInfo.launch_default_for_uri`, novo helper `_open_uri`).
+3. **Arquivos de configuração** — os paths (movido pro fim).
+
+Sem rede no boot (só abre URL quando o user clica). Mesmo texto-base do README/
+AUTHOR.md, condensado pra um pane de settings.
 
 ---
 
