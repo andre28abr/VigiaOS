@@ -59,11 +59,14 @@ def get_policy_version() -> str:
     return "?"
 
 
-def get_persistent_mode() -> str:
+def get_persistent_mode(path: str = "/etc/selinux/config") -> str:
     """Le SELINUX= em /etc/selinux/config. Retorna 'enforcing', 'permissive',
-    'disabled' ou 'unknown'. Esse valor e' o que aplica APOS reboot."""
+    'disabled' ou 'unknown'. Esse valor e' o que aplica APOS reboot.
+
+    O parametro `path` (default literal) existe so para testabilidade, igual
+    ao parse_report(path=...) do hardening — produção sempre usa o default."""
     try:
-        with open("/etc/selinux/config") as f:
+        with open(path) as f:
             for line in f:
                 line = line.strip()
                 if line.startswith("SELINUX=") and not line.startswith("SELINUXTYPE="):
