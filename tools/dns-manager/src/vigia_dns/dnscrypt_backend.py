@@ -112,14 +112,9 @@ def get_version() -> str:
         return ""
 
 
-def _run(cmd: list[str], timeout: int = 30) -> tuple[int, str, str]:
-    try:
-        result = subprocess.run(
-            cmd, capture_output=True, text=True, timeout=timeout,
-        )
-        return result.returncode, result.stdout, result.stderr
-    except (subprocess.TimeoutExpired, FileNotFoundError):
-        return 1, "", ""
+# Subprocesso centralizado em vigia_common.proc.run (nunca levanta;
+# timeout/binário ausente -> (1, "", "")). Aliased p/ não mexer nos callers.
+from vigia_common.proc import run as _run
 
 
 # ============================================================

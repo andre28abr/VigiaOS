@@ -9,9 +9,9 @@ o logo viaja junto ao ser enviado por e-mail).
 from __future__ import annotations
 
 import base64
-import json
-import os
 from pathlib import Path
+
+from vigia_common.state import load_json, save_json_0600
 
 CONFIG_DIR = Path.home() / ".config" / "vigia"
 CONFIG_FILE = CONFIG_DIR / "reports.json"
@@ -27,32 +27,17 @@ _LOGO_MAX_BYTES = 512 * 1024  # 512 KB — evita relatório gigante
 
 def load_config() -> dict:
     cfg = dict(_DEFAULTS)
-    if CONFIG_FILE.is_file():
-        try:
-            data = json.loads(CONFIG_FILE.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError):
-            data = {}
-        if isinstance(data, dict):
-            for k in _DEFAULTS:
-                if isinstance(data.get(k), str):
-                    cfg[k] = data[k]
+    data = load_json(CONFIG_FILE, {})
+    if isinstance(data, dict):
+        for k in _DEFAULTS:
+            if isinstance(data.get(k), str):
+                cfg[k] = data[k]
     return cfg
 
 
 def save_config(cfg: dict) -> None:
-    CONFIG_DIR.mkdir(parents=True, exist_ok=True)
-    try:
-        os.chmod(CONFIG_DIR, 0o700)
-    except OSError:
-        pass
     clean = {k: str(cfg.get(k, "")) for k in _DEFAULTS}
-    try:
-        CONFIG_FILE.write_text(
-            json.dumps(clean, indent=2, ensure_ascii=False), encoding="utf-8"
-        )
-        os.chmod(CONFIG_FILE, 0o600)
-    except OSError:
-        pass
+    save_json_0600(CONFIG_FILE, clean)
 
 
 def logo_data_uri(path: str) -> str:

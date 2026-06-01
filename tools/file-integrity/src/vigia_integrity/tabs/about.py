@@ -14,7 +14,6 @@ gi.require_version("Adw", "1")
 from gi.repository import Adw, Gtk  # noqa: E402
 
 from .. import backend
-from ._helpers import make_clamp
 
 
 ABOUT_TEXT = (

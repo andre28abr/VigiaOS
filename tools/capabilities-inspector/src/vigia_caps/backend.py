@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import re
 import shutil
-import subprocess
 from dataclasses import dataclass, field
 
 
@@ -51,14 +50,9 @@ def getcap_available() -> bool:
     return shutil.which("getcap") is not None
 
 
-def _run(cmd: list[str], timeout: int = 60) -> tuple[int, str, str]:
-    try:
-        result = subprocess.run(
-            cmd, capture_output=True, text=True, timeout=timeout,
-        )
-        return result.returncode, result.stdout, result.stderr
-    except (subprocess.TimeoutExpired, FileNotFoundError):
-        return 1, "", ""
+# Subprocesso centralizado em vigia_common.proc.run (nunca levanta;
+# timeout/binário ausente -> (1, "", "")). Aliased p/ não mexer nos callers.
+from vigia_common.proc import run as _run
 
 
 # ============================================================

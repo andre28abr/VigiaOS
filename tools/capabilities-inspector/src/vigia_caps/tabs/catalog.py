@@ -10,7 +10,7 @@ gi.require_version("Adw", "1")
 from gi.repository import Adw, Gtk  # noqa: E402
 
 from ..capabilities import CAPABILITIES, RISK_ORDER
-from ._helpers import escape_markup, make_clamp, risk_css
+from ._helpers import make_clamp, risk_css
 
 
 RISK_FILTERS = [

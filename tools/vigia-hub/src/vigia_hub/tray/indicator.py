@@ -14,7 +14,6 @@ Entry point: `vigia-hub-tray` (registrado no pyproject.toml).
 
 from __future__ import annotations
 
-import os
 import shutil
 import signal
 import sys

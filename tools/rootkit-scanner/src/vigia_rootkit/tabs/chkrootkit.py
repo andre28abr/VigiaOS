@@ -7,7 +7,6 @@ elemento dentro de Adw.PreferencesGroup que faz clamping interno.
 
 from __future__ import annotations
 
-import threading
 
 import gi
 

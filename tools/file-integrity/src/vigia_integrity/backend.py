@@ -12,8 +12,6 @@ Todas as operacoes que mexem em /var/lib/aide/ precisam de root → via pkexec.
 
 from __future__ import annotations
 
-import json
-import os
 import re
 import shutil
 import subprocess
@@ -21,6 +19,7 @@ import time
 from dataclasses import dataclass, field
 
 from vigia_common.platform import install_hint
+from vigia_common.state import load_json, save_json_0600
 from datetime import datetime
 from pathlib import Path
 
@@ -190,13 +189,8 @@ def format_age(seconds: int | None) -> str:
 
 
 def load_state() -> dict:
-    if not STATE_FILE.is_file():
-        return {}
-    try:
-        data = json.loads(STATE_FILE.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return {}
     # HARDENING: arquivo editavel/corrompivel — garante dict.
+    data = load_json(STATE_FILE, {})
     return data if isinstance(data, dict) else {}
 
 
@@ -205,18 +199,9 @@ def save_state(state: dict) -> None:
 
     LGPD HARDENING: state file contem timestamps de check, contagens de
     diffs. Em sistema multi-user, outros usuarios poderiam inferir
-    atividade de baseline checking. Forca 0600.
+    atividade de baseline checking. Forca 0600 (escrita atomica).
     """
-    STATE_DIR.mkdir(parents=True, exist_ok=True)
-    try:
-        os.chmod(STATE_DIR, 0o700)
-    except OSError:
-        pass
-    try:
-        STATE_FILE.write_text(json.dumps(state, indent=2, ensure_ascii=False), encoding="utf-8")
-        os.chmod(STATE_FILE, 0o600)
-    except OSError:
-        pass
+    save_json_0600(STATE_FILE, state)
 
 
 def get_last_check() -> tuple[datetime | None, CheckSummary | None]:

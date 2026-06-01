@@ -6,7 +6,6 @@ Estrutura identica a chkrootkit.py mas adaptada pra rkhunter
 
 from __future__ import annotations
 
-import threading
 
 import gi
 

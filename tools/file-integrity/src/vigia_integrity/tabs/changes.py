@@ -9,7 +9,7 @@ gi.require_version("Adw", "1")
 
 from gi.repository import Adw, Gtk  # noqa: E402
 
-from ..backend import CheckResult, FileChange
+from ..backend import FileChange
 from ._helpers import make_clamp
 
 

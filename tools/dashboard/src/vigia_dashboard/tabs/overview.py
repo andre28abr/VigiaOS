@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from datetime import datetime
 
 import gi
 
@@ -11,7 +10,7 @@ gi.require_version("Adw", "1")
 
 from gi.repository import Adw, Gdk, GLib, Gtk  # noqa: E402
 
-from .. import COLOR_CPU, COLOR_DIM, COLOR_DISK, COLOR_NET, COLOR_OK, COLOR_RAM, COLOR_WARN
+from .. import COLOR_CPU, COLOR_NET, COLOR_RAM
 from .. import backend
 from ..graphs import Sparkline
 from ._helpers import make_clamp

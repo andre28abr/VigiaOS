@@ -52,7 +52,6 @@ from .idle import IdleMonitor
 from .logging_setup import get_logger
 from .manuals import (
     MANUAL_ENTRIES,
-    ManualEntry,
     build_html,
     load_manual,
     webkit_available,
@@ -69,7 +68,6 @@ from .settings import (
     save_settings,
 )
 from .tray.checks import (
-    INSTALL_PACKAGES,
     enable_extension_command,
     install_command,
     tray_can_work,
@@ -1345,9 +1343,7 @@ class VigiaHubWindow(Adw.ApplicationWindow):
 
     def show_settings_view(self) -> None:
         """Navega pro modo 'settings' (chamado por app.show-settings action)."""
-        # Acha a row do nav que tem mode_id='settings'
-        n = self._nav_list.get_n_items() if hasattr(self._nav_list, "get_n_items") else None
-        # Itera rows e seleciona a 'settings'
+        # Itera as rows do nav e seleciona a que tem mode_id='settings'
         idx = 0
         while True:
             row = self._nav_list.get_row_at_index(idx)
