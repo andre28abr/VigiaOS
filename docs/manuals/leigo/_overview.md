@@ -16,7 +16,7 @@ Imagine que você guarda informações sensíveis dos seus clientes
 **cuidar** desses dados — usar antivírus, ter senhas fortes, registrar
 o que acontece no computador, fazer cópias de segurança.
 
-O Vigia reúne **16 ferramentas** que cuidam disso pra você, **num
+O Vigia reúne **15 ferramentas** que cuidam disso pra você, **num
 único lugar fácil de usar**.
 
 ## Como funciona?
@@ -27,7 +27,7 @@ sem precisar abrir vários programas.
 
 ### Sua barra lateral tem 4 ícones:
 
-🔲 **Ferramentas** — todas as 16 ferramentas do Vigia
+🔲 **Ferramentas** — todas as 15 ferramentas do Vigia
 📦 **Instalador** — pra adicionar programas extras seguros
 ⚙️ **Configurações** — pra ajustar o Vigia (tema, senha, etc)
 ❓ **Ajuda** — este manual que você está lendo agora

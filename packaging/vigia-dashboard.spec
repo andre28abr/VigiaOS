@@ -5,7 +5,7 @@
 %global mod_name vigia_dashboard
 
 Name:           %{pkg_name}
-Version:        0.4.1
+Version:        0.4.2
 Release:        1%{?dist}
 Summary:        Dashboard de sistema em tempo real (substitui htop/btop)
 License:        Apache-2.0
@@ -81,6 +81,9 @@ fi
 /usr/bin/gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 
 %changelog
+* Sun May 31 2026 André Augusto Azarias de Souza <andre@vigia.local> - 0.4.2-1
+- Alinha versao do spec com a tool (auditoria 100%): 0.4.1 -> 0.4.2.
+
 * Sun May 31 2026 André Augusto Azarias de Souza <andre@vigia.local> - 0.4.1-1
 - Alinha a versao do spec com a tool (0.2.0 -> 0.4.1).
 

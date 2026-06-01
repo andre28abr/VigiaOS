@@ -5,7 +5,7 @@
 %global mod_name vigia_antivirus
 
 Name:           %{pkg_name}
-Version:        0.1.1
+Version:        0.1.3
 Release:        1%{?dist}
 Summary:        Antivirus on-demand via ClamAV (substitui clamtk)
 License:        Apache-2.0
@@ -81,5 +81,8 @@ fi
 /usr/bin/gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 
 %changelog
+* Sun May 31 2026 André Augusto Azarias de Souza <andre@vigia.local> - 0.1.3-1
+- Alinha versao do spec com a tool (auditoria 100%): 0.1.1 -> 0.1.3.
+
 * Mon May 26 2026 André Augusto Azarias de Souza <andre@vigia.local> - 0.1.1-1
 - Initial release in COPR

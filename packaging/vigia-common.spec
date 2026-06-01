@@ -5,7 +5,7 @@
 %global mod_name vigia_common
 
 Name:           %{pkg_name}
-Version:        0.2.1
+Version:        0.2.2
 Release:        1%{?dist}
 Summary:        Helpers compartilhados entre as ferramentas do VigiaOS
 License:        Apache-2.0
@@ -53,6 +53,9 @@ cd tools/vigia-common
 %{python3_sitelib}/%{mod_name}-*.dist-info/
 
 %changelog
+* Sun May 31 2026 André Augusto Azarias de Souza <andre@vigia.local> - 0.2.2-1
+- Alinha versao do spec com a tool (auditoria 100%): 0.2.1 -> 0.2.2.
+
 * Sun May 31 2026 André Augusto Azarias de Souza <andre@vigia.local> - 0.2.1-1
 - Alinha a versao do spec com a tool (0.1.0 -> 0.2.1).
 

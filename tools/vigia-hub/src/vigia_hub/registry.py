@@ -222,7 +222,7 @@ TOOLS: list[ToolEntry] = [
         description="Gerenciador DNS com provedores curados e DoT.",
         long_description=(
             "Gerencia o DNS do sistema via **systemd-resolved**. Catálogo de "
-            "**9 provedores populares** (Cloudflare, Quad9, AdGuard, Mullvad, "
+            "**11 provedores populares** (Cloudflare, Quad9, AdGuard, Mullvad, "
             "Google, etc.) com descrição + filtros (ads, malware, adulto) e "
             "**1-click apply**.\n\n"
             "**DNS over TLS (DoT)** encriptado por padrão — sem isso, ISP "
@@ -239,7 +239,7 @@ TOOLS: list[ToolEntry] = [
         ),
         features=[
             "**3 tabs**: Status (provedor + interfaces), Provedores (catálogo), Sobre",
-            "Catálogo com **9 provedores curados** (Cloudflare, Quad9, AdGuard, Mullvad, ...)",
+            "Catálogo com **11 provedores curados** (Cloudflare, Quad9, AdGuard, Mullvad, ...)",
             "Toggle **DNS over TLS (DoT)** — encripta queries",
             "Backup automático do `/etc/systemd/resolved.conf` antes de aplicar",
             "**Flush cache** + **Restaurar padrão** com 1 clique",
@@ -464,7 +464,7 @@ TOOLS: list[ToolEntry] = [
             "**classificação de risco** ALTO/MÉDIO/BAIXO. **Vetor clássico "
             "de privilege escalation**: atacante adiciona `cap_setuid` em "
             "um binário inocuo e ganha root sem precisar de SUID.\n\n"
-            "**Catálogo das ~40 capabilities** do kernel Linux como aba "
+            "**Catálogo das 41 capabilities** do kernel Linux como aba "
             "dedicada — descrição em pt-BR + classe de risco + contexto "
             "de uso comum. Útil pra entender o que cada cap permite "
             "exatamente.\n\n"
@@ -475,7 +475,7 @@ TOOLS: list[ToolEntry] = [
             "**4 tabs**: Visão Geral, Binários, Capabilities (catálogo), Sobre",
             "Scan completo via `pkexec getcap -r /usr /opt /var` (1 dialog)",
             "Quick scan sem pkexec (paths user-readable)",
-            "**40 capabilities catalogadas** pt-BR com classe de risco",
+            "**41 capabilities catalogadas** pt-BR com classe de risco",
             "Filtros: por risco (ALTO/MÉDIO/BAIXO), search por path ou cap name",
         ],
         icon_path=_TOOLS_DIR / "capabilities-inspector" / "data" / "br.com.vigia.CapabilitiesInspector.svg",

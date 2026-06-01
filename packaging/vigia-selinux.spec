@@ -5,7 +5,7 @@
 %global mod_name vigia_selinux
 
 Name:           %{pkg_name}
-Version:        0.2.0
+Version:        0.2.1
 Release:        1%{?dist}
 Summary:        GUI moderno para SELinux com descricoes em pt-BR
 License:        Apache-2.0
@@ -82,5 +82,8 @@ fi
 /usr/bin/gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 
 %changelog
+* Sun May 31 2026 André Augusto Azarias de Souza <andre@vigia.local> - 0.2.1-1
+- Alinha versao do spec com a tool (auditoria 100%): 0.2.0 -> 0.2.1.
+
 * Mon May 26 2026 André Augusto Azarias de Souza <andre@vigia.local> - 0.2.0-1
 - Initial release in COPR
