@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#18181b"/><stop offset="100%" stop-color="#09090b"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="42%" r="42%">
+      <stop offset="0%" stop-color="#ef4444" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#ef4444" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="256" height="256" rx="48" fill="url(#bg)"/>
+  <rect width="256" height="256" rx="48" fill="url(#glow)"/>
+  <g stroke="#ef4444" stroke-width="4" opacity="0.55"><line x1="128" y1="104" x2="80" y2="64"/><line x1="128" y1="104" x2="176" y2="64"/><line x1="128" y1="104" x2="80" y2="150"/><line x1="128" y1="104" x2="176" y2="150"/></g><circle cx="128" cy="104" r="20" fill="#fafafa"/><g fill="#ef4444"><circle cx="80" cy="64" r="11"/><circle cx="176" cy="64" r="11"/><circle cx="80" cy="150" r="11"/><circle cx="176" cy="150" r="11"/></g>
+  <g transform="translate(128 230)" text-anchor="middle" font-family="JetBrains Mono, ui-monospace, monospace" font-weight="700" font-size="13" letter-spacing="3" fill="#fafafa" opacity="0.9"><text>VIGIA<tspan fill="#ef4444">·</tspan>SCAN</text></g>
+</svg>

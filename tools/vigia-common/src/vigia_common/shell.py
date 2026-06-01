@@ -22,6 +22,7 @@ Uso (no `__main__` do produto):
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass, field
 
 
@@ -109,6 +110,17 @@ def run_product(meta: ProductMeta, modules: list[Module],
 
     # ---------- helpers de UI ----------
 
+    def _img(icon: str, size: int) -> Gtk.Widget:
+        """Ícone do módulo: SVG colorido (padrão Hub) se for arquivo; senão
+        cai no icon-name do tema."""
+        if icon and icon.endswith(".svg") and os.path.isfile(icon):
+            im = Gtk.Image.new_from_file(icon)
+            im.set_pixel_size(size)
+            return im
+        return Gtk.Image.new_from_icon_name(
+            icon or "application-x-executable-symbolic"
+        )
+
     def _open_uri(uri: str) -> None:
         try:
             Gio.AppInfo.launch_default_for_uri(uri, None)
@@ -128,7 +140,7 @@ def run_product(meta: ProductMeta, modules: list[Module],
             "Este módulo ainda não foi implementado — o esqueleto já reserva "
             "o lugar dele no produto."
         )
-        status_row.add_prefix(Gtk.Image.new_from_icon_name(mod.icon))
+        status_row.add_prefix(_img(mod.icon, 40))
         head.add(status_row)
         page.add(head)
 
@@ -359,7 +371,7 @@ def run_product(meta: ProductMeta, modules: list[Module],
                     row = Adw.ActionRow()
                     row.set_title(mod.name)
                     row.set_subtitle(mod.summary)
-                    row.add_prefix(Gtk.Image.new_from_icon_name(mod.icon))
+                    row.add_prefix(_img(mod.icon, 28))
                     pill = Gtk.Label(label=STATUS_LABEL.get(mod.status, ""))
                     pill.add_css_class("caption")
                     pill.add_css_class("dim-label")

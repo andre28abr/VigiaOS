@@ -13,7 +13,7 @@ META = ProductMeta(
     key="red",
     name="VigiaRed",
     app_id="br.com.vigia.Red",
-    version="0.0.1",
+    version="0.0.2",
     tagline=(
         "Suíte ofensiva (pentest / red team) com interface gráfica moderna — "
         "parte do ecossistema VigiaOS. Esqueleto: os módulos chegam um a um."
@@ -111,4 +111,14 @@ MODULES: list[Module] = [
         features=["Ataque por dicionário e regras", "GPU (hashcat)",
                   "Identificação de tipo de hash"],
     ),
+]
+
+# Ícones coloridos (padrão Hub): usa o SVG do módulo em data/modules/<id>.svg
+# quando existe; senão mantém o icon-name do tema como fallback.
+import dataclasses as _dc
+from pathlib import Path as _Path
+_ICONS_DIR = _Path(__file__).resolve().parents[2] / "data" / "modules"
+MODULES = [
+    _dc.replace(_m, icon=str(_p)) if (_p := _ICONS_DIR / f"{_m.id}.svg").is_file() else _m
+    for _m in MODULES
 ]
