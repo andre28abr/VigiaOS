@@ -114,7 +114,7 @@ depender do Hub (veja *Instalar só um módulo*).
 | 12 | **[Vigia Tool Installer](tools/tool-installer/)** v0.3.6 | Python + GTK4 | 🟢 rpm-ostree + **extensões navegador open source** |
 | 13 | **[Vigia DNS Manager](tools/dns-manager/)** v0.4.3 | Python + GTK4 | 🟢 **dnscrypt-proxy** (DoH/DoT) com 11 servers curados |
 | 14 | **[Vigia Capabilities Inspector](tools/capabilities-inspector/)** v0.1.2 | Python + GTK4 | 🟢 getcap audit + 41 caps pt-BR |
-| 15 | **[Vigia Antivirus](tools/antivirus/)** v0.1.3 | Python + GTK4 | 🟢 ClamAV wrapper (substitui clamtk) |
+| 15 | **[Vigia Antivirus](tools/antivirus/)** v0.1.4 | Python + GTK4 | 🟢 ClamAV wrapper (substitui clamtk) |
 | 16 | **[Vigia Rootkit Scanner](tools/rootkit-scanner/)** v0.2.2 | Python + GTK4 | 🟢 **chkrootkit + rkhunter** unificados |
 | 17 | **[Vigia Deployments Manager](tools/deployments-manager/)** v0.1.2 | Python + GTK4 | 🟢 **rpm-ostree** GUI — rollback, pin, cleanup, labels LGPD |
 

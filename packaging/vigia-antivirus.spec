@@ -5,7 +5,7 @@
 %global mod_name vigia_antivirus
 
 Name:           %{pkg_name}
-Version:        0.1.3
+Version:        0.1.4
 Release:        1%{?dist}
 Summary:        Antivirus on-demand via ClamAV (substitui clamtk)
 License:        Apache-2.0
@@ -81,6 +81,11 @@ fi
 /usr/bin/gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 
 %changelog
+* Mon Jun 01 2026 André Augusto Azarias de Souza <andre@vigia.local> - 0.1.4-1
+- Fix: idade da base agora vem do mtime dos arquivos .cvd/.cld (era do
+  strptime locale-dependent no `clamscan --version`, que quebrava em pt-BR
+  e mostrava 'idade desconhecida' mesmo com a base atualizada).
+
 * Sun May 31 2026 André Augusto Azarias de Souza <andre@vigia.local> - 0.1.3-1
 - Alinha versao do spec com a tool (auditoria 100%): 0.1.1 -> 0.1.3.
 
