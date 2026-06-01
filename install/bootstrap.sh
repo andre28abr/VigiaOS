@@ -182,8 +182,13 @@ for t in "${VIGIA_TOOLS[@]}"; do
         install -Dpm 0644 "$tdir"/data/*.svg "$ICONS_DIR"/ 2>/dev/null || true
     fi
 done
+# gtk-update-icon-cache exige um index.theme no dir do tema; em ~/.local ele
+# costuma faltar e o cache nao reconstroi (icones novos ficam invisiveis no
+# GNOME). Copia o do sistema se faltar e forca o rebuild.
+HICOLOR_DIR="$HOME/.local/share/icons/hicolor"
+[ -f "$HICOLOR_DIR/index.theme" ] || cp /usr/share/icons/hicolor/index.theme "$HICOLOR_DIR/" 2>/dev/null || true
 update-desktop-database "$APPS_DIR" >/dev/null 2>&1 || true
-gtk-update-icon-cache "$HOME/.local/share/icons/hicolor" >/dev/null 2>&1 || true
+gtk-update-icon-cache -f "$HICOLOR_DIR" >/dev/null 2>&1 || true
 
 # ---- 4. Flatpaks ----------------------------------------------------------
 hr
