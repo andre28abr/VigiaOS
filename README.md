@@ -15,27 +15,27 @@ Resultado: as ferramentas funcionam em qualquer Fedora Atomic (Silverblue,
 Kinoite, Bluefin, Bazzite, Aurora), aproveitando atualizações automáticas
 do sistema-base sem complicação.
 
-## O que está incluído (v2 — 16 ferramentas focadas em LGPD/escritório)
+## O que está incluído (v2 — 15 ferramentas focadas em LGPD/escritório)
 
 | # | Componente | Stack | Status |
 |---|---|---|---|
 | 1 | `bootstrap.sh` | bash | 🟡 Em desenvolvimento |
 | 2 | **[Vigia Hub](tools/vigia-hub/)** v0.7.4 | Python + GTK4 | 🟢 3 painéis + autostart XDG + tray (quick actions) + lock Polkit + backup/restore + Ajuda (manuais MD) |
-| 3 | **[Vigia Monitor do Sistema](tools/dashboard/)** v0.4.1 | Python + GTK4 + Cairo | 🟢 Sistema em tempo real + per-process I/O + alertas + inspetor syscalls + banda por processo + selo de plataforma |
+| 3 | **[Vigia Monitor do Sistema](tools/dashboard/)** v0.4.2 | Python + GTK4 + Cairo | 🟢 Sistema em tempo real + per-process I/O + alertas + inspetor syscalls + banda por processo + selo de plataforma |
 | 4 | **[Vigia Activity Log](tools/activity-log/)** v0.7.1 (core) + [GUI](tools/activity-log-gui/) v0.1 | Rust + Python | 🟢 audit + journald + fail2ban + correlations |
-| 5 | **[Vigia Privacy Controls](tools/privacy-controls/)** v0.3.1 | Python + GTK4 | 🟢 13 toggles user+system scope |
-| 6 | **[Vigia SELinux GUI](tools/selinux-gui/)** v0.2 | Python + GTK4 | 🟢 6 tabs + pt-BR + audit2allow |
+| 5 | **[Vigia Privacy Controls](tools/privacy-controls/)** v0.3.2 | Python + GTK4 | 🟢 12 toggles user+system scope |
+| 6 | **[Vigia SELinux GUI](tools/selinux-gui/)** v0.2.1 | Python + GTK4 | 🟢 6 tabs + pt-BR + audit2allow |
 | 7 | **[Vigia Firewall GUI](tools/firewall-gui/)** v0.1 | Python + GTK4 | 🟡 Status + zones CRUD |
 | 8 | **[Vigia Network Monitor](tools/netmon-gui/)** v0.1.1 | Python + GTK4 | 🟡 Conexões + modo admin opt-in |
-| 9 | **[Vigia Hardening Checks](tools/hardening-checks/)** v0.1.4 | Python + GTK4 | 🟢 Lynis wrapper + perfil Silverblue |
-| 10 | **[Vigia Reports](tools/reports/)** v0.2.6 | Python + Jinja2 + SVG | 🟢 6 modelos + selo SHA-256 + identidade do escritório + **agendamento mensal** (headless) |
-| 11 | **[Vigia File Integrity](tools/file-integrity/)** v0.2.4 | Python + GTK4 | 🟢 AIDE (sistema) + Hash ad-hoc (user) — 6 tabs |
-| 12 | **[Vigia Tool Installer](tools/tool-installer/)** v0.3.3 | Python + GTK4 | 🟢 rpm-ostree + **extensões navegador open source** |
-| 13 | **[Vigia DNS Manager](tools/dns-manager/)** v0.4.2 | Python + GTK4 | 🟢 **dnscrypt-proxy** (DoH/DoT) com 11 servers curados |
-| 14 | **[Vigia Capabilities Inspector](tools/capabilities-inspector/)** v0.1 | Python + GTK4 | 🟢 getcap audit + 41 caps pt-BR |
-| 15 | **[Vigia Antivirus](tools/antivirus/)** v0.1.1 | Python + GTK4 | 🟢 ClamAV wrapper (substitui clamtk) |
-| 16 | **[Vigia Rootkit Scanner](tools/rootkit-scanner/)** v0.2.0 | Python + GTK4 | 🟢 **chkrootkit + rkhunter** unificados |
-| 17 | **[Vigia Deployments Manager](tools/deployments-manager/)** v0.1.1 | Python + GTK4 | 🟢 **rpm-ostree** GUI — rollback, pin, cleanup, labels LGPD |
+| 9 | **[Vigia Hardening Checks](tools/hardening-checks/)** v0.1.5 | Python + GTK4 | 🟢 Lynis wrapper + perfil Silverblue |
+| 10 | **[Vigia Reports](tools/reports/)** v0.2.7 | Python + Jinja2 + SVG | 🟢 6 modelos + selo SHA-256 + identidade do escritório + **agendamento mensal** (headless) |
+| 11 | **[Vigia File Integrity](tools/file-integrity/)** v0.2.6 | Python + GTK4 | 🟢 AIDE (sistema) + Hash ad-hoc (user) — 6 tabs |
+| 12 | **[Vigia Tool Installer](tools/tool-installer/)** v0.3.6 | Python + GTK4 | 🟢 rpm-ostree + **extensões navegador open source** |
+| 13 | **[Vigia DNS Manager](tools/dns-manager/)** v0.4.3 | Python + GTK4 | 🟢 **dnscrypt-proxy** (DoH/DoT) com 11 servers curados |
+| 14 | **[Vigia Capabilities Inspector](tools/capabilities-inspector/)** v0.1.2 | Python + GTK4 | 🟢 getcap audit + 41 caps pt-BR |
+| 15 | **[Vigia Antivirus](tools/antivirus/)** v0.1.3 | Python + GTK4 | 🟢 ClamAV wrapper (substitui clamtk) |
+| 16 | **[Vigia Rootkit Scanner](tools/rootkit-scanner/)** v0.2.2 | Python + GTK4 | 🟢 **chkrootkit + rkhunter** unificados |
+| 17 | **[Vigia Deployments Manager](tools/deployments-manager/)** v0.1.2 | Python + GTK4 | 🟢 **rpm-ostree** GUI — rollback, pin, cleanup, labels LGPD |
 
 ### Removidas na limpeza 2026-05-27 (foco LGPD)
 
@@ -75,7 +75,7 @@ curl -fsSL https://raw.githubusercontent.com/andre28abr/VigiaOS/main/install/boo
 # Em sistema atômico, reinicie ao final:  systemctl reboot
 ```
 
-Instala as 16 ferramentas + os backends que elas usam (`lynis`, `aide`,
+Instala as 15 ferramentas + os backends que elas usam (`lynis`, `aide`,
 `clamav`, …), registra os atalhos no menu do GNOME e instala Flatpaks de
 privacidade (KeePassXC, Signal, Tor Browser…). **Não liga nenhum serviço**
 — `fail2ban`/`dnscrypt-proxy` ficam off; você ativa cada um na

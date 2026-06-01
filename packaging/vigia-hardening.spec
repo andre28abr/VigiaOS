@@ -5,7 +5,7 @@
 %global mod_name vigia_hardening
 
 Name:           %{pkg_name}
-Version:        0.1.4
+Version:        0.1.5
 Release:        1%{?dist}
 Summary:        Wrapper de Lynis com perfil Silverblue
 License:        Apache-2.0
@@ -80,6 +80,9 @@ fi
 /usr/bin/gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 
 %changelog
+* Sun May 31 2026 André Augusto Azarias de Souza <andre@vigia.local> - 0.1.5-1
+- Alinha versao do spec com a tool (auditoria 100%): 0.1.4 -> 0.1.5.
+
 * Sun May 31 2026 André Augusto Azarias de Souza <andre@vigia.local> - 0.1.4-1
 - Alinha a versao do spec com a tool (0.1.2 -> 0.1.4).
 

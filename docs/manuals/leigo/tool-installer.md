@@ -7,7 +7,7 @@ adicionar mais ferramentas ao seu computador.
 
 Ao invés de você ter que pesquisar "qual antivírus pra Linux?", "como
 instala o lynis?", "onde acho o uBlock Origin?", o Vigia já te entrega
-uma lista **curada e segura** — são 16 ferramentas selecionadas + 8
+uma lista **curada e segura** — são 13 ferramentas selecionadas + 8
 extensões de navegador.
 
 Tudo com 1 clique.

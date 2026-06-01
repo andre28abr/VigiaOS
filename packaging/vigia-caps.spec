@@ -8,7 +8,7 @@
 %global mod_name vigia_caps
 
 Name:           %{pkg_name}
-Version:        0.1.0
+Version:        0.1.2
 Release:        1%{?dist}
 Summary:        Auditoria de Linux capabilities via getcap
 License:        Apache-2.0
@@ -83,5 +83,8 @@ fi
 /usr/bin/gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 
 %changelog
+* Sun May 31 2026 André Augusto Azarias de Souza <andre@vigia.local> - 0.1.2-1
+- Alinha versao do spec com a tool (auditoria 100%): 0.1.0 -> 0.1.2.
+
 * Mon May 26 2026 André Augusto Azarias de Souza <andre@vigia.local> - 0.1.0-1
 - Initial release in COPR

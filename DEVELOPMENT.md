@@ -4,7 +4,7 @@
 > contexto completo para retomar o desenvolvimento (humano ou IA) sem
 > precisar reler histórico de PRs ou conversas anteriores.
 >
-> Última atualização: 2026-05-28 (revisão 5: +Hub v0.5.10 autostart/tray/lock, +Deployments Manager v0.1)
+> Última atualização: 2026-05-31 (revisão 6: Reports v0.2 overhaul — gráficos SVG/6 modelos/selo/identidade/agendamento; remoção do trilho Tor de sistema; auditoria 100% — bugs+perf+testes+DRY vigia_common)
 
 ---
 
@@ -49,7 +49,7 @@ software por cima (layered + flatpak).
 advocacia** — ambiente onde clientes confiam dados sensíveis e o
 profissional precisa demonstrar diligência.
 
-**Estado atual** (2026-05-28): **17 ferramentas focadas em LGPD/escritório**
+**Estado atual** (2026-05-28): **15 ferramentas focadas em LGPD/escritório**
 integradas via Hub com layout master-detail-content (3 painéis) + categorias +
 modo embedded. Limpeza 2026-05-27 removeu 3 tools fora do escopo (Network
 Scanner, Firmware Analyzer, VPN Manager) e mergeou Hash Tools no File Integrity.
@@ -57,23 +57,23 @@ Em 2026-05-28 adicionada **Deployments Manager** (rpm-ostree GUI).
 
 | # | Ferramenta | Versão | Stack | Status |
 |---|---|---|---|---|
-| 1 | **Vigia Hub** | v0.7.1 | Python + GTK4 + libadwaita | 🟢 3 painéis + autostart XDG + tray (quick actions, subprocess GTK3) + lock Polkit + Ajuda (manuais MD) |
+| 1 | **Vigia Hub** | v0.7.4 | Python + GTK4 + libadwaita | 🟢 3 painéis + autostart XDG + tray (quick actions, subprocess GTK3) + lock Polkit + Ajuda (manuais MD) |
 | 2 | **Activity Log (core)** | v0.7.1 (Rust) | Rust + Ratatui + Crossterm | 🟢 3 sources + correlations + JsonBundle |
-| 3 | **Activity Log (GUI)** | v0.1.0 | Python + GTK4 | 🟢 Frontend do core Rust via JSON |
-| 4 | **Privacy Controls** | v0.3.1 | Python + GTK4 | 🟢 13 toggles user+system scope |
-| 5 | **SELinux Manager** | v0.2.0 | Python + GTK4 | 🟢 6 tabs + pt-BR + audit2allow + lazy tabs |
+| 3 | **Activity Log (GUI)** | v0.1.1 | Python + GTK4 | 🟢 Frontend do core Rust via JSON |
+| 4 | **Privacy Controls** | v0.3.2 | Python + GTK4 | 🟢 12 toggles user+system scope |
+| 5 | **SELinux Manager** | v0.2.1 | Python + GTK4 | 🟢 6 tabs + pt-BR + audit2allow + lazy tabs |
 | 6 | **Firewall Manager** | v0.1.0 | Python + GTK4 | 🟡 Status + zones CRUD |
-| 7 | **Network Monitor** | v0.1.0 | Python + GTK4 | 🟡 Conexões + modo admin + auto-refresh smart |
-| 8 | **Hardening Checks** | v0.1.4 | Python + GTK4 | 🟢 Lynis wrapper + perfil Silverblue |
-| 9 | **Reports** | v0.1.1 | Python + GTK4 + Jinja2 + WeasyPrint | 🟢 PDF/HTML LGPD via Activity Log JSON |
-| 10 | **File Integrity** | v0.2.1 | Python + GTK4 | 🟢 AIDE (sistema) + Hash ad-hoc (user) — 6 tabs |
-| 11 | **Tool Installer** | v0.2.0 | Python + GTK4 | 🟢 Catálogo rpm-ostree + Extensoes navegador (FOSS) |
-| 12 | **DNS Manager** | v0.4.1 | Python + GTK4 | 🟢 dnscrypt-proxy only — 11 servers curados |
-| 13 | **Capabilities Inspector** | v0.1.0 | Python + GTK4 | 🟢 getcap audit + catálogo pt-BR de 41 caps |
-| 14 | **Antivirus** | v0.1.1 | Python + GTK4 | 🟢 ClamAV wrapper — substitui clamtk |
-| 15 | **Dashboard** | v0.2.1 | Python + GTK4 + Cairo | 🟢 Sistema em tempo real + per-process I/O + alertas |
-| 16 | **Rootkit Scanner** | v0.2.0 | Python + GTK4 | 🟢 chkrootkit + rkhunter — pattern PreferencesGroup |
-| 17 | **Deployments Manager** | v0.1.1 | Python + GTK4 | 🟢 rpm-ostree deployments (rollback/pin/cleanup) + labels/notas LGPD |
+| 7 | **Network Monitor** | v0.1.1 | Python + GTK4 | 🟡 Conexões + modo admin + auto-refresh smart |
+| 8 | **Hardening Checks** | v0.1.5 | Python + GTK4 | 🟢 Lynis wrapper + perfil Silverblue |
+| 9 | **Reports** | v0.2.7 | Python + Jinja2 + SVG | 🟢 6 modelos + gráficos SVG + selo SHA-256 + identidade + agendamento mensal |
+| 10 | **File Integrity** | v0.2.6 | Python + GTK4 | 🟢 AIDE (sistema) + Hash ad-hoc (user) — 6 tabs |
+| 11 | **Tool Installer** | v0.3.6 | Python + GTK4 | 🟢 Catálogo rpm-ostree + Extensoes navegador (FOSS) |
+| 12 | **DNS Manager** | v0.4.3 | Python + GTK4 | 🟢 dnscrypt-proxy only — 11 servers curados |
+| 13 | **Capabilities Inspector** | v0.1.2 | Python + GTK4 | 🟢 getcap audit + catálogo pt-BR de 41 caps |
+| 14 | **Antivirus** | v0.1.3 | Python + GTK4 | 🟢 ClamAV wrapper — substitui clamtk |
+| 15 | **Dashboard** | v0.4.2 | Python + GTK4 + Cairo | 🟢 Tempo real + per-process I/O + alertas + inspetor syscalls + banda/processo + selo plataforma |
+| 16 | **Rootkit Scanner** | v0.2.2 | Python + GTK4 | 🟢 chkrootkit + rkhunter — pattern PreferencesGroup |
+| 17 | **Deployments Manager** | v0.1.2 | Python + GTK4 | 🟢 rpm-ostree deployments (rollback/pin/cleanup) + labels/notas LGPD |
 
 **Removidas na limpeza 2026-05-27** (foco LGPD/escritorio):
 - ~~Network Scanner (nmap)~~ — fora do escopo + risco etico
@@ -196,7 +196,7 @@ VigiaOS/
     ├── activity-log/            # Rust — parser core (CLI/TUI/JSON)
     ├── activity-log-gui/        # Python — frontend GTK4 do core
     ├── vigia-hub/               # Python — launcher mestre (3 painéis)
-    ├── privacy-controls/        # Python — 13 toggles
+    ├── privacy-controls/        # Python — 12 toggles
     ├── selinux-gui/             # Python — manager SELinux
     ├── firewall-gui/            # Python — manager firewalld
     ├── netmon-gui/              # Python — monitor de rede
@@ -218,7 +218,7 @@ build system (`pyproject.toml`, `Cargo.toml`). Versionam separadamente.
 
 ## 5. Catálogo de ferramentas — estado atual
 
-### 5.1 Vigia Hub (`tools/vigia-hub/`, v0.7.1)
+### 5.1 Vigia Hub (`tools/vigia-hub/`, v0.7.4)
 
 **Função**: Launcher mestre. Um único ícone no menu GNOME que abre tudo.
 
@@ -315,7 +315,7 @@ pronto para COPR. Tag `v0.7.0` criada no GitHub.
 
 ---
 
-### 5.3 Vigia Activity Log — GUI (`tools/activity-log-gui/`, v0.1.0)
+### 5.3 Vigia Activity Log — GUI (`tools/activity-log-gui/`, v0.1.1)
 
 **Função**: Frontend GTK4 do core Rust. Roda `vigia-log --output json-bundle`
 em background, parseia e renderiza visualmente.
@@ -333,9 +333,9 @@ Python.
 
 ---
 
-### 5.4 Vigia Privacy Controls (`tools/privacy-controls/`, v0.3.1)
+### 5.4 Vigia Privacy Controls (`tools/privacy-controls/`, v0.3.2)
 
-**Função**: 13 toggles de privacidade em uma única janela.
+**Função**: 12 toggles de privacidade em uma única janela.
 
 **Stack**: Python + PyGObject + GTK4 + libadwaita.
 
@@ -357,7 +357,7 @@ Python.
 
 ---
 
-### 5.5 Vigia SELinux Manager (`tools/selinux-gui/`, v0.2.0)
+### 5.5 Vigia SELinux Manager (`tools/selinux-gui/`, v0.2.1)
 
 **Função**: GUI moderno para SELinux. 6 tabs + Sobre.
 
@@ -416,7 +416,7 @@ auto-refresh smart (pausa quando modo admin ON).
 
 ---
 
-### 5.8 Vigia Hardening Checks (`tools/hardening-checks/`, v0.1.4)
+### 5.8 Vigia Hardening Checks (`tools/hardening-checks/`, v0.1.5)
 
 **Função**: Wrapper de Lynis. Roda `lynis audit system`, parseia
 `/var/log/lynis-report.dat`, renderiza findings categorizados.
@@ -440,31 +440,42 @@ mutável). Reduz ruído cognitivo.
 
 ---
 
-### 5.9 Vigia Reports (`tools/reports/`, v0.1.1)
+### 5.9 Vigia Reports (`tools/reports/`, v0.2.7)
 
-**Função**: Gera PDF/HTML com narrativa LGPD-friendly a partir do JSON do
-Activity Log.
+**Função**: Gera relatórios LGPD-friendly (HTML → imprimir/salvar PDF pelo
+navegador) a partir do JSON do Activity Log + estado das outras ferramentas.
+O **carro-chefe** para auditoria e documentação do escritório.
 
-**Stack**: Python + GTK4 + Jinja2 + WeasyPrint.
+**Stack**: Python + Jinja2 (autoescape) + gráficos **SVG** gerados em Python
+(`charts.py` — bar/hbar/donut, sem JS/CDN/rede; offline por princípio LGPD).
+Sem WeasyPrint — impressão via navegador evita dependência pesada.
 
-**Tabs**: Gerar + Histórico + Sobre.
+**Tabs**: Gerar + Histórico + **Configurações** (identidade + agendamento) + Sobre.
 
-**Templates** (Jinja2):
-- "Atividade dos últimos 7 dias"
-- "Eventos suspeitos"
-- "Acessos administrativos"
+**6 modelos** (`backend.COLLECTORS` → `collect_for(template_id, period, elevated)`):
+Resumo Executivo, Atividade (7/30 dias), Eventos suspeitos, Acessos
+administrativos, **Conformidade LGPD** (9 checagens de postura, `compliance.py`)
+e **Saúde do Sistema** (lê o último resultado de Lynis/ClamAV/AIDE/rootkit
+*sem importar* essas tools — `system_health.py`).
 
-**Modo admin** (`v0.1.1`, `736b525`): 1 dialog polkit que ganha acesso a
-audit log + escreve PDF. Sem múltiplos prompts.
+**Selo de integridade** (`renderer._doc_seal`): SHA-256 do conteúdo no rodapé +
+sidecar `.sha256` (`sha256sum -c`). **Pacote de auditoria**:
+`build_audit_package()` zipa relatórios + selos.
 
-**LGPD permissions**: PDFs gerados em `~/.local/share/vigia-reports/`
-com `chmod 0600`.
+**Identidade do escritório** (`config.py`, `~/.config/vigia/reports.json` 0600):
+nome/subtítulo/responsável/logo (data-URI base64) injetados no cabeçalho/rodapé.
 
-**Wrapper de**: `vigia-log` (core Rust) + Jinja2/WeasyPrint (libs Python).
+**Agendamento** (`scheduler.py`): systemd **user** timer (sem root),
+`OnCalendar=*-*-01 09:00` → `cli.main_headless --generate`; GTK só é importado
+no caminho GUI (headless não puxa gi).
+
+**Modo admin**: 1 dialog polkit (audit log) → coleta elevada, sem prompts múltiplos.
+
+**LGPD**: relatórios em `~/.local/share/vigia-reports/` com `chmod 0600`.
 
 ---
 
-### 5.10 Vigia File Integrity (`tools/file-integrity/`, v0.2.1)
+### 5.10 Vigia File Integrity (`tools/file-integrity/`, v0.2.6)
 
 **Função**: Wrapper de AIDE (Advanced Intrusion Detection Environment) para
 integridade de sistema, **+ hashing ad-hoc** (SHA-256/512/1, MD5) e
@@ -501,7 +512,7 @@ ad-hoc do usuário, sem subprocess).
 
 ---
 
-### 5.11 Vigia Tool Installer (`tools/tool-installer/`, v0.2.0)
+### 5.11 Vigia Tool Installer (`tools/tool-installer/`, v0.3.6)
 
 **Função**: Catálogo curado de ferramentas de segurança instaláveis via
 `rpm-ostree install` ou `flatpak install`. **v0.2** adicionou a aba
@@ -535,7 +546,7 @@ ferramentas de uso diário.
 
 ---
 
-### 5.12 Vigia DNS Manager (`tools/dns-manager/`, v0.4.1)
+### 5.12 Vigia DNS Manager (`tools/dns-manager/`, v0.4.3)
 
 **Função**: DNS focado em privacidade — wrappa o `dnscrypt-proxy` (DoH/DNSCrypt
 com DNSSEC + no-logs). A v0.3 removeu o "modo simples" (systemd-resolved);
@@ -565,7 +576,7 @@ ligado fica local; backups de config `chmod 0600`; recomenda servers no-logs
 **Wrapper de**: `dnscrypt-proxy` (config TOML) + `systemd-resolved` (restore).
 
 ---
-### 5.13 Vigia Capabilities Inspector (`tools/capabilities-inspector/`, v0.1.0)
+### 5.13 Vigia Capabilities Inspector (`tools/capabilities-inspector/`, v0.1.2)
 
 **Função**: Audit de Linux capabilities. Lista binários com capabilities
 setadas via `getcap -r /`, mostra detalhes pt-BR de cada capability.
@@ -590,7 +601,7 @@ power tools pra isso.
 
 ---
 
-### 5.14 Vigia Antivirus (`tools/antivirus/`, v0.1.1)
+### 5.14 Vigia Antivirus (`tools/antivirus/`, v0.1.3)
 
 **Função**: Antivirus on-demand para Linux desktop, wrapper de ClamAV.
 
@@ -621,7 +632,7 @@ com `chmod 0600` (LGPD).
 
 ---
 
-### 5.15 Vigia Dashboard (`tools/dashboard/`, v0.2.1)
+### 5.15 Vigia Dashboard (`tools/dashboard/`, v0.4.2)
 
 **Função**: Dashboard de sistema em tempo real — CPU, memória, disco
 I/O, rede e processos com gráficos visuais.
@@ -708,7 +719,7 @@ Opcional: `lm_sensors` para sensores extras.
 
 ---
 
-### 5.16 Vigia Rootkit Scanner (`tools/rootkit-scanner/`, v0.2.0)
+### 5.16 Vigia Rootkit Scanner (`tools/rootkit-scanner/`, v0.2.2)
 
 **Função**: Wrapper unificado de **chkrootkit** + **Rootkit Hunter (rkhunter)**.
 v0.2.0 reescrito do zero com o mesmo pattern PreferencesGroup do Antivirus.
@@ -730,7 +741,7 @@ thread + `GLib.idle_add` (igual Antivirus). Saída estilo terminal.
 
 ---
 
-### 5.17 Vigia Deployments Manager (`tools/deployments-manager/`, v0.1.1)
+### 5.17 Vigia Deployments Manager (`tools/deployments-manager/`, v0.1.2)
 
 **Função**: GUI para os **deployments do `rpm-ostree`** — os snapshots
 imutáveis que aparecem no GRUB. Lista (atual/rollback/staged/pinados),
@@ -2115,6 +2126,65 @@ se gera sozinho.
 
 Com isso, **as 3 frentes que o André pediu ("pode fazer tudo") estão prontas**:
 branding (v0.2.5) + agendamento + responsável. Reports = carro-chefe completo.
+
+---
+
+### 2026-05-31 — Auditoria 100% (bugs + performance + testes + drift + DRY)
+
+Pente-fino profundo do projeto inteiro (5 agentes paralelos: bugs, segurança,
+performance, qualidade/drift, cobertura) + síntese priorizada. O André autorizou
+as 4 frentes. **Segurança: FORTE** — zero vulns exploráveis (pkexec sempre
+argv-list nunca shell-string; 0600/0700 consistente; Jinja2 autoescape com
+`| safe` só em SVG já escapado; sem `shell=True`; sem segredos hardcoded).
+
+**Fase 1 — bugs (`107834a`)**. 3 bugs reais + 2 robustez, todos confirmados por
+grep antes de corrigir:
+- **Antivirus**: `clamscan --no-summary=no --bell=no` (flags booleanas com `=no`
+  inválidas) quebrava TODOS os scans → `clamscan -r`; `path` → `-- path`
+  (anti flag-injection). 0.1.1→0.1.2.
+- **Activity Log GUI**: 3 dicts (`SEVERITY_CSS/LABEL`, `SOURCE_LABEL`) sumidos
+  numa migração (`66121a6`) → restaurados do git. 0.1.0→0.1.1.
+- **Rootkit**: `rkhunter.py` sem `import notify_if_unfocused` (o sibling tinha)
+  → NameError na notificação. 0.2.0→0.2.1.
+- **File Integrity**: `get_last_check` `if not last:` → `isinstance(dict)`
+  (AttributeError em state corrompido). 0.2.4→0.2.5.
+- **Hardening**: sucesso por artefato (mtime do report — Lynis sai !=0 com
+  report válido). 0.1.4→0.1.5.
+
+**Fase 2 — performance (`7e11829`)**. Dashboard: timers pausam no `unmap` /
+retomam no `map` (não rodam 24/7 com Hub minimizado); coleta de métricas
+(`statvfs` pode travar em fs de rede) movida pra thread + `GLib.idle_add`.
+0.4.1→0.4.2.
+
+**Fase 3 — testes (`b8e52a0`, +157; 762→919)**. Fechou os 4 backends SEM
+nenhum teste (~900 linhas de parsing, testáveis headless): capabilities (+30;
+achou e corrigiu bug do operador `+` em `cap_names` → `re.split([=+])`,
+0.1.0→0.1.1), netmon `ss` (+36), firewall (+15), selinux (+36; refactor
+`get_persistent_mode(path=)`, 0.2.0→0.2.1). +40: cancelamento pkexec (rc 126/127)
+em antivirus/integrity/hardening/dns/rootkit + regressões da Fase 1. Teste
+não-hermético (`test_system_health` lia `~/.local` e `/var/log` reais) isolado
+p/ tmp.
+
+**Fase 5 — DRY `vigia_common` (`00438a2`, +21; 919→940)**. Dois primitivos
+eliminando ~10 cópias de boilerplate:
+- `proc.py::run(cmd, timeout)` → `(rc, out, err)`, nunca levanta (OSError/
+  SubprocessError → `(1,"","")`). 8 sites migrados; `subprocess` removido onde
+  só o `_run` usava.
+- `state.py::save_json_0600` (dir 0700 + escrita atômica via tmp+`os.replace` +
+  0600) e `load_json`. 5 sites; 3 eram não-atômicos → agora atômicos.
+  Bumps funcionais: common 0.2.2, antivirus 0.1.3, caps 0.1.2, deployments
+  0.1.2, rootkit 0.2.2, dns 0.4.3, reports 0.2.7, integrity 0.2.6.
+
+**Fase 4 — drift + código morto**. 16 imports não-usados + 1 var morta removidos
+(detector AST próprio — sem linter no ambiente; re-exports `_helpers` preservados).
+11 specs RPM realinhados com pyproject (+ changelog). Contagens corrigidas na
+fonte: privacy **12 toggles** (era 13 — vírgula num comentário enganava o
+contador), DNS **11**, caps **41**, catálogo do installer **13**; contagem global
+**15 ferramentas** (14 na sidebar + Tool Installer). Tabelas §1, headers §5 e
+§5.9 (Reports reescrita) de README/DEVELOPMENT atualizadas.
+
+**Resultado**: suite **940 passando, 4 skipped**; segurança FORTE; docs/specs/
+versões em dia. `#77` i18n permanece congelado.
 
 ---
 

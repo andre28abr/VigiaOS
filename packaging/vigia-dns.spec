@@ -5,7 +5,7 @@
 %global mod_name vigia_dns
 
 Name:           %{pkg_name}
-Version:        0.4.2
+Version:        0.4.3
 Release:        1%{?dist}
 Summary:        Wrapper systemd-resolved com 9 providers DoT
 License:        Apache-2.0
@@ -80,6 +80,9 @@ fi
 /usr/bin/gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 
 %changelog
+* Sun May 31 2026 André Augusto Azarias de Souza <andre@vigia.local> - 0.4.3-1
+- Alinha versao do spec com a tool (auditoria 100%): 0.4.2 -> 0.4.3.
+
 * Sun May 31 2026 André Augusto Azarias de Souza <andre@vigia.local> - 0.4.2-1
 - Alinha a versao do spec com a tool (0.1.0 -> 0.4.2).
 

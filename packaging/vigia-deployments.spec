@@ -9,7 +9,7 @@
 %global mod_name vigia_deployments
 
 Name:           %{pkg_name}
-Version:        0.1.1
+Version:        0.1.2
 Release:        1%{?dist}
 Summary:        Gerenciador de deployments rpm-ostree (boot snapshots)
 License:        Apache-2.0
@@ -87,5 +87,8 @@ fi
 /usr/bin/gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 
 %changelog
+* Sun May 31 2026 André Augusto Azarias de Souza <andre@vigia.local> - 0.1.2-1
+- Alinha versao do spec com a tool (auditoria 100%): 0.1.1 -> 0.1.2.
+
 * Thu May 29 2026 André Augusto Azarias de Souza <andre@vigia.local> - 0.1.1-1
 - Initial release in COPR
