@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#18181b"/><stop offset="100%" stop-color="#09090b"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="42%" r="42%">
+      <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#3b82f6" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="256" height="256" rx="48" fill="url(#bg)"/>
+  <rect width="256" height="256" rx="48" fill="url(#glow)"/>
+  <rect x="82" y="66" width="92" height="94" rx="10" fill="none" stroke="#fafafa" stroke-width="8"/><g stroke="#3b82f6" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" fill="none"><path d="M100 96 l8 8 l16 -16"/><path d="M100 134 l8 8 l16 -16"/></g><g stroke="#fafafa" stroke-width="6" stroke-linecap="round"><line x1="134" y1="100" x2="158" y2="100"/><line x1="134" y1="138" x2="158" y2="138"/></g>
+  <g transform="translate(128 230)" text-anchor="middle" font-family="JetBrains Mono, ui-monospace, monospace" font-weight="700" font-size="13" letter-spacing="3" fill="#fafafa" opacity="0.9"><text>VIGIA<tspan fill="#3b82f6">·</tspan>PLAY</text></g>
+</svg>

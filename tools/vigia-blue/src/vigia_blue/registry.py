@@ -13,7 +13,7 @@ META = ProductMeta(
     key="blue",
     name="VigiaBlue",
     app_id="br.com.vigia.Blue",
-    version="0.0.1",
+    version="0.0.2",
     tagline=(
         "Suíte defensiva (blue team / SOC) com interface gráfica moderna — "
         "detecção, caça a ameaças, forense e resposta. Parte do ecossistema "
@@ -104,4 +104,14 @@ MODULES: list[Module] = [
         features=["Roteiros passo a passo", "Registro de ações (LGPD)",
                   "Modelos por tipo de incidente"],
     ),
+]
+
+# Ícones coloridos (padrão Hub): usa o SVG do módulo em data/modules/<id>.svg
+# quando existe; senão mantém o icon-name do tema como fallback.
+import dataclasses as _dc
+from pathlib import Path as _Path
+_ICONS_DIR = _Path(__file__).resolve().parents[2] / "data" / "modules"
+MODULES = [
+    _dc.replace(_m, icon=str(_p)) if (_p := _ICONS_DIR / f"{_m.id}.svg").is_file() else _m
+    for _m in MODULES
 ]
