@@ -5,7 +5,7 @@
 %global mod_name vigia_hub
 
 Name:           %{pkg_name}
-Version:        0.7.5
+Version:        0.7.6
 Release:        1%{?dist}
 Summary:        Launcher mestre do VigiaOS (3 paineis, embedded mode)
 License:        Apache-2.0
@@ -81,6 +81,9 @@ fi
 /usr/bin/gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 
 %changelog
+* Mon Jun 01 2026 André Augusto Azarias de Souza <andre@vigia.local> - 0.7.6-1
+- Icone limpo (olho, sem wordmark gravado) + reposicionamento: VigiaHub = produto, VigiaOS = ecossistema.
+
 * Mon Jun 01 2026 André Augusto Azarias de Souza <andre@vigia.local> - 0.7.5-1
 - Aba Sobre (Config): cartao do Autor (bio + links LinkedIn/GitHub) +
   resumo do Vigia Hub. Links abrem no navegador via launch_default_for_uri.
