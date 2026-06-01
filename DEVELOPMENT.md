@@ -2314,6 +2314,18 @@ Testar na VM: instalar `yara`, abrir VigiaBlue → Vigia YARA → escanear uma p
 
 ---
 
+### 2026-06-01 — Fix: navegação da sidebar dos produtos (shell)
+
+Bug (André): no VigiaBlue/Red, clicar num módulo não trocava o conteúdo à
+direita. Causa: o shell escutava **`row-activated`**, mas `Adw.ActionRow` não é
+`activatable` por padrão — então esse sinal **nunca disparava** (só foi notado
+agora porque o 1º módulo aparecia por default no init). Fix: **`row-selected`**
+(como o Hub) + `row.set_activatable(True)` + selecionar a 1ª row no init.
+common 0.2.7. (Nota: spec do common pulou de 0.2.5 p/ 0.2.7 — o 0.2.6 da ponte
+`impl` não chegou a bumpar o spec; alinhado aqui.)
+
+---
+
 ## 10. Roadmap
 
 ### 10.1 Próximas iterações por ferramenta
