@@ -5,7 +5,7 @@ v0.2.0: reescrito do zero usando pattern identico ao Antivirus
 KPI cards horizontais — apenas Adw.PreferencesGroup tudo.
 """
 
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 __app_id__ = "br.com.vigia.RootkitScanner"
 
 WRAPPED_PACKAGES = ["chkrootkit", "rkhunter"]

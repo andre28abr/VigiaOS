@@ -16,6 +16,8 @@ gi.require_version("Pango", "1.0")
 
 from gi.repository import Adw, GLib, Gtk, Pango  # noqa: E402
 
+from vigia_common.notifications import PRIORITY_HIGH, notify_if_unfocused
+
 from .. import backend
 from ._helpers import make_clamp, show_error, show_info
 

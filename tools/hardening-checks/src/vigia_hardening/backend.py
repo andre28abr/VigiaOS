@@ -260,6 +260,12 @@ else
 fi
 exit $rc
 """
+    # mtime do relatorio ANTES de rodar — pra detectar se o Lynis o regenerou.
+    try:
+        before_mtime = REPORT_PATH.stat().st_mtime if REPORT_PATH.is_file() else 0.0
+    except OSError:
+        before_mtime = 0.0
+
     try:
         # bash -c SCRIPT NOME ARG1 → dentro do script $0=NOME, $1=ARG1.
         # validated_user chega como "$1" (sobrevive a' higienizacao do pkexec).
@@ -276,6 +282,17 @@ exit $rc
 
     if result.returncode in (126, 127):
         return False, "Autenticação cancelada."
+
+    # O Lynis pode sair com codigo != 0 MESMO apos gerar o relatorio completo
+    # (varia por versao/config). Julga pelo ARTEFATO: se o relatorio foi
+    # (re)gerado agora (mtime avancou), o audit rodou — sucesso, ignorando o rc.
+    try:
+        after_mtime = REPORT_PATH.stat().st_mtime if REPORT_PATH.is_file() else 0.0
+    except OSError:
+        after_mtime = 0.0
+    if after_mtime > before_mtime:
+        return True, ""
+
     if result.returncode != 0:
         stderr = (result.stderr or "").strip()
         if stderr:
