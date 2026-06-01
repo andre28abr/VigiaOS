@@ -103,8 +103,16 @@ class TestScoreStatusSummary:
 
 
 class TestCollectHealth:
-    def test_returns_four_well_formed(self):
+    def test_returns_four_well_formed(self, tmp_path, monkeypatch):
+        # HERMETICO: isola dos paths reais (~/.local, /var/log) apontando p/
+        # um tmp vazio — antes lia o estado real da maquina (nao-deterministico).
+        monkeypatch.setattr(sh, "ANTIVIRUS_DIR", tmp_path / "av")
+        monkeypatch.setattr(sh, "ROOTKIT_DIR", tmp_path / "rk")
+        monkeypatch.setattr(sh, "INTEGRITY_STATE", tmp_path / "fi.json")
+        monkeypatch.setattr(sh, "LYNIS_REPORT", tmp_path / "lynis.dat")
         entries = sh.collect_health()
         assert len(entries) == 4
         keys = {"tool", "label", "state", "headline", "detail", "ran_at"}
         assert all(keys <= set(e) for e in entries)
+        # Tudo vazio → todas "missing", de forma deterministica.
+        assert all(e["state"] == "missing" for e in entries)

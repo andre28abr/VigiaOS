@@ -26,11 +26,15 @@ class BinaryWithCaps:
 
     @property
     def cap_names(self) -> list[str]:
-        """Nomes das capabilities sem o flags suffix (=ep, =eip, etc)."""
+        """Nomes das capabilities sem o flags suffix (`=ep`, `+ep`, `=eip`…).
+
+        O getcap usa `=` mas o setcap (e algumas versoes/saidas) usam `+` como
+        operador — cortamos ambos, senao 'cap_net_raw+ep' nao casava o catalogo.
+        """
         names: list[str] = []
         for cap in self.capabilities:
             # 'cap_net_admin,cap_net_raw=ep' -> ['cap_net_admin', 'cap_net_raw']
-            base = cap.split("=", 1)[0]
+            base = re.split(r"[=+]", cap, maxsplit=1)[0]
             for name in base.split(","):
                 name = name.strip()
                 if name and name not in names:
