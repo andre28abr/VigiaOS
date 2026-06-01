@@ -9,17 +9,19 @@ gi.require_version("Adw", "1")
 
 from gi.repository import Adw, Gio, Gtk  # noqa: E402
 
-from .. import config
+from .. import config, renderer, scheduler
+from ._helpers import show_error
 
 _LOGO_HINT = "Nenhum (PNG, JPG ou SVG, até 512 KB)"
 
 
 class SettingsTab(Adw.Bin):
-    """Edita ~/.config/vigia/reports.json — nome, subtítulo, responsável, logo."""
+    """Identidade do escritório + agendamento automático dos relatórios."""
 
     def __init__(self) -> None:
         super().__init__()
         self._cfg = config.load_config()
+        self._sched_busy = False
 
         page = Adw.PreferencesPage()
 
@@ -61,6 +63,37 @@ class SettingsTab(Adw.Bin):
         group.add(self._logo_row)
 
         page.add(group)
+
+        # ---- Agendamento automático ---- #
+        sched_group = Adw.PreferencesGroup(
+            title="Agendamento automático",
+            description=(
+                "Gera um relatório sozinho todo mês (dia 1, 9h) e salva na "
+                "Biblioteca. A trilha de auditoria LGPD se monta sem você "
+                "precisar lembrar. Use um modelo que não peça senha "
+                "(Conformidade LGPD ou Saúde do sistema)."
+            ),
+        )
+        self._sched_ids = [tid for tid, _, _ in renderer.list_templates()]
+        names = Gtk.StringList.new([name for _, name, _ in renderer.list_templates()])
+        self._sched_combo = Adw.ComboRow(title="Modelo do relatório mensal")
+        self._sched_combo.set_model(names)
+        cur = scheduler.scheduled_model()
+        default = cur if cur in self._sched_ids else "lgpd_compliance"
+        self._sched_combo.set_selected(
+            self._sched_ids.index(default) if default in self._sched_ids else 0
+        )
+        self._sched_combo.connect("notify::selected", self._on_sched_model_changed)
+        sched_group.add(self._sched_combo)
+
+        self._sched_switch = Adw.SwitchRow(
+            title="Gerar automaticamente todo mês",
+            subtitle="Cria um timer do systemd no seu usuário (sem senha).",
+        )
+        self._sched_switch.set_active(scheduler.is_enabled())
+        self._sched_switch.connect("notify::active", self._on_sched_toggled)
+        sched_group.add(self._sched_switch)
+        page.add(sched_group)
 
         info = Adw.PreferencesGroup()
         info_row = Adw.ActionRow(
@@ -117,3 +150,31 @@ class SettingsTab(Adw.Bin):
         self._cfg["logo_path"] = ""
         self._logo_row.set_subtitle(_LOGO_HINT)
         self._save()
+
+    # ============================================================
+    # Agendamento (systemd user timer)
+    # ============================================================
+
+    def _selected_sched_model(self) -> str:
+        i = self._sched_combo.get_selected()
+        if 0 <= i < len(self._sched_ids):
+            return self._sched_ids[i]
+        return self._sched_ids[0]
+
+    def _on_sched_toggled(self, switch: Adw.SwitchRow, _pspec) -> None:
+        if self._sched_busy:  # ignora o set_active de reversão
+            return
+        if switch.get_active():
+            ok, msg = scheduler.enable_schedule(self._selected_sched_model(), 30)
+        else:
+            ok, msg = scheduler.disable_schedule()
+        if not ok:
+            self._sched_busy = True
+            switch.set_active(not switch.get_active())  # reverte visualmente
+            self._sched_busy = False
+            show_error(self, "Falha no agendamento", msg or "Erro desconhecido.")
+
+    def _on_sched_model_changed(self, _combo, _pspec) -> None:
+        # Se já está ligado, re-aplica o timer com o novo modelo.
+        if self._sched_switch.get_active() and not self._sched_busy:
+            scheduler.enable_schedule(self._selected_sched_model(), 30)

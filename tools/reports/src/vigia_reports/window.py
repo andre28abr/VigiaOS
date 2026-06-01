@@ -46,7 +46,7 @@ class _ReportsContent:
         stack = Adw.ViewStack()
         stack.add_titled_with_icon(self.generate, "generate", "Gerar", "document-new-symbolic")
         stack.add_titled_with_icon(self.library, "library", "Biblioteca", "view-list-symbolic")
-        stack.add_titled_with_icon(self.settings, "settings", "Identidade", "avatar-default-symbolic")
+        stack.add_titled_with_icon(self.settings, "settings", "Configurações", "emblem-system-symbolic")
         stack.add_titled_with_icon(self.about, "about", "Sobre", "help-about-symbolic")
 
         switcher = Adw.ViewSwitcher()

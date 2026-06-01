@@ -10,7 +10,7 @@ a partir de `journalctl`, `last` e `lastb` — pensado para auditoria LGPD.
 
 | Item | Valor |
 |---|---|
-| **Pacote** | `vigia-reports` (versão 0.2.5) |
+| **Pacote** | `vigia-reports` (versão 0.2.6) |
 | **App ID** | `br.com.vigia.Reports` |
 | **Pacotes wrapped** | `journalctl`, `last`, `lastb` |
 | **Templating** | Jinja2 (`PackageLoader("vigia_reports", "templates")`) |
@@ -103,7 +103,7 @@ senha derretem UX e treinam o usuário a clicar sem ler.
 |---|---|
 | **Gerar** | `ComboRow` modelo (Atividade geral, Eventos de autenticação, Resumo executivo, Acesso administrativo, Conformidade LGPD, Saúde do sistema) + `ComboRow` período (24h, 7d, 30d, 90d) + `SwitchRow` modo admin + botão `Gerar`. Progress bar pulsante. Abre HTML no navegador via `Gio.AppInfo.launch_default_for_uri`. |
 | **Biblioteca** | Lista HTMLs ordenados por mtime desc. Cada row tem `Abrir` + `Excluir` (com `Adw.AlertDialog`). Toolbar: "Abrir pasta", **"Pacote de auditoria (.zip)"** (`build_audit_package`) e atualizar. |
-| **Identidade** | `Adw.PreferencesPage` com `EntryRow`s (nome, subtítulo, responsável) + `Gtk.FileDialog` p/ logo. Auto-salva em `~/.config/vigia/reports.json` (0600) a cada mudança. |
+| **Configurações** | *Identidade*: `EntryRow`s (nome, subtítulo, responsável) + `Gtk.FileDialog` p/ logo, auto-salva em `~/.config/vigia/reports.json` (0600). *Agendamento*: `SwitchRow` + `ComboRow` → cria/habilita o systemd user timer. |
 | **Sobre** | `Adw.PreferencesPage` com 5 seções markup-formatted. |
 
 ### KPIs do template `activity_overview`
@@ -191,7 +191,23 @@ template (logo vira **data-URI base64** via `logo_data_uri` — PNG/JPG/SVG até
 512 KB, relatório self-contained). `renderer.render_html` injeta `ctx["org"]`
 **antes** do selo (a identidade entra no hash). O `base.html` usa `org.name`/
 `logo_uri` no cabeçalho (fallback "VIGIA · REPORTS") e `org.responsible` no
-rodapé. Editável na aba **Identidade**.
+rodapé. Editável na aba **Configurações**.
+
+### Modo headless + agendamento automático — v0.2.6
+
+- **Headless** (`cli.py`): `vigia-reports --generate <modelo> [--period N] [--admin]`
+  coleta + renderiza + salva (com selo `.sha256`), imprime o caminho e sai. O
+  `__main__` roteia pra cá quando vê `--generate` (importando GTK só no caminho
+  GUI — headless roda sem display). `backend.collect_for(template_id, period,
+  elevated)` despacha pelo dict `backend.COLLECTORS` (compartilhado com a GUI).
+- **Agendamento** (`scheduler.py`): escreve
+  `~/.config/systemd/user/vigia-reports.{service,timer}` — a `.service` é
+  oneshot (`ExecStart=… --generate …`), a `.timer` é `OnCalendar=*-*-01 09:00`
+  + `Persistent=true`. `enable_schedule` faz `systemctl --user daemon-reload`
+  + `enable --now`; tudo **escopo do usuário, sem root/pkexec**. Construtores de
+  unit (`build_service_unit`/`build_timer_unit`) são puros/testáveis.
+  Recomenda-se um modelo user-readable (Conformidade LGPD / Saúde do sistema),
+  já que o timer roda sem sessão pra autenticar pkexec.
 
 ## Quando usar
 

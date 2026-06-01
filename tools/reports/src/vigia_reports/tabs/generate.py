@@ -151,20 +151,7 @@ class GenerateTab(Adw.Bin):
             period = backend.make_period(period_days)
             GLib.idle_add(self._update_progress, "Coletando journal...")
 
-            if template_id == "activity_overview":
-                data = backend.collect_for_activity_overview(period, elevated=elevated)
-            elif template_id == "auth_events":
-                data = backend.collect_for_auth_events(period, elevated=elevated)
-            elif template_id == "executive_summary":
-                data = backend.collect_for_executive_summary(period, elevated=elevated)
-            elif template_id == "admin_access":
-                data = backend.collect_for_admin_access(period, elevated=elevated)
-            elif template_id == "lgpd_compliance":
-                data = backend.collect_for_lgpd_compliance(period, elevated=elevated)
-            elif template_id == "system_health":
-                data = backend.collect_for_system_health(period, elevated=elevated)
-            else:
-                raise ValueError(f"Template não suportado: {template_id}")
+            data = backend.collect_for(template_id, period, elevated=elevated)
 
             GLib.idle_add(self._update_progress, "Renderizando HTML...")
 
