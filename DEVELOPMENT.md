@@ -2295,6 +2295,25 @@ Pendente: GUI (abas Scan/Histórico/Sobre, clone do Antivírus) + ponte no
 
 ---
 
+### 2026-06-01 — Vigia YARA: GUI + ponte de módulo no shell (1º módulo "pronto")
+
+GUI do Vigia YARA + o mecanismo que liga módulos à interface real:
+- **`vigia_common.shell`**: `Module` ganhou campo **`impl`** (string p/ um módulo
+  Python que exporta `build_content()`). `_module_page` carrega a GUI real quando
+  há `impl`; senão mostra "Em breve". Falha de import cai no placeholder (não
+  derruba). É a ponte padrão p/ TODO módulo futuro. common 0.2.6.
+- **`page.py`**: abas Scan (FileDialog de pasta + regras + Escanear; scan em
+  thread → GLib.idle_add; lista de matches; banner se yara ausente) / Histórico
+  (list_recent_reports) / Sobre. O `__init__` do módulo fica SEM gi (backend
+  segue testável headless); `impl` aponta p/ `.page`.
+- registry: yara `status="pronto"` + `impl`. +1 teste de wiring (headless).
+  Suite 982. Manual técnico atualizado. blue 0.0.4.
+
+Testar na VM: instalar `yara`, abrir VigiaBlue → Vigia YARA → escanear uma pasta
+(o arquivo de teste EICAR é pego). Próximo módulo reusa a mesma ponte `impl`.
+
+---
+
 ## 10. Roadmap
 
 ### 10.1 Próximas iterações por ferramenta

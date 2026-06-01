@@ -44,6 +44,9 @@ class Module:
     wraps: list[str] = field(default_factory=list)   # CLIs que vai embarcar
     features: list[str] = field(default_factory=list)  # recursos previstos
     status: str = "planejado"      # planejado | em-dev | pronto
+    # Módulo Python que exporta build_content() -> Gtk.Widget. Quando definido,
+    # o shell embarca a GUI real do módulo em vez da página "Em breve".
+    impl: str | None = None
 
 
 @dataclass(frozen=True)
@@ -128,7 +131,21 @@ def run_product(meta: ProductMeta, modules: list[Module],
             print(f"[{meta.key}] falha ao abrir {uri}: {e}", flush=True)
 
     def _module_page(mod: Module) -> Gtk.Widget:
-        """Página 'Em breve' de um módulo: descrição + o que vai integrar."""
+        """Conteúdo de um módulo.
+
+        Se `mod.impl` aponta para um módulo Python com `build_content()`, embarca
+        a GUI real (auto-contida, com header próprio). Senão, mostra a página
+        'Planejado / Em breve'. Falha de import cai no placeholder (não derruba).
+        """
+        if mod.impl:
+            try:
+                import importlib
+                widget = importlib.import_module(mod.impl).build_content()
+                return widget
+            except Exception as e:  # noqa: BLE001 — módulo quebrado não derruba o app
+                print(f"[{meta.key}] falha ao carregar {mod.id} ({mod.impl}): {e}",
+                      flush=True)
+
         page = Adw.PreferencesPage()
 
         head = Adw.PreferencesGroup()

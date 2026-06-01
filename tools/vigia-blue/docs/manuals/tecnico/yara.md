@@ -5,9 +5,10 @@ seguindo o mesmo padrão dos scanners do VigiaHub (Antivírus/Rootkit Scanner):
 *escanear path → parsear saída → lista de achados → relatório JSON (0600) +
 histórico*.
 
-> **Estado atual (2026-06-01):** backend + testes prontos (headless). GUI
-> (abas Scan/Histórico/Sobre) e a ligação no shell do VigiaBlue (sair da página
-> "Em breve") são o próximo passo.
+> **Estado atual (2026-06-01):** backend + GUI prontos. **1º módulo "pronto"
+> do ecossistema.** Abas Scan/Histórico/Sobre (`page.py`) ligadas ao shell via
+> `Module.impl` — o shell carrega `build_content()` em vez da página "Em breve".
+> Essa ponte (`impl`) é o **mecanismo padrão** que todo módulo futuro usa.
 
 ## Arquivos
 
@@ -16,8 +17,9 @@ tools/vigia-blue/
 ├── src/vigia_blue/modules/
 │   ├── __init__.py
 │   └── yara/
-│       ├── __init__.py
-│       └── backend.py          # wrapper + parser + relatórios (PURO/testável)
+│       ├── __init__.py         # mínimo (sem gi — mantém backend testável)
+│       ├── backend.py          # wrapper + parser + relatórios (PURO/testável)
+│       └── page.py             # GUI: build_content() → abas Scan/Histórico/Sobre
 └── data/yara-rules/
     └── starter.yar             # regras de partida (EICAR + webshell + revshell)
 
@@ -79,11 +81,27 @@ suas em `~/.local/share/vigia-yara/rules/`.
   na etapa de GUI.)
 - Relatórios `0600`; nada sai da máquina (offline por princípio).
 
+## GUI (`page.py`)
+
+`build_content()` retorna um `Adw.ToolbarView` auto-contido (header com
+`Adw.ViewSwitcher` + `Adw.ViewStack`):
+
+- **Scan** (`_ScanView`): seletor de pasta (`Gtk.FileDialog.select_folder`),
+  info de regras (+ botão "Pasta de regras"), botão **Escanear** (fora de card),
+  banner de estado (yara instalado? via `install_hint`), e a lista de matches.
+  O scan roda em `threading.Thread` → `GLib.idle_add` (não trava a UI) e salva o
+  relatório ao terminar.
+- **Histórico** (`_HistoryView`): `list_recent_reports()` → 1 linha por scan
+  (alvo, data, nº de matches), com botão **Atualizar**.
+- **Sobre**: descrição + path das regras do usuário.
+
+Ligação: `Module.impl="vigia_blue.modules.yara.page"` no registry. O shell
+(`vigia_common.shell._module_page`) importa `impl` e chama `build_content()`;
+falha de import cai no placeholder (não derruba o app).
+
 ## Pendências (próximos passos)
 
-1. GUI: abas **Scan** (selecionar path + regras, rodar em thread, lista de
-   matches) / **Histórico** / **Sobre** — clonar do Antivírus.
-2. Ponte no `vigia_common.shell` para o módulo expor `build_content()` (sair da
-   página "Em breve") — provável campo `impl` no `Module`.
-3. Aba **Regras**: listar/atualizar conjuntos.
+1. Aba **Regras**: listar/baixar/atualizar conjuntos da comunidade.
+2. Scan de **PID/memória** (yara suporta `yara regras PID`).
+3. **pkexec** para escanear paths root-only (argv-list).
 4. Empacotar `data/yara-rules/` (package-data) p/ instalação não-editable + spec COPR.
