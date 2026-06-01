@@ -2271,6 +2271,30 @@ dos backends** (o André ajusta a GUI primeiro; módulos entram depois um a um).
 
 ---
 
+### 2026-06-01 — VigiaBlue: 1º módulo real (Vigia YARA) + diretriz de documentação
+
+**Diretriz permanente do André**: documentar TUDO em MD em toda operação — vira
+fonte das páginas de Ajuda (leigo+técnico) E memória de contexto pra eu (IA)
+retomar após o fim da janela. Gravado em `memory/feedback-documentar-sempre.md`.
+Convenção: manuais por módulo em `tools/vigia-<prod>/docs/manuals/{leigo,tecnico}/`.
+
+**Vigia YARA** (VigiaBlue → Caça a Ameaças) — escolhido como módulo-referência
+por ser o mais fácil: clone do padrão Antivírus/Rootkit (scan → parse → achados
+→ relatório). **Backend pronto** (puro/testável, headless):
+- `parse_yara_output`, `build_scan_cmd` (`yara -w -r REGRAS -- ALVO` — lista,
+  nunca shell), descoberta de regras (user `RULES_DIR` > bundled), `scan` via
+  `vigia_common.proc.run`, relatórios 0600 via `vigia_common.state`. +22 testes.
+- Regras de partida `data/yara-rules/starter.yar` (EICAR + webshell + revshell;
+  seguras, demo). Usuário sobrepõe em `~/.local/share/vigia-yara/rules/`.
+- Manuais leigo+técnico escritos (alimentam a futura aba Ajuda).
+vigia-blue 0.0.3. Suite 981.
+
+Pendente: GUI (abas Scan/Histórico/Sobre, clone do Antivírus) + ponte no
+`vigia_common.shell` pro módulo expor `build_content()` (campo `impl` no
+`Module`, saindo da página "Em breve").
+
+---
+
 ## 10. Roadmap
 
 ### 10.1 Próximas iterações por ferramenta
