@@ -25,6 +25,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Callable
 
+from vigia_common.state import save_json_0600
+
 
 REPORTS_DIR = Path.home() / ".local" / "share" / "vigia-rootkit" / "scans"
 
@@ -70,14 +72,9 @@ def rkhunter_installed() -> bool:
     return shutil.which("rkhunter") is not None
 
 
-def _run(cmd: list[str], timeout: int = 10) -> tuple[int, str, str]:
-    try:
-        result = subprocess.run(
-            cmd, capture_output=True, text=True, timeout=timeout,
-        )
-        return result.returncode, result.stdout, result.stderr
-    except (subprocess.TimeoutExpired, FileNotFoundError):
-        return 1, "", ""
+# Subprocesso centralizado em vigia_common.proc.run (nunca levanta;
+# timeout/binário ausente -> (1, "", "")). Aliased p/ não mexer nos callers.
+from vigia_common.proc import run as _run
 
 
 def get_versions() -> Versions:
@@ -133,14 +130,7 @@ def _save_report(result: ScanResult) -> Path | None:
         ],
         "raw_output": result.raw_output[:256_000],
     }
-    try:
-        with open(path, "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
-        os.chmod(path, 0o600)
-        return path
-    except OSError as e:
-        print(f"[rootkit] save_report falhou: {e}", flush=True)
-        return None
+    return path if save_json_0600(path, data) else None
 
 
 def list_recent_reports(limit: int = 20) -> list[dict]:

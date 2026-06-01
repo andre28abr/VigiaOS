@@ -25,6 +25,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Callable
 
+from vigia_common.state import save_json_0600
+
 
 REPORTS_DIR = Path.home() / ".local" / "share" / "vigia-antivirus"
 
@@ -89,14 +91,9 @@ def daemon_running() -> bool:
     return False
 
 
-def _run(cmd: list[str], timeout: int = 30) -> tuple[int, str, str]:
-    try:
-        result = subprocess.run(
-            cmd, capture_output=True, text=True, timeout=timeout,
-        )
-        return result.returncode, result.stdout, result.stderr
-    except (subprocess.TimeoutExpired, FileNotFoundError):
-        return 1, "", ""
+# Subprocesso centralizado em vigia_common.proc.run (nunca levanta;
+# timeout/binário ausente -> (1, "", "")). Aliased p/ não mexer nos callers.
+from vigia_common.proc import run as _run
 
 
 # ============================================================
@@ -214,12 +211,7 @@ def _save_report(result: ScanResult) -> None:
         "elapsed_sec": result.elapsed_sec,
         "findings": [{"path": f.path, "signature": f.signature} for f in result.findings],
     }
-    try:
-        with open(path, "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
-        os.chmod(path, 0o600)
-    except OSError:
-        pass
+    save_json_0600(path, data)
 
 
 def list_recent_reports(limit: int = 10) -> list[dict]:

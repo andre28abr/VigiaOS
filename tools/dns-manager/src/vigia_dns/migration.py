@@ -21,7 +21,6 @@ LGPD: backups com chmod 0600 (regra do projeto).
 from __future__ import annotations
 
 import shutil
-import subprocess
 from pathlib import Path
 
 
@@ -31,14 +30,9 @@ RESOLV_CONF = Path("/etc/resolv.conf")
 RESOLV_BACKUP = Path("/etc/resolv.conf.vigia-resolved-backup")
 
 
-def _run(cmd: list[str], timeout: int = 30) -> tuple[int, str, str]:
-    try:
-        result = subprocess.run(
-            cmd, capture_output=True, text=True, timeout=timeout,
-        )
-        return result.returncode, result.stdout, result.stderr
-    except (subprocess.TimeoutExpired, FileNotFoundError):
-        return 1, "", ""
+# Subprocesso centralizado em vigia_common.proc.run (nunca levanta;
+# timeout/binário ausente -> (1, "", "")). Aliased p/ não mexer nos callers.
+from vigia_common.proc import run as _run
 
 
 def has_resolved_backup() -> bool:

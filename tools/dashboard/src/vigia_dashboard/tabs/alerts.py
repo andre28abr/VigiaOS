@@ -16,7 +16,7 @@ from vigia_common.notifications import PRIORITY_HIGH, notify
 
 from .. import alerts as alerts_mod
 from .. import backend
-from ._helpers import make_clamp, show_error, show_info
+from ._helpers import make_clamp, show_error
 
 
 REFRESH_MS = 2000   # Avalia cada 2s

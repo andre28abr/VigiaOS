@@ -9,7 +9,7 @@ gi.require_version("Adw", "1")
 
 from gi.repository import Adw, GLib, Gtk  # noqa: E402
 
-from .. import COLOR_CPU, COLOR_DISK, COLOR_NET, COLOR_RAM
+from .. import COLOR_DISK, COLOR_NET, COLOR_RAM
 from .. import backend
 from ..graphs import LineChart, StackedBar
 from ._helpers import make_clamp

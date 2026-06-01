@@ -19,10 +19,10 @@ Formato:
 
 from __future__ import annotations
 
-import json
-import os
 from dataclasses import dataclass, field
 from pathlib import Path
+
+from vigia_common.state import load_json, save_json_0600
 
 
 STATE_PATH = Path.home() / ".config" / "vigia-deployments" / "state.json"
@@ -37,39 +37,21 @@ class State:
 def _load() -> State:
     """Le state file. Retorna State() vazio se nao existe ou erro."""
     st = State()
-    if not STATE_PATH.exists():
-        return st
-    try:
-        with open(STATE_PATH, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        # HARDENING: arquivo editavel pelo user / corrompivel. Garante shape.
-        if isinstance(data, dict):
-            labels = data.get("labels", {})
-            notes = data.get("notes", {})
-            st.labels = dict(labels) if isinstance(labels, dict) else {}
-            st.notes = dict(notes) if isinstance(notes, dict) else {}
-    except (OSError, json.JSONDecodeError) as e:
-        print(f"[state] load falhou: {e}", flush=True)
+    data = load_json(STATE_PATH)
+    # HARDENING: arquivo editavel pelo user / corrompivel. Garante shape.
+    if isinstance(data, dict):
+        labels = data.get("labels", {})
+        notes = data.get("notes", {})
+        st.labels = dict(labels) if isinstance(labels, dict) else {}
+        st.notes = dict(notes) if isinstance(notes, dict) else {}
     return st
 
 
 def _save(state: State) -> bool:
-    """Salva atomico. Retorna True se OK."""
-    try:
-        STATE_PATH.parent.mkdir(parents=True, exist_ok=True)
-        os.chmod(STATE_PATH.parent, 0o700)
-        tmp = STATE_PATH.with_suffix(".tmp")
-        with open(tmp, "w", encoding="utf-8") as f:
-            json.dump({
-                "labels": state.labels,
-                "notes": state.notes,
-            }, f, ensure_ascii=False, indent=2)
-        os.chmod(tmp, 0o600)
-        tmp.replace(STATE_PATH)
-        return True
-    except OSError as e:
-        print(f"[state] save falhou: {e}", flush=True)
-        return False
+    """Salva atomico (0600). Retorna True se OK."""
+    return save_json_0600(
+        STATE_PATH, {"labels": state.labels, "notes": state.notes}
+    )
 
 
 # ============================================================

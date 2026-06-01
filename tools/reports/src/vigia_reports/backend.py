@@ -20,6 +20,8 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
 
+from vigia_common import proc
+
 from . import compliance, system_health
 
 
@@ -102,16 +104,9 @@ def ensure_reports_dir() -> Path:
 
 
 def _run(cmd: list[str], timeout: int = 30) -> str:
-    """Roda comando e retorna stdout. String vazia se falhar."""
-    try:
-        result = subprocess.run(
-            cmd, capture_output=True, text=True, timeout=timeout,
-        )
-        if result.returncode != 0:
-            return ""
-        return result.stdout
-    except (subprocess.TimeoutExpired, FileNotFoundError):
-        return ""
+    """Roda comando e retorna stdout (string vazia se rc != 0 ou falhar)."""
+    rc, out, _ = proc.run(cmd, timeout)
+    return out if rc == 0 else ""
 
 
 def _parse_json_lines(text: str) -> list[dict]:

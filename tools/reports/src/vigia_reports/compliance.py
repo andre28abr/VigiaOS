@@ -13,20 +13,17 @@ só cola subprocess + interpretação.
 from __future__ import annotations
 
 import shutil
-import subprocess
+
+from vigia_common import proc
 
 
 def _run(cmd: list[str], timeout: int = 10) -> str:
     """stdout (strip), independente do returncode. '' em erro/binário ausente.
 
     `systemctl is-active` sai !=0 quando inativo mas imprime 'inactive' no
-    stdout — por isso ignoramos o returncode.
+    stdout — por isso ignoramos o returncode (pegamos sempre o stdout).
     """
-    try:
-        r = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
-        return r.stdout.strip()
-    except (OSError, subprocess.SubprocessError):
-        return ""
+    return proc.run(cmd, timeout)[1].strip()
 
 
 # ============================================================

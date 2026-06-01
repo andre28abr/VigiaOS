@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "vigia-deployments"
-version = "0.1.1"
+version = "0.1.2"
 description = "Gerenciador de deployments rpm-ostree com UI GTK4 — parte do VigiaOS"
 license = { text = "Apache-2.0" }
 readme = "README.md"

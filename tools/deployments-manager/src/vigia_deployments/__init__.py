@@ -12,7 +12,7 @@ Features:
 - Sobre tab com manual didatico
 """
 
-__version__ = "0.1.1"
+__version__ = "0.1.2"
 __app_id__ = "br.com.vigia.DeploymentsManager"
 
 WRAPPED_PACKAGES = ["rpm-ostree"]

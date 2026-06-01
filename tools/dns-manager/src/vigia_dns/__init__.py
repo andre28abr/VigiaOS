@@ -16,7 +16,7 @@ Por que enxugar (v0.3 -> v0.4):
 Pre-requisito: dnscrypt-proxy instalado.
 """
 
-__version__ = "0.4.2"
+__version__ = "0.4.3"
 __app_id__ = "br.com.vigia.DnsManager"
 
 WRAPPED_PACKAGES = ["dnscrypt-proxy"]
