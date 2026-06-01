@@ -2056,6 +2056,25 @@ ideias da frente "documentação" (quando quiser): 🥇 agendamento automático
 (timer systemd + modo headless) e 🥉 selo de integridade (SHA-256) + pacote de
 auditoria `.zip`.
 
+### 2026-05-31 — Reports v0.2.4: selo de integridade SHA-256 + pacote de auditoria
+
+A frente 🥉 — dá **valor de prova** aos documentos (anti-adulteração, LGPD).
+
+- **Selo no rodapé** (`renderer._doc_seal`): SHA-256 de `json.dumps(ctx,
+  sort_keys, default=str)` (dados+meta, único por geração). Exibido no
+  `base.html`. Fingerprint **visível** do conteúdo.
+- **Sidecar `.sha256`** (`write_report`): `<rel>.html.sha256` no formato
+  `sha256sum`. Como `write_text(utf-8)` grava exatamente `html.encode()`, o
+  digest **bate com `sha256sum <file>`** → verificação **independente** com
+  `sha256sum -c` (validado: `shasum -c` → `OK` no arquivo real). É a prova de
+  adulteração de verdade.
+- **Pacote de auditoria** (`build_audit_package`): zipa `.html` + `.sha256` +
+  `MANIFEST.txt` (hashes) + `LEIA-ME.txt` (passo a passo) → `auditoria-<ts>.zip`
+  (0600). Botão na aba **Biblioteca** (`Adw.AlertDialog` → abrir pasta).
+- +10 testes (`test_integrity.py`: selo determinístico, sidecar == hash do
+  arquivo, zip com manifesto/sidecars). Manuais + registry + README. Suite
+  **743**.
+
 ---
 
 ## 10. Roadmap

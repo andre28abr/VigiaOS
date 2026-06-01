@@ -302,6 +302,20 @@
   }
   .doc-footer .mono { font-size: 11px; }
 
+  /* Selo de integridade */
+  .doc-integrity {
+    margin-top: 12px;
+    padding: 10px 14px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 10px;
+    color: var(--text-dim);
+    line-height: 1.7;
+  }
+  .doc-integrity .seal { color: var(--accent); font-weight: 700; }
+  .doc-integrity .mono { font-size: 10px; word-break: break-all; }
+
   /* Impressao / PDF (via navegador) */
   @page { size: A4; margin: 14mm; }
   @media print {
@@ -366,6 +380,16 @@
       {{ meta.platform }}
     </div>
   </footer>
+
+  {% if doc_seal %}
+  <div class="doc-integrity">
+    <span class="seal">🔒 Selo de integridade</span> — SHA-256 do conteúdo:
+    <span class="mono">{{ doc_seal }}</span><br>
+    Cada relatório salvo tem um arquivo <span class="mono">.sha256</span> ao lado;
+    para conferir que não foi adulterado, rode
+    <span class="mono">sha256sum -c &lt;arquivo&gt;.sha256</span>.
+  </div>
+  {% endif %}
 
 </div>
 </body>
