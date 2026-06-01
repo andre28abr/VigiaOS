@@ -10,6 +10,7 @@ GTK só é importado aqui (no caminho da GUI) — o `backend.py` continua puro.
 from __future__ import annotations
 
 import threading
+from pathlib import Path
 
 import gi
 
@@ -50,6 +51,23 @@ def _open_path(path: str) -> None:
         Gio.AppInfo.launch_default_for_uri(f"file://{path}", None)
     except GLib.Error as e:
         print(f"[yara] falha ao abrir {path}: {e}", flush=True)
+
+
+# severidade (do meta da regra) -> (rótulo, ícone, classe-css de cor)
+_SEVERITY = {
+    "teste": ("Teste", "dialog-information-symbolic", "accent"),
+    "baixo": ("Baixo", "dialog-information-symbolic", "accent"),
+    "suspeito": ("Suspeito", "dialog-warning-symbolic", "warning"),
+    "medio": ("Médio", "dialog-warning-symbolic", "warning"),
+    "alto": ("Alto", "dialog-error-symbolic", "error"),
+    "critico": ("Crítico", "dialog-error-symbolic", "error"),
+}
+
+
+def _sev(severity: str) -> tuple[str, str, str]:
+    return _SEVERITY.get(
+        (severity or "").lower(), ("Alerta", "dialog-warning-symbolic", "warning")
+    )
 
 
 # ============================================================
@@ -117,13 +135,11 @@ class _ScanView(Gtk.Box):
         g_action.add(box)
         page.add(g_action)
 
-        # --- Resultados ---
+        # --- Resultados (expanders por alerta) ---
         self._results = Adw.PreferencesGroup()
         self._results.set_title("Resultados")
-        self._results_list = Gtk.ListBox()
-        self._results_list.add_css_class("boxed-list")
-        self._results.add(self._results_list)
         page.add(self._results)
+        self._result_rows: list[Gtk.Widget] = []
         self._set_results_empty("Nenhum scan executado ainda.")
 
         self._refresh_banner()
@@ -140,19 +156,77 @@ class _ScanView(Gtk.Box):
             self._banner.set_revealed(False)
             self._scan_btn.set_sensitive(True)
 
+    def _add_result(self, row: Gtk.Widget) -> None:
+        self._results.add(row)
+        self._result_rows.append(row)
+
+    def _clear_results(self) -> None:
+        for r in self._result_rows:
+            self._results.remove(r)
+        self._result_rows = []
+
     def _set_results_empty(self, text: str) -> None:
         self._clear_results()
+        self._results.set_description(None)
         row = Adw.ActionRow()
         row.set_title(text)
         row.add_prefix(Gtk.Image.new_from_icon_name("dialog-information-symbolic"))
-        self._results_list.append(row)
+        self._add_result(row)
 
-    def _clear_results(self) -> None:
-        child = self._results_list.get_first_child()
-        while child is not None:
-            nxt = child.get_next_sibling()
-            self._results_list.remove(child)
-            child = nxt
+    def _detail(self, title: str, value: str) -> Adw.ActionRow:
+        r = Adw.ActionRow()
+        r.set_title(title)
+        r.set_subtitle(value)
+        r.set_subtitle_lines(0)
+        r.add_css_class("property")
+        return r
+
+    def _match_row(self, m: backend.Match) -> Adw.ExpanderRow:
+        label, icon, css = _sev(m.severity)
+        exp = Adw.ExpanderRow()
+        exp.set_title(Path(m.path).name or m.path)
+        exp.set_subtitle(m.description or m.rule)
+        exp.set_subtitle_lines(0)
+        img = Gtk.Image.new_from_icon_name(icon)
+        if css in ("warning", "error"):
+            img.add_css_class(css)
+        exp.add_prefix(img)
+        pill = Gtk.Label(label=label)
+        pill.add_css_class("caption")
+        if css in ("warning", "error"):
+            pill.add_css_class(css)
+        exp.add_suffix(pill)
+        # detalhes (abrem ao clicar no alerta)
+        if m.description:
+            exp.add_row(self._detail("O que é", m.description))
+        exp.add_row(self._detail("Arquivo", m.path))
+        tech = m.rule + (f"  ·  tags: {', '.join(m.tags)}" if m.tags else "")
+        exp.add_row(self._detail("Regra (técnico)", tech))
+        return exp
+
+    def _add_raw(self, result: backend.ScanResult) -> None:
+        raw = (result.raw_output or "").strip()
+        if not raw:
+            return
+        exp = Adw.ExpanderRow()
+        exp.set_title("Saída do yara")
+        exp.set_subtitle("Resultado bruto da ferramenta")
+        exp.add_prefix(Gtk.Image.new_from_icon_name("utilities-terminal-symbolic"))
+        lbl = Gtk.Label(label=raw)
+        lbl.set_xalign(0)
+        lbl.set_wrap(True)
+        lbl.set_selectable(True)
+        lbl.add_css_class("monospace")
+        lbl.add_css_class("caption")
+        lbl.set_margin_top(8)
+        lbl.set_margin_bottom(8)
+        lbl.set_margin_start(12)
+        lbl.set_margin_end(12)
+        holder = Gtk.ListBoxRow()
+        holder.set_activatable(False)
+        holder.set_child(lbl)
+        exp.add_row(holder)
+        self._add_result(exp)
 
     # -- pickers --
     def _on_pick(self, _btn: Gtk.Button) -> None:
@@ -199,13 +273,19 @@ class _ScanView(Gtk.Box):
         self._spinner.stop()
         self._scan_btn.set_sensitive(True)
         self._clear_results()
+        self._results.set_description(None)
 
         if result.error:
-            self._results.set_description(None)
-            self._set_results_empty(f"Erro: {result.error}")
+            row = Adw.ActionRow()
+            row.set_title(f"Erro: {result.error}")
+            row.set_subtitle_lines(0)
+            row.add_prefix(Gtk.Image.new_from_icon_name("dialog-error-symbolic"))
+            self._add_result(row)
+            self._add_raw(result)
             return False
 
         n = len(result.matches)
+        files = len({m.path for m in result.matches})
         if n == 0:
             self._results.set_description(
                 f"Nada suspeito. {result.rules_count} regra(s) · "
@@ -214,21 +294,17 @@ class _ScanView(Gtk.Box):
             row = Adw.ActionRow()
             row.set_title("Nenhum match — alvo limpo para as regras atuais.")
             row.add_prefix(Gtk.Image.new_from_icon_name("emblem-ok-symbolic"))
-            self._results_list.append(row)
+            self._add_result(row)
+            self._add_raw(result)
             return False
 
         self._results.set_description(
-            f"{n} match(es) · {result.rules_count} regra(s) · {result.elapsed_sec:.1f}s. "
-            "Um match é um alerta, não prova — revise cada arquivo."
+            f"{n} alerta(s) em {files} arquivo(s) · {result.rules_count} regra(s) · "
+            f"{result.elapsed_sec:.1f}s. Clique num alerta para ver o que é."
         )
         for m in result.matches:
-            row = Adw.ActionRow()
-            title = m.rule + (f"  [{', '.join(m.tags)}]" if m.tags else "")
-            row.set_title(title)
-            row.set_subtitle(m.path)
-            row.set_subtitle_lines(0)
-            row.add_prefix(Gtk.Image.new_from_icon_name("dialog-warning-symbolic"))
-            self._results_list.append(row)
+            self._add_result(self._match_row(m))
+        self._add_raw(result)
         return False
 
 

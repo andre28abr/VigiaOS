@@ -88,9 +88,13 @@ suas em `~/.local/share/vigia-yara/rules/`.
 
 - **Scan** (`_ScanView`): seletor de pasta (`Gtk.FileDialog.select_folder`),
   info de regras (+ botão "Pasta de regras"), botão **Escanear** (fora de card),
-  banner de estado (yara instalado? via `install_hint`), e a lista de matches.
-  O scan roda em `threading.Thread` → `GLib.idle_add` (não trava a UI) e salva o
-  relatório ao terminar.
+  banner de estado (yara instalado? via `install_hint`). O scan roda em
+  `threading.Thread` → `GLib.idle_add` (não trava a UI) e salva o relatório.
+  **Cada alerta é um `Adw.ExpanderRow`** (clicável): recolhido mostra nome do
+  arquivo + severidade colorida; expandido mostra **O que é** (description),
+  **Arquivo** (caminho) e **Regra (técnico)** (rule + tags). No fim, um expander
+  **"Saída do yara"** (recolhido) com o stdout cru. Resumo no topo do grupo
+  (`N alerta(s) em M arquivo(s) · regras · tempo`).
 - **Histórico** (`_HistoryView`): `list_recent_reports()` → 1 linha por scan
   (alvo, data, nº de matches), com botão **Atualizar**.
 - **Sobre**: descrição + path das regras do usuário.

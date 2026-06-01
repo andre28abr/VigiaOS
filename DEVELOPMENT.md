@@ -2336,6 +2336,23 @@ blue 0.0.5.
 
 ---
 
+### 2026-06-01 — Vigia YARA: alertas amigáveis (expander + descrição + severidade)
+
+Ideia do André: alertas no estilo do Hub, com resultado final claro. Implementado
+melhor que copiar o console raw — **lidera pela versão amigável**:
+- backend: `Match` ganhou `description`/`severity`; `ScanResult` ganhou
+  `raw_output`. Novo `rule_meta(rules)` extrai `description`/`severity` do bloco
+  `meta:` das regras (regex, puro/testável); `scan()` enriquece cada match e
+  guarda o stdout cru. save_report inclui os campos. +4 testes (986 total).
+- GUI: cada alerta é um **`Adw.ExpanderRow` clicável** — recolhido: arquivo +
+  severidade colorida; expandido: **O que é** (description) / **Arquivo** /
+  **Regra (técnico)**. Expander **"Saída do yara"** (raw, recolhido) no fim.
+  Resumo `N alerta(s) em M arquivo(s)`.
+- starter.yar já trazia description+severity → alertas legíveis pro leigo.
+  Manuais leigo/técnico atualizados. blue 0.0.6.
+
+---
+
 ## 10. Roadmap
 
 ### 10.1 Próximas iterações por ferramenta
