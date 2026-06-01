@@ -2,7 +2,7 @@
 
 ## André Augusto Azarias De Souza
 
-→ [LinkedIn](https://linkedin.com/in/adreaugusto-azariasdesouza) · [GitHub](https://github.com/andre28abr) · [Profile completo](https://github.com/andre28abr)
+→ [LinkedIn](https://linkedin.com/in/andreaugusto-azariasdesouza) · [GitHub](https://github.com/andre28abr) · [Profile completo](https://github.com/andre28abr)
 
 ---
 
@@ -81,4 +81,4 @@ O **VigiaOS** nasceu como exercício pessoal de portfólio com três objetivos:
 
 ---
 
-→ **[LinkedIn](https://linkedin.com/in/adreaugusto-azariasdesouza)** · [GitHub](https://github.com/andre28abr)
+→ **[LinkedIn](https://linkedin.com/in/andreaugusto-azariasdesouza)** · [GitHub](https://github.com/andre28abr)
