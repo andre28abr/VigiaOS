@@ -861,9 +861,78 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         return page
 
     def _build_settings_about_tab(self) -> Gtk.Widget:
-        """Aba 'Sobre' — caminhos dos arquivos de configuracao."""
+        """Aba 'Sobre' — o Hub, o autor e os caminhos de configuracao."""
+        from . import __version__ as _ver
+
         page = Adw.PreferencesPage()
 
+        # ---- Sobre o Vigia Hub ----
+        hub_group = Adw.PreferencesGroup()
+        hub_group.set_title("Sobre o Vigia Hub")
+        hub_group.set_description(
+            "Launcher central do VigiaOS: reúne as ferramentas de segurança, "
+            "privacidade e auditoria (LGPD) numa janela só, em layout de 3 "
+            "painéis, com as ferramentas rodando embarcadas. O Hub cuida do "
+            "autostart, ícone na bandeja, bloqueio por senha (Polkit) e "
+            "backup/restauração da configuração."
+        )
+        ver_row = Adw.ActionRow()
+        ver_row.set_title("Vigia Hub")
+        ver_row.set_subtitle(f"Versão {_ver}")
+        ver_row.add_prefix(
+            Gtk.Image.new_from_icon_name("preferences-system-symbolic")
+        )
+        hub_group.add(ver_row)
+        page.add(hub_group)
+
+        # ---- Autor ----
+        author_group = Adw.PreferencesGroup()
+        author_group.set_title("Autor")
+        author_group.set_description(
+            "DPO / Encarregado de Dados com mais de 18 anos em gestão "
+            "administrativa, compliance, governança da informação e proteção "
+            "de dados (LGPD); formação dupla em Direito (Anhanguera) e Análise "
+            "e Desenvolvimento de Sistemas (Mackenzie). Conduziu o VigiaOS como "
+            "product owner técnico — traduzindo exigências regulatórias, "
+            "hardening e auditoria numa suíte funcional."
+        )
+
+        name_row = Adw.ActionRow()
+        name_row.set_title("André Augusto Azarias De Souza")
+        name_row.set_subtitle("DPO · Compliance & GRC · Privacy Engineering")
+        name_row.set_subtitle_lines(0)
+        name_row.add_prefix(
+            Gtk.Image.new_from_icon_name("avatar-default-symbolic")
+        )
+        author_group.add(name_row)
+
+        def _link_row(title: str, subtitle: str, uri: str, icon: str):
+            row = Adw.ActionRow()
+            row.set_title(title)
+            row.set_subtitle(subtitle)
+            row.add_prefix(Gtk.Image.new_from_icon_name(icon))
+            row.add_suffix(
+                Gtk.Image.new_from_icon_name("adw-external-link-symbolic")
+            )
+            row.set_activatable(True)
+            row.connect("activated", lambda _r, u=uri: self._open_uri(u))
+            return row
+
+        author_group.add(_link_row(
+            "LinkedIn",
+            "linkedin.com/in/andreaugusto-azariasdesouza",
+            "https://linkedin.com/in/andreaugusto-azariasdesouza",
+            "applications-internet-symbolic",
+        ))
+        author_group.add(_link_row(
+            "GitHub",
+            "github.com/andre28abr",
+            "https://github.com/andre28abr",
+            "applications-internet-symbolic",
+        ))
+        page.add(author_group)
+
+        # ---- Arquivos de configuracao ----
         info_group = Adw.PreferencesGroup()
         info_group.set_title("Arquivos de configuração")
         info_group.set_description(
@@ -891,22 +960,14 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         info_group.add(autostart_row)
 
         page.add(info_group)
-
-        # Grupo Versao
-        ver_group = Adw.PreferencesGroup()
-        ver_group.set_title("Hub")
-        from . import __version__ as _ver
-
-        ver_row = Adw.ActionRow()
-        ver_row.set_title("Vigia Hub")
-        ver_row.set_subtitle(f"Versão {_ver}")
-        ver_row.add_prefix(
-            Gtk.Image.new_from_icon_name("preferences-system-symbolic")
-        )
-        ver_group.add(ver_row)
-
-        page.add(ver_group)
         return page
+
+    def _open_uri(self, uri: str) -> None:
+        """Abre uma URL no navegador padrão (só quando o user clica num link)."""
+        try:
+            Gio.AppInfo.launch_default_for_uri(uri, None)
+        except GLib.Error as e:  # link quebrado não pode derrubar o Hub
+            print(f"[hub] falha ao abrir {uri}: {e}", flush=True)
 
     # ------------------------------------------------------------------
     # Backup / restauracao (Etapa D) — backend em backup.py (testavel)
