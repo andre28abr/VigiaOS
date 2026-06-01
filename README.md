@@ -27,7 +27,7 @@ Profissional com mais de 18 anos de experiência em **gestão administrativa, co
 
 Atualmente em **transição de carreira, com disponibilidade imediata**, conduziu o VigiaOS como **product owner técnico, com auxílio de assistentes de IA generativa para a etapa de codificação** — exercitando a tradução de exigências regulatórias (LGPD) e conceitos de hardening, auditoria e privacidade em uma suíte funcional, demonstrando fluência técnica suficiente para dialogar com times de engenharia, segurança e operações.
 
-→ **[Bio completa: AUTHOR.md](AUTHOR.md)** · [LinkedIn](https://linkedin.com/in/adreaugusto-azariasdesouza) · [GitHub Profile](https://github.com/andre28abr)
+→ **[Bio completa: AUTHOR.md](AUTHOR.md)** · [LinkedIn](https://linkedin.com/in/andreaugusto-azariasdesouza) · [GitHub Profile](https://github.com/andre28abr)
 
 ### 📂 Outros projetos do autor
 
@@ -232,7 +232,7 @@ Apache 2.0 — ver [LICENSE](LICENSE).
 
 **Feito por André Augusto Azarias De Souza**
 
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-André%20Augusto-0A66C2?logo=linkedin&logoColor=white)](https://linkedin.com/in/adreaugusto-azariasdesouza)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-André%20Augusto-0A66C2?logo=linkedin&logoColor=white)](https://linkedin.com/in/andreaugusto-azariasdesouza)
 [![GitHub](https://img.shields.io/badge/GitHub-andre28abr-181717?logo=github&logoColor=white)](https://github.com/andre28abr)
 
 </div>
