@@ -124,8 +124,8 @@ RULESET_INFO = {
 def rulesets() -> list[Ruleset]:
     """Conjuntos selecionáveis: 'Tudo' + um por arquivo de regra disponível."""
     files = effective_rules()
-    out = [Ruleset("all", "Tudo (todas as regras)",
-                   "Malware + LGPD + credenciais + o que mais houver",
+    out = [Ruleset("all", "Tudo",
+                   "Todas as regras (malware + LGPD + credenciais + suas)",
                    files, count_rules(files))]
     for f in files:
         label, desc = RULESET_INFO.get(

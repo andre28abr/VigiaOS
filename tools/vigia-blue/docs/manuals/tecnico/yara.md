@@ -25,7 +25,7 @@ tools/vigia-blue/
     ├── lgpd.yar                # conjunto "LGPD": CPF, CNPJ, e-mail, telefone, cartão
     └── secrets.yar             # conjunto "Credenciais": chave privada, AWS, senhas
 
-tests/blue/test_yara_backend.py # 22 testes (parser, cmd, regras, scan, report)
+tests/blue/test_yara_backend.py # 34 testes (parser, cmd, regras, meta, rulesets, scan, report)
 ```
 
 ## Dependência
@@ -48,7 +48,7 @@ Partes **puras** (testadas sem `yara` nem gi):
   abrir `--` como arquivo). `-w` silencia warnings de regra (reduz ruído).
 - **Descoberta de regras**: `list_rules(dir)` (*.yar/*.yara ordenados),
   `bundled_rules()` (as empacotadas em `data/yara-rules/`), `effective_rules()`
-  (regras do usuário em `RULES_DIR` se houver; senão as empacotadas).
+  (UNIÃO: empacotadas + usuário, base do conjunto "Tudo").
 
 Parte que toca o sistema:
 
@@ -113,8 +113,8 @@ Não é ruleset de produção — é ponto de partida. O usuário estende em
 
 - **Scan** (`_ScanView`): seletor de pasta (`Gtk.FileDialog.select_folder`),
   **seletor de conjunto** (`Adw.ComboRow` populado por `backend.rulesets()`:
-  Tudo / Malware / LGPD / Credenciais / conjuntos do usuário) + botão "Pasta de
-  regras", botão **Escanear** (fora de card),
+  Tudo / Malware / LGPD / Credenciais / conjuntos do usuário; só o nome no
+  dropdown, contagem+descrição no subtítulo), botão **Escanear** (fora de card),
   banner de estado (yara instalado? via `install_hint`). O scan roda em
   `threading.Thread` → `GLib.idle_add` (não trava a UI) e salva o relatório.
   **Cada alerta é um `Adw.ExpanderRow`** (clicável): recolhido mostra nome do
