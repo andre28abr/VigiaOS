@@ -147,12 +147,16 @@ def build_scan_cmd(
 
     `yara [-r] [-w] REGRA... ALVO`. Múltiplos arquivos de regra são permitidos
     antes do alvo. `-w` silencia warnings de regra (reduz ruído no parse).
+
+    NÃO usamos `--`: o parser do `yara` não o reconhece como fim-de-opções —
+    tentaria abrir `--` como arquivo de regra ("could not open file: --").
+    Segurança vem de passar argv em LISTA (sem shell); o alvo chega absoluto
+    (`/...`) do seletor, então não é confundido com opção.
     """
     cmd = ["yara", "-w"]
     if recursive:
         cmd.append("-r")
     cmd.extend(str(r) for r in rules)
-    cmd.append("--")          # fim das opções: alvo a seguir (anti-injection)
     cmd.append(str(target))
     return cmd
 

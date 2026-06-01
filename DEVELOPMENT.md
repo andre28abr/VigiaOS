@@ -2326,6 +2326,16 @@ common 0.2.7. (Nota: spec do common pulou de 0.2.5 p/ 0.2.7 — o 0.2.6 da ponte
 
 ---
 
+### 2026-06-01 — Fix: Vigia YARA — remover `--` do comando (yara não suporta)
+
+Bug (André testou): scan dava `error: could not open file: --`. O `build_scan_cmd`
+punha `--` antes do alvo (hábito GNU de fim-de-opções), mas o parser do `yara`
+NÃO reconhece `--` — tratava como nome de arquivo de regra. Removido. Segurança
+segue OK (argv em lista, sem shell; alvo absoluto do seletor). Teste ajustado.
+blue 0.0.5.
+
+---
+
 ## 10. Roadmap
 
 ### 10.1 Próximas iterações por ferramenta
