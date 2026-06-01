@@ -314,8 +314,11 @@ def run_product(meta: ProductMeta, modules: list[Module],
             box.append(self._stack)
             self.set_content(box)
 
-            # seleciona o 1º módulo
-            if modules:
+            # seleciona o 1º módulo na sidebar — dispara row-selected, que mostra
+            # o conteúdo e acende a linha. Fallback: set direto se algo falhar.
+            if self._first_mod_row is not None:
+                self._sidebar.select_row(self._first_mod_row)
+            elif modules:
                 self._show_module(modules[0])
 
         # -- rail --
@@ -368,7 +371,10 @@ def run_product(meta: ProductMeta, modules: list[Module],
             sidebar = Gtk.ListBox()
             sidebar.add_css_class("navigation-sidebar")
             sidebar.set_selection_mode(Gtk.SelectionMode.SINGLE)
-            sidebar.connect("row-activated", self._on_row_activated)
+            # row-selected (não row-activated): ActionRow não é activatable por
+            # padrão, então row-activated nunca dispara. Selecionar = clicar.
+            sidebar.connect("row-selected", self._on_row_selected)
+            self._first_mod_row: Gtk.ListBoxRow | None = None
 
             for cat, mods in self._grouped.items():
                 header = Gtk.Label(label=categories.get(cat, cat).upper())
@@ -393,8 +399,11 @@ def run_product(meta: ProductMeta, modules: list[Module],
                     pill.add_css_class("caption")
                     pill.add_css_class("dim-label")
                     row.add_suffix(pill)
+                    row.set_activatable(True)
                     row._vigia_module = mod  # type: ignore[attr-defined]
                     sidebar.append(row)
+                    if self._first_mod_row is None:
+                        self._first_mod_row = row
 
             scroller = Gtk.ScrolledWindow()
             scroller.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
@@ -422,7 +431,9 @@ def run_product(meta: ProductMeta, modules: list[Module],
             split.append(self._content_bin)
             return split
 
-        def _on_row_activated(self, _lb: Gtk.ListBox, row: Gtk.ListBoxRow) -> None:
+        def _on_row_selected(self, _lb: Gtk.ListBox, row) -> None:
+            if row is None:          # deseleção
+                return
             mod = getattr(row, "_vigia_module", None)
             if mod is not None:
                 self._content_bin.set_child(_module_page(mod))
