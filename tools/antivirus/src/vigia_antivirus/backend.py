@@ -101,50 +101,70 @@ from vigia_common.proc import run as _run
 # ============================================================
 
 
-def get_db_info() -> DbInfo:
+# Dirs onde a base de assinaturas pode estar (1ª que existir vence).
+DB_DIRS = (
+    "/var/lib/clamav",
+    "/usr/local/share/clamav",
+    "/var/lib/clamav-unofficial-sigs",
+)
+
+
+def _newest_db_mtime(db_dir: Path) -> float | None:
+    """mtime do arquivo de assinatura (.cvd/.cld) mais recente em `db_dir`.
+
+    Retorna None se o dir não tiver base legível. É a fonte de idade do Vigia
+    porque é **independente de locale** — ao contrário da data no
+    `clamscan --version`, cujo `strptime("%a %b …")` quebra sob locale pt-BR
+    (espera "Dom"/"Jun" e recebe o inglês "Sun"/"Jun" do ClamAV).
+    """
+    newest: float | None = None
+    try:
+        for f in db_dir.glob("*.c[lv]d"):  # daily/main/bytecode .cvd ou .cld
+            try:
+                m = f.stat().st_mtime
+            except OSError:
+                continue
+            if newest is None or m > newest:
+                newest = m
+    except OSError:
+        return None
+    return newest
+
+
+def get_db_info(db_dirs: tuple[str, ...] | None = None) -> DbInfo:
     info = DbInfo()
     if not clamav_installed():
         return info
 
-    # clamscan --version output: "ClamAV 1.0.5/27365/Mon May 13 12:34:56 2026"
+    # Versão do engine + versão da base via `clamscan --version`:
+    #   "ClamAV 1.4.4/27600/Sun Jun  1 03:30:00 2026"
+    # NÃO usamos o 3º campo (data) pra idade: o strptime dele é locale-dependent
+    # e nem sempre vem preenchido. A idade sai do mtime dos arquivos (abaixo).
     rc, out, _ = _run(["clamscan", "--version"], timeout=10)
     if rc == 0 and out:
-        line = out.strip()
-        # split em "/"
-        parts = line.split("/")
-        if len(parts) >= 1:
-            # "ClamAV 1.0.5"
+        parts = out.strip().split("/")
+        if parts:
             m = re.search(r"ClamAV\s+([\d.]+)", parts[0])
             if m:
                 info.engine_version = m.group(1)
         if len(parts) >= 2:
             info.db_version = parts[1].strip()
-        if len(parts) >= 3:
-            info.last_update = parts[2].strip()
-            try:
-                # "Mon May 13 12:34:56 2026"
-                dt = datetime.strptime(info.last_update, "%a %b %d %H:%M:%S %Y")
-                info.last_update_epoch = int(dt.timestamp())
-            except ValueError:
-                pass
 
-    # Tenta determinar dir de DB
-    for candidate in (
-        "/var/lib/clamav",
-        "/usr/local/share/clamav",
-        "/var/lib/clamav-unofficial-sigs",
-    ):
-        if Path(candidate).is_dir():
+    # Idade / última atualização pela mtime do arquivo de base mais recente.
+    for candidate in (db_dirs or DB_DIRS):
+        d = Path(candidate)
+        if not d.is_dir():
+            continue
+        if not info.db_dir:
             info.db_dir = candidate
-            # Conta arquivos .cvd/.cld para estimar sig count
-            try:
-                files = list(Path(candidate).glob("*.c[lv]d"))
-                if files:
-                    # Cada .cvd tem header com sig count, mas evitar parse binario
-                    # Estimativa: ~8M signatures em main.cvd, ~3M daily.cvd
-                    info.sig_count = 0
-            except (OSError, PermissionError):
-                pass
+        newest = _newest_db_mtime(d)
+        if newest is not None:
+            info.last_update_epoch = int(newest)
+            # strftime só com códigos numéricos (%d/%m/%Y %H:%M) — sem %a/%b,
+            # portanto também independente de locale.
+            info.last_update = datetime.fromtimestamp(newest).strftime(
+                "%d/%m/%Y %H:%M"
+            )
             break
 
     return info

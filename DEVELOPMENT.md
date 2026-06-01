@@ -70,7 +70,7 @@ Em 2026-05-28 adicionada **Deployments Manager** (rpm-ostree GUI).
 | 11 | **Tool Installer** | v0.3.6 | Python + GTK4 | 🟢 Catálogo rpm-ostree + Extensoes navegador (FOSS) |
 | 12 | **DNS Manager** | v0.4.3 | Python + GTK4 | 🟢 dnscrypt-proxy only — 11 servers curados |
 | 13 | **Capabilities Inspector** | v0.1.2 | Python + GTK4 | 🟢 getcap audit + catálogo pt-BR de 41 caps |
-| 14 | **Antivirus** | v0.1.3 | Python + GTK4 | 🟢 ClamAV wrapper — substitui clamtk |
+| 14 | **Antivirus** | v0.1.4 | Python + GTK4 | 🟢 ClamAV wrapper — substitui clamtk |
 | 15 | **Dashboard** | v0.4.2 | Python + GTK4 + Cairo | 🟢 Tempo real + per-process I/O + alertas + inspetor syscalls + banda/processo + selo plataforma |
 | 16 | **Rootkit Scanner** | v0.2.2 | Python + GTK4 | 🟢 chkrootkit + rkhunter — pattern PreferencesGroup |
 | 17 | **Deployments Manager** | v0.1.2 | Python + GTK4 | 🟢 rpm-ostree deployments (rollback/pin/cleanup) + labels/notas LGPD |
@@ -601,7 +601,7 @@ power tools pra isso.
 
 ---
 
-### 5.14 Vigia Antivirus (`tools/antivirus/`, v0.1.3)
+### 5.14 Vigia Antivirus (`tools/antivirus/`, v0.1.4)
 
 **Função**: Antivirus on-demand para Linux desktop, wrapper de ClamAV.
 
@@ -2185,6 +2185,27 @@ contador), DNS **11**, caps **41**, catálogo do installer **13**; contagem glob
 
 **Resultado**: suite **940 passando, 4 skipped**; segurança FORTE; docs/specs/
 versões em dia. `#77` i18n permanece congelado.
+
+---
+
+### 2026-06-01 — Antivirus v0.1.4: idade da base imune a locale
+
+**Bug reportado pelo André** (VM pt-BR): o banner "Base de assinaturas: idade
+desconhecida. Atualize…" persistia mesmo depois de atualizar a base — e o scan
+rodava normal (engine 1.4.4, 200k+ arquivos, base carregada).
+
+**Raiz**: `get_db_info` derivava a idade do 3º campo do `clamscan --version`
+(`ClamAV 1.4.4/27600/Sun Jun  1 …`) via `datetime.strptime(…, "%a %b %d …")`.
+`%a`/`%b` são **locale-dependent**: sob `LC_TIME=pt_BR` o Python espera
+"Dom"/"Jun" e recebe o inglês "Sun"/"Jun" do ClamAV → `ValueError` →
+`last_update_epoch=0` → `db_age_days` None → banner "idade desconhecida".
+
+**Fix**: a idade passa a vir do **mtime do arquivo de assinatura mais recente**
+(`*.c[lv]d` em `/var/lib/clamav`) — independente de locale e do formato do
+`--version`, e é exatamente "quando o freshclam atualizou". `get_db_info`
+ganhou parâmetro `db_dirs=` (testável) + helper `_newest_db_mtime`. A string
+de versão ainda dá engine/db version. +3 testes (incl. regressão de locale).
+Suite 942.
 
 ---
 

@@ -26,23 +26,59 @@ from vigia_antivirus import backend
 # ============================================================
 
 
+def _mk_db(tmp_path, name="daily.cld", age_days=0):
+    """Cria um dir de base com 1 arquivo de assinatura com mtime = age_days atras."""
+    db = tmp_path / "clamav"
+    db.mkdir(exist_ok=True)
+    f = db / name
+    f.write_bytes(b"x")
+    ts = int(time.time()) - age_days * 86400
+    os.utime(f, (ts, ts))
+    return db, ts
+
+
 class TestGetDbInfo:
-    def test_parses_version_line(self, monkeypatch):
+    def test_versao_do_version_string_idade_do_mtime(self, monkeypatch, tmp_path):
         monkeypatch.setattr(backend, "clamav_installed", lambda: True)
         monkeypatch.setattr(
-            backend,
-            "_run",
-            lambda cmd, timeout=10: (
-                0,
-                "ClamAV 1.0.5/27365/Mon May 13 12:34:56 2026\n",
-                "",
-            ),
+            backend, "_run",
+            lambda cmd, timeout=10: (0, "ClamAV 1.4.4/27600/Sun Jun  1 03:30:00 2026\n", ""),
         )
-        info = backend.get_db_info()
-        assert info.engine_version == "1.0.5"
-        assert info.db_version == "27365"
-        assert info.last_update == "Mon May 13 12:34:56 2026"
+        db, ts = _mk_db(tmp_path, age_days=2)
+        info = backend.get_db_info(db_dirs=(str(db),))
+        # engine + db version saem da string --version
+        assert info.engine_version == "1.4.4"
+        assert info.db_version == "27600"
+        # idade vem do mtime do arquivo (nao da data da string)
+        assert info.last_update_epoch == ts
+        assert backend.db_age_days(info) == 2
+        assert info.last_update  # string formatada nao-vazia
+
+    def test_idade_independente_de_locale(self, monkeypatch, tmp_path):
+        # REGRESSAO: antes a idade vinha de strptime("%a %b ...") na data do
+        # --version, que falha sob locale pt-BR (espera "Dom"/"Jun", recebe o
+        # ingles "Sun"/"Jun" do ClamAV) -> epoch 0 -> "idade desconhecida"
+        # mesmo com a base recem-atualizada. Agora vem do mtime: imune a locale.
+        monkeypatch.setattr(backend, "clamav_installed", lambda: True)
+        monkeypatch.setattr(
+            backend, "_run",
+            # data em portugues / formato estranho: irrelevante agora
+            lambda cmd, timeout=10: (0, "ClamAV 1.4.4/27600/Dom  1 Jun 2026\n", ""),
+        )
+        db, ts = _mk_db(tmp_path, name="main.cvd", age_days=0)
+        info = backend.get_db_info(db_dirs=(str(db),))
         assert info.last_update_epoch > 0
+        assert backend.db_age_days(info) == 0  # atualizada hoje -> sem banner
+
+    def test_sem_arquivos_de_base_idade_desconhecida(self, monkeypatch, tmp_path):
+        # Dir existe mas vazio -> idade desconhecida (banner correto: sem base).
+        monkeypatch.setattr(backend, "clamav_installed", lambda: True)
+        monkeypatch.setattr(backend, "_run", lambda cmd, timeout=10: (0, "ClamAV 1.4.4\n", ""))
+        empty = tmp_path / "vazio"
+        empty.mkdir()
+        info = backend.get_db_info(db_dirs=(str(empty),))
+        assert info.last_update_epoch == 0
+        assert backend.db_age_days(info) is None
 
     def test_not_installed_returns_blank(self, monkeypatch):
         monkeypatch.setattr(backend, "clamav_installed", lambda: False)
@@ -50,10 +86,10 @@ class TestGetDbInfo:
         assert info.engine_version == ""
         assert info.db_version == ""
 
-    def test_malformed_version_line_is_safe(self, monkeypatch):
+    def test_malformed_version_line_is_safe(self, monkeypatch, tmp_path):
         monkeypatch.setattr(backend, "clamav_installed", lambda: True)
         monkeypatch.setattr(backend, "_run", lambda cmd, timeout=10: (0, "lixo\n", ""))
-        info = backend.get_db_info()
+        info = backend.get_db_info(db_dirs=(str(tmp_path),))
         # sem '/' nem 'ClamAV X.Y' -> campos ficam vazios, sem crash
         assert info.engine_version == ""
         assert info.db_version == ""
