@@ -41,11 +41,17 @@ _BUNDLED_RULES_DIR = Path(__file__).resolve().parents[4] / "data" / "yara-rules"
 
 @dataclass
 class Match:
-    """Um match do YARA: a regra que disparou e o arquivo onde."""
+    """Um match do YARA: a regra que disparou e o arquivo onde.
+
+    `description`/`severity` vêm do `meta` da regra (preenchidos pelo scan), para
+    a UI mostrar um alerta amigável em vez de só o nome técnico da regra.
+    """
 
     rule: str
     path: str
     tags: list[str] = field(default_factory=list)
+    description: str = ""
+    severity: str = ""
 
 
 @dataclass
@@ -56,6 +62,7 @@ class ScanResult:
     elapsed_sec: float = 0.0
     error: str = ""
     started_at: str = ""        # ISO timestamp
+    raw_output: str = ""        # stdout cru do yara (mostrado colapsado na UI)
 
 
 # ============================================================
@@ -162,6 +169,41 @@ def build_scan_cmd(
 
 
 # ============================================================
+# Metadados das regras (description/severity do bloco `meta:`)
+# ============================================================
+
+_RULE_RE = re.compile(r"\brule\s+(\w+)\b")
+
+
+def _meta_str(block: str, key: str) -> str:
+    m = re.search(key + r'\s*=\s*"((?:[^"\\]|\\.)*)"', block)
+    return m.group(1).replace('\\"', '"').replace("\\\\", "\\") if m else ""
+
+
+def rule_meta(rules: list[Path | str]) -> dict[str, dict[str, str]]:
+    """Extrai `{description, severity}` do `meta:` de cada regra nos arquivos.
+
+    Parser leve (regex), suficiente pro formato dos `.yar` do produto. Cada nome
+    de regra mapeia para um dict; ausência de meta = strings vazias. Puro/testável.
+    """
+    out: dict[str, dict[str, str]] = {}
+    for rf in rules:
+        try:
+            text = Path(rf).read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+        names = [(m.group(1), m.start()) for m in _RULE_RE.finditer(text)]
+        for i, (name, start) in enumerate(names):
+            end = names[i + 1][1] if i + 1 < len(names) else len(text)
+            block = text[start:end]
+            out[name] = {
+                "description": _meta_str(block, "description"),
+                "severity": _meta_str(block, "severity"),
+            }
+    return out
+
+
+# ============================================================
 # Scan (toca o sistema via proc.run)
 # ============================================================
 
@@ -190,7 +232,14 @@ def scan(
     rc, out, err = proc.run(build_scan_cmd(rules, target, recursive), timeout=timeout)
     result.elapsed_sec = round(time.monotonic() - t0, 2)
 
+    result.raw_output = out
     result.matches = parse_yara_output(out)
+    # enriquece cada match com description/severity do meta da regra
+    meta = rule_meta(rules)
+    for m in result.matches:
+        info = meta.get(m.rule, {})
+        m.description = info.get("description", "")
+        m.severity = info.get("severity", "")
     # yara sai 0 mesmo com matches; rc!=0 sem stdout = erro real (regra inválida,
     # path inacessível, etc.).
     if rc != 0 and not out:
@@ -221,7 +270,11 @@ def save_report(result: ScanResult) -> Path | None:
         "rules_count": result.rules_count,
         "elapsed_sec": result.elapsed_sec,
         "error": result.error,
-        "matches": [{"rule": m.rule, "path": m.path, "tags": m.tags} for m in result.matches],
+        "matches": [
+            {"rule": m.rule, "path": m.path, "tags": m.tags,
+             "description": m.description, "severity": m.severity}
+            for m in result.matches
+        ],
     }
     return path if save_json_0600(path, data) else None
 

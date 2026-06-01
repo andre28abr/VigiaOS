@@ -24,12 +24,19 @@ usado por times de segurança pra **caçar ameaças** (*threat hunting*).
 2. Clique em **Escanear**.
 3. Aguarde — o Vigia YARA passa todas as **regras** por cada arquivo.
 4. Veja os **resultados**:
-   - **Nenhum match** → nada suspeito casou com as regras. 👍
-   - **Um ou mais matches** → algum arquivo casou com uma regra. Cada linha mostra
-     **qual regra** disparou e **em qual arquivo**.
+   - **Nenhum alerta** → nada suspeito casou com as regras. 👍
+   - **Um ou mais alertas** → cada alerta é um **botão**: aparece o **nome do
+     arquivo** e a **severidade** (Teste / Suspeito / Alto…). **Clique no alerta**
+     pra abrir os detalhes:
+     - **O que é** — explicação em português do que foi encontrado;
+     - **Arquivo** — o caminho completo;
+     - **Regra (técnico)** — o nome da regra YARA + tags, pra quem quer o detalhe.
+   - No fim da lista há um **"Saída do yara"** (recolhido) com o resultado bruto
+     da ferramenta, caso queira ver exatamente o que ela imprimiu.
 
-> Um **match** não é prova absoluta de vírus — é um **alerta** de que aquele
-> arquivo tem características suspeitas e merece um olhar humano.
+> Um alerta **não é prova absoluta** de vírus — é um aviso de que aquele arquivo
+> tem características suspeitas e merece um olhar humano. A descrição em "O que é"
+> ajuda a entender o risco.
 
 ## As regras
 

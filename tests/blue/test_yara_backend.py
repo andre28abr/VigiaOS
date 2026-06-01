@@ -185,3 +185,37 @@ class TestWiring:
         assert yara.status == "pronto"
         # registry continua importável headless (não puxa gi/page)
         assert yara.icon.endswith(".svg")
+
+
+class TestRuleMeta:
+    def test_extrai_description_e_severity(self, tmp_path):
+        rf = tmp_path / "r.yar"
+        rf.write_text(
+            'rule Foo : tag1 {\n  meta:\n    description = "Faz algo suspeito"\n'
+            '    severity = "suspeito"\n  strings:\n    $a = "x"\n  condition:\n    $a\n}\n'
+            'rule Bar {\n  condition:\n    true\n}\n'
+        )
+        meta = backend.rule_meta([rf])
+        assert meta["Foo"]["description"] == "Faz algo suspeito"
+        assert meta["Foo"]["severity"] == "suspeito"
+        assert meta["Bar"]["description"] == ""   # sem meta
+
+    def test_bundled_tem_meta(self):
+        meta = backend.rule_meta(backend.bundled_rules())
+        assert meta.get("EICAR_Test_File", {}).get("description")
+
+    def test_arquivo_inexistente_ignorado(self, tmp_path):
+        assert backend.rule_meta([tmp_path / "nao.yar"]) == {}
+
+
+class TestScanEnrichment:
+    def test_match_recebe_description_severity_e_raw(self, monkeypatch):
+        monkeypatch.setattr(
+            backend.proc, "run",
+            lambda cmd, timeout=900: (0, "EICAR_Test_File /tmp/e.txt\n", ""),
+        )
+        r = backend.scan("/tmp", rules=backend.bundled_rules())
+        assert r.raw_output.strip() == "EICAR_Test_File /tmp/e.txt"
+        assert len(r.matches) == 1
+        assert r.matches[0].description          # veio do meta do starter.yar
+        assert r.matches[0].severity == "teste"
