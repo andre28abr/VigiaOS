@@ -13,7 +13,7 @@ META = ProductMeta(
     key="blue",
     name="VigiaBlue",
     app_id="br.com.vigia.Blue",
-    version="0.0.3",
+    version="0.0.4",
     tagline=(
         "Suíte defensiva (blue team / SOC) com interface gráfica moderna — "
         "detecção, caça a ameaças, forense e resposta. Parte do ecossistema "
@@ -63,6 +63,8 @@ MODULES: list[Module] = [
         wraps=["yara"],
         features=["Conjuntos de regras atualizáveis", "Scan de path e memória",
                   "Quarentena opcional do achado"],
+        status="pronto",
+        impl="vigia_blue.modules.yara.page",
     ),
     Module(
         id="memory", name="Vigia Memory", category="forensics",

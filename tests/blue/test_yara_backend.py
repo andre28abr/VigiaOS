@@ -175,3 +175,13 @@ class TestReports:
     def test_list_sem_dir(self, tmp_path, monkeypatch):
         monkeypatch.setattr(backend, "REPORTS_DIR", tmp_path / "nada")
         assert backend.list_recent_reports() == []
+
+
+class TestWiring:
+    def test_registry_liga_yara_na_gui(self):
+        from vigia_blue.registry import MODULES
+        yara = next(m for m in MODULES if m.id == "yara")
+        assert yara.impl == "vigia_blue.modules.yara.page"
+        assert yara.status == "pronto"
+        # registry continua importável headless (não puxa gi/page)
+        assert yara.icon.endswith(".svg")
