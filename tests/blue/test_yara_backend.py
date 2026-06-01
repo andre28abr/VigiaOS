@@ -127,16 +127,18 @@ class TestRulesDiscovery:
 
 
 class TestScan:
-    def test_scan_parseia_matches(self, monkeypatch):
+    def test_scan_parseia_matches(self, monkeypatch, tmp_path):
+        rf = tmp_path / "x.yar"
+        rf.write_text("rule X { condition: true }")
         monkeypatch.setattr(
             backend.proc, "run",
             lambda cmd, timeout=900: (0, "EICAR_Test_File /tmp/eicar.txt\n", ""),
         )
-        r = backend.scan("/tmp", rules=["/r/a.yar"])
+        r = backend.scan("/tmp", rules=[rf])
         assert r.error == ""
         assert len(r.matches) == 1
         assert r.matches[0].rule == "EICAR_Test_File"
-        assert r.rules_count == 1
+        assert r.rules_count == 1          # 1 REGRA (não arquivo)
         assert r.started_at
 
     def test_scan_rc_erro_sem_stdout(self, monkeypatch):
@@ -219,3 +221,29 @@ class TestScanEnrichment:
         assert len(r.matches) == 1
         assert r.matches[0].description          # veio do meta do starter.yar
         assert r.matches[0].severity == "teste"
+
+
+class TestCountRules:
+    def test_conta_regras_nao_arquivos(self, tmp_path):
+        (tmp_path / "a.yar").write_text("rule One {condition: true}\nrule Two {condition: true}")
+        (tmp_path / "b.yar").write_text("rule Three {condition: true}")
+        # 2 arquivos, 3 regras
+        assert backend.count_rules(backend.list_rules(tmp_path)) == 3
+
+    def test_arquivo_inexistente_zero(self, tmp_path):
+        assert backend.count_rules([tmp_path / "nao.yar"]) == 0
+
+    def test_bundled_inclui_starter_e_lgpd(self):
+        b = backend.bundled_rules()
+        nomes = {p.name for p in b}
+        assert "starter.yar" in nomes and "lgpd.yar" in nomes
+        assert backend.count_rules(b) >= 8   # 3 malware + 5 LGPD
+
+
+class TestLgpdRules:
+    def test_lgpd_tem_meta_pt_br(self):
+        meta = backend.rule_meta(backend.bundled_rules())
+        assert "LGPD_CPF" in meta
+        assert "CPF" in meta["LGPD_CPF"]["description"]
+        assert meta["LGPD_CPF"]["severity"] == "suspeito"
+        assert meta["LGPD_Cartao_Credito"]["severity"] == "alto"

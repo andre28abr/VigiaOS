@@ -108,11 +108,15 @@ class _ScanView(Gtk.Box):
         g_rules.set_title("Regras")
         rules = backend.effective_rules()
         using_user = bool(backend.list_rules(backend.RULES_DIR))
+        n_rules = backend.count_rules(rules)
         rules_row = Adw.ActionRow()
-        rules_row.set_title(f"{len(rules)} conjunto(s) de regras")
+        rules_row.set_title(f"{n_rules} regra(s)")
         rules_row.set_subtitle(
-            "Suas regras" if using_user else "Regras de partida (EICAR + heurísticas)"
+            "Suas regras (em ~/.local/share/vigia-yara/rules/)"
+            if using_user
+            else "Regras de partida: malware (webshell/revshell) + LGPD (CPF, e-mail…)"
         )
+        rules_row.set_subtitle_lines(0)
         rules_row.add_prefix(Gtk.Image.new_from_icon_name("text-x-generic-symbolic"))
         open_rules = Gtk.Button(label="Pasta de regras")
         open_rules.set_valign(Gtk.Align.CENTER)
@@ -288,7 +292,7 @@ class _ScanView(Gtk.Box):
         files = len({m.path for m in result.matches})
         if n == 0:
             self._results.set_description(
-                f"Nada suspeito. {result.rules_count} conjunto(s) de regras · "
+                f"Nada suspeito. {result.rules_count} regra(s) ·"
                 f"{result.elapsed_sec:.1f}s."
             )
             row = Adw.ActionRow()
@@ -299,7 +303,7 @@ class _ScanView(Gtk.Box):
             return False
 
         self._results.set_description(
-            f"{n} alerta(s) em {files} arquivo(s) · {result.rules_count} conjunto(s) de regras · "
+            f"{n} alerta(s) em {files} arquivo(s) · {result.rules_count} regra(s) ·"
             f"{result.elapsed_sec:.1f}s. Clique num alerta para ver o que é."
         )
         for m in result.matches:

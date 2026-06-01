@@ -40,10 +40,25 @@ usado por times de segurança pra **caçar ameaças** (*threat hunting*).
 
 ## As regras
 
-O Vigia YARA já vem com um conjunto **inicial** de regras (o arquivo de teste
-EICAR, heurísticas de webshell PHP e de *reverse shell*). Você pode adicionar as
-suas (ou conjuntos da comunidade) na pasta `~/.local/share/vigia-yara/rules/` —
-quando houver regras suas ali, elas têm prioridade sobre as que já vêm.
+O Vigia YARA já vem com regras de partida em dois grupos:
+
+- **Malware** — arquivo de teste EICAR, heurísticas de *webshell* PHP e de
+  *reverse shell*.
+- **LGPD / dados pessoais** — encontram arquivos que **contêm dado pessoal**:
+  CPF, CNPJ, e-mail, telefone e número de cartão. Útil pro escritório saber
+  *"quais arquivos têm dados de clientes?"*. (É um **alerta para revisão**: o
+  YARA reconhece o *formato* do CPF, não confirma se é um CPF real.)
+
+Você pode adicionar as suas regras (ou conjuntos da comunidade) na pasta
+`~/.local/share/vigia-yara/rules/` — quando houver regras suas ali, elas têm
+prioridade sobre as que já vêm.
+
+> **Importante sobre Word e PDF:** o YARA lê o arquivo "como está". Em texto
+> puro (`.txt`, `.csv`, `.log`, e-mails) ele acha os dados pessoais sem
+> problema. Mas `.docx`/`.xlsx` são arquivos **compactados** e muitos `.pdf`
+> também — nesses, o texto fica "escondido" e o YARA pode **não encontrar**. A
+> verificação desses documentos virá no módulo **Vigia LGPD / Higiene de Dados**
+> (planejado), que abre o documento antes de procurar.
 
 ## Privacidade
 

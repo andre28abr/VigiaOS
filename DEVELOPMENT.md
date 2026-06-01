@@ -2353,6 +2353,30 @@ melhor que copiar o console raw — **lidera pela versão amigável**:
 
 ---
 
+### 2026-06-01 — Vigia YARA: ruleset LGPD (PII) + contagem de regras
+
+Dois pedidos do André:
+
+1. **Contar regras, não arquivos.** `rules_count` era nº de arquivos de regra
+   (mostrava "1 conjunto" com 3 regras dentro). Novo `count_rules(rules)` conta
+   as declarações `rule X`; `scan()` usa ele; a UI mostra "N regras".
+2. **Ruleset LGPD/PII** (`data/yara-rules/lgpd.yar`): regras regex que sinalizam
+   arquivos com **dado pessoal** — CPF (suspeito), CNPJ/e-mail/telefone (baixo),
+   cartão de crédito (alto), com description/severity pt-BR. Vira o caso de uso
+   de escritório: "quais arquivos têm dados de clientes?". Bundled junto do
+   starter → scan default cobre malware + LGPD.
+
+**Limite honesto documentado**: YARA casa bytes — pega PII em texto puro
+(.txt/.csv/.log/.eml/código) mas NÃO em `.docx`/`.xlsx`/`.pdf` (texto
+comprimido). E é match por FORMATO, não validação. A parte de documentos +
+política de filesystem (doc na pasta errada, permissão frouxa) fica para um
+**módulo dedicado "Vigia LGPD / Higiene de Dados" no VigiaHub** (futuro) — que
+extrai texto antes e combina com checagens de local/permissão.
+
++4 testes (count_rules + lgpd meta). Suite 990. Manuais leigo/técnico. blue 0.0.8.
+
+---
+
 ## 10. Roadmap
 
 ### 10.1 Próximas iterações por ferramenta
