@@ -13,7 +13,7 @@ META = ProductMeta(
     key="blue",
     name="VigiaBlue",
     app_id="br.com.vigia.Blue",
-    version="0.0.2",
+    version="0.0.3",
     tagline=(
         "Suíte defensiva (blue team / SOC) com interface gráfica moderna — "
         "detecção, caça a ameaças, forense e resposta. Parte do ecossistema "
