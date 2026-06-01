@@ -10,7 +10,7 @@ a partir de `journalctl`, `last` e `lastb` — pensado para auditoria LGPD.
 
 | Item | Valor |
 |---|---|
-| **Pacote** | `vigia-reports` (versão 0.2.3) |
+| **Pacote** | `vigia-reports` (versão 0.2.4) |
 | **App ID** | `br.com.vigia.Reports` |
 | **Pacotes wrapped** | `journalctl`, `last`, `lastb` |
 | **Templating** | Jinja2 (`PackageLoader("vigia_reports", "templates")`) |
@@ -102,7 +102,7 @@ senha derretem UX e treinam o usuário a clicar sem ler.
 | Tab | Descrição |
 |---|---|
 | **Gerar** | `ComboRow` modelo (Atividade geral, Eventos de autenticação, Resumo executivo, Acesso administrativo, Conformidade LGPD, Saúde do sistema) + `ComboRow` período (24h, 7d, 30d, 90d) + `SwitchRow` modo admin + botão `Gerar`. Progress bar pulsante. Abre HTML no navegador via `Gio.AppInfo.launch_default_for_uri`. |
-| **Biblioteca** | Lista HTMLs ordenados por mtime desc. Cada row tem `Abrir` + `Excluir` (com `Adw.AlertDialog`). Botão "Abrir pasta" lança file manager. |
+| **Biblioteca** | Lista HTMLs ordenados por mtime desc. Cada row tem `Abrir` + `Excluir` (com `Adw.AlertDialog`). Toolbar: "Abrir pasta", **"Pacote de auditoria (.zip)"** (`build_audit_package`) e atualizar. |
 | **Sobre** | `Adw.PreferencesPage` com 5 seções markup-formatted. |
 
 ### KPIs do template `activity_overview`
@@ -165,6 +165,22 @@ Dois modelos novos, ambos a partir dos dados já coletados:
   Cada um vira `{tool, label, state, headline, detail, ran_at}` (`state` ∈
   ok/warn/danger/**missing**). Tool nunca rodada → *missing* (não conta no
   score). Interpretadores puros (`_interpret_*`) testáveis sem I/O.
+
+### Integridade: selo SHA-256 + pacote de auditoria (v0.2.4)
+
+- **Selo no rodapé** (`renderer._doc_seal`): SHA-256 de `json.dumps(ctx,
+  sort_keys=True, default=str)` (dados + metadata; inclui `generated_at`, logo
+  é único por documento). Injetado como `doc_seal` e exibido no `base.html`.
+  Fingerprint **do conteúdo**, visível na página.
+- **Sidecar `.sha256`** (`renderer.write_report`): grava
+  `<relatório>.html.sha256` no formato `sha256sum` (`<hash>  <nome>`). Como
+  `write_text(utf-8)` grava exatamente `html.encode()`, o digest bate com
+  `sha256sum <file>` → **verificável independente** (`sha256sum -c`). É a prova
+  de adulteração de verdade (o selo do rodapé é o fingerprint visual).
+- **Pacote de auditoria** (`renderer.build_audit_package(reports_dir)`): zipa
+  todos os `.html` + os `.sha256` + um `MANIFEST.txt` (lista de hashes) + um
+  `LEIA-ME.txt` (passo a passo). Saída `auditoria-<ts>.zip` (0600); botão na
+  aba **Biblioteca**.
 
 ## Quando usar
 

@@ -44,6 +44,13 @@ class LibraryTab(Adw.Bin):
         open_dir_btn.connect("clicked", self._on_open_dir_clicked)
         toolbar.append(open_dir_btn)
 
+        export_btn = Gtk.Button(label="Pacote de auditoria (.zip)")
+        export_btn.set_tooltip_text(
+            "Empacota todos os relatórios + selos de integridade num .zip para auditoria"
+        )
+        export_btn.connect("clicked", self._on_export_clicked)
+        toolbar.append(export_btn)
+
         refresh_btn = Gtk.Button.new_from_icon_name("view-refresh-symbolic")
         refresh_btn.set_tooltip_text("Atualizar lista")
         refresh_btn.connect("clicked", lambda _b: self.refresh())
@@ -178,6 +185,30 @@ class LibraryTab(Adw.Bin):
                 subprocess.Popen(["xdg-open", str(reports_dir)])
             except Exception as e:
                 show_error(self, "Falha ao abrir", str(e))
+
+    def _on_export_clicked(self, _btn: Gtk.Button) -> None:
+        zip_path, count, err = renderer.build_audit_package(backend.ensure_reports_dir())
+        if err or zip_path is None:
+            show_error(self, "Não foi possível exportar", err or "Erro desconhecido.")
+            return
+        dlg = Adw.AlertDialog(
+            heading="Pacote de auditoria criado",
+            body=(
+                f"{count} relatório(s) empacotado(s) em:\n{zip_path.name}\n\n"
+                "Inclui os selos .sha256 de cada relatório, um MANIFEST.txt com "
+                "todos os hashes e um LEIA-ME.txt com o passo a passo de verificação."
+            ),
+        )
+        dlg.add_response("ok", "OK")
+        dlg.add_response("open", "Abrir pasta")
+        dlg.set_response_appearance("open", Adw.ResponseAppearance.SUGGESTED)
+        dlg.set_default_response("open")
+        dlg.connect("response", self._on_export_response)
+        dlg.present(self.get_root())
+
+    def _on_export_response(self, _dlg, response: str) -> None:
+        if response == "open":
+            self._on_open_dir_clicked(None)
 
     def _on_delete_clicked(self, _btn: Gtk.Button, path: Path) -> None:
         dlg = Adw.AlertDialog(

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "vigia-reports"
-version = "0.2.3"
+version = "0.2.4"
 description = "Gerador de relatorios HTML (preparados pra PDF via browser) — parte do VigiaOS"
 license = { text = "Apache-2.0" }
 readme = "README.md"

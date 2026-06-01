@@ -37,8 +37,10 @@ Clicou em Gerar -> aparece uma barra de progresso por uns segundos ->
 o relatório abre **automaticamente** no Firefox.
 
 **Biblioteca**: lista todos os relatórios que você já gerou. Cada um
-tem botões "Abrir" e "Excluir". Tem também um botão "Abrir pasta" pra
-ver onde os arquivos estão.
+tem botões "Abrir" e "Excluir". Tem também "Abrir pasta" e o botão
+**"Pacote de auditoria (.zip)"** — junta todos os relatórios num arquivo
+só, com os selos de verificação e um passo a passo, pronto pra entregar
+ao auditor ou guardar.
 
 **Sobre**: explicação da ferramenta com mais detalhes.
 
@@ -92,6 +94,20 @@ O relatório abre no Firefox. Pra salvar como PDF:
 1. `Ctrl+P` (ou menu Arquivo -> Imprimir)
 2. Destino: "Salvar como PDF"
 3. Pronto
+
+### Selo de integridade (à prova de adulteração)
+
+Todo relatório agora vem com um **🔒 selo de integridade** no rodapé — um
+código SHA-256, que é como uma "impressão digital" única do documento. E,
+ao lado de cada relatório salvo, a ferramenta cria um arquivo `.sha256`.
+
+Pra que serve: **provar que ninguém alterou o relatório** depois de gerado.
+Se um dia precisar mostrar pra um auditor que o documento é original, um
+técnico roda um comando (`sha256sum -c`) e o computador confirma se está
+intacto — qualquer mudança de uma vírgula é detectada.
+
+O botão **"Pacote de auditoria (.zip)"** na Biblioteca junta tudo isso num
+arquivo só (relatórios + selos + instruções) pra você entregar de uma vez.
 
 ## Posso quebrar alguma coisa?
 
