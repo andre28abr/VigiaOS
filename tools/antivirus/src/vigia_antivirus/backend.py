@@ -276,13 +276,18 @@ def scan_async(
         # Escolha: clamdscan se daemon ativo (mais rapido), senao clamscan.
         # clamdscan tem flags ligeiramente diferentes; uso clamscan por
         # consistencia + suporte universal nesta v0.1.
-        cmd = ["clamscan", "-r", "--no-summary=no", "--bell=no"]
+        # NOTA: `--no-summary`/`--bell` sao flags booleanas do clamscan e NAO
+        # aceitam `=valor` (passar `--no-summary=no` faz o clamscan abortar
+        # antes de escanear). O summary (que o parser abaixo precisa) vem por
+        # padrao; o bell ja' e' off por padrao. Por isso so' `-r`.
+        cmd = ["clamscan", "-r"]
         # Varredura de sistema inteiro ("/"): pula pseudo-filesystems que
         # nao contem arquivos reais (e que poderiam travar/poluir o scan).
         if os.path.abspath(path) == "/":
             for pat in ("^/proc", "^/sys", "^/dev", "^/run"):
                 cmd.append(f"--exclude-dir={pat}")
-        cmd.append(path)
+        # `--` encerra as flags: path do usuario comecando com `-` nao vira flag.
+        cmd.extend(["--", path])
 
         start = time.time()
         try:

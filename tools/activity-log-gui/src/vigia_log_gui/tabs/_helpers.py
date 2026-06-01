@@ -34,6 +34,28 @@ def make_clamp(child: Gtk.Widget) -> Adw.Clamp:
 # (sao usadas apenas aqui)
 # ============================================================
 
+# Mapas de rotulo/cor por severidade e fonte do evento (consumidos pelas
+# abas Timeline e Correlacoes). Restaurados apos a migracao vigia_common
+# (commit 66121a6) te-los removido por engano.
+SEVERITY_CSS = {
+    "suspicious": "error",
+    "interesting": "warning",
+    "routine": "dim-label",
+}
+
+SEVERITY_LABEL = {
+    "suspicious": "SUSP",
+    "interesting": "INFO",
+    "routine": "OK",
+}
+
+SOURCE_LABEL = {
+    "audit": "AUDIT",
+    "journal": "JRNL",
+    "fail2ban": "F2B",
+}
+
+
 def severity_css(sev: str) -> str:
     return SEVERITY_CSS.get(sev, "dim-label")
 

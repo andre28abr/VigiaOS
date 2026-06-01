@@ -222,7 +222,9 @@ def save_state(state: dict) -> None:
 def get_last_check() -> tuple[datetime | None, CheckSummary | None]:
     state = load_state()
     last = state.get("last_check")
-    if not last:
+    if not isinstance(last, dict):
+        # HARDENING: state e' editavel/corrompivel; last_check pode nao ser
+        # dict (string/lista) — sem isso, last.get(...) levantaria AttributeError.
         return None, None
     try:
         ts = datetime.fromisoformat(last.get("timestamp", ""))
