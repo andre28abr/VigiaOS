@@ -2753,6 +2753,35 @@ sugerida revisada: **B5 → B1 → (B3 ⇒ B2 ⇒ B6) → B4**.
 
 ---
 
+### 10.7 Ecossistema — construção em andamento (jun/2026)
+
+Estado real dos produtos novos: esqueletos GUI prontos, módulos sendo
+preenchidos 1 a 1 via a ponte `Module.impl` do shell (`vigia_common.shell`).
+
+**VigiaBlue** (7 módulos):
+- ✅ **Vigia YARA** — pronto: scan + alertas amigáveis (ExpanderRow: descrição
+  + severidade) + seletor de conjuntos (Malware / LGPD / Credenciais / Tudo).
+  Pendências: pkexec p/ paths root, aba Regras (baixar da comunidade), scan de
+  PID/memória, package-data + spec COPR.
+- 🔜 SIEM (reusa Activity Log) · IDS · Memory (Volatility) · Timeline (plaso) ·
+  Intel (MISP/OTX) · Playbooks.
+
+**VigiaRed** (7 módulos): esqueleto pronto. 1º a implementar: **Network Scanner
+(nmap)** — que também monta a infra de **termo de uso / 1ª execução** (Lei
+12.737/12), reusável por Recon / Vuln / Web / Wireless / Exploit / Cracker.
+
+**VigiaHub — módulo novo AGENDADO: "Vigia LGPD / Higiene de Dados"** 🏛️
+- Onde o Vigia YARA (Blue) acha PII no *conteúdo* de texto, este módulo no Hub
+  é o produto **pro escritório**: (a) **extrai texto de .docx/.xlsx/.pdf** antes
+  de procurar PII (o YARA sozinho não lê comprimido); (b) **higiene de
+  filesystem** — documento sensível na pasta errada (Desktop/Downloads), arquivo
+  com dado pessoal legível por outros (`0644` vs `0600`), sem criptografia.
+  Reusa as regras LGPD do YARA por baixo. Sinergia com o modelo "Conformidade
+  LGPD" do Reports.
+- **Status: planejado** (decidido jun/2026; após os módulos atuais de Blue/Red).
+
+---
+
 ## 11. Lições aprendidas
 
 ### 11.1 Pivot v1 → v2 valeu a pena
