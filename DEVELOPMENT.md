@@ -2572,9 +2572,23 @@ em execução; sem ele, o arquivo não existe. Dois ajustes:
 Também esclarecido (pergunta do André): o IDS **não conflita com o firewall** —
 é passivo (só observa); o firewall bloqueia. São complementares.
 
----
+### 2026-06-02 — Convenção de amostras de teste: `~/teste/<modulo>/`
 
-## 10. Roadmap
+A pedido do André: **todo artefato de teste vai para `~/teste/<modulo>/`** (pasta
+pessoal, fora do repo). Criado **`install/test-samples.sh`** que gera amostras
+**seguras** por módulo:
+- `yara/` — `eicar.txt` + `clientes-lgpd.txt` (CPF/CNPJ/e-mail/tel/cartão) +
+  `credenciais-vazadas.txt` (AWS exemplo / senha / chave). Disparam as regras —
+  **verificado: as 9 regex casam** com as amostras.
+- `intel/` — `iocs-exemplo.txt` (importar) + `indicadores-para-verificar.txt`
+  (checar). IPs/domínios reservados (RFC 5737/2606), nunca reais.
+- `timeline/` — `timeline-exemplo.jsonl` (export json_line — abre **sem** plaso).
+- `ids/` — LEIA-ME; o `.pcap` vem do **`ids-demo.sh`**, que agora salva em
+  `~/teste/ids/vigia-ids-demo.pcap`.
+
+Sem amostra estática: SIEM (lê ao vivo), Memory (precisa de dump real de RAM),
+Playbooks (sem arquivo). Cada pasta tem um `LEIA-ME.txt`. Tudo fictício/inofensivo;
+não baixa nada, não vira root. Artefatos ficam em `$HOME` (não vão pro git).
 
 ### 10.1 Próximas iterações por ferramenta
 
