@@ -279,30 +279,13 @@ def run_product(meta: ProductMeta, modules: list[Module],
         return sp
 
     def _installer_page() -> Gtk.Widget:
-        """Mesmo padrão do Hub: módulos agrupados por categoria, cada um como
-        ExpanderRow (ícone + resumo + descrição em markdown), com o status da
-        sua dependência externa (instalada? como instalar) dobrado no corpo."""
+        """Mesmo padrão do instalador do Hub: abas no topo (ViewSwitcher) —
+        **Módulos · Atualizações · Sobre** — uma sub-barra com as ferramentas
+        que os módulos embarcam, e cada módulo como ExpanderRow (badge de
+        status + descrição + dependência e o nome do Pacote no corpo)."""
         from .markdown import md_to_pango
 
         grouped = modules_by_category(modules, order)
-        page = Adw.PreferencesPage()
-
-        intro = Adw.PreferencesGroup()
-        intro.set_title("Instalador")
-        n_ext = sum(1 for m in modules if m.requires)
-        intro.set_description(
-            f"Verificação do que está instalado nos {len(modules)} módulos do "
-            f"{meta.name}, por categoria. {n_ext} embarcam uma ferramenta "
-            "externa (✓ instalada / ✗ falta). A instalação é feita pelo script "
-            "— rode no terminal: ./install/vigia-setup.sh "
-            f"(instalador guiado de todos os produtos · plataforma: "
-            f"{package_manager()})."
-        )
-        refresh = Gtk.Button(label="Reverificar")
-        refresh.add_css_class("flat")
-        refresh.set_valign(Gtk.Align.CENTER)
-        intro.set_header_suffix(refresh)
-        page.add(intro)
 
         def _dep_block(mod: Module) -> Gtk.Widget:
             box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
@@ -340,8 +323,17 @@ def run_product(meta: ProductMeta, modules: list[Module],
                 lbl.set_hexpand(True)
                 line.append(lbl)
                 box.append(line)
-                # Só-leitura: mostramos se está instalado, não como instalar
-                # (a instalação é pelo script). A nota fica como contexto.
+                # Nome do pacote (igual o "Pacote" do Catálogo do Hub).
+                pkg = dep.package or dep.label
+                if pkg:
+                    pk = Gtk.Label(label=f"pacote: {pkg}")
+                    pk.add_css_class("caption")
+                    pk.add_css_class("dim-label")
+                    pk.add_css_class("monospace")
+                    pk.set_xalign(0)
+                    pk.set_margin_start(28)
+                    box.append(pk)
+                # Só-leitura: a nota fica como contexto (instalação é pelo script).
                 if dep.note:
                     nl = Gtk.Label(label=dep.note)
                     nl.add_css_class("caption")
@@ -387,23 +379,125 @@ def run_product(meta: ProductMeta, modules: list[Module],
             exp.add_row(wrapper)
             return exp
 
-        cat_groups: list[Gtk.Widget] = []
+        # ---------- aba Módulos (verificação) ----------
+        def _modules_tab() -> Gtk.Widget:
+            page = Adw.PreferencesPage()
+            intro = Adw.PreferencesGroup()
+            intro.set_title("Ferramentas embarcadas")
+            n_ext = sum(1 for m in modules if m.requires)
+            intro.set_description(
+                f"Os {len(modules)} módulos do {meta.name} embarcam ferramentas "
+                "open source **curadas e auditáveis** (YARA, Suricata, "
+                f"Volatility, …). {n_ext} usam uma ferramenta externa — aqui "
+                "você confere o que já está instalado (✓) e o que falta (✗). A "
+                "instalação é feita pelo script guiado: `./install/vigia-setup.sh` "
+                f"(plataforma: {package_manager()})."
+            )
+            refresh = Gtk.Button(label="Reverificar")
+            refresh.add_css_class("flat")
+            refresh.set_valign(Gtk.Align.CENTER)
+            intro.set_header_suffix(refresh)
+            page.add(intro)
 
-        def _build_groups(*_a):
-            for grp in cat_groups:
-                page.remove(grp)
-            cat_groups.clear()
-            for cat, mods in grouped.items():
-                grp = Adw.PreferencesGroup()
-                grp.set_title(categories.get(cat, cat))
-                for mod in mods:
-                    grp.add(_module_expander(mod))
-                page.add(grp)
-                cat_groups.append(grp)
+            cat_groups: list[Gtk.Widget] = []
 
-        refresh.connect("clicked", _build_groups)
-        _build_groups()
-        return _content_with_header("Instalador", page)
+            def _build_groups(*_a):
+                for grp in cat_groups:
+                    page.remove(grp)
+                cat_groups.clear()
+                for cat, mods in grouped.items():
+                    grp = Adw.PreferencesGroup()
+                    grp.set_title(categories.get(cat, cat))
+                    for mod in mods:
+                        grp.add(_module_expander(mod))
+                    page.add(grp)
+                    cat_groups.append(grp)
+
+            refresh.connect("clicked", _build_groups)
+            _build_groups()
+            return _widen_clamps(page)
+
+        # ---------- aba Atualizações (reusa a UpdatesTab do Hub) ----------
+        def _updates_tab() -> Gtk.Widget:
+            try:
+                from vigia_installer.tabs.updates import UpdatesTab
+                return UpdatesTab()
+            except Exception as e:  # noqa: BLE001 — opcional; cai num aviso
+                print(f"[{meta.key}] aba Atualizações indisponível: {e}",
+                      flush=True)
+                return _placeholder(
+                    "software-update-available-symbolic",
+                    "Atualizações",
+                    "O verificador de atualizações não está disponível aqui.")
+
+        # ---------- aba Sobre (sobre o instalador) ----------
+        def _about_installer_tab() -> Gtk.Widget:
+            page = Adw.PreferencesPage()
+            g = Adw.PreferencesGroup()
+            g.set_title("Sobre o Instalador")
+            g.set_description(
+                f"Esta área verifica as ferramentas externas que os módulos do "
+                f"{meta.name} embarcam — é só conferência. A instalação é feita "
+                "pelo script guiado do ecossistema: ./install/vigia-setup.sh."
+            )
+            r = Adw.ActionRow()
+            r.set_title("Gerenciador de pacotes")
+            r.set_subtitle(package_manager())
+            r.add_prefix(
+                Gtk.Image.new_from_icon_name("preferences-system-symbolic"))
+            g.add(r)
+            page.add(g)
+            return _widen_clamps(page)
+
+        # ---------- sub-barra "Embarca:" (tags das ferramentas) ----------
+        def _wrapper_bar():
+            pkgs: list[str] = []
+            for m in modules:
+                for d in m.requires:
+                    name = d.package or d.label
+                    if name and name not in pkgs:
+                        pkgs.append(name)
+            bar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+            bar.set_margin_start(12)
+            bar.set_margin_end(12)
+            bar.set_margin_top(4)
+            bar.set_margin_bottom(4)
+            intro = Gtk.Label(label="Embarca:")
+            intro.add_css_class("caption")
+            intro.add_css_class("dim-label")
+            bar.append(intro)
+            for p in pkgs:
+                pill = Gtk.Label(label=p)
+                pill.add_css_class("monospace")
+                pill.add_css_class("caption")
+                pill.add_css_class("dim-label")
+                bar.append(pill)
+            return bar, bool(pkgs)
+
+        # ---------- monta ViewStack + ViewSwitcher (igual o Hub) ----------
+        stack = Adw.ViewStack()
+        stack.add_titled_with_icon(
+            _modules_tab(), "modulos", "Módulos", "view-grid-symbolic")
+        stack.add_titled_with_icon(
+            _updates_tab(), "atualizacoes", "Atualizações",
+            "software-update-available-symbolic")
+        stack.add_titled_with_icon(
+            _about_installer_tab(), "sobre", "Sobre", "help-about-symbolic")
+
+        switcher = Adw.ViewSwitcher()
+        switcher.set_stack(stack)
+        switcher.set_policy(Adw.ViewSwitcherPolicy.WIDE)
+
+        header = Adw.HeaderBar()
+        header.set_title_widget(switcher)
+
+        tv = Adw.ToolbarView()
+        tv.add_top_bar(header)
+        bar, has_pkgs = _wrapper_bar()
+        if has_pkgs:
+            tv.add_top_bar(bar)
+        tv.set_content(stack)
+        return tv
 
     def _config_page() -> Gtk.Widget:
         sp = _placeholder(
