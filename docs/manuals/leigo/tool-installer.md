@@ -22,6 +22,9 @@ Tudo com 1 clique.
   Extensões lista as melhores opções gratuitas.
 - **Quando você vai investigar uma máquina comprometida**: instala
   ClamAV (antivírus) e hashdeep (hash de evidências).
+- **De vez em quando, pra manter tudo em dia**: a aba **Atualizações**
+  verifica sozinha se há novidades de segurança e deixa você atualizar
+  o sistema com 1 clique (ou pelo terminal, se preferir).
 
 ## O que você vai ver
 
@@ -37,9 +40,16 @@ A janela tem **4 abas**:
 Cada item tem um botão "Instalar" (ou "Remover" se já tiver). Tem busca
 no topo pra filtrar.
 
-**Pendentes**: depois de instalar algo, aparece aqui dizendo "Tal coisa
-vai ser instalada no próximo boot". Tem um botão "Reiniciar agora" pra
-aplicar.
+**Atualizações**: o lugar de **manter o sistema em dia**. Quando você
+abre, ele **já verifica sozinho** se há atualizações e te avisa ali
+mesmo. Você escolhe como atualizar:
+- pelo **painel do Vigia** (botão "Atualizar agora"), ou
+- copiando o **comando pro terminal** do sistema.
+
+O Vigia reconhece sozinho se o seu sistema usa `rpm-ostree` (Silverblue)
+ou `dnf` (Workstation) e mostra o comando certo. Se você acabou de
+instalar algo e o sistema for atômico, aparece aqui também o aviso de
+"Reiniciar agora" pra aplicar.
 
 **Extensões**: detecta os navegadores que você tem (Firefox, Chrome,
 Brave, etc.) e mostra as **8 extensões recomendadas** pra cada um. Você
@@ -99,7 +109,7 @@ e mantidas**. Não tem nada suspeito. As extensões são todas FOSS
    **rkhunter** (auditoria de segurança completa).
 2. Catálogo -> Instalar **fail2ban** (bloqueia automaticamente IPs que
    tentam invadir).
-3. **Pendentes** -> Reiniciar agora.
+3. **Atualizações** -> Reiniciar agora.
 4. Depois do boot, abra a ferramenta de **Integridade de Arquivos** e
    crie o baseline.
 5. Volte aqui na aba **Extensões**, abra seu navegador favorito,

@@ -1,6 +1,6 @@
 """Janela principal do Tool Installer (abas no Adw.ViewStack).
 
-Abas: Catalogo / Pendentes (so' em sistema atomico) / Extensoes / Sobre.
+Abas: Catalogo / Atualizacoes / Extensoes / Sobre.
 Suporta modo standalone (VigiaInstallerWindow) e embedded (build_content()).
 """
 
@@ -14,9 +14,7 @@ gi.require_version("Adw", "1")
 from gi.repository import Adw, Gtk  # noqa: E402
 
 from . import WRAPPED_PACKAGES
-from .tabs import AboutTab, BrowseTab, ExtensionsTab, PendingTab
-
-from vigia_common.platform import is_atomic
+from .tabs import AboutTab, BrowseTab, ExtensionsTab, UpdatesTab
 
 
 def _make_pkg_badges_bar() -> Gtk.Widget:
@@ -41,18 +39,16 @@ def _make_pkg_badges_bar() -> Gtk.Widget:
 
 class _InstallerContent:
     def __init__(self) -> None:
-        # Aba "Pendentes" so' faz sentido em sistema atomico (rpm-ostree
-        # stage + reboot). No Workstation o dnf aplica na hora — escondida.
-        self._atomic = is_atomic()
-        self.pending = PendingTab(on_changed=lambda: None) if self._atomic else None
+        # Aba "Atualizacoes" aparece nos dois (rpm-ostree e dnf): checa e
+        # aplica updates do sistema. So' a secao de reinicio e' atomica.
+        self.updates = UpdatesTab()
         self.browse = BrowseTab(on_changed=self._on_browse_changed)
         self.extensions = ExtensionsTab()
         self.about = AboutTab()
 
         stack = Adw.ViewStack()
         stack.add_titled_with_icon(self.browse, "browse", "Catálogo", "package-x-generic-symbolic")
-        if self.pending is not None:
-            stack.add_titled_with_icon(self.pending, "pending", "Pendentes", "view-refresh-symbolic")
+        stack.add_titled_with_icon(self.updates, "updates", "Atualizações", "software-update-available-symbolic")
         stack.add_titled_with_icon(self.extensions, "extensions", "Extensões", "web-browser-symbolic")
         stack.add_titled_with_icon(self.about, "about", "Sobre", "help-about-symbolic")
 
@@ -70,9 +66,9 @@ class _InstallerContent:
         self.toolbar.set_content(stack)
 
     def _on_browse_changed(self) -> None:
-        """Apos install/uninstall, atualiza tab Pendentes (so' em atomico)."""
-        if self.pending is not None:
-            self.pending.refresh()
+        """Apos install/uninstall, re-checa a aba Atualizacoes (uma instalacao
+        em sistema atomico vira mudanca staged pendente de reboot)."""
+        self.updates.recheck()
 
 
 def build_content() -> Gtk.Widget:

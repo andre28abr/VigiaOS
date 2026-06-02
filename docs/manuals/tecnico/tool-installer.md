@@ -10,10 +10,10 @@ abrem em AMO/Chrome Web Store via `xdg-open`.
 
 | Item | Valor |
 |---|---|
-| **Pacote** | `vigia-tool-installer` (versão 0.2.0) |
+| **Pacote** | `vigia-tool-installer` (versão 0.4.0) |
 | **App ID** | `br.com.vigia.ToolInstaller` |
 | **Pacotes wrapped** | `rpm-ostree`, `xdg-open` |
-| **Privilégios** | `pkexec rpm-ostree install/uninstall` |
+| **Privilégios** | `pkexec rpm-ostree install/uninstall/upgrade` ou `pkexec dnf install/remove/upgrade` |
 | **State local** | `~/.config/vigia-installer/browser-extensions.json` |
 | **Stack** | Python 3.11+ . PyGObject . GTK4 . libadwaita 1 |
 
@@ -21,13 +21,13 @@ abrem em AMO/Chrome Web Store via `xdg-open`.
 
 ```
 vigia_installer/
-|-- backend.py             # rpm-ostree install/uninstall/status/pending_changes
+|-- backend.py             # rpm-ostree/dnf install/uninstall/upgrade/status/check_updates
 |-- catalog.py             # CATALOG: 13 CatalogEntry em 5 categorias
 |-- browser_extensions.py  # detect_installed_browsers + CATALOG extensoes + state
 |-- window.py              # 4 tabs no Adw.ViewStack
 `-- tabs/
     |-- browse.py          # catalogo categorizado + search + install/remove
-    |-- pending.py         # lista pending_added/removed + botao Reiniciar
+    |-- updates.py         # checa/aplica updates do sistema + reinicio pendente
     |-- extensions.py      # extensoes por navegador detectado
     `-- about.py
 ```
@@ -84,6 +84,26 @@ def pending_changes() -> PendingChanges:
         pending_removed = sorted(booted_pkgs - staged_pkgs)
 ```
 
+### Checagem e aplicação de atualizações (aba Atualizações)
+
+```python
+def check_updates() -> UpdateInfo:
+    # atomico:     rpm-ostree upgrade --check   (rc 0 = update, 77 = nada)
+    # workstation: dnf check-update             (rc 100 = update, 0 = nada)
+    # parse_dnf_check_update / parse_rpm_ostree_check extraem os nomes
+
+def update_command(elevated=False) -> list[str]:
+    # atomico: ["rpm-ostree","upgrade"]; dnf: ["dnf","upgrade","-y"]
+    # elevated=True prefixa "pkexec" (uso no painel do Hub)
+```
+
+`check_updates()` é **read-only** (sem root) e roda em worker thread ao
+abrir a aba (notificação no próprio painel). `run_system_update_blocking()`
+aplica via `pkexec` (timeout 1800s). O comando "puro"
+(`update_command_display()` → `rpm-ostree upgrade` / `sudo dnf upgrade`) é
+exposto **copiável** pro usuário rodar no terminal — os dois caminhos
+coexistem (painel vs terminal, o usuário escolhe).
+
 ## Comandos disparados
 
 ```bash
@@ -102,6 +122,14 @@ pkexec rpm-ostree uninstall lynis
 # Aplicar mudancas
 pkexec systemctl reboot
 
+# Checar atualizacoes (read-only, sem root)
+rpm-ostree upgrade --check      # atomico  (rc 0 = update, 77 = nada)
+dnf check-update                # workstation (rc 100 = update, 0 = nada)
+
+# Aplicar atualizacao do sistema (caminho "painel")
+pkexec rpm-ostree upgrade       # atomico  (stage p/ proximo boot)
+pkexec dnf upgrade -y           # workstation (aplica na hora)
+
 # Extensao: abrir URL no navegador default
 xdg-open "https://addons.mozilla.org/firefox/addon/ublock-origin/"
 xdg-open "https://chromewebstore.google.com/detail/cjpalhdlnbpafiamejdnhcphjbkeiagm"
@@ -112,7 +140,7 @@ xdg-open "https://chromewebstore.google.com/detail/cjpalhdlnbpafiamejdnhcphjbkei
 | Tab | Descrição |
 |---|---|
 | **Catálogo** | Lista categorizada em `Adw.PreferencesGroup`. Cada item é `Adw.ExpanderRow` com prefix badge de status (`Disponivel` / `INSTALADO` / `PENDENTE`) + suffix botão ação (`Instalar` / `Remover` / `Pendente`). Expansão mostra `why` + nome do pacote. Status carregado em worker thread (`refresh_statuses_async`). Search filtra em nome/desc/pacote/why. |
-| **Pendentes** | Hero "X pendentes" + grupos "Será instalado" / "Será removido no próximo boot" + botão `Reiniciar agora` (`pkexec systemctl reboot`). |
+| **Atualizações** | Checagem automática ao abrir (worker thread → hero "N atualizações" / "Sistema atualizado"). Dois caminhos: botão `Atualizar agora` (`pkexec rpm-ostree/dnf upgrade`) e comando copiável pro terminal (`update_command_display`). Lista de pacotes com update (ferramentas da suíte destacadas via `find_by_package`). Em sistema atômico, seção "Reinício pendente" (staged + `Reiniciar agora`). Aparece nos dois (atômico **e** dnf). |
 | **Extensões** | Detecta navegadores instalados, lista catálogo FOSS + botão "Abrir no <browser>" (xdg-open URL da AMO/Web Store). Marcação manual de "já instalei" persistente em JSON. Lock por categoria ad-blocker (só 1 por browser). |
 | **Sobre** | 5 seções markup-formatted. |
 
