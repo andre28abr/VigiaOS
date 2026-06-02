@@ -2642,6 +2642,14 @@ intuitivo. Grande revisão do módulo:
 Pendência: empacotar o helper p/ instalação não-editável (hoje resolve via
 `parents[6]` do repo — funciona no editable).
 
+### 2026-06-02 — tcpdump entra nas deps do Blue (captura do IDS)
+
+O botão "Capturar tráfego agora" precisa do `tcpdump`. Adicionado em
+`install/blue-deps.sh` (RPM_PKGS) e como 2ª `Dependency` no `Module.requires` do
+IDS → aparece sozinho na aba **Instalador** da GUI e no `vigia-setup.sh` (via
+`_deps.py`). Comando rápido p/ instalar tudo do Blue de uma vez:
+`./install/blue-deps.sh`. blue 0.0.18.
+
 ---
 
 ## 10. Roadmap

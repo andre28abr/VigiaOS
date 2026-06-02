@@ -8,6 +8,7 @@
 #
 #   yara        → rpm-ostree (atomic) | dnf (workstation)   — módulo Vigia YARA
 #   suricata    → rpm-ostree | dnf                          — módulo Vigia IDS
+#   tcpdump     → rpm-ostree | dnf                          — captura do Vigia IDS
 #   volatility3 → pipx (forense, sem root)                  — módulo Vigia Memory
 #   plaso       → pipx (forense, sem root)                  — módulo Vigia Timeline
 #   vigia-log   → cargo build + install /usr/local/bin      — módulo Vigia SIEM
@@ -69,7 +70,7 @@ fi
 # ===========================================================================
 # 1) Pacotes do sistema: yara, suricata (+ pipx p/ a forense)
 # ===========================================================================
-RPM_PKGS=(yara suricata)
+RPM_PKGS=(yara suricata tcpdump)
 [[ $DO_FORENSICS -eq 1 ]] && RPM_PKGS+=(pipx)
 
 info "Instalando pacotes do sistema: ${RPM_PKGS[*]}"
