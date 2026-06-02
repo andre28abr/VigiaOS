@@ -449,30 +449,26 @@ def run_product(meta: ProductMeta, modules: list[Module],
             page.add(g)
             return _widen_clamps(page)
 
-        # ---------- sub-barra "Embarca:" (tags das ferramentas) ----------
-        def _wrapper_bar():
-            pkgs: list[str] = []
-            for m in modules:
-                for d in m.requires:
-                    name = d.package or d.label
-                    if name and name not in pkgs:
-                        pkgs.append(name)
+        # ---------- sub-barra "Wrapper de:" (mesma do Hub) ----------
+        def _wrapper_bar() -> Gtk.Widget:
+            # Igual o Hub (WRAPPED_PACKAGES): mostra a ferramenta principal que
+            # o instalador embrulha — aqui, o gerenciador de pacotes que a aba
+            # Atualizações usa (rpm-ostree no Silverblue / dnf no Workstation).
             bar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
             bar.set_margin_start(12)
             bar.set_margin_end(12)
             bar.set_margin_top(4)
             bar.set_margin_bottom(4)
-            intro = Gtk.Label(label="Embarca:")
+            intro = Gtk.Label(label="Wrapper de:")
             intro.add_css_class("caption")
             intro.add_css_class("dim-label")
             bar.append(intro)
-            for p in pkgs:
-                pill = Gtk.Label(label=p)
-                pill.add_css_class("monospace")
-                pill.add_css_class("caption")
-                pill.add_css_class("dim-label")
-                bar.append(pill)
-            return bar, bool(pkgs)
+            pill = Gtk.Label(label=package_manager())
+            pill.add_css_class("monospace")
+            pill.add_css_class("caption")
+            pill.add_css_class("dim-label")
+            bar.append(pill)
+            return bar
 
         # ---------- monta ViewStack + ViewSwitcher (igual o Hub) ----------
         stack = Adw.ViewStack()
@@ -493,9 +489,7 @@ def run_product(meta: ProductMeta, modules: list[Module],
 
         tv = Adw.ToolbarView()
         tv.add_top_bar(header)
-        bar, has_pkgs = _wrapper_bar()
-        if has_pkgs:
-            tv.add_top_bar(bar)
+        tv.add_top_bar(_wrapper_bar())
         tv.set_content(stack)
         return tv
 
