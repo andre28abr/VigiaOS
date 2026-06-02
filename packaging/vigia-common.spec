@@ -5,7 +5,7 @@
 %global mod_name vigia_common
 
 Name:           %{pkg_name}
-Version:        0.2.18
+Version:        0.2.19
 Release:        1%{?dist}
 Summary:        Helpers compartilhados entre as ferramentas do VigiaOS
 License:        Apache-2.0
@@ -53,6 +53,11 @@ cd tools/vigia-common
 %{python3_sitelib}/%{mod_name}-*.dist-info/
 
 %changelog
+* Tue Jun 02 2026 André Augusto Azarias de Souza <andre@vigia.local> - 0.2.19-1
+- shell: aba Modulos do instalador com o cabecalho do Catalogo do Hub — titulo
+  "Catalogo curado" (.title-2) + descricao (.dim-label) com o nº de ferramentas
+  + barra de busca. Mesmas classes de fonte que o Hub.
+
 * Tue Jun 02 2026 André Augusto Azarias de Souza <andre@vigia.local> - 0.2.18-1
 - shell: sub-barra do instalador segue a nomenclatura do Hub ("Wrapper de:") e
   mostra o gerenciador de pacotes (rpm-ostree/dnf), nao a lista de ferramentas.

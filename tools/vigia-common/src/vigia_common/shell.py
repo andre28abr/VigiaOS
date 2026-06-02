@@ -380,42 +380,102 @@ def run_product(meta: ProductMeta, modules: list[Module],
             return exp
 
         # ---------- aba Módulos (verificação) ----------
+        # Mesmo cabeçalho do Catálogo do Hub: título .title-2 + descrição
+        # .dim-label (com o nº de ferramentas) + barra de busca. Mesmas classes
+        # de fonte que o Hub → tamanhos/tipos idênticos nos três produtos.
         def _modules_tab() -> Gtk.Widget:
-            page = Adw.PreferencesPage()
-            intro = Adw.PreferencesGroup()
-            intro.set_title("Ferramentas embarcadas")
-            n_ext = sum(1 for m in modules if m.requires)
-            intro.set_description(
-                f"Os {len(modules)} módulos do {meta.name} embarcam ferramentas "
-                "open source **curadas e auditáveis** (YARA, Suricata, "
-                f"Volatility, …). {n_ext} usam uma ferramenta externa — aqui "
-                "você confere o que já está instalado (✓) e o que falta (✗). A "
-                "instalação é feita pelo script guiado: `./install/vigia-setup.sh` "
-                f"(plataforma: {package_manager()})."
-            )
+            n = len(modules)
+            plural = "s" if n != 1 else ""
+
+            title = Gtk.Label(label="Catálogo curado")
+            title.add_css_class("title-2")
+            title.set_halign(Gtk.Align.START)
+            title.set_hexpand(True)
             refresh = Gtk.Button(label="Reverificar")
             refresh.add_css_class("flat")
             refresh.set_valign(Gtk.Align.CENTER)
-            intro.set_header_suffix(refresh)
-            page.add(intro)
+            title_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+            title_row.append(title)
+            title_row.append(refresh)
+            title_row.set_margin_bottom(8)
 
-            cat_groups: list[Gtk.Widget] = []
+            desc = Gtk.Label(label=(
+                f"{n} ferramenta{plural} de segurança selecionada{plural}. "
+                "Veja o que cada módulo embarca e confira o que já está "
+                "instalado (✓) ou falta (✗)."
+            ))
+            desc.add_css_class("dim-label")
+            desc.set_halign(Gtk.Align.START)
+            desc.set_wrap(True)
+            desc.set_xalign(0)
+            desc.set_margin_bottom(20)
+
+            search = Gtk.SearchEntry()
+            search.set_placeholder_text("Buscar por nome, descrição ou pacote...")
+            search.set_hexpand(True)
+            search.set_margin_bottom(16)
+
+            categories_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL,
+                                     spacing=20)
+            row_text: dict = {}     # ExpanderRow -> texto pesquisável
+            group_rows: dict = {}   # PreferencesGroup -> [ExpanderRow]
 
             def _build_groups(*_a):
-                for grp in cat_groups:
-                    page.remove(grp)
-                cat_groups.clear()
+                child = categories_box.get_first_child()
+                while child is not None:
+                    nxt = child.get_next_sibling()
+                    categories_box.remove(child)
+                    child = nxt
+                row_text.clear()
+                group_rows.clear()
                 for cat, mods in grouped.items():
                     grp = Adw.PreferencesGroup()
                     grp.set_title(categories.get(cat, cat))
+                    rows = []
                     for mod in mods:
-                        grp.add(_module_expander(mod))
-                    page.add(grp)
-                    cat_groups.append(grp)
+                        exp = _module_expander(mod)
+                        grp.add(exp)
+                        pk = " ".join(
+                            f"{d.package} {d.label}" for d in mod.requires)
+                        row_text[exp] = f"{mod.name} {mod.summary} {pk}".lower()
+                        rows.append(exp)
+                    categories_box.append(grp)
+                    group_rows[grp] = rows
 
-            refresh.connect("clicked", _build_groups)
+            def _apply_filter(*_a):
+                q = search.get_text().strip().lower()
+                for grp, rows in group_rows.items():
+                    visible_any = False
+                    for exp in rows:
+                        vis = (not q) or (q in row_text.get(exp, ""))
+                        exp.set_visible(vis)
+                        visible_any = visible_any or vis
+                    grp.set_visible(visible_any)
+
+            search.connect("search-changed", _apply_filter)
+            refresh.connect("clicked",
+                            lambda _b: (_build_groups(), _apply_filter()))
             _build_groups()
-            return _widen_clamps(page)
+
+            outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+            outer.set_margin_top(24)
+            outer.set_margin_bottom(32)
+            outer.set_margin_start(28)
+            outer.set_margin_end(28)
+            outer.append(title_row)
+            outer.append(desc)
+            outer.append(search)
+            outer.append(categories_box)
+
+            clamp = Adw.Clamp()
+            clamp.set_maximum_size(CONTENT_MAX_WIDTH)
+            clamp.set_tightening_threshold(CONTENT_TIGHTENING)
+            clamp.set_child(outer)
+            scrolled = Gtk.ScrolledWindow()
+            scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+            scrolled.set_vexpand(True)
+            scrolled.set_child(clamp)
+            return scrolled
 
         # ---------- aba Atualizações (reusa a UpdatesTab do Hub) ----------
         def _updates_tab() -> Gtk.Widget:
