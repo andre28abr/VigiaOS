@@ -2392,6 +2392,51 @@ Pedido do André: poder **escolher o que procurar** (não só busca geral).
 
 Conjuntos de partida: Malware (3) + LGPD (5) + Credenciais (3) = 11 regras.
 
+### 2026-06-01 — Vigia YARA: limpeza do seletor de regras (blue 0.0.10)
+
+Pedido do André: o seletor de conjuntos quebrava o texto e tinha um botão "Pasta
+de regras" redundante (já existe na aba Sobre). Removido o botão do `ComboRow`; o
+dropdown mostra só o rótulo curto (contagem + descrição vão pro subtítulo). Menu
+mais largo e legível.
+
+### 2026-06-01 — VigiaBlue: 2º módulo real — Vigia SIEM (detecção) ✅
+
+**Vigia SIEM** (VigiaBlue → Detecção & SIEM) — **2º módulo "pronto"** do
+ecossistema. É uma **camada de detecção** sobre o core do Activity Log (binário
+Rust `vigia-log`): coleta o mesmo bundle (audit/journald/fail2ban) e aplica
+**regras** que geram **alertas** triados por severidade, cada um com texto leigo +
+recomendação. Distinto do Activity Log (que é o *navegador* da timeline) — aqui o
+foco é **"o que é suspeito?"** (como uma stack de SOC separa *log aggregation* de
+*detection*).
+
+Arquitetura (espelha o Vigia YARA):
+- **`backend.py`** PURO/testável (sem gi, sem `vigia-log`): `parse_bundle()`
+  (defensivo), **`detect(events, correlations)`** — o MOTOR: roda as 7 regras,
+  mapeia as `correlations` do core como alertas, ordena por severidade; regra que
+  levante exceção é ignorada (não derruba a análise). `rules_catalog()` p/ a aba
+  Regras. Toca o sistema só em `collect()` (roda `vigia-log` via `proc.run`;
+  `pkexec` opt-in p/ o audit) e `analyze()`. Relatórios **0600** em
+  `~/.local/share/vigia-siem/`.
+- **7 regras**: `ssh_bruteforce` (≥5 falhas/origem → alto; ≥20 → crítico),
+  `failed_sudo`, `account_change`, `service_failure`, `selinux_denial`
+  (enforcing × permissive = 2 alertas), `package_change` (info), `fail2ban_ban`.
+- **`page.py`** GUI: abas **Alertas** (switch "incluir audit" → pkexec; análise
+  em `threading.Thread` → `idle_add`; alerta = `ExpanderRow` com O que é / O que
+  fazer / Quando / Ocorrências / Evidência) / **Regras** (catálogo leigo) /
+  **Histórico** / **Sobre**.
+- **Não importa** `vigia_log_gui` — fala direto com o binário `vigia-log` (o
+  artefato compartilhado), mantendo o VigiaBlue independente.
+- Achados de dados do core: `source` é `"journal"` (não `"journald"`, que é só o
+  nome da fonte no `--sources`); `payload` = Event serializado (audit:
+  `records[].fields`; journal: `message/unit/comm/priority`; fail2ban:
+  `action.kind/ip/jail`).
+
+Registrado (`status="pronto", impl="vigia_blue.modules.siem.page"`). +36 testes
+(motor puro, headless). Suite 993 → **1029**. Manuais leigo/técnico. blue 0.0.11.
+
+Pendências: janela temporal real na força-bruta, regras do usuário, notificação
+(libnotify) p/ achado crítico, spec COPR.
+
 ---
 
 ## 10. Roadmap
@@ -2759,12 +2804,16 @@ Estado real dos produtos novos: esqueletos GUI prontos, módulos sendo
 preenchidos 1 a 1 via a ponte `Module.impl` do shell (`vigia_common.shell`).
 
 **VigiaBlue** (7 módulos):
-- ✅ **Vigia YARA** — pronto: scan + alertas amigáveis (ExpanderRow: descrição
-  + severidade) + seletor de conjuntos (Malware / LGPD / Credenciais / Tudo).
-  Pendências: pkexec p/ paths root, aba Regras (baixar da comunidade), scan de
-  PID/memória, package-data + spec COPR.
-- 🔜 SIEM (reusa Activity Log) · IDS · Memory (Volatility) · Timeline (plaso) ·
-  Intel (MISP/OTX) · Playbooks.
+- ✅ **Vigia YARA** — caça a malware: scan + alertas amigáveis (ExpanderRow:
+  descrição + severidade) + seletor de conjuntos (Malware / LGPD / Credenciais /
+  Tudo). Pendências: pkexec p/ paths root, aba Regras (baixar da comunidade),
+  scan de PID/memória, package-data + spec COPR.
+- ✅ **Vigia SIEM** — detecção: lê os eventos do core `vigia-log` e aplica **7
+  regras** → alertas triados (força-bruta SSH, sudo, conta nova, falha de
+  serviço, SELinux, pacote, fail2ban), cada um leigo + recomendação. `pkexec`
+  opt-in p/ o audit. 36 testes. Pendências: janela temporal, regras do usuário,
+  notificação, spec COPR.
+- 🔜 IDS · Memory (Volatility) · Timeline (plaso) · Intel (MISP/OTX) · Playbooks.
 
 **VigiaRed** (7 módulos): esqueleto pronto. 1º a implementar: **Network Scanner
 (nmap)** — que também monta a infra de **termo de uso / 1ª execução** (Lei
