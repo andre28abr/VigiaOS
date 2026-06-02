@@ -15,6 +15,7 @@ from vigia_installer.catalog import (
     CATEGORIES_ORDER,
     CATEGORY_DESCRIPTIONS,
     find_by_package,
+    is_suite_package,
 )
 
 
@@ -57,3 +58,18 @@ class TestCatalogoIntacto:
     def test_toda_entry_tem_categoria_valida(self):
         for e in CATALOG:
             assert e.category in CATEGORIES_ORDER
+
+
+class TestIsSuitePackage:
+    def test_catalog_tool_e_suite(self):
+        assert is_suite_package("lynis") is True
+        assert is_suite_package("clamav") is True
+
+    def test_pacote_vigia_e_suite(self):
+        assert is_suite_package("vigia-hub") is True
+        assert is_suite_package("vigia-common") is True
+
+    def test_pacote_do_sistema_nao_e_suite(self):
+        assert is_suite_package("kernel") is False
+        assert is_suite_package("glibc") is False
+        assert is_suite_package("bash") is False

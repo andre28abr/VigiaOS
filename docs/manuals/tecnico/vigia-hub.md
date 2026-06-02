@@ -66,11 +66,10 @@ Master-detail. Cada `ToolEntry` aparece com ícone, nome, descrição curta, bad
 
 ### Modo Configurações
 
-Três sub-abas via `Adw.ViewSwitcher`:
+Duas sub-abas via `Adw.ViewSwitcher` (o **Sobre** virou item próprio do rail):
 
-- **Aplicação** — autostart, tray, iniciar minimizado, tema (system/light/dark)
+- **Aplicação** — autostart, tray, iniciar minimizado, **checar atualizações ao iniciar** (`check_updates`, default ligado)
 - **Segurança** — password lock (pkexec), auto-lock por inatividade (5/10/15/30/60 min)
-- **Sobre** — paths dos arquivos de config e versão
 
 O switch de tray faz `tray_can_work()` (`checks.py`) que verifica via subprocess se `AyatanaAppIndicator3` importa e se a extensão GNOME `appindicatorsupport@rgcjonas.gmail.com` está `enabled` em `gnome-extensions list --enabled`.
 
@@ -87,6 +86,11 @@ Sem WebKit, cai pra `TextView` monospace com markdown raw.
 ### Modo Instalador
 
 Importa `vigia_installer.window.build_content()` e embute fullscreen.
+
+Ao iniciar, o Hub roda `vigia_installer.backend.check_updates()` numa thread
+(read-only, sem root) e, se houver update, pendura um badge (`.vigia-nav-badge`,
+overlay no ícone via `_apply_update_badge`) no item **Instalador** do rail. O
+toggle `check_updates` (Config → Aplicação) liga/desliga a checagem.
 
 ## Quando usar
 

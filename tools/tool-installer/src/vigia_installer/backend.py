@@ -17,6 +17,8 @@ from dataclasses import dataclass
 
 from vigia_common.platform import is_atomic
 
+from .catalog import is_suite_package
+
 
 @dataclass
 class PendingChanges:
@@ -275,6 +277,17 @@ def parse_rpm_ostree_check(output: str) -> list[str]:
             if tok:
                 pkgs.append(tok[0].lstrip("+- "))
     return sorted(set(p for p in pkgs if p))
+
+
+def split_updates(packages: list[str]) -> tuple[list[str], list[str]]:
+    """Separa a lista de pacotes com update em (suíte, sistema). 'suíte' = o
+    que `is_suite_package` reconhece (catálogo Vigia ou pacotes `vigia-*`); o
+    resto é considerado pacote do sistema. Mantém a ordem de entrada."""
+    suite: list[str] = []
+    system: list[str] = []
+    for pkg in packages:
+        (suite if is_suite_package(pkg) else system).append(pkg)
+    return suite, system
 
 
 def check_updates() -> UpdateInfo:

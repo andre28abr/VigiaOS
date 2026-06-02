@@ -63,6 +63,8 @@ class TestLoadSettings:
         # v0.6.0 — novos defaults
         assert s.theme == "system"
         assert s.auto_lock_minutes == 0
+        # v0.8.0 — checagem de updates ao iniciar (default ligado)
+        assert s.check_updates is True
 
     def test_loads_existing_file(self, isolated_paths):
         isolated_paths["state_dir"].mkdir(parents=True, exist_ok=True)
@@ -233,3 +235,18 @@ class TestAutostartSync:
         settings.autostart_sync(enabled=True, minimized=True)
         content = isolated_paths["autostart_path"].read_text()
         assert "--minimized" in content
+
+
+class TestCheckUpdatesField:
+    def test_default_true(self):
+        assert settings.Settings().check_updates is True
+
+    def test_roundtrip_false(self, isolated_paths):
+        assert settings.save_settings(
+            settings.Settings(check_updates=False)) is True
+        assert settings.load_settings().check_updates is False
+
+    def test_missing_key_defaults_true(self, isolated_paths):
+        isolated_paths["state_dir"].mkdir(parents=True, exist_ok=True)
+        isolated_paths["state_path"].write_text('{"autostart": true}')
+        assert settings.load_settings().check_updates is True

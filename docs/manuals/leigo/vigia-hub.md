@@ -18,7 +18,7 @@ Você abre o Hub, e ele te mostra na lateral as ferramentas disponíveis (Dashbo
 
 Quando você abre o Hub, a janela tem **três partes**:
 
-1. **Uma barra fininha na esquerda** com 4 botões-ícone: Tools (as ferramentas), Instalador, Configurações e Ajuda.
+1. **Uma barra fininha na esquerda** com 5 botões-ícone: Módulos (as ferramentas), Instalador, Config., Ajuda e Sobre.
 2. **Uma lista no meio** com todas as ferramentas, agrupadas por tipo: Monitoramento, Privacidade, Defesa & Hardening, Sistema, Relatórios.
 3. **A área grande da direita** que mostra a ferramenta escolhida em tela cheia.
 
@@ -34,15 +34,16 @@ A lista das ferramentas. Clica e ela abre. Pronto. As principais são **Dashboar
 
 ### Instalador
 
-Tela cheia que abre o **Tool Installer** — ele instala pacotes do Fedora que algumas ferramentas precisam (Lynis, ClamAV, AIDE, etc).
+Tela cheia que abre o **Tool Installer** — ele instala pacotes do Fedora que algumas ferramentas precisam (Lynis, ClamAV, AIDE, etc) e tem a aba **Atualizações** pra manter tudo em dia.
+
+Quando o Hub abre, ele dá uma olhada (sozinho, sem senha) se há atualizações — do sistema ou dos seus programas de segurança. Se houver, aparece um **selinho azul no ícone do Instalador**, na barra da esquerda. É só um aviso: não instala nada sozinho. Dá pra ligar/desligar em Configurações → Aplicação.
 
 ### Configurações
 
-Três abas:
+Duas abas (o **Sobre** agora é um ícone próprio na barra da esquerda):
 
-- **Aplicação** — Liga o Hub junto com o sistema, mostra ícone na bandeja, escolhe se quer tema escuro ou claro.
+- **Aplicação** — Liga o Hub junto com o sistema, mostra ícone na bandeja, inicia minimizado e **verifica atualizações ao iniciar** (o tal selinho do Instalador).
 - **Segurança** — Pede senha de admin pra abrir o Hub e auto-bloqueia se você ficar X minutos sem mexer (5, 10, 15, 30 ou 60 minutos).
-- **Sobre** — Mostra onde ficam os arquivos de configuração do Hub e a versão.
 
 ### Ajuda
 

@@ -91,11 +91,24 @@ class UpdatesTab(Adw.Bin):
         cmd_row.add_css_class("property")
         self._term_group.add(cmd_row)
 
-        # ---- Atualizacoes disponiveis (lista dinamica) ----
-        self._avail_group = Adw.PreferencesGroup()
-        self._avail_group.set_title("Atualizações disponíveis")
-        self._avail_group.set_margin_top(8)
-        self._avail_group.set_visible(False)
+        # ---- Atualizacoes disponiveis: SEPARADAS por origem ----
+        # Sistema (pacotes do SO) vs Programas da suite Vigia (catalogo/vigia-*),
+        # pra deixar claro o que sera atualizado.
+        self._system_group = Adw.PreferencesGroup()
+        self._system_group.set_title("Sistema")
+        self._system_group.set_description(
+            "Pacotes do sistema operacional com atualização."
+        )
+        self._system_group.set_margin_top(8)
+        self._system_group.set_visible(False)
+
+        self._suite_group = Adw.PreferencesGroup()
+        self._suite_group.set_title("Programas da suíte Vigia")
+        self._suite_group.set_description(
+            "Ferramentas instaladas pela Vigia (lynis, clamav, …) com atualização."
+        )
+        self._suite_group.set_margin_top(8)
+        self._suite_group.set_visible(False)
 
         # ---- Reinicio pendente (so' atomico; herda da antiga Pendentes) ----
         self._pending_group = Adw.PreferencesGroup()
@@ -121,7 +134,8 @@ class UpdatesTab(Adw.Bin):
         outer.append(self._hero_sub)
         outer.append(action_box)
         outer.append(self._term_group)
-        outer.append(self._avail_group)
+        outer.append(self._system_group)
+        outer.append(self._suite_group)
         outer.append(self._pending_group)
 
         scrolled = Gtk.ScrolledWindow()
@@ -182,13 +196,19 @@ class UpdatesTab(Adw.Bin):
             )
             self._update_btn.set_sensitive(False)
         elif info.available:
+            suite, system = backend.split_updates(info.packages)
             n = len(info.packages)
             self._hero.set_label("Atualizações disponíveis")
             self._hero.add_css_class("warning")
-            self._hero_sub.set_label(
-                f"{n} pacote(s) com atualização."
-                if n else "Há atualização do sistema disponível."
-            )
+            if n:
+                parts = []
+                if system:
+                    parts.append(f"{len(system)} do sistema")
+                if suite:
+                    parts.append(f"{len(suite)} da suíte")
+                self._hero_sub.set_label(" · ".join(parts) + ".")
+            else:
+                self._hero_sub.set_label("Há atualização do sistema disponível.")
             self._update_btn.set_sensitive(True)
         else:
             self._hero.set_label("Sistema atualizado")
@@ -217,14 +237,20 @@ class UpdatesTab(Adw.Bin):
     def _render_available(self, info: "backend.UpdateInfo") -> None:
         self._clear_dyn()
         if not (info.checked and info.available):
-            self._avail_group.set_visible(False)
+            self._system_group.set_visible(False)
+            self._suite_group.set_visible(False)
             return
-        self._avail_group.set_visible(True)
-        if info.packages:
-            for pkg in info.packages:
-                self._avail_group.add(self._pkg_row(pkg))
-                # _dyn_rows trackeado dentro de _pkg_row
-        else:
+
+        suite, system = backend.split_updates(info.packages)
+
+        # Sistema
+        if system:
+            self._system_group.set_visible(True)
+            for pkg in system:
+                self._system_group.add(self._pkg_row(pkg, suite=False))
+        elif not info.packages:
+            # Atomico: sem lista pacote-a-pacote, mas ha update do sistema.
+            self._system_group.set_visible(True)
             row = Adw.ActionRow()
             row.set_title("Atualização do sistema")
             row.set_subtitle(
@@ -233,18 +259,30 @@ class UpdatesTab(Adw.Bin):
             row.add_prefix(
                 Gtk.Image.new_from_icon_name("software-update-available-symbolic")
             )
-            self._avail_group.add(row)
+            self._system_group.add(row)
             self._dyn_rows.append(row)
+        else:
+            self._system_group.set_visible(False)
 
-    def _pkg_row(self, package: str) -> Adw.ActionRow:
+        # Programas da suite Vigia
+        if suite:
+            self._suite_group.set_visible(True)
+            for pkg in suite:
+                self._suite_group.add(self._pkg_row(pkg, suite=True))
+        else:
+            self._suite_group.set_visible(False)
+
+    def _pkg_row(self, package: str, suite: bool) -> Adw.ActionRow:
         entry = find_by_package(package)
         row = Adw.ActionRow()
         if entry is not None:
             row.set_title(entry.name)
-            row.set_subtitle(f"{package}  ·  ferramenta da suíte Vigia")
+            row.set_subtitle(package)
         else:
             row.set_title(package)
-            row.set_subtitle("pacote do sistema")
+            row.set_subtitle(
+                "programa da suíte Vigia" if suite else "pacote do sistema"
+            )
         row.add_prefix(
             Gtk.Image.new_from_icon_name("software-update-available-symbolic")
         )
