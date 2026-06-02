@@ -2540,6 +2540,20 @@ entram quando os módulos chegarem; não instala ferramenta de pentest p/ módul
 inexistente. Flags `--yes` / `--dry-run`. Não roda como root, não liga serviço
 (minimum surface). Validado via `bash -n` + dry-run.
 
+### 2026-06-02 — Instalador lê as registries (fonte única; install/_deps.py)
+
+André: "auto-ler registries" — em vez de a tabela de pacotes do `vigia-setup.sh`
+ser digitada à mão, ela passa a vir do código. Criado **`install/_deps.py`** que
+importa as registries do Blue/Red (puro, sem GTK) e emite os `Module.requires`
+(produto · módulo · label · kind · package · checks), **separados por `\x1f`**
+(US — não é *whitespace*, então o `read` do bash não colapsa o campo vazio das
+deps `source` como o vigia-log; com TAB, colapsava e quebrava). O `vigia-setup.sh`
+monta as linhas de Blue/Red e as listas de instalação (rpm/pipx/source) a partir
+disso; o **Hub segue curado à mão** (seus `wrapped_packages` têm muito "comando"
+que não é pacote instalável). **Ganho:** módulo novo com `requires` declarado
+aparece sozinho na tabela do script **e** na aba Instalador da GUI — uma fonte de
+verdade só, sem duplicação. +1 teste (contrato do `_deps.py`). Suite 1107 → 1108.
+
 ---
 
 ## 10. Roadmap

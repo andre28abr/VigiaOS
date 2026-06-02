@@ -118,3 +118,35 @@ def test_blue_pronto_deps_have_install_command(blue):
         if m.status == "pronto":
             for dep in m.requires:
                 assert dep_command(dep).strip()
+
+
+# ============================================================
+# install/_deps.py — "auto-ler registries" (fonte única p/ o vigia-setup.sh)
+# ============================================================
+
+
+def test_deps_helper_reads_registry():
+    """O helper lê a registry e emite as deps do Blue (campos separados por \\x1f,
+    preservando o `package` vazio das deps `source`)."""
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    repo = Path(__file__).resolve().parents[2]
+    res = subprocess.run(
+        [sys.executable, str(repo / "install" / "_deps.py")],
+        capture_output=True, text=True,
+    )
+    assert res.returncode == 0, res.stderr
+    rows = [ln.split("\x1f") for ln in res.stdout.splitlines() if ln]
+    assert rows and all(len(r) == 6 for r in rows)   # 6 campos por linha
+
+    by_pkg = {r[4]: r for r in rows if r[4]}
+    assert by_pkg["yara"][0] == "Blue" and by_pkg["yara"][3] == "rpm"
+    assert by_pkg["suricata"][3] == "rpm"
+    assert by_pkg["volatility3"][3] == "pip"
+    assert by_pkg["plaso"][3] == "pip"
+
+    kinds = {r[3] for r in rows}
+    assert "source" in kinds                          # vigia-log (package vazio)
+    assert all(r[0] != "Red" for r in rows)           # Red ainda sem deps

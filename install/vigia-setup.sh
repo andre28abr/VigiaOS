@@ -158,8 +158,15 @@ fi
 # ============================================================
 step "2/3" "Pacotes principais dos módulos"
 
-# Curadoria: só os pacotes PRINCIPAIS (o backend que cada módulo embarca).
-# (pkg de exibição | produto | módulo/para quê)
+# Hub = curado à mão (os wrapped_packages do Hub têm muito "comando" que não é
+# pacote instalável, e o Hub é estável). Blue/Red = lidos da REGISTRY
+# (Module.requires, via _deps.py) — fonte única de verdade: módulo novo com
+# `requires` declarado aparece aqui sozinho, sem editar este script.
+HUB_RPM=(clamav clamav-update chkrootkit rkhunter lynis aide firewalld
+         policycoreutils-python-utils)
+DEPS_TSV="$(python3 "$SCRIPT_DIR/_deps.py" 2>/dev/null || true)"
+declare -a DYN_RPM=() DYN_PIP=() SRC_LABELS=()
+
 ptop
 prow "Pacote"                        "Prod" "Para qual modulo"
 psep
@@ -170,21 +177,31 @@ prow "lynis"                         "Hub"  "Hardening Checks"
 prow "aide"                          "Hub"  "File Integrity"
 prow "firewalld"                     "Hub"  "Firewall Manager"
 prow "policycoreutils-python-utils"  "Hub"  "SELinux Manager"
-prow "yara"                          "Blue" "Vigia YARA"
-prow "suricata"                      "Blue" "Vigia IDS"
-prow "volatility3 (pipx)"            "Blue" "Vigia Memory"
-prow "plaso (pipx)"                  "Blue" "Vigia Timeline"
-prow "vigia-log (compilar)"          "Blue" "Vigia SIEM"
+# linhas de Blue/Red montadas a partir da registry (uma por dependência)
+if [[ -n "$DEPS_TSV" ]]; then
+    while IFS=$'\x1f' read -r prod modname label kind package checks; do
+        [[ -z "${prod:-}" ]] && continue
+        case "$kind" in
+            rpm)    disp="$package";                DYN_RPM+=("$package") ;;
+            pip)    disp="$package (pipx)";          DYN_PIP+=("$package") ;;
+            source) disp="${checks%%,*} (compilar)"; SRC_LABELS+=("$label") ;;
+            *)      disp="${package:-$label}" ;;
+        esac
+        prow "$disp" "$prod" "$modname"
+    done <<< "$DEPS_TSV"
+fi
 pbot
-echo "  ${DIM}VigiaRed está em construção — seus pacotes (nmap, etc.) entram"
-echo "  quando os módulos chegarem; nada a instalar por ora.${NC}"
+if ! grep -q $'^Red\x1f' <<< "$DEPS_TSV"; then
+    echo "  ${DIM}VigiaRed está em construção — sem pacotes externos ainda;"
+    echo "  aparecem aqui sozinhos quando os módulos forem declarados.${NC}"
+fi
 
-# pacotes rpm "principais" (base GTK só se faltar)
-RPM_PKGS=(clamav clamav-update chkrootkit rkhunter lynis aide firewalld
-          policycoreutils-python-utils yara suricata)
+# Listas finais: Hub (curado) + Blue/Red (da registry); base GTK só se faltar.
+RPM_PKGS=("${HUB_RPM[@]}" "${DYN_RPM[@]}")
 if ! python3 -c "import gi; gi.require_version('Gtk','4.0')" >/dev/null 2>&1; then
     RPM_PKGS=(python3-gobject gtk4 libadwaita "${RPM_PKGS[@]}")
 fi
+PIPX_PKGS=("${DYN_PIP[@]}")
 
 echo
 if confirm "Instalar esses pacotes do sistema?"; then
@@ -200,36 +217,41 @@ if confirm "Instalar esses pacotes do sistema?"; then
         else err "dnf falhou."; FAIL_PKGS+=("${RPM_PKGS[*]}"); fi
     fi
 
-    # forense via pipx (sem root)
-    if command -v pipx >/dev/null 2>&1 || [[ $DRY_RUN -eq 1 ]]; then
-        for p in volatility3 plaso; do
-            info "pipx install $p"
-            if run pipx install "$p"; then DONE_PKGS+=("$p (pipx)"); ok "$p ok."
-            else err "falha em $p."; FAIL_PKGS+=("$p"); fi
-        done
-    else
-        warn "pipx ausente — volatility3/plaso ficam de fora."
-        if [[ $ATOMIC -eq 1 ]]; then
-            warn "Em atômico: reinicie (pipx vem nos pacotes) e rode de novo."
-            RPM_PKGS+=(pipx); run rpm-ostree install --idempotent --allow-inactive pipx >/dev/null 2>&1 || true
-            NEEDS_REBOOT=1
+    # forense via pipx (sem root) — pacotes kind=pip lidos da registry
+    if [[ ${#PIPX_PKGS[@]} -gt 0 ]]; then
+        if command -v pipx >/dev/null 2>&1 || [[ $DRY_RUN -eq 1 ]]; then
+            for p in "${PIPX_PKGS[@]}"; do
+                info "pipx install $p"
+                if run pipx install "$p"; then DONE_PKGS+=("$p (pipx)"); ok "$p ok."
+                else err "falha em $p."; FAIL_PKGS+=("$p"); fi
+            done
         else
-            run sudo dnf install -y pipx && run pipx install volatility3 plaso || true
+            warn "pipx ausente — ${PIPX_PKGS[*]} ficam de fora."
+            if [[ $ATOMIC -eq 1 ]]; then
+                warn "Em atômico: reinicie (pipx vem nos pacotes) e rode de novo."
+                run rpm-ostree install --idempotent --allow-inactive pipx >/dev/null 2>&1 || true
+                NEEDS_REBOOT=1
+            else
+                run sudo dnf install -y pipx \
+                    && for p in "${PIPX_PKGS[@]}"; do run pipx install "$p"; done || true
+            fi
+            SKIP_PKGS+=("${PIPX_PKGS[*]}")
         fi
-        SKIP_PKGS+=("volatility3 + plaso")
     fi
 
-    # vigia-log (core do SIEM, Rust)
-    if command -v vigia-log >/dev/null 2>&1; then
-        ok "vigia-log já instalado."
-    elif command -v cargo >/dev/null 2>&1 && [[ -d "$REPO_ROOT/tools/activity-log" ]]; then
-        info "Compilando vigia-log (cargo)…"
-        if run bash -c "cd '$REPO_ROOT/tools/activity-log' && cargo build --release && sudo install -m 0755 target/release/vigia-log /usr/local/bin/"; then
-            DONE_PKGS+=("vigia-log"); ok "vigia-log instalado em /usr/local/bin."
-        else err "falha ao compilar o vigia-log."; FAIL_PKGS+=("vigia-log"); fi
-    else
-        warn "cargo (Rust) ausente — vigia-log (SIEM) fica de fora."
-        SKIP_PKGS+=("vigia-log (sem cargo)")
+    # core do SIEM (Rust): só se a registry declarar uma dep kind=source (vigia-log)
+    if [[ ${#SRC_LABELS[@]} -gt 0 ]]; then
+        if command -v vigia-log >/dev/null 2>&1; then
+            ok "vigia-log já instalado."
+        elif command -v cargo >/dev/null 2>&1 && [[ -d "$REPO_ROOT/tools/activity-log" ]]; then
+            info "Compilando vigia-log (cargo)…"
+            if run bash -c "cd '$REPO_ROOT/tools/activity-log' && cargo build --release && sudo install -m 0755 target/release/vigia-log /usr/local/bin/"; then
+                DONE_PKGS+=("vigia-log"); ok "vigia-log instalado em /usr/local/bin."
+            else err "falha ao compilar o vigia-log."; FAIL_PKGS+=("vigia-log"); fi
+        else
+            warn "cargo (Rust) ausente — vigia-log (SIEM) fica de fora."
+            SKIP_PKGS+=("vigia-log (sem cargo)")
+        fi
     fi
 else
     warn "pulando pacotes do sistema."
