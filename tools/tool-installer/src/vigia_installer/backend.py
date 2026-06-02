@@ -196,3 +196,136 @@ def reboot_system() -> tuple[bool, str]:
     if result.returncode != 0:
         return False, (result.stderr or "Falha desconhecida").strip()
     return True, ""
+
+
+# ============================================================
+# Atualizacoes do sistema (rpm-ostree upgrade / dnf upgrade)
+# ============================================================
+
+
+@dataclass
+class UpdateInfo:
+    """Resultado de uma checagem de atualizacoes (NAO aplica nada)."""
+
+    checked: bool = False        # a checagem rodou ate o fim?
+    available: bool = False      # ha atualizacoes?
+    packages: list[str] = None   # type: ignore[assignment]
+    raw: str = ""                # saida bruta (pra expandir/depurar)
+    error: str = ""              # mensagem (quando checked=False)
+
+    def __post_init__(self) -> None:
+        if self.packages is None:
+            self.packages = []
+
+
+def check_update_command() -> list[str]:
+    """Comando de *checagem* (read-only, sem root, nao aplica nada)."""
+    if is_atomic():
+        return ["rpm-ostree", "upgrade", "--check"]
+    return ["dnf", "check-update"]
+
+
+def update_command(elevated: bool = False) -> list[str]:
+    """Comando que *aplica* a atualizacao do sistema. Com `elevated`,
+    prefixa pkexec (uso no painel do Hub). Sem ele, e' o comando base."""
+    base = (["rpm-ostree", "upgrade"] if is_atomic()
+            else ["dnf", "upgrade", "-y"])
+    return (["pkexec"] + base) if elevated else base
+
+
+def update_command_display() -> str:
+    """Comando amigavel pro usuario copiar e rodar no proprio terminal."""
+    return "rpm-ostree upgrade" if is_atomic() else "sudo dnf upgrade"
+
+
+def parse_dnf_check_update(output: str) -> list[str]:
+    """Nomes dos pacotes de `dnf check-update`. Cada update e' uma linha
+    'nome.arch  versao  repo'. Ignora cabecalho, vazias e o bloco
+    'Obsoleting Packages'."""
+    pkgs: list[str] = []
+    in_obsoleting = False
+    for line in output.splitlines():
+        s = line.strip()
+        if not s:
+            continue
+        low = s.lower()
+        if low.startswith("last metadata") or low.startswith("security:"):
+            continue
+        if low.startswith("obsoleting packages"):
+            in_obsoleting = True
+            continue
+        if in_obsoleting:
+            continue
+        parts = s.split()
+        # linha valida de update: >=3 colunas e a 1a traz '.arch'
+        if len(parts) >= 3 and "." in parts[0] and not parts[0].endswith(":"):
+            pkgs.append(parts[0].rsplit(".", 1)[0])
+    return sorted(set(pkgs))
+
+
+def parse_rpm_ostree_check(output: str) -> list[str]:
+    """Best-effort: pacotes alterados no output de `rpm-ostree upgrade
+    --check` (linhas com '->'). Pode vir vazio mesmo havendo update do
+    base image — rpm-ostree nem sempre lista pacote-a-pacote."""
+    pkgs: list[str] = []
+    for line in output.splitlines():
+        s = line.strip()
+        if "->" in s and not s.lower().startswith("version"):
+            tok = s.split()
+            if tok:
+                pkgs.append(tok[0].lstrip("+- "))
+    return sorted(set(p for p in pkgs if p))
+
+
+def check_updates() -> UpdateInfo:
+    """Checa se ha atualizacoes do sistema (rpm-ostree / dnf). Read-only:
+    nao precisa de root e nao altera nada. Robusta a erro/timeout."""
+    info = UpdateInfo()
+    cmd = check_update_command()
+    try:
+        result = subprocess.run(
+            cmd, capture_output=True, text=True, timeout=180,
+        )
+    except subprocess.TimeoutExpired:
+        info.error = "A checagem excedeu o tempo limite."
+        return info
+    except FileNotFoundError:
+        info.error = f"{cmd[0]} não encontrado."
+        return info
+
+    info.raw = (result.stdout or "").strip()
+    rc = result.returncode
+
+    if is_atomic():
+        # rpm-ostree upgrade --check: rc 0 = ha update; rc 77 = sem update.
+        if rc == 77:
+            info.checked, info.available = True, False
+        elif rc == 0:
+            low = info.raw.lower()
+            if "no upgrade available" in low or "no updates" in low:
+                info.checked, info.available = True, False
+            else:
+                info.checked, info.available = True, True
+                info.packages = parse_rpm_ostree_check(info.raw)
+        else:
+            info.error = (result.stderr or info.raw
+                          or "Falha na checagem.").strip()[:400]
+    else:
+        # dnf check-update: rc 100 = ha update; rc 0 = nenhum; outro = erro.
+        if rc == 100:
+            info.checked, info.available = True, True
+            info.packages = parse_dnf_check_update(info.raw)
+        elif rc == 0:
+            info.checked, info.available = True, False
+        else:
+            info.error = (result.stderr or info.raw
+                          or "Falha na checagem.").strip()[:400]
+
+    return info
+
+
+def run_system_update_blocking() -> tuple[bool, str]:
+    """Aplica a atualizacao do sistema via pkexec (bloqueante e LONGO).
+    Atomico: faz stage pra proximo boot; Workstation: aplica na hora."""
+    return _run_pkg_cmd(
+        update_command(elevated=True), 1800, "atualização do sistema")

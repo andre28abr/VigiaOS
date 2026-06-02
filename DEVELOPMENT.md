@@ -2704,6 +2704,31 @@ bloco de dependência dobrado no corpo. Sai o `pill` da direita. A aba **Extens�
 segue exclusiva do Hub (faz mais sentido lá); **Sobre** já está nos três.
 vigia-common 0.2.15.
 
+### 2026-06-02 — Instalador do Hub: aba "Pendentes" vira "Atualizações"
+
+A aba **Pendentes** do instalador (`vigia_installer`) foi promovida a
+**Atualizações** — agora cuida de manter o sistema em dia, nos dois tipos de
+sistema (reconhece `rpm-ostree` vs `dnf` via `vigia_common.platform`):
+
+- **Checagem automática ao abrir** (worker thread, read-only, sem root):
+  `rpm-ostree upgrade --check` (rc 0 = update / 77 = nada) ou `dnf check-update`
+  (rc 100 = update / 0 = nada). O resultado vira a notificação no hero ("N
+  atualizações" / "Sistema atualizado") — a "notificação ali" que o user pediu.
+- **Dois caminhos pra atualizar, o usuário escolhe**: botão **Atualizar agora**
+  (`pkexec rpm-ostree/dnf upgrade`, timeout 1800s) **ou** o comando copiável
+  pro **terminal** (`update_command_display` → `rpm-ostree upgrade` / `sudo dnf
+  upgrade`).
+- **Lista de pacotes** com update (ferramentas da suíte destacadas via
+  `find_by_package`); em sistema atômico, a seção **Reinício pendente** (staged
+  + `Reiniciar agora`) segue herdada da antiga aba.
+
+Backend novo e testável em `backend.py`: `UpdateInfo`, `check_updates()`,
+`parse_dnf_check_update()`, `parse_rpm_ostree_check()`, `update_command()`,
+`update_command_display()`, `run_system_update_blocking()` (+22 testes). O
+`pending.py`/`PendingTab` foi **removido** (subsumido por `tabs/updates.py`).
+A aba **Extensões** segue exclusiva do Hub (a pedido). vigia-installer 0.4.0,
+suíte 1143.
+
 ---
 
 ## 10. Roadmap

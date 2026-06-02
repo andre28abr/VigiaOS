@@ -1,6 +1,6 @@
 from .about import AboutTab
 from .browse import BrowseTab
 from .extensions import ExtensionsTab
-from .pending import PendingTab
+from .updates import UpdatesTab
 
-__all__ = ["BrowseTab", "PendingTab", "ExtensionsTab", "AboutTab"]
+__all__ = ["BrowseTab", "UpdatesTab", "ExtensionsTab", "AboutTab"]
