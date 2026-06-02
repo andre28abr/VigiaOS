@@ -2496,6 +2496,17 @@ o Suricata.
 - +11 testes (helpers + registry requires). Suite 1096 → **1107**. vigia-common
   0.2.9, blue 0.0.13.
 
+### 2026-06-02 — Instalador do Blue no padrão visual do Hub (categorias + descrição)
+
+André pediu pra alinhar o layout da aba Instalador ao do Hub. Reescrito o
+`_installer_page` (shell): em vez de lista plana de dependências, agora **agrupa
+os módulos por categoria** (igual ao overview do Hub) — cada módulo é um
+`ExpanderRow` com ícone colorido + resumo no subtítulo + **descrição em markdown**
+(`md_to_pango`) + pílula "Pronto / Falta instalar"; dentro, um bloco
+**"Dependência"** com ✓/✗ + comando de instalação + botão Copiar. Reaproveita
+`modules_by_category` + `categories`/`order` do produto → o VigiaRed herda o mesmo
+padrão. vigia-common 0.2.10.
+
 ---
 
 ## 10. Roadmap

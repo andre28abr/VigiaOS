@@ -5,7 +5,7 @@
 %global mod_name vigia_common
 
 Name:           %{pkg_name}
-Version:        0.2.9
+Version:        0.2.10
 Release:        1%{?dist}
 Summary:        Helpers compartilhados entre as ferramentas do VigiaOS
 License:        Apache-2.0
