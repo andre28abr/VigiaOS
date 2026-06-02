@@ -2590,6 +2590,30 @@ Sem amostra estática: SIEM (lê ao vivo), Memory (precisa de dump real de RAM),
 Playbooks (sem arquivo). Cada pasta tem um `LEIA-ME.txt`. Tudo fictício/inofensivo;
 não baixa nada, não vira root. Artefatos ficam em `$HOME` (não vão pro git).
 
+### 2026-06-02 — Fix Vigia IDS: análise de .pcap precisa de root (pkexec)
+
+André testou o "Analisar .pcap" e veio: `conf-yaml-loader: failed to open
+/etc/suricata/suricata.yaml: Permission denied`. O Suricata é **ferramenta de
+root** — a config e as regras não são legíveis por usuário comum no Fedora.
+Correção:
+- **`build_pcap_cmd(..., elevated=True)`** → prefixa `pkexec` (caminho absoluto do
+  suricata, argv-list, nunca shell).
+- **`analyze_pcap`** tenta como usuário e, se a saída indicar falta de permissão
+  (**`_needs_root`**: "permission denied"/"failed to open"/…), **repete com
+  pkexec** (um diálogo polkit). Trata auth cancelada (rc 126/127). O eve.json em
+  `mkdtemp` sai 0644 → legível pelo usuário.
+- **GUI + manual** avisam "pode pedir senha".
+- **`ids-demo.sh`**: a auto-verificação agora roda `sudo suricata` (senão dava 0
+  alertas pelo mesmo motivo).
+- +2 testes (cmd elevado, `_needs_root`). Suite 1108 → 1110. blue 0.0.15.
+
+Pendência: a rota eve.json (ler `/var/log/suricata/eve.json` de um Suricata ativo)
+também pode precisar de pkexec — fica para quando for usada.
+
+---
+
+## 10. Roadmap
+
 ### 10.1 Próximas iterações por ferramenta
 
 **Vigia Hub v0.6+**:
