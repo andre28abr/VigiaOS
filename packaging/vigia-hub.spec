@@ -5,7 +5,7 @@
 %global mod_name vigia_hub
 
 Name:           %{pkg_name}
-Version:        0.8.0
+Version:        0.8.1
 Release:        1%{?dist}
 Summary:        Launcher mestre do VigiaOS (3 paineis, embedded mode)
 License:        Apache-2.0
@@ -81,6 +81,11 @@ fi
 /usr/bin/gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 
 %changelog
+* Tue Jun 02 2026 André Augusto Azarias de Souza <andre@vigia.local> - 0.8.1-1
+- Aviso de update sai do icone do Instalador e vira um sininho no rodape do
+  rail (bolinha vermelha + popover listando as notificacoes). Mesmo padrao no
+  Blue/Red via shell.
+
 * Tue Jun 02 2026 André Augusto Azarias de Souza <andre@vigia.local> - 0.8.0-1
 - Checagem de atualizacoes em segundo plano ao iniciar: badge discreto no icone
   do Instalador quando ha update (sistema ou suite). Toggle em Config > Aplicacao

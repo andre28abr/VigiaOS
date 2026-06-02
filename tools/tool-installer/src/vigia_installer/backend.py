@@ -16,6 +16,7 @@ import subprocess
 from dataclasses import dataclass
 
 from vigia_common.platform import is_atomic
+from vigia_common.notices import Notification
 
 from .catalog import is_suite_package
 
@@ -342,3 +343,28 @@ def run_system_update_blocking() -> tuple[bool, str]:
     Atomico: faz stage pra proximo boot; Workstation: aplica na hora."""
     return _run_pkg_cmd(
         update_command(elevated=True), 1800, "atualização do sistema")
+
+
+def updates_to_notifications(info: "UpdateInfo") -> "list[Notification]":
+    """Converte um UpdateInfo numa lista de Notification (pro sininho do Hub).
+    Vazia quando nao ha update. Separa sistema vs programas da suite."""
+    if not (info.checked and info.available):
+        return []
+    suite, system = split_updates(info.packages)
+    out: list[Notification] = []
+    if system or not info.packages:
+        n = len(system)
+        out.append(Notification(
+            "Atualização do sistema disponível",
+            (f"{n} pacote(s) do sistema operacional."
+             if n else "Há novidades do sistema para baixar."),
+            "software-update-available-symbolic",
+        ))
+    if suite:
+        nomes = ", ".join(suite[:3]) + ("…" if len(suite) > 3 else "")
+        out.append(Notification(
+            "Atualização de programas da suíte",
+            f"{len(suite)} programa(s): {nomes}",
+            "application-x-executable-symbolic",
+        ))
+    return out

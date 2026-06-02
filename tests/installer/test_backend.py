@@ -320,3 +320,39 @@ class TestSplitUpdates:
     def test_preserva_ordem_de_entrada(self):
         suite, _ = backend.split_updates(["clamav", "lynis"])
         assert suite == ["clamav", "lynis"]
+
+
+class TestUpdatesToNotifications:
+    def test_vazio_quando_sem_update(self):
+        assert backend.updates_to_notifications(backend.UpdateInfo()) == []
+        assert backend.updates_to_notifications(
+            backend.UpdateInfo(checked=True, available=False)) == []
+
+    def test_so_sistema(self):
+        info = backend.UpdateInfo(
+            checked=True, available=True, packages=["kernel", "glibc"])
+        notes = backend.updates_to_notifications(info)
+        assert len(notes) == 1
+        assert "sistema" in notes[0].title.lower()
+
+    def test_so_suite(self):
+        info = backend.UpdateInfo(
+            checked=True, available=True, packages=["lynis"])
+        notes = backend.updates_to_notifications(info)
+        assert len(notes) == 1
+        assert "suíte" in notes[0].title.lower()
+
+    def test_sistema_e_suite(self):
+        info = backend.UpdateInfo(
+            checked=True, available=True,
+            packages=["kernel", "lynis", "clamav"])
+        notes = backend.updates_to_notifications(info)
+        assert len(notes) == 2
+        titles = " ".join(n.title.lower() for n in notes)
+        assert "sistema" in titles and "suíte" in titles
+
+    def test_atomico_sem_lista_vira_notif_de_sistema(self):
+        info = backend.UpdateInfo(checked=True, available=True, packages=[])
+        notes = backend.updates_to_notifications(info)
+        assert len(notes) == 1
+        assert "sistema" in notes[0].title.lower()

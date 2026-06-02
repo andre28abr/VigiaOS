@@ -32,9 +32,10 @@ import gi
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 
-from gi.repository import Adw, Gdk, Gio, GLib, Gtk  # noqa: E402
+from gi.repository import Adw, Gio, GLib, Gtk  # noqa: E402
 
 from vigia_common.helpers import show_error, show_info
+from vigia_common.notifications_bell import NotificationsBell
 
 from .markdown import md_to_pango
 from .registry import (
@@ -119,10 +120,6 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         # Settings — carregado lazy quando aba Config abre. Pre-carrega aqui
         # pra _reconfigure_idle_monitor() funcionar caso lock ja' estivesse on
         self._settings = load_settings()
-
-        # Badges por modo do rail (ex.: aviso de update no Instalador)
-        self._nav_badges: dict[str, Gtk.Widget] = {}
-        self._install_hub_css()
 
         # ============= Nav fina (esquerda) ============= #
         nav_box = self._build_nav_bar()
@@ -217,18 +214,7 @@ class VigiaHubWindow(Adw.ApplicationWindow):
             icon = Gtk.Image.new_from_icon_name(icon_name)
             icon.set_pixel_size(22)
             icon.set_halign(Gtk.Align.CENTER)
-            # Overlay pra pendurar um badge (aviso de update) no canto do ícone.
-            icon_overlay = Gtk.Overlay()
-            icon_overlay.set_halign(Gtk.Align.CENTER)
-            icon_overlay.set_child(icon)
-            badge = Gtk.Label(label="")
-            badge.add_css_class("vigia-nav-badge")
-            badge.set_halign(Gtk.Align.END)
-            badge.set_valign(Gtk.Align.START)
-            badge.set_visible(False)
-            icon_overlay.add_overlay(badge)
-            self._nav_badges[mode_id] = badge
-            inner.append(icon_overlay)
+            inner.append(icon)
 
             lbl = Gtk.Label(label=label)
             lbl.add_css_class("caption")
@@ -240,70 +226,40 @@ class VigiaHubWindow(Adw.ApplicationWindow):
 
         box.append(self._nav_list)
 
-        # Spacer
+        # Spacer empurra o sininho pro rodapé
         spacer = Gtk.Box()
         spacer.set_vexpand(True)
         box.append(spacer)
 
+        # Sininho de notificações no rodapé do rail (updates do sistema/suíte)
+        self._bell = NotificationsBell()
+        self._bell.set_halign(Gtk.Align.CENTER)
+        self._bell.set_margin_bottom(14)
+        box.append(self._bell)
+
         return box
 
-    def _install_hub_css(self) -> None:
-        """Provider de CSS do Hub (badge de aviso no rail)."""
-        css = (
-            ".vigia-nav-badge {"
-            " background-color: @accent_bg_color;"
-            " color: @accent_fg_color;"
-            " border-radius: 999px;"
-            " font-size: 0.62em;"
-            " font-weight: bold;"
-            " padding: 0px 4px;"
-            " min-width: 10px;"
-            " min-height: 10px;"
-            " margin-top: 1px;"
-            "}"
-        ).encode()
-        try:
-            provider = Gtk.CssProvider()
-            provider.load_from_data(css)
-            display = Gdk.Display.get_default()
-            if display is not None:
-                Gtk.StyleContext.add_provider_for_display(
-                    display, provider,
-                    Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION,
-                )
-        except Exception as e:  # pylint: disable=broad-except
-            _log.debug("falha ao instalar CSS do Hub: %s", e)
-
-    # ---- Checagem de updates em segundo plano (badge no Instalador) ----
+    # ---- Checagem de updates em segundo plano (sininho de notificações) ----
 
     def _start_update_check(self) -> None:
         """Dispara, em thread, a checagem de updates do sistema/suíte. O
-        resultado vira um badge discreto no ícone do Instalador (read-only,
-        sem root, não instala nada)."""
+        resultado alimenta o sininho de notificações (read-only, sem root,
+        não instala nada)."""
         threading.Thread(target=self._update_check_worker, daemon=True).start()
 
     def _update_check_worker(self) -> None:
         try:
             from vigia_installer import backend as _inst_backend
             info = _inst_backend.check_updates()
+            notifs = _inst_backend.updates_to_notifications(info)
         except Exception as e:  # pylint: disable=broad-except
             _log.debug("checagem de updates falhou: %s", e)
             return
-        GLib.idle_add(self._apply_update_badge, info)
+        GLib.idle_add(self._apply_update_notifications, notifs)
 
-    def _apply_update_badge(self, info) -> bool:
-        badge = self._nav_badges.get("installer")
-        if badge is None:
-            return False
-        if getattr(info, "available", False):
-            n = len(getattr(info, "packages", []) or [])
-            badge.set_label(str(n) if n else "•")
-            badge.set_tooltip_text(
-                "Há atualizações disponíveis. Abra o Instalador → Atualizações."
-            )
-            badge.set_visible(True)
-        else:
-            badge.set_visible(False)
+    def _apply_update_notifications(self, notifs) -> bool:
+        if getattr(self, "_bell", None) is not None:
+            self._bell.set_notifications(notifs)
         return False
 
     def _on_nav_selected(
@@ -842,8 +798,8 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         self._sw_check_updates.set_title("Verificar atualizações ao iniciar")
         self._sw_check_updates.set_subtitle(
             "Procura atualizações do sistema e dos programas da suíte quando o "
-            "Hub abre e mostra um aviso no ícone do Instalador. Não instala "
-            "nada sozinho — é só um aviso."
+            "Hub abre e mostra um aviso no sininho de notificações (rodapé do "
+            "menu da esquerda). Não instala nada sozinho — é só um aviso."
         )
         self._sw_check_updates.set_active(self._settings.check_updates)
         self._sw_check_updates.connect(
@@ -1392,9 +1348,8 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         if switch.get_active():
             self._start_update_check()
         else:
-            badge = self._nav_badges.get("installer")
-            if badge is not None:
-                badge.set_visible(False)
+            if getattr(self, "_bell", None) is not None:
+                self._bell.set_notifications([])
 
     def _on_lock_toggled(self, switch: Adw.SwitchRow, *_args) -> None:
         """User toggleou 'Exigir senha para abrir o Hub'.
