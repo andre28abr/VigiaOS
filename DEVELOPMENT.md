@@ -2507,6 +2507,17 @@ os módulos por categoria** (igual ao overview do Hub) — cada módulo é um
 `modules_by_category` + `categories`/`order` do produto → o VigiaRed herda o mesmo
 padrão. vigia-common 0.2.10.
 
+### 2026-06-02 — Conteúdo mais largo no shell (clamp 820, padrão do Hub)
+
+André: o conteúdo dentro do VigiaBlue ficava estreito (muita margem lateral +
+rolagem maior). O `Adw.PreferencesPage` usa um clamp interno ~600px, mais
+apertado que o `Adw.Clamp(820)` dos tools do Hub. Adicionado **`_widen_clamps()`**
+no shell: percorre a árvore do conteúdo e alarga todo `Adw.Clamp`/`ClampScrollable`
+(inclui o interno do PreferencesPage) para **820 / aperto 640** — aplicado nos
+dois caminhos (`_module_page` e `_content_with_header`), então vale para os 7
+módulos **e** a aba Instalador sem editar cada `page.py`. Defensivo (tupla de
+tipos via `getattr`, robusto a versões de libadwaita). vigia-common 0.2.11.
+
 ---
 
 ## 10. Roadmap

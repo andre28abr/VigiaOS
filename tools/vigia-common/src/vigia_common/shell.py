@@ -159,6 +159,33 @@ def run_product(meta: ProductMeta, modules: list[Module],
 
     accent = meta.accent
 
+    # Largura do conteúdo — mesmo "padrão do Hub" (Adw.Clamp 820 / aperto 640).
+    # O Adw.PreferencesPage usa um clamp interno mais estreito (~600); para o
+    # conteúdo não ficar espremido no centro (rolagem maior), alargamos todos os
+    # clamps da árvore — vale para os módulos e para a aba Instalador de uma vez.
+    CONTENT_MAX_WIDTH = 820
+    CONTENT_TIGHTENING = 640
+    _CLAMP_TYPES = tuple(
+        t for t in (getattr(Adw, "Clamp", None),
+                    getattr(Adw, "ClampScrollable", None))
+        if t is not None
+    )
+
+    def _widen_clamps(widget: Gtk.Widget) -> Gtk.Widget:
+        """Percorre a árvore e alarga todo Adw.Clamp/ClampScrollable (inclui o
+        interno do PreferencesPage). Retorna o widget (encadeável)."""
+        stack = [widget]
+        while stack:
+            w = stack.pop()
+            if _CLAMP_TYPES and isinstance(w, _CLAMP_TYPES):
+                w.set_maximum_size(CONTENT_MAX_WIDTH)
+                w.set_tightening_threshold(CONTENT_TIGHTENING)
+            child = w.get_first_child()
+            while child is not None:
+                stack.append(child)
+                child = child.get_next_sibling()
+        return widget
+
     # ---------- helpers de UI ----------
 
     def _img(icon: str, size: int) -> Gtk.Widget:
@@ -189,7 +216,7 @@ def run_product(meta: ProductMeta, modules: list[Module],
             try:
                 import importlib
                 widget = importlib.import_module(mod.impl).build_content()
-                return widget
+                return _widen_clamps(widget)
             except Exception as e:  # noqa: BLE001 — módulo quebrado não derruba o app
                 print(f"[{meta.key}] falha ao carregar {mod.id} ({mod.impl}): {e}",
                       flush=True)
@@ -241,7 +268,7 @@ def run_product(meta: ProductMeta, modules: list[Module],
         hb = Adw.HeaderBar()
         hb.set_title_widget(Adw.WindowTitle(title=title, subtitle=meta.name))
         tv.add_top_bar(hb)
-        tv.set_content(child)
+        tv.set_content(_widen_clamps(child))
         return tv
 
     def _placeholder(icon: str, title: str, desc: str) -> Gtk.Widget:
