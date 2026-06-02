@@ -301,3 +301,22 @@ class TestRunSystemUpdate:
         ok, _ = backend.run_system_update_blocking()
         assert ok is True
         assert run.calls[0] == ["pkexec", "dnf", "upgrade", "-y"]
+
+
+class TestSplitUpdates:
+    def test_separa_suite_de_sistema(self):
+        suite, system = backend.split_updates(
+            ["kernel", "lynis", "glibc", "clamav"])
+        assert suite == ["lynis", "clamav"]
+        assert system == ["kernel", "glibc"]
+
+    def test_pacotes_vigia_vao_pra_suite(self):
+        suite, system = backend.split_updates(["vigia-hub", "bash"])
+        assert "vigia-hub" in suite and "bash" in system
+
+    def test_vazio(self):
+        assert backend.split_updates([]) == ([], [])
+
+    def test_preserva_ordem_de_entrada(self):
+        suite, _ = backend.split_updates(["clamav", "lynis"])
+        assert suite == ["clamav", "lynis"]

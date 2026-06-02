@@ -51,6 +51,11 @@ ou `dnf` (Workstation) e mostra o comando certo. Se você acabou de
 instalar algo e o sistema for atômico, aparece aqui também o aviso de
 "Reiniciar agora" pra aplicar.
 
+A lista embaixo separa o que será atualizado em duas partes: **Sistema**
+(pacotes do sistema operacional) e **Programas da suíte Vigia** (as suas
+ferramentas de segurança, tipo lynis e ClamAV). Assim você sabe exatamente
+o que muda — só o sistema, ou o sistema e os programas junto.
+
 **Extensões**: detecta os navegadores que você tem (Firefox, Chrome,
 Brave, etc.) e mostra as **8 extensões recomendadas** pra cada um. Você
 clica em "Abrir no Firefox" e o navegador abre na página da extensão —

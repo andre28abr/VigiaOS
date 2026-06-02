@@ -258,3 +258,10 @@ def find_by_package(package: str) -> CatalogEntry | None:
         if e.package == package:
             return e
     return None
+
+
+def is_suite_package(package: str) -> bool:
+    """True se o pacote pertence à suíte Vigia — ou está no catálogo curado
+    (lynis, aide, clamav, …), ou é um dos próprios apps `vigia-*`. Usado pra
+    separar 'atualização do sistema' de 'atualização de programas da suíte'."""
+    return package.startswith("vigia") or find_by_package(package) is not None

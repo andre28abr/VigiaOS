@@ -140,7 +140,7 @@ xdg-open "https://chromewebstore.google.com/detail/cjpalhdlnbpafiamejdnhcphjbkei
 | Tab | Descrição |
 |---|---|
 | **Catálogo** | Lista categorizada em `Adw.PreferencesGroup`. Cada item é `Adw.ExpanderRow` com prefix badge de status (`Disponivel` / `INSTALADO` / `PENDENTE`) + suffix botão ação (`Instalar` / `Remover` / `Pendente`). Expansão mostra `why` + nome do pacote. Status carregado em worker thread (`refresh_statuses_async`). Search filtra em nome/desc/pacote/why. |
-| **Atualizações** | Checagem automática ao abrir (worker thread → hero "N atualizações" / "Sistema atualizado"). Dois caminhos: botão `Atualizar agora` (`pkexec rpm-ostree/dnf upgrade`) e comando copiável pro terminal (`update_command_display`). Lista de pacotes com update (ferramentas da suíte destacadas via `find_by_package`). Em sistema atômico, seção "Reinício pendente" (staged + `Reiniciar agora`). Aparece nos dois (atômico **e** dnf). |
+| **Atualizações** | Checagem automática ao abrir (worker thread → hero "N atualizações" / "Sistema atualizado"). Dois caminhos: botão `Atualizar agora` (`pkexec rpm-ostree/dnf upgrade`) e comando copiável pro terminal (`update_command_display`). Lista **separada por origem**: **Sistema** vs **Programas da suíte Vigia** (`split_updates` + `catalog.is_suite_package`). Em sistema atômico, seção "Reinício pendente" (staged + `Reiniciar agora`). Aparece nos dois (atômico **e** dnf). |
 | **Extensões** | Detecta navegadores instalados, lista catálogo FOSS + botão "Abrir no <browser>" (xdg-open URL da AMO/Web Store). Marcação manual de "já instalei" persistente em JSON. Lock por categoria ad-blocker (só 1 por browser). |
 | **Sobre** | 5 seções markup-formatted. |
 

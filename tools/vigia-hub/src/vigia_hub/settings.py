@@ -39,6 +39,8 @@ class Settings:
     theme: str = "system"  # "system" | "light" | "dark"
     # 0 = desabilitado; min 1 quando ativo (auto_lock so faz sentido com lock ON)
     auto_lock_minutes: int = 0
+    # v0.8.0: checa atualizacoes ao iniciar (badge no icone do Instalador)
+    check_updates: bool = True
 
 
 # ============================================================
@@ -71,6 +73,7 @@ def load_settings() -> Settings:
             password_lock=bool(data.get("password_lock", False)),
             theme=theme_raw,
             auto_lock_minutes=auto_lock,
+            check_updates=bool(data.get("check_updates", True)),
         )
     except (OSError, json.JSONDecodeError) as e:
         import logging

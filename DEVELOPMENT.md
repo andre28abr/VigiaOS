@@ -2729,6 +2729,33 @@ Backend novo e testável em `backend.py`: `UpdateInfo`, `check_updates()`,
 A aba **Extensões** segue exclusiva do Hub (a pedido). vigia-installer 0.4.0,
 suíte 1143.
 
+### 2026-06-02 — Aviso de update no rail do Hub + lista separada (Sistema vs Suíte)
+
+Duas peças que o user pediu na sequência da aba Atualizações:
+
+**A) Badge de update no ícone do Instalador (Hub).** Ao iniciar, o Hub roda
+`vigia_installer.backend.check_updates()` numa thread (read-only, sem root) e,
+se houver atualização (sistema **ou** programa da suíte), pendura um badge
+discreto (`.vigia-nav-badge` — pílula `@accent_bg_color`, overlay no ícone) no
+item **Instalador** do rail. Implementado em `window.py`: `_install_hub_css`,
+`_build_nav_bar` (cada ícone agora num `Gtk.Overlay` com badge escondido em
+`self._nav_badges`), `_start_update_check`/`_update_check_worker`/
+`_apply_update_badge`. Novo setting **`check_updates`** (default `True`) +
+SwitchRow "Verificar atualizações ao iniciar" em Config → Aplicação
+(`_on_check_updates_toggled`). Desligado → some o badge e não checa. vigia-hub
+0.8.0.
+
+**B) Lista de updates separada por origem (aba Atualizações).** A lista agora
+tem dois grupos: **Sistema** (pacotes do SO) e **Programas da suíte Vigia**
+(catálogo curado ou `vigia-*`). O "Atualizar agora" continua atualizando
+**tudo** de uma vez (é o `upgrade` do gerenciador), mas o painel deixa explícito
+o que muda. Backend novo e testável: `catalog.is_suite_package()` +
+`backend.split_updates()`; o hero também resume ("N do sistema · M da suíte").
+vigia-installer 0.4.1.
+
+Testes: +10 (`split_updates`, `is_suite_package`, `check_updates` no settings).
+Suíte **1153**.
+
 ---
 
 ## 10. Roadmap
