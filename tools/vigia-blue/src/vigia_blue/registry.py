@@ -13,7 +13,7 @@ META = ProductMeta(
     key="blue",
     name="VigiaBlue",
     app_id="br.com.vigia.Blue",
-    version="0.0.10",
+    version="0.0.11",
     tagline=(
         "Suíte defensiva (blue team / SOC) com interface gráfica moderna — "
         "detecção, caça a ameaças, forense e resposta. Parte do ecossistema "
@@ -36,13 +36,17 @@ MODULES: list[Module] = [
     Module(
         id="siem", name="Vigia SIEM", category="detection",
         icon="view-list-symbolic",
-        summary="Agregação + correlação de logs",
-        description="SIEM-lite que estende o core do Activity Log (Rust): "
-                    "agrega logs de várias fontes, correlaciona eventos e "
-                    "gera alertas com regras estilo Sigma.",
-        wraps=["vigia-activity-log (core)", "regras Sigma-style"],
+        summary="Detecção: regras → alertas triados",
+        description="Camada de detecção sobre o core do Activity Log (Rust "
+                    "vigia-log): lê os eventos (audit/journald/fail2ban) e "
+                    "aplica regras para gerar alertas triados por severidade, "
+                    "cada um com explicação leiga e recomendação.",
+        wraps=["vigia-log (core)", "regras de detecção"],
         features=["Coleta multi-fonte (audit/journald/fail2ban)",
-                  "Correlação + dedupe", "Alertas por regra"],
+                  "7 regras de detecção prontas",
+                  "Alertas leigos + recomendação + histórico"],
+        status="pronto",
+        impl="vigia_blue.modules.siem.page",
     ),
     Module(
         id="ids", name="Vigia IDS", category="detection",
