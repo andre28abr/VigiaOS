@@ -2684,6 +2684,16 @@ agora **promovida** a item de topo (`_build_about_page` reusa o widget) e
 **removida** das abas do Config (sem duplicação). vigia-hub 0.7.8. Os três
 produtos têm o mesmo rail de 5 itens.
 
+### 2026-06-02 — "Sobre" dos produtos (Blue/Red) com a bio completa do Hub
+
+A pedido, copiei o conteúdo "redondo" do **Sobre** do Hub para o `_about_page`
+do shell (compartilhado por Blue e Red): o grupo **Autor** agora traz a bio
+longa (DPO/Encarregado, 18+ anos, dupla formação Direito + ADS, product owner
+técnico do VigiaOS) + a linha **nome/cargo com avatar**, além dos links LinkedIn
+e GitHub que já existiam. O grupo de produto (versão · para quem é · ecossistema)
+e o aviso legal (Red) seguem como estavam. Uma edição no shell atualiza os dois
+produtos de uma vez. vigia-common 0.2.14.
+
 ---
 
 ## 10. Roadmap
