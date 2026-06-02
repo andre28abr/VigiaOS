@@ -355,14 +355,15 @@ def run_product(meta: ProductMeta, modules: list[Module],
             exp.set_title(mod.name)
             exp.set_subtitle(mod.summary)
             exp.set_subtitle_lines(0)
-            exp.add_prefix(_img(mod.icon, 36))
-            if mod.requires:
-                ok_all = all(dep_installed(d) for d in mod.requires)
-                pill = Gtk.Label(label="Pronto" if ok_all else "Falta instalar")
-                pill.add_css_class("caption")
-                pill.add_css_class("success" if ok_all else "warning")
-                pill.set_valign(Gtk.Align.CENTER)
-                exp.add_suffix(pill)
+            # Mesmo padrão do Catálogo do Hub: badge de status como PREFIXO
+            # (caption-heading verde/âmbar), sem o ícone colorido do módulo.
+            ok_all = (not mod.requires) or all(
+                dep_installed(d) for d in mod.requires)
+            badge = Gtk.Label(label="PRONTO" if ok_all else "FALTA")
+            badge.add_css_class("caption-heading")
+            badge.add_css_class("success" if ok_all else "warning")
+            badge.set_valign(Gtk.Align.CENTER)
+            exp.add_prefix(badge)
 
             body = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
             body.set_margin_top(12)
