@@ -155,7 +155,7 @@ def run_product(meta: ProductMeta, modules: list[Module],
 
     gi.require_version("Gtk", "4.0")
     gi.require_version("Adw", "1")
-    from gi.repository import Adw, Gdk, Gio, Gtk
+    from gi.repository import Adw, Gdk, Gio, GLib, Gtk
     from .notifications_bell import NotificationsBell
     from .notices import module_dep_notifications
 
@@ -346,8 +346,10 @@ def run_product(meta: ProductMeta, modules: list[Module],
 
         def _module_expander(mod: Module) -> Adw.ExpanderRow:
             exp = Adw.ExpanderRow()
-            exp.set_title(mod.name)
-            exp.set_subtitle(mod.summary)
+            # set_title/set_subtitle do Adw interpretam markup Pango — escapa
+            # pra um '&' no texto não quebrar a renderização.
+            exp.set_title(GLib.markup_escape_text(mod.name))
+            exp.set_subtitle(GLib.markup_escape_text(mod.summary))
             exp.set_subtitle_lines(0)
             # Mesmo padrão do Catálogo do Hub: badge de status como PREFIXO
             # (caption-heading verde/âmbar), sem o ícone colorido do módulo.
@@ -390,14 +392,7 @@ def run_product(meta: ProductMeta, modules: list[Module],
             title = Gtk.Label(label="Catálogo curado")
             title.add_css_class("title-2")
             title.set_halign(Gtk.Align.START)
-            title.set_hexpand(True)
-            refresh = Gtk.Button(label="Reverificar")
-            refresh.add_css_class("flat")
-            refresh.set_valign(Gtk.Align.CENTER)
-            title_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-            title_row.append(title)
-            title_row.append(refresh)
-            title_row.set_margin_bottom(8)
+            title.set_margin_bottom(8)
 
             desc = Gtk.Label(label=(
                 f"{n} ferramenta{plural} de segurança selecionada{plural}. "
@@ -419,28 +414,20 @@ def run_product(meta: ProductMeta, modules: list[Module],
                                      spacing=20)
             row_text: dict = {}     # ExpanderRow -> texto pesquisável
             group_rows: dict = {}   # PreferencesGroup -> [ExpanderRow]
-
-            def _build_groups(*_a):
-                child = categories_box.get_first_child()
-                while child is not None:
-                    nxt = child.get_next_sibling()
-                    categories_box.remove(child)
-                    child = nxt
-                row_text.clear()
-                group_rows.clear()
-                for cat, mods in grouped.items():
-                    grp = Adw.PreferencesGroup()
-                    grp.set_title(categories.get(cat, cat))
-                    rows = []
-                    for mod in mods:
-                        exp = _module_expander(mod)
-                        grp.add(exp)
-                        pk = " ".join(
-                            f"{d.package} {d.label}" for d in mod.requires)
-                        row_text[exp] = f"{mod.name} {mod.summary} {pk}".lower()
-                        rows.append(exp)
-                    categories_box.append(grp)
-                    group_rows[grp] = rows
+            for cat, mods in grouped.items():
+                grp = Adw.PreferencesGroup()
+                # categoria pode ter '&' (markup) — escapa.
+                grp.set_title(GLib.markup_escape_text(categories.get(cat, cat)))
+                rows = []
+                for mod in mods:
+                    exp = _module_expander(mod)
+                    grp.add(exp)
+                    pk = " ".join(
+                        f"{d.package} {d.label}" for d in mod.requires)
+                    row_text[exp] = f"{mod.name} {mod.summary} {pk}".lower()
+                    rows.append(exp)
+                categories_box.append(grp)
+                group_rows[grp] = rows
 
             def _apply_filter(*_a):
                 q = search.get_text().strip().lower()
@@ -453,16 +440,13 @@ def run_product(meta: ProductMeta, modules: list[Module],
                     grp.set_visible(visible_any)
 
             search.connect("search-changed", _apply_filter)
-            refresh.connect("clicked",
-                            lambda _b: (_build_groups(), _apply_filter()))
-            _build_groups()
 
             outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
             outer.set_margin_top(24)
             outer.set_margin_bottom(32)
             outer.set_margin_start(28)
             outer.set_margin_end(28)
-            outer.append(title_row)
+            outer.append(title)
             outer.append(desc)
             outer.append(search)
             outer.append(categories_box)
@@ -490,23 +474,65 @@ def run_product(meta: ProductMeta, modules: list[Module],
                     "Atualizações",
                     "O verificador de atualizações não está disponível aqui.")
 
-        # ---------- aba Sobre (sobre o instalador) ----------
+        # ---------- aba Sobre (manual didático, padrão do Hub) ----------
         def _about_installer_tab() -> Gtk.Widget:
+            pm = GLib.markup_escape_text(package_manager())
+            _name = GLib.markup_escape_text(meta.name)
+            _tag = GLib.markup_escape_text(meta.tagline)
+            sections = [
+                ("O que faz",
+                 f"Esta área <b>verifica</b> as ferramentas open source que os "
+                 f"módulos do {_name} embarcam (YARA, Suricata, Volatility, …): "
+                 "mostra o que já está instalado (✓) e o que falta (✗).\n\n"
+                 "Ela <b>não instala nada</b> por conta própria — é só "
+                 "conferência. A instalação fica a cargo do script guiado do "
+                 "ecossistema."),
+                ("Como usar",
+                 "<b>Aba Módulos</b>:\n"
+                 "1. Os módulos vêm agrupados por categoria, com um badge de "
+                 "status (<i>PRONTO</i> / <i>FALTA</i>)\n"
+                 "2. Expanda um módulo (seta) pra ver a descrição, a dependência "
+                 "e o <tt>pacote</tt> que ela usa\n"
+                 "3. A busca filtra por nome, descrição ou pacote\n\n"
+                 "<b>Aba Atualizações</b>:\n"
+                 "- Verifica e aplica atualizações do sistema e dos programas\n"
+                 "- Atualize pelo painel (botão) ou copie o comando pro terminal"),
+                ("Como instalar o que falta",
+                 "A instalação é feita pelo <b>instalador guiado do "
+                 "ecossistema</b>, no terminal:\n\n"
+                 "<tt>./install/vigia-setup.sh</tt>\n\n"
+                 "Ele cuida das dependências dos três produtos (Hub, Blue e Red) "
+                 f"de uma vez, já na plataforma certa (detectada: <tt>{pm}</tt>)."),
+                ("Conceitos importantes",
+                 "<b>Ferramentas embarcadas</b>: cada módulo é uma interface "
+                 "gráfica que <i>embrulha</i> uma ferramenta de linha de comando "
+                 "consagrada (ex.: o Vigia IDS embrulha o <tt>Suricata</tt>). Sem "
+                 "a ferramenta instalada, o módulo aparece como <i>FALTA</i>.\n\n"
+                 f"<b>{pm}</b>: é o gerenciador de pacotes que a aba Atualizações "
+                 "usa pra manter o sistema e as ferramentas em dia."),
+                ("Saiba mais",
+                 f"- Produto: <b>{_name}</b> — {_tag}\n"
+                 "- Instalador do ecossistema: <tt>install/vigia-setup.sh</tt>\n"
+                 "- Repositório: https://github.com/andre28abr/VigiaOS"),
+            ]
             page = Adw.PreferencesPage()
-            g = Adw.PreferencesGroup()
-            g.set_title("Sobre o Instalador")
-            g.set_description(
-                f"Esta área verifica as ferramentas externas que os módulos do "
-                f"{meta.name} embarcam — é só conferência. A instalação é feita "
-                "pelo script guiado do ecossistema: ./install/vigia-setup.sh."
-            )
-            r = Adw.ActionRow()
-            r.set_title("Gerenciador de pacotes")
-            r.set_subtitle(package_manager())
-            r.add_prefix(
-                Gtk.Image.new_from_icon_name("preferences-system-symbolic"))
-            g.add(r)
-            page.add(g)
+            for stitle, content in sections:
+                group = Adw.PreferencesGroup()
+                group.set_title(stitle)
+                lbl = Gtk.Label()
+                lbl.set_markup(content)
+                lbl.set_wrap(True)
+                lbl.set_xalign(0)
+                lbl.set_selectable(True)
+                lbl.set_margin_start(12)
+                lbl.set_margin_end(12)
+                lbl.set_margin_top(12)
+                lbl.set_margin_bottom(12)
+                row = Adw.PreferencesRow()
+                row.set_child(lbl)
+                row.set_activatable(False)
+                group.add(row)
+                page.add(group)
             return _widen_clamps(page)
 
         # ---------- sub-barra "Wrapper de:" (mesma do Hub) ----------
