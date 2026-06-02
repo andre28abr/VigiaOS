@@ -98,6 +98,7 @@ NAV_MODES = [
     ("installer", "Instalador", "package-x-generic-symbolic"),
     ("settings", "Config.", "preferences-system-symbolic"),
     ("help", "Ajuda", "help-browser-symbolic"),
+    ("about", "Sobre", "help-about-symbolic"),
 ]
 
 
@@ -268,7 +269,20 @@ class VigiaHubWindow(Adw.ApplicationWindow):
             return self._build_settings_page()
         if mode_id == "help":
             return self._build_help_page()
+        if mode_id == "about":
+            return self._build_about_page()
         raise ValueError(f"Modo desconhecido: {mode_id}")
+
+    def _build_about_page(self) -> Gtk.Widget:
+        """Página 'Sobre' (item do rail) — reaproveita o conteúdo da antiga aba
+        Sobre do Config, promovida a item de topo (padrão Blue/Red)."""
+        header = Adw.HeaderBar()
+        header.set_title_widget(
+            Adw.WindowTitle(title="Sobre", subtitle="Vigia Hub"))
+        toolbar = Adw.ToolbarView()
+        toolbar.add_top_bar(header)
+        toolbar.set_content(self._build_settings_about_tab())
+        return toolbar
 
     def _build_help_page(self) -> Gtk.Widget:
         """Aba Ajuda: 3 sub-abas (ViewSwitcher) com manuais.
@@ -659,7 +673,7 @@ class VigiaHubWindow(Adw.ApplicationWindow):
           ToolbarView
             HeaderBar (com X de fechar) + ViewSwitcher no titulo
             ViewStack
-              [Aplicacao] [Seguranca] [Sobre]
+              [Aplicacao] [Seguranca]   (Sobre virou item do rail)
 
         Cada aba e um Adw.PreferencesPage isolado, pra facilitar
         adicionar futuras abas (ex: Tema, Notificacoes).
@@ -686,12 +700,7 @@ class VigiaHubWindow(Adw.ApplicationWindow):
             "Segurança",
             "channel-secure-symbolic",
         )
-        stack.add_titled_with_icon(
-            self._build_settings_about_tab(),
-            "about",
-            "Sobre",
-            "help-about-symbolic",
-        )
+        # (A aba "Sobre" virou item próprio do rail — padronização Hub/Blue/Red.)
 
         # ============= HeaderBar com ViewSwitcher ============= #
         switcher = Adw.ViewSwitcher()
