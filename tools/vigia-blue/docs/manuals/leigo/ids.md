@@ -20,6 +20,12 @@ os alertas dele de forma **organizada e em português**, por gravidade.
 
 Há dois jeitos de dar uma fonte de alertas ao Vigia IDS:
 
+> **Importante:** o Vigia IDS **não cria** o `eve.json` — ele só **lê**. Quem cria
+> esse arquivo é um **Suricata em execução** (de plantão, vigiando a rede). Se você
+> não tem um Suricata rodando, o arquivo simplesmente não existe — por isso o
+> seletor pode "não mostrar nada". Nesse caso, use o jeito **2** (analisar um
+> `.pcap`), que é o mais fácil para testar.
+
 ### 1) Ler o eve.json de um Suricata que já roda
 Se você (ou a TI) já tem o Suricata monitorando a rede, ele grava tudo num arquivo
 chamado **`eve.json`** (normalmente em `/var/log/suricata/eve.json`).
@@ -32,6 +38,14 @@ Se você tem uma **captura de rede** (um arquivo `.pcap`, feito por exemplo com 
 Wireshark) e o **Suricata está instalado** nesta máquina:
 1. Clique em **Selecionar .pcap** e escolha a captura.
 2. O Vigia IDS roda o Suricata sobre ela e mostra os alertas.
+
+### Quer ver funcionando agora? (teste seguro)
+Não tem um `.pcap` à mão? No terminal, rode `./install/ids-demo.sh`. Ele gera um
+`.pcap` de teste **sem nenhum vírus** — só acessa o `testmynids.org`, um
+serviço-teste que faz o Suricata disparar a regra *"GPL ATTACK_RESPONSE id check
+returned root"* (o "EICAR dos IDS"). Depois, em **Selecionar .pcap**, escolha o
+arquivo gerado (`/tmp/vigia-ids-demo.pcap`) e veja o alerta aparecer. Precisa do
+`suricata` + `tcpdump` instalados.
 
 ### Lendo os resultados
 Cada alerta é um **botão**: aparece o nome do ataque detectado e a **gravidade**
