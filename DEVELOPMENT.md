@@ -2807,6 +2807,24 @@ no header com **Módulos · Atualizações · Sobre** + uma sub-barra de ferrame
 
 Só GUI (shell), sem mudança de backend nem de testes. vigia-common 0.2.17.
 
+### 2026-06-02 — Cabeçalho "Catálogo curado" + busca no instalador (Blue/Red)
+
+A aba **Módulos** do instalador dos produtos passou a usar o **mesmo cabeçalho
+do Catálogo do Hub**, com as mesmas classes de fonte (consistência de
+tamanho/tipo nos três; só a cor de destaque muda por produto):
+
+- **Título** `Catálogo curado` em `.title-2` (antes era título de
+  `PreferencesGroup`, menor).
+- **Descrição** em `.dim-label` com o **número de ferramentas** do produto
+  (`len(modules)`, com plural correto) — atualiza sozinho se um módulo for
+  adicionado.
+- **Barra de busca** (`Gtk.SearchEntry`, "Buscar por nome, descrição ou
+  pacote…") que filtra os módulos por nome/resumo/pacote e esconde categorias
+  vazias.
+
+Layout num `Gtk.Box` clampado a 820 (igual o `make_clamp` do Hub). "Reverificar"
+foi pro canto do título. vigia-common 0.2.19.
+
 ---
 
 ## 10. Roadmap
