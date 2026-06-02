@@ -109,3 +109,57 @@ def test_run_plugin_missing_dump(monkeypatch, tmp_path):
                         lambda b: "/usr/bin/vol" if b == "vol" else None)
     res = backend.run_plugin(tmp_path / "nao_existe.raw", "linux.pslist.PsList")
     assert "não encontrado" in res.error.lower() or "encontrado" in res.error.lower()
+
+
+# ============================================================
+# Captura de dump (AVML via pkexec)
+# ============================================================
+
+
+def test_avml_path_via_which(monkeypatch):
+    monkeypatch.setattr(backend.shutil, "which",
+                        lambda b: "/usr/bin/avml" if b == "avml" else None)
+    assert backend.avml_path() == "/usr/bin/avml"
+    assert backend.avml_available() is True
+
+
+def test_avml_path_extra_location(monkeypatch, tmp_path):
+    monkeypatch.setattr(backend.shutil, "which", lambda _b: None)
+    fake = tmp_path / "avml"
+    fake.write_text("#!/bin/sh\n")
+    fake.chmod(0o755)
+    monkeypatch.setattr(backend, "_AVML_EXTRA_PATHS", [fake])
+    assert backend.avml_path() == str(fake)
+    assert backend.avml_available() is True
+
+
+def test_avml_path_absent(monkeypatch):
+    monkeypatch.setattr(backend.shutil, "which", lambda _b: None)
+    monkeypatch.setattr(backend, "_AVML_EXTRA_PATHS", [])
+    assert backend.avml_path() is None
+    assert backend.avml_available() is False
+
+
+def test_default_dump_path():
+    p = backend.default_dump_path()
+    assert str(p).endswith(".lime")
+    assert p.parent == backend.TEST_DIR
+    assert p.name.startswith("captura-")
+
+
+def test_build_capture_cmd():
+    cmd = backend.build_capture_cmd(
+        "/home/u/teste/memory/d.lime", "/usr/bin/avml", owner="u")
+    assert isinstance(cmd, list)
+    assert cmd[0] == "pkexec"
+    assert cmd[1].endswith("_mem_capture.sh")
+    assert cmd[2] == "/usr/bin/avml"
+    assert cmd[3] == "/home/u/teste/memory/d.lime"
+    assert cmd[4] == "u"
+
+
+def test_capture_dump_no_avml(monkeypatch):
+    monkeypatch.setattr(backend, "avml_path", lambda: None)
+    res = backend.capture_dump()
+    assert res.ok is False
+    assert "avml" in res.error.lower()

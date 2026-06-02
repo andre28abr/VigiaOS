@@ -2859,6 +2859,30 @@ Bump nos pacotes-âncora: **vigia-common 0.2.21** e **vigia-hub 0.8.2**. (As
 tools embarcadas tiveram só a constante de largura unificada — mudança
 cosmética compartilhada, sem bump individual.)
 
+### 2026-06-02 — Vigia Memory: captura de dump nativa (AVML via pkexec)
+
+O Vigia Memory deixou de só *analisar* — agora também **captura** a RAM da
+máquina, no mesmo espírito do botão "Capturar" do Vigia IDS:
+
+- **`install/_mem_capture.sh`** — helper privilegiado (pkexec): valida o destino
+  (`*/teste/memory/*`), roda o **AVML** (lê a memória física → formato LiME) e
+  devolve a posse ao usuário com **0600** (dump = senhas/chaves, LGPD).
+- **backend** (`memory/backend.py`): `avml_path()`/`avml_available()`,
+  `default_dump_path()` (`~/teste/memory/captura-<ts>.lime`), `build_capture_cmd`
+  (argv pkexec), `capture_dump()` (CaptureResult; trata pkexec cancelado). +6
+  testes.
+- **page**: botão **Capturar** na aba Análise → captura em thread → vira o dump
+  selecionado, pronto pra escolher plugin e Analisar. Aba Sobre ganhou a nota da
+  **pegadinha dos símbolos (ISF)** do Linux.
+- **registry**: AVML vira `requires` do Memory (kind=source, nota "para capturar"),
+  igual o tcpdump do IDS — aparece no Instalador/sininho se faltar.
+- **`install/blue-deps.sh`**: baixa o AVML oficial da Microsoft (HTTPS) pra
+  `~/.local/bin/avml`.
+
+Pendência conhecida: análise de dump **Linux** ainda precisa dos **símbolos do
+kernel (ISF)** — é o próximo passo pra fechar capturar→analisar no Linux.
+vigia-blue 0.0.20 (alinha pyproject/__init__). Suíte **1169**.
+
 ---
 
 ## 10. Roadmap

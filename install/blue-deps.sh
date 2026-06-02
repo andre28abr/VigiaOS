@@ -10,6 +10,7 @@
 #   suricata    → rpm-ostree | dnf                          — módulo Vigia IDS
 #   tcpdump     → rpm-ostree | dnf                          — captura do Vigia IDS
 #   volatility3 → pipx (forense, sem root)                  — módulo Vigia Memory
+#   avml        → download oficial (Microsoft) → ~/.local/bin — captura do Memory
 #   plaso       → pipx (forense, sem root)                  — módulo Vigia Timeline
 #   vigia-log   → cargo build + install /usr/local/bin      — módulo Vigia SIEM
 #
@@ -147,6 +148,41 @@ if [[ $DO_CORE -eq 1 ]]; then
     fi
 else
     SKIPPED+=("vigia-log (--no-core)")
+fi
+
+# ===========================================================================
+# 4) Captura de memória: AVML (binário estático oficial da Microsoft)
+# ===========================================================================
+if [[ $DO_FORENSICS -eq 1 ]]; then
+    AVML_DEST="$HOME/.local/bin/avml"
+    if command -v avml >/dev/null 2>&1 || [[ -x "$AVML_DEST" ]]; then
+        ok "AVML já presente."
+        DONE+=("avml (já presente)")
+    else
+        info "Baixando o AVML (release oficial da Microsoft) → ~/.local/bin/avml…"
+        mkdir -p "$HOME/.local/bin"
+        AVML_URL="https://github.com/microsoft/avml/releases/latest/download/avml"
+        if command -v curl >/dev/null 2>&1; then
+            DL=(curl -fsSL -o "$AVML_DEST" "$AVML_URL")
+        else
+            DL=(wget -qO "$AVML_DEST" "$AVML_URL")
+        fi
+        if "${DL[@]}" && chmod 0755 "$AVML_DEST"; then
+            ok "AVML instalado em ~/.local/bin/avml."
+            DONE+=("avml (download oficial)")
+            case ":$PATH:" in
+                *":$HOME/.local/bin:"*) : ;;
+                *) warn "~/.local/bin não está no PATH — adicione p/ o 'avml' ser achado." ;;
+            esac
+        else
+            err "falha ao baixar o AVML."
+            warn "Baixe manualmente: $AVML_URL → ~/.local/bin/avml (chmod +x)"
+            FAILED+=("avml")
+            rm -f "$AVML_DEST" 2>/dev/null || true
+        fi
+    fi
+else
+    SKIPPED+=("avml (--no-forensics)")
 fi
 
 # ===========================================================================
