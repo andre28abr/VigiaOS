@@ -2756,6 +2756,34 @@ vigia-installer 0.4.1.
 Testes: +10 (`split_updates`, `is_suite_package`, `check_updates` no settings).
 Suíte **1153**.
 
+### 2026-06-02 — Sininho de notificações no rodapé do rail (Hub + Blue + Red)
+
+O badge no ícone do Instalador não ficou bom; substituído por um **sininho de
+notificações** no rodapé da coluna fina, padronizado nos três produtos:
+
+- **Widget reutilizável** em `vigia_common`: `notices.py` (modelo **puro** —
+  `Notification` + `module_dep_notifications`, sem gi, testável) e
+  `notifications_bell.py` (`NotificationsBell`, um `Gtk.MenuButton` com o sino +
+  **bolinha vermelha** + popover à direita). A bolinha usa o **mesmo padrão do
+  dot de status** da coluna do meio (`Label("●")` + classe `error`), só que
+  vermelho. `set_notifications([])` esconde a bolinha. (Nome `notices` pra não
+  colidir com o `notifications.py` existente, que dispara notificação desktop.)
+- **Hub**: removido o badge do ícone (`_install_hub_css`/`.vigia-nav-badge`/
+  `_nav_badges` saíram, junto com o import de `Gdk`). O `_build_nav_bar` põe o
+  sininho após o spacer; a checagem ao iniciar agora chama
+  `backend.updates_to_notifications(info)` → `_apply_update_notifications` →
+  `bell.set_notifications(...)`. Toggle `check_updates` segue em Config →
+  Aplicação. vigia-hub 0.8.1.
+- **Blue/Red (shell)**: `_build_rail` ganha o mesmo sininho no rodapé, alimentado
+  com os **módulos cuja dependência externa falta** (`module_dep_notifications`).
+  vigia-common 0.2.16.
+- **Instalador**: `backend.updates_to_notifications(info)` converte o
+  `UpdateInfo` em `Notification`s (separa sistema vs suíte). vigia-installer
+  0.4.2.
+
+Testes +10 (`updates_to_notifications`, `module_dep_notifications` em
+`tests/common/test_notices.py`). Suíte **1163**.
+
 ---
 
 ## 10. Roadmap

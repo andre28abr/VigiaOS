@@ -87,10 +87,12 @@ Sem WebKit, cai pra `TextView` monospace com markdown raw.
 
 Importa `vigia_installer.window.build_content()` e embute fullscreen.
 
-Ao iniciar, o Hub roda `vigia_installer.backend.check_updates()` numa thread
-(read-only, sem root) e, se houver update, pendura um badge (`.vigia-nav-badge`,
-overlay no ícone via `_apply_update_badge`) no item **Instalador** do rail. O
-toggle `check_updates` (Config → Aplicação) liga/desliga a checagem.
+Ao iniciar, o Hub roda `vigia_installer.backend.check_updates()` +
+`updates_to_notifications()` numa thread (read-only, sem root) e alimenta o
+**sininho de notificações** (`NotificationsBell`, de `vigia_common`) no rodapé
+do rail — `_apply_update_notifications`. A bolinha vermelha usa o mesmo padrão
+do dot de status (`Label("●")` + classe `error`). O toggle `check_updates`
+(Config → Aplicação) liga/desliga a checagem.
 
 ## Quando usar
 

@@ -5,7 +5,7 @@
 %global mod_name vigia_installer
 
 Name:           %{pkg_name}
-Version:        0.4.1
+Version:        0.4.2
 Release:        1%{?dist}
 Summary:        Catalogo curado de tools de seguranca via rpm-ostree
 License:        Apache-2.0
@@ -79,6 +79,10 @@ fi
 /usr/bin/gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 
 %changelog
+* Tue Jun 02 2026 André Augusto Azarias de Souza <andre@vigia.local> - 0.4.2-1
+- backend.updates_to_notifications: converte UpdateInfo em notificacoes pro
+  sininho do Hub (separa sistema vs programas da suite).
+
 * Tue Jun 02 2026 André Augusto Azarias de Souza <andre@vigia.local> - 0.4.1-1
 - Atualizacoes separa a lista por origem: 'Sistema' vs 'Programas da suite
   Vigia' (split_updates + catalog.is_suite_package). Backend reusavel pelo Hub

@@ -5,7 +5,7 @@
 %global mod_name vigia_common
 
 Name:           %{pkg_name}
-Version:        0.2.15
+Version:        0.2.16
 Release:        1%{?dist}
 Summary:        Helpers compartilhados entre as ferramentas do VigiaOS
 License:        Apache-2.0
@@ -53,6 +53,11 @@ cd tools/vigia-common
 %{python3_sitelib}/%{mod_name}-*.dist-info/
 
 %changelog
+* Tue Jun 02 2026 André Augusto Azarias de Souza <andre@vigia.local> - 0.2.16-1
+- Novo: sininho de notificacoes reutilizavel (notices.py = modelo puro;
+  notifications_bell.py = widget). Shell poe o sininho no rodape do rail dos
+  produtos (Blue/Red) com as dependencias externas faltando.
+
 * Tue Jun 02 2026 André Augusto Azarias de Souza <andre@vigia.local> - 0.2.15-1
 - shell: instalador dos produtos no mesmo padrao visual do Catalogo do Hub —
   badge de status como prefixo (PRONTO/FALTA), sem o icone colorido do modulo.

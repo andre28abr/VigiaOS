@@ -156,6 +156,8 @@ def run_product(meta: ProductMeta, modules: list[Module],
     gi.require_version("Gtk", "4.0")
     gi.require_version("Adw", "1")
     from gi.repository import Adw, Gdk, Gio, Gtk
+    from .notifications_bell import NotificationsBell
+    from .notices import module_dep_notifications
 
     # Largura do conteúdo — mesmo "padrão do Hub" (Adw.Clamp 820 / aperto 640).
     # O Adw.PreferencesPage usa um clamp interno mais estreito (~600); para o
@@ -581,6 +583,17 @@ def run_product(meta: ProductMeta, modules: list[Module],
             spacer = Gtk.Box()
             spacer.set_vexpand(True)
             box.append(spacer)
+            # Sininho de notificações no rodapé (mesmo padrão do Hub):
+            # módulos cuja ferramenta externa não está instalada.
+            items = [
+                (m.name, [d.label for d in m.requires if not dep_installed(d)])
+                for m in modules if m.requires
+            ]
+            bell = NotificationsBell()
+            bell.set_halign(Gtk.Align.CENTER)
+            bell.set_margin_bottom(14)
+            bell.set_notifications(module_dep_notifications(items))
+            box.append(bell)
             if first is not None:
                 nav.select_row(first)
             return box
