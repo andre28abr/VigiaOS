@@ -145,11 +145,18 @@ def parse_eve(text: str) -> list[Alert]:
 # ============================================================
 
 
-def build_pcap_cmd(pcap: Path | str, outdir: Path | str) -> list[str]:
+def build_pcap_cmd(pcap: Path | str, outdir: Path | str,
+                   elevated: bool = False) -> list[str]:
     """Argv do suricata p/ analisar um pcap (lista — nunca shell string).
 
-    `suricata -r <pcap> -l <outdir>` gera `eve.json` em `outdir`.
+    `suricata -r <pcap> -l <outdir>` gera `eve.json` em `outdir`. Com
+    `elevated=True`, prefixa `pkexec` — o Suricata é ferramenta de root e precisa
+    ler `/etc/suricata/suricata.yaml` + as regras (inacessíveis ao usuário comum
+    no Fedora). pkexec usa o caminho absoluto do binário.
     """
+    if elevated:
+        suri = shutil.which("suricata") or "suricata"
+        return ["pkexec", suri, "-r", str(pcap), "-l", str(outdir)]
     return ["suricata", "-r", str(pcap), "-l", str(outdir)]
 
 
@@ -195,26 +202,51 @@ def analyze_eve(path: Path | str, max_alerts: int = 2000) -> IdsResult:
     return _finish(result, text, t0, max_alerts)
 
 
+def _needs_root(err: str) -> bool:
+    """A saída do suricata indica falta de permissão (config/regras de root)?"""
+    low = (err or "").lower()
+    return ("permission denied" in low or "failed to open" in low
+            or "could not" in low or "errno 13" in low)
+
+
 def analyze_pcap(pcap: Path | str, timeout: int = 300,
                  max_alerts: int = 2000) -> IdsResult:
-    """Roda o Suricata sobre um pcap e parseia o eve.json gerado."""
+    """Roda o Suricata sobre um pcap e parseia o eve.json gerado.
+
+    O Suricata é uma ferramenta de root: tenta primeiro como usuário e, se faltar
+    permissão (não consegue ler /etc/suricata/suricata.yaml ou as regras), repete
+    com `pkexec` (um diálogo polkit). Nunca levanta.
+    """
     result = IdsResult(source=str(pcap),
                        started_at=datetime.now().isoformat(timespec="seconds"))
     t0 = time.monotonic()
     if not suricata_available():
         result.error = "Suricata não está instalado."
         return result
+
     outdir = tempfile.mkdtemp(prefix="vigia-ids-")
     rc, out, err = proc.run(build_pcap_cmd(pcap, outdir), timeout=timeout)
     eve = Path(outdir) / "eve.json"
+
+    # Sem permissão como usuário → tenta com privilégio (pkexec).
+    if not eve.is_file() and _needs_root(err):
+        outdir = tempfile.mkdtemp(prefix="vigia-ids-")
+        rc, out, err = proc.run(
+            build_pcap_cmd(pcap, outdir, elevated=True), timeout=timeout)
+        eve = Path(outdir) / "eve.json"
+
     if not eve.is_file():
-        result.error = (err.strip() or "O Suricata não gerou eve.json.")[:400]
+        if rc in (126, 127):
+            result.error = "Autenticação cancelada (pkexec)."
+        else:
+            result.error = (err.strip() or "O Suricata não gerou eve.json.")[:400]
         result.elapsed_sec = round(time.monotonic() - t0, 2)
         return result
     try:
         text = _read_tail(eve)
     except OSError as e:
-        result.error = f"Falha ao ler o eve.json gerado: {e}"
+        result.error = (f"O eve.json foi gerado com privilégio e não consegui "
+                        f"lê-lo ({e}).")
         return result
     return _finish(result, text, t0, max_alerts)
 

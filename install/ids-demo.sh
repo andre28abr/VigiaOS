@@ -65,7 +65,7 @@ ok "Captura salva em ${BOLD}$PCAP${N}"
 # ---- auto-verificação: roda o Suricata no .pcap (igual o Vigia IDS faz) -----
 info "Conferindo se o .pcap dispara alerta…"
 OUT="$(mktemp -d)"
-suricata -r "$PCAP" -l "$OUT" >/dev/null 2>&1 || true
+sudo suricata -r "$PCAP" -l "$OUT" >/dev/null 2>&1 || true
 N_ALERTS=0
 if [[ -f "$OUT/eve.json" ]]; then
     N_ALERTS=$(grep -c '"event_type":"alert"' "$OUT/eve.json" 2>/dev/null || true)

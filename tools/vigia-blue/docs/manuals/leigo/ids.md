@@ -37,7 +37,8 @@ chamado **`eve.json`** (normalmente em `/var/log/suricata/eve.json`).
 Se você tem uma **captura de rede** (um arquivo `.pcap`, feito por exemplo com o
 Wireshark) e o **Suricata está instalado** nesta máquina:
 1. Clique em **Selecionar .pcap** e escolha a captura.
-2. O Vigia IDS roda o Suricata sobre ela e mostra os alertas.
+2. O Vigia IDS roda o Suricata sobre ela e mostra os alertas. *(Pode pedir sua
+   senha — o Suricata precisa de privilégio para ler a configuração dele.)*
 
 ### Quer ver funcionando agora? (teste seguro)
 Não tem um `.pcap` à mão? No terminal, rode `./install/ids-demo.sh`. Ele gera um
