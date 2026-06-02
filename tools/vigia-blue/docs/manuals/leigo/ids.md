@@ -44,8 +44,8 @@ Não tem um `.pcap` à mão? No terminal, rode `./install/ids-demo.sh`. Ele gera
 `.pcap` de teste **sem nenhum vírus** — só acessa o `testmynids.org`, um
 serviço-teste que faz o Suricata disparar a regra *"GPL ATTACK_RESPONSE id check
 returned root"* (o "EICAR dos IDS"). Depois, em **Selecionar .pcap**, escolha o
-arquivo gerado (`/tmp/vigia-ids-demo.pcap`) e veja o alerta aparecer. Precisa do
-`suricata` + `tcpdump` instalados.
+arquivo gerado (`~/teste/ids/vigia-ids-demo.pcap`) e veja o alerta aparecer.
+Precisa do `suricata` + `tcpdump` instalados.
 
 ### Lendo os resultados
 Cada alerta é um **botão**: aparece o nome do ataque detectado e a **gravidade**

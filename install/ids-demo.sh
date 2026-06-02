@@ -15,7 +15,7 @@
 # se elas ainda não existirem.
 #
 # Uso:
-#   ./install/ids-demo.sh                      # gera /tmp/vigia-ids-demo.pcap
+#   ./install/ids-demo.sh                      # gera ~/teste/ids/vigia-ids-demo.pcap
 #   ./install/ids-demo.sh /caminho/saida.pcap  # escolhe onde salvar
 #
 set -uo pipefail
@@ -32,9 +32,10 @@ case "${1:-}" in
     -h|--help) sed -n '2,18p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
 esac
 
-PCAP="${1:-/tmp/vigia-ids-demo.pcap}"
+PCAP="${1:-$HOME/teste/ids/vigia-ids-demo.pcap}"
 URL="http://testmynids.org/uid/index.html"   # HTTP (texto claro) — de propósito
 IFACE="any"
+mkdir -p "$(dirname "$PCAP")"                 # convenção: ~/teste/<modulo>/
 
 # ---- pré-requisitos --------------------------------------------------------
 command -v suricata >/dev/null 2>&1 \
