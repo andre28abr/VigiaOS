@@ -2667,6 +2667,15 @@ Hub: rótulo do rail "Tools" → **"Módulos"** (padronização do nome). Removi
 antiga do rail (togglebutton) + variável `accent` órfã. Mudança de GUI; suíte
 1121 intacta. vigia-common 0.2.12, vigia-hub 0.7.7.
 
+### 2026-06-02 — Rail do shell: 5 itens na ordem padrão (+ Config. placeholder)
+
+André padronizou a 1ª coluna (rail) do VigiaBlue/VigiaRed para 5 itens na ordem
+**Módulos · Instalador · Config. · Ajuda · Sobre**. Adicionado o **Config.**
+(faltava) como página placeholder ("Configurações chegam aqui — em breve", ícone
+`preferences-system-symbolic`), reservando o lugar para implementar depois.
+vigia-common 0.2.13. (O Hub já tem Módulos/Instalador/Config./Ajuda; falta só
+acrescentar **Sobre** no rail dele — pendente.)
+
 ---
 
 ## 10. Roadmap
