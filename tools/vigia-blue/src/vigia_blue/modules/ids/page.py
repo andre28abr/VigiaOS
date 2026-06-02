@@ -99,7 +99,8 @@ class _AlertsView(Gtk.Box):
 
         pcap_row = Adw.ActionRow()
         pcap_row.set_title("Analisar um arquivo .pcap")
-        pcap_row.set_subtitle("Roda o Suricata sobre a captura — jeito fácil de testar")
+        pcap_row.set_subtitle(
+            "Roda o Suricata sobre a captura (pode pedir senha) — jeito fácil de testar")
         pcap_row.set_subtitle_lines(0)
         pcap_row.add_prefix(Gtk.Image.new_from_icon_name("network-wired-symbolic"))
         pcap_btn = Gtk.Button(label="Selecionar .pcap")

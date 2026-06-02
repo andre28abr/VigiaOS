@@ -89,6 +89,21 @@ def test_build_pcap_cmd():
     assert isinstance(cmd, list)
 
 
+def test_build_pcap_cmd_elevated():
+    cmd = backend.build_pcap_cmd("/tmp/x.pcap", "/tmp/out", elevated=True)
+    assert cmd[0] == "pkexec"
+    assert "-r" in cmd and "/tmp/x.pcap" in cmd
+    assert "-l" in cmd and "/tmp/out" in cmd
+
+
+def test_needs_root():
+    assert backend._needs_root(
+        "failed to open file: /etc/suricata/suricata.yaml: Permission denied")
+    assert backend._needs_root("Permission denied")
+    assert not backend._needs_root("")
+    assert not backend._needs_root("tudo certo, 3 alertas")
+
+
 # ============================================================
 # analyze_eve
 # ============================================================
