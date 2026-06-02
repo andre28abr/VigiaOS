@@ -13,7 +13,7 @@ META = ProductMeta(
     key="blue",
     name="VigiaBlue",
     app_id="br.com.vigia.Blue",
-    version="0.0.17",
+    version="0.0.18",
     tagline=(
         "Suíte defensiva (blue team / SOC) com interface gráfica moderna — "
         "detecção, caça a ameaças, forense e resposta. Parte do ecossistema "
@@ -65,7 +65,11 @@ MODULES: list[Module] = [
                   "Alertas triados + histórico"],
         status="pronto",
         impl="vigia_blue.modules.ids.page",
-        requires=(Dependency("Suricata", ("suricata",), "rpm", "suricata"),),
+        requires=(
+            Dependency("Suricata", ("suricata",), "rpm", "suricata"),
+            Dependency("tcpdump", ("tcpdump",), "rpm", "tcpdump",
+                       note="Para o botão 'Capturar tráfego agora'."),
+        ),
     ),
     Module(
         id="yara", name="Vigia YARA", category="hunting",
