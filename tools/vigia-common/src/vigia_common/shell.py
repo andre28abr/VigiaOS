@@ -402,6 +402,15 @@ def run_product(meta: ProductMeta, modules: list[Module],
         _build_groups()
         return _content_with_header("Instalador", page)
 
+    def _config_page() -> Gtk.Widget:
+        sp = _placeholder(
+            "preferences-system-symbolic",
+            "Configurações",
+            f"As preferências do {meta.name} (tema, atalhos, comportamento) "
+            "chegam aqui. Em breve.",
+        )
+        return _content_with_header("Configurações", sp)
+
     def _help_page() -> Gtk.Widget:
         sp = _placeholder(
             "help-browser-symbolic",
@@ -488,6 +497,7 @@ def run_product(meta: ProductMeta, modules: list[Module],
             self._stack = Adw.ViewStack()
             self._stack.add_named(self._build_modules_area(), "modulos")
             self._stack.add_named(_installer_page(), "instalador")
+            self._stack.add_named(_config_page(), "config")
             self._stack.add_named(_help_page(), "ajuda")
             self._stack.add_named(_about_page(), "sobre")
 
@@ -528,6 +538,7 @@ def run_product(meta: ProductMeta, modules: list[Module],
             entries = [
                 ("modulos", "Módulos", "view-grid-symbolic"),
                 ("instalador", "Instalador", "package-x-generic-symbolic"),
+                ("config", "Config.", "preferences-system-symbolic"),
                 ("ajuda", "Ajuda", "help-browser-symbolic"),
                 ("sobre", "Sobre", "help-about-symbolic"),
             ]
