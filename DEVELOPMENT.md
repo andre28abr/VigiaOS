@@ -2825,6 +2825,22 @@ tamanho/tipo nos três; só a cor de destaque muda por produto):
 Layout num `Gtk.Box` clampado a 820 (igual o `make_clamp` do Hub). "Reverificar"
 foi pro canto do título. vigia-common 0.2.19.
 
+### 2026-06-02 — Instalador do Blue/Red: 3 acertos de paridade com o Hub
+
+- **Categoria com "&" sumia** (ex.: "Detecção & SIEM", e no Red "Reconhecimento
+  & OSINT" etc.): o título do `Adw.PreferencesGroup` é **markup Pango**, então o
+  `&` solto quebrava a renderização e a categoria ficava sem título. Fix
+  **systemic**: `GLib.markup_escape_text()` no título da categoria e no
+  título/subtítulo do módulo (vale pra qualquer produto/rótulo futuro).
+- **Botão "Reverificar" removido** da aba Módulos — não existe no Catálogo do
+  Hub (lá o status atualiza sozinho). A verificação roda na montagem da aba.
+- **Aba Sobre do instalador detalhada** — antes era um parágrafo; agora segue o
+  `AboutTab` do Hub, com seções em markup (O que faz · Como usar · Como instalar
+  o que falta · Conceitos · Saiba mais), adaptadas ao produto (`meta.name`,
+  `package_manager()`).
+
+Só GUI (shell). vigia-common 0.2.20. Suíte 1163.
+
 ---
 
 ## 10. Roadmap
