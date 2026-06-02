@@ -5,7 +5,7 @@
 %global mod_name vigia_common
 
 Name:           %{pkg_name}
-Version:        0.2.20
+Version:        0.2.21
 Release:        1%{?dist}
 Summary:        Helpers compartilhados entre as ferramentas do VigiaOS
 License:        Apache-2.0
@@ -53,6 +53,11 @@ cd tools/vigia-common
 %{python3_sitelib}/%{mod_name}-*.dist-info/
 
 %changelog
+* Tue Jun 02 2026 André Augusto Azarias de Souza <andre@vigia.local> - 0.2.21-1
+- UI: largura do conteudo padronizada em TODO o ecossistema — Adw.Clamp
+  1100/900 (era 820/640 no shell e variava 720-1000 nas tools). Conteudo mais
+  largo, com sobra menor nas laterais, igual nos tres produtos.
+
 * Tue Jun 02 2026 André Augusto Azarias de Souza <andre@vigia.local> - 0.2.20-1
 - shell: fix titulo de categoria com '&' (escapa markup Pango — categoria
   sumia); remove o botao Reverificar (fora do padrao do Hub); aba Sobre do

@@ -2841,6 +2841,24 @@ foi pro canto do título. vigia-common 0.2.19.
 
 Só GUI (shell). vigia-common 0.2.20. Suíte 1163.
 
+### 2026-06-02 — Largura do conteúdo padronizada (1100/900) em todo o ecossistema
+
+A largura do `Adw.Clamp` estava **inconsistente**: 820 no shell (Blue/Red), e
+variando de **720 a 1000** entre as 14 tools do Hub (cada uma com seu
+`_helpers.py: CONTENT_MAX_WIDTH`). Numa janela de 1340 isso deixava **muita
+sobra** nas laterais (e larguras diferentes entre telas).
+
+Sweep: **todos** unificados em **`CONTENT_MAX_WIDTH = 1100` / `CONTENT_TIGHTENING
+= 900`** — conteúdo mais largo, com sobra pequena (~80px de cada lado), **igual
+em todas as telas e nos três produtos** (só a cor de destaque muda). Atingidos:
+`vigia_common/__init__.py` (base) + `shell.py` + os 14 `_helpers.py` das tools +
+o clamp inline da página de detalhe fallback do Hub (era 720). README do
+vigia-common atualizado.
+
+Bump nos pacotes-âncora: **vigia-common 0.2.21** e **vigia-hub 0.8.2**. (As
+tools embarcadas tiveram só a constante de largura unificada — mudança
+cosmética compartilhada, sem bump individual.)
+
 ---
 
 ## 10. Roadmap

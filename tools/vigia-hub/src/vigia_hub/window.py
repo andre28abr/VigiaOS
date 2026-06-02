@@ -1719,7 +1719,7 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         scrolled.set_vexpand(True)
         scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
 
-        clamp = Adw.Clamp(maximum_size=720, tightening_threshold=600)
+        clamp = Adw.Clamp(maximum_size=1100, tightening_threshold=900)
 
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=20)
         box.set_margin_top(32)

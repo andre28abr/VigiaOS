@@ -38,11 +38,11 @@ def test_margin_action_box_top():
 
 
 def test_content_max_width():
-    assert vigia_common.CONTENT_MAX_WIDTH == 820
+    assert vigia_common.CONTENT_MAX_WIDTH == 1100
 
 
 def test_content_tightening():
-    assert vigia_common.CONTENT_TIGHTENING == 640
+    assert vigia_common.CONTENT_TIGHTENING == 900
 
 
 def test_consistency_margins_are_positive():
