@@ -94,7 +94,7 @@ def find_terminal() -> tuple[str, list[str]] | None:
 
 # Modos da nav lateral
 NAV_MODES = [
-    ("tools", "Tools", "view-grid-symbolic"),
+    ("tools", "Módulos", "view-grid-symbolic"),
     ("installer", "Instalador", "package-x-generic-symbolic"),
     ("settings", "Config.", "preferences-system-symbolic"),
     ("help", "Ajuda", "help-browser-symbolic"),
