@@ -105,6 +105,36 @@ def test_needs_root():
 
 
 # ============================================================
+# explain — descrição amigável "o que é"
+# ============================================================
+
+
+def _alert(sig="X", cat="", sev="baixo"):
+    return backend.Alert("t", sig, cat, sev, "1.2.3.4:5", "6.7.8.9:80", "TCP", 1)
+
+
+def test_explain_invalid_checksum():
+    txt = backend.explain(_alert(sig="SURICATA UDPv4 invalid checksum",
+                                 cat="Generic Protocol Command Decode")).lower()
+    assert "checksum" in txt and ("artefato" in txt or "inofensivo" in txt)
+
+
+def test_explain_by_category():
+    txt = backend.explain(_alert(cat="Potentially Bad Traffic", sev="suspeito")).lower()
+    assert "malicios" in txt or "falso positivo" in txt
+
+
+def test_explain_fallback_by_severity():
+    txt = backend.explain(_alert(cat="Categoria Inexistente ZZZ", sev="alto"))
+    assert "ALTA" in txt or "prioridade" in txt.lower()
+
+
+def test_explain_never_empty():
+    # sempre retorna algo, mesmo sem categoria conhecida
+    assert backend.explain(_alert(cat="", sev="info")).strip()
+
+
+# ============================================================
 # analyze_eve
 # ============================================================
 

@@ -2610,6 +2610,18 @@ Correção:
 Pendência: a rota eve.json (ler `/var/log/suricata/eve.json` de um Suricata ativo)
 também pode precisar de pkexec — fica para quando for usada.
 
+### 2026-06-02 — Vigia IDS: "O que é" em cada alerta (descrição leiga)
+
+André testou (deu certo — 9 alertas, incl. o "GPL ATTACK_RESPONSE id check
+returned root" do teste seguro) e pediu uma descrição amigável por achado, como
+no YARA. Adicionado **`explain(alert)`** (puro) no backend: mapa **`_CATEGORY_PT`**
+por *classtype* do Suricata (potentially bad traffic, generic protocol command
+decode, network trojan, web app attack, network scan, DoS, C2, …) + fallback por
+severidade; **caso especial p/ "invalid checksum"** (explica que é artefato da
+captura / offload da placa de rede — inofensivo, não é ataque). A GUI mostra
+**"O que é"** como 1ª linha do `ExpanderRow` (antes de Origem/Destino/Protocolo/
+Quando/SID). +4 testes. Suite 1110 → 1114. Manual leigo atualizado. blue 0.0.16.
+
 ---
 
 ## 10. Roadmap
