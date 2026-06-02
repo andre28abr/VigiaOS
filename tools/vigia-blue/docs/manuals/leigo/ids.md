@@ -18,7 +18,7 @@ os alertas dele de forma **organizada e em português**, por gravidade.
 
 ## Como usar
 
-Há dois jeitos de dar uma fonte de alertas ao Vigia IDS:
+Há três jeitos de dar uma fonte de alertas ao Vigia IDS:
 
 > **Importante:** o Vigia IDS **não cria** o `eve.json` — ele só **lê**. Quem cria
 > esse arquivo é um **Suricata em execução** (de plantão, vigiando a rede). Se você
@@ -40,6 +40,12 @@ Wireshark) e o **Suricata está instalado** nesta máquina:
 2. O Vigia IDS roda o Suricata sobre ela e mostra os alertas. *(Pode pedir sua
    senha — o Suricata precisa de privilégio para ler a configuração dele.)*
 
+### 3) Capturar o seu próprio tráfego (um clique)
+Quer um "check-up" da sua máquina? Em **Capturar tráfego agora**, clique em
+**30s**, **1 min** ou **5 min**. O Vigia IDS grava a sua rede por esse tempo
+(pede a senha), salva o `.pcap` em `~/teste/ids/` e **já analisa** — sem você
+abrir o terminal. Precisa do `tcpdump` + `suricata` instalados.
+
 ### Quer ver funcionando agora? (teste seguro)
 Não tem um `.pcap` à mão? No terminal, rode `./install/ids-demo.sh`. Ele gera um
 `.pcap` de teste **sem nenhum vírus** — só acessa o `testmynids.org`, um
@@ -49,6 +55,11 @@ arquivo gerado (`~/teste/ids/vigia-ids-demo.pcap`) e veja o alerta aparecer.
 Precisa do `suricata` + `tcpdump` instalados.
 
 ### Lendo os resultados
+No topo há um **resumo** (quantos alertas, e quantos de cada gravidade). Alertas
+iguais ficam **agrupados** (ex.: *"invalid checksum (6×)"*) para não poluir a
+tela. E o botão **Esconder ruído** (canto do "Alertas") some com os de gravidade
+*Baixo*, deixando só o que merece atenção.
+
 Cada alerta é um **botão**: aparece o nome do ataque detectado e a **gravidade**
 (Info / Baixo / Suspeito / Alto). **Clique** para ver:
 - **O que é** — explicação em português do que aquele alerta significa (ex.:

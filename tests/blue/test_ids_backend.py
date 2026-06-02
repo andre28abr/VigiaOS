@@ -135,6 +135,61 @@ def test_explain_never_empty():
 
 
 # ============================================================
+# Agrupamento + resumo + captura
+# ============================================================
+
+
+def test_group_alerts_dedup_and_sort():
+    alerts = [_alert(sig="ruido", sev="baixo"),
+              _alert(sig="ruido", sev="baixo"),
+              _alert(sig="ruido", sev="baixo"),
+              _alert(sig="ataque", sev="alto")]
+    groups = backend.group_alerts(alerts)
+    assert len(groups) == 2
+    assert groups[0].signature == "ataque" and groups[0].count == 1   # + severo
+    assert groups[1].signature == "ruido" and groups[1].count == 3
+
+
+def test_group_alerts_unique_endpoints():
+    a = [backend.Alert("t", "s", "c", "baixo", "1.1.1.1:5", "2.2.2.2:53", "UDP", 1),
+         backend.Alert("t", "s", "c", "baixo", "1.1.1.1:5", "2.2.2.2:53", "UDP", 1),
+         backend.Alert("t", "s", "c", "baixo", "3.3.3.3:9", "2.2.2.2:53", "UDP", 1)]
+    g = backend.group_alerts(a)[0]
+    assert g.count == 3 and len(g.endpoints) == 2   # endpoints únicos
+
+
+def test_group_alerts_empty():
+    assert backend.group_alerts([]) == []
+
+
+def test_severity_counts():
+    c = backend.severity_counts([_alert(sev="alto"), _alert(sev="baixo"),
+                                 _alert(sev="baixo")])
+    assert c["alto"] == 1 and c["baixo"] == 2
+
+
+def test_tcpdump_available(monkeypatch):
+    monkeypatch.setattr(backend.shutil, "which",
+                        lambda b: "/x" if b == "tcpdump" else None)
+    assert backend.tcpdump_available() is True
+    monkeypatch.setattr(backend.shutil, "which", lambda _b: None)
+    assert backend.tcpdump_available() is False
+
+
+def test_explain_accepts_group():
+    g = backend.AlertGroup("SURICATA UDPv4 invalid checksum",
+                           "Generic Protocol Command Decode", "baixo", 3)
+    assert "checksum" in backend.explain(g).lower()
+
+
+def test_capture_requires_tcpdump(monkeypatch):
+    monkeypatch.setattr(backend, "suricata_available", lambda: True)
+    monkeypatch.setattr(backend, "tcpdump_available", lambda: False)
+    res = backend.capture_and_analyze(30)
+    assert "tcpdump" in res.error.lower() and res.alerts == []
+
+
+# ============================================================
 # analyze_eve
 # ============================================================
 

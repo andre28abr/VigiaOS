@@ -17,6 +17,7 @@ Partes PURAS (testáveis headless, sem suricata e sem gi):
 
 from __future__ import annotations
 
+import getpass
 import json
 import shutil
 import tempfile
@@ -38,6 +39,11 @@ DEFAULT_EVE_PATHS = [
 ]
 
 SEVERITY_RANK = {"info": 0, "baixo": 1, "suspeito": 2, "alto": 3, "critico": 4}
+
+# Captura de teste — convenção do projeto: ~/teste/<modulo>/ (feedback do André).
+TEST_DIR = Path.home() / "teste" / "ids"
+# Helper rodado via pkexec (root): captura (tcpdump) + suricata + devolve a posse.
+_CAPTURE_HELPER = Path(__file__).resolve().parents[6] / "install" / "_ids_capture.sh"
 
 
 @dataclass
@@ -62,6 +68,20 @@ class IdsResult:
     started_at: str = ""
 
 
+@dataclass
+class AlertGroup:
+    """Alertas idênticos (mesma assinatura) agrupados — declutter da lista."""
+
+    signature: str
+    category: str
+    severity: str
+    count: int
+    endpoints: list[str] = field(default_factory=list)  # "origem → destino"
+    proto: str = ""
+    when: str = ""
+    sid: int = 0
+
+
 # ============================================================
 # Sanity
 # ============================================================
@@ -69,6 +89,10 @@ class IdsResult:
 
 def suricata_available() -> bool:
     return shutil.which("suricata") is not None
+
+
+def tcpdump_available() -> bool:
+    return shutil.which("tcpdump") is not None
 
 
 def find_eve() -> Path | None:
@@ -196,20 +220,74 @@ _SEVERITY_PT = {
 }
 
 
-def explain(alert: Alert) -> str:
-    """Descrição amigável (pt-BR) do que é o alerta — para leigo, como no YARA."""
-    if "invalid checksum" in (alert.signature or "").lower():
+def explain(item) -> str:
+    """Descrição amigável (pt-BR) — para leigo, como no YARA.
+
+    `item` pode ser um `Alert` OU um `AlertGroup` (ambos têm signature/category/
+    severity), então serve também para a lista agrupada.
+    """
+    sig = (getattr(item, "signature", "") or "").lower()
+    if "invalid checksum" in sig:
         return ("Checksum inválido no pacote. Quase sempre é um artefato de "
                 "como o tráfego foi capturado (a placa de rede recalcula o "
                 "checksum depois, então na captura ele aparece 'errado') — "
                 "inofensivo, não é ataque.")
-    cat = (alert.category or "").strip().lower()
+    cat = (getattr(item, "category", "") or "").strip().lower()
     if cat in _CATEGORY_PT:
         return _CATEGORY_PT[cat]
     return _SEVERITY_PT.get(
-        alert.severity,
+        getattr(item, "severity", ""),
         "Alerta de rede do Suricata. Veja a categoria e a assinatura abaixo "
         "para o contexto técnico.")
+
+
+# ============================================================
+# Agrupamento + resumo (puro)
+# ============================================================
+
+
+def group_alerts(alerts: list[Alert], max_endpoints: int = 8) -> list[AlertGroup]:
+    """Agrupa alertas por assinatura (declutter da lista). Ordena por severidade
+    e contagem (desc); cada grupo traz amostras de origem→destino."""
+    buckets: dict[str, list[Alert]] = {}
+    order: list[str] = []
+    for a in alerts:
+        if a.signature not in buckets:
+            buckets[a.signature] = []
+            order.append(a.signature)
+        buckets[a.signature].append(a)
+
+    groups: list[AlertGroup] = []
+    for sig in order:
+        items = buckets[sig]
+        sev = max(items, key=lambda a: SEVERITY_RANK.get(a.severity, 0)).severity
+        eps: list[str] = []
+        seen: set[str] = set()
+        for a in items:
+            ep = f"{a.src} → {a.dest}".strip()
+            if ep and ep not in seen:
+                seen.add(ep)
+                eps.append(ep)
+            if len(eps) >= max_endpoints:
+                break
+        ts = sorted(a.timestamp for a in items if a.timestamp)
+        when = (ts[0] if (ts and ts[0] == ts[-1])
+                else (f"{ts[0]} … {ts[-1]}" if ts else ""))
+        rep = items[0]
+        groups.append(AlertGroup(
+            signature=sig, category=rep.category, severity=sev, count=len(items),
+            endpoints=eps, proto=rep.proto, when=when, sid=rep.sid))
+    groups.sort(key=lambda g: (SEVERITY_RANK.get(g.severity, 0), g.count),
+                reverse=True)
+    return groups
+
+
+def severity_counts(alerts: list[Alert]) -> dict[str, int]:
+    """Conta alertas por severidade (p/ a linha de resumo da UI)."""
+    out: dict[str, int] = {}
+    for a in alerts:
+        out[a.severity] = out.get(a.severity, 0) + 1
+    return out
 
 
 # ============================================================
@@ -319,6 +397,58 @@ def analyze_pcap(pcap: Path | str, timeout: int = 300,
     except OSError as e:
         result.error = (f"O eve.json foi gerado com privilégio e não consegui "
                         f"lê-lo ({e}).")
+        return result
+    return _finish(result, text, t0, max_alerts)
+
+
+def capture_and_analyze(seconds: int, max_alerts: int = 2000) -> IdsResult:
+    """Captura `seconds` de tráfego (tcpdump via pkexec) + Suricata, e analisa.
+
+    Roda o helper privilegiado (UM diálogo polkit) que captura, roda o suricata
+    e devolve a posse dos arquivos ao usuário. O .pcap fica em ~/teste/ids/.
+    Nunca levanta.
+    """
+    started = datetime.now().isoformat(timespec="seconds")
+    result = IdsResult(source="(captura ao vivo)", started_at=started)
+    t0 = time.monotonic()
+    secs = max(5, int(seconds))
+    if not suricata_available():
+        result.error = "Suricata não está instalado."
+        return result
+    if not tcpdump_available():
+        result.error = "tcpdump não está instalado (necessário para capturar)."
+        return result
+    if not _CAPTURE_HELPER.is_file():
+        result.error = "Script de captura não encontrado (instalação não-editável?)."
+        return result
+
+    outdir = TEST_DIR / f"captura-{started.replace(':', '-')}"
+    try:
+        outdir.mkdir(parents=True, exist_ok=True)
+    except OSError as e:
+        result.error = f"Não consegui criar a pasta de captura ({e})."
+        return result
+
+    cmd = ["pkexec", str(_CAPTURE_HELPER), str(secs), str(outdir),
+           getpass.getuser()]
+    rc, out, err = proc.run(cmd, timeout=secs + 90)
+    pcap = outdir / "captura.pcap"
+    eve = outdir / "eve.json"
+    result.source = str(pcap) if pcap.is_file() else str(outdir)
+
+    if rc in (126, 127):
+        result.error = "Autenticação cancelada (pkexec)."
+        result.elapsed_sec = round(time.monotonic() - t0, 2)
+        return result
+    if not eve.is_file():
+        result.error = (err.strip() or "A captura não gerou resultados (sem "
+                        "tráfego no período ou sem regras do Suricata).")[:400]
+        result.elapsed_sec = round(time.monotonic() - t0, 2)
+        return result
+    try:
+        text = _read_tail(eve)
+    except OSError as e:
+        result.error = f"Falha ao ler o resultado da captura ({e})."
         return result
     return _finish(result, text, t0, max_alerts)
 
