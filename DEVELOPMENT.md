@@ -2650,6 +2650,23 @@ IDS → aparece sozinho na aba **Instalador** da GUI e no `vigia-setup.sh` (via
 `_deps.py`). Comando rápido p/ instalar tudo do Blue de uma vez:
 `./install/blue-deps.sh`. blue 0.0.18.
 
+### 2026-06-02 — Padronização visual do shell com o Hub (rail/sidebar/instalador)
+
+André pediu (Hub como referência) pra alinhar 3 coisas no VigiaBlue/VigiaRed:
+1. **Rail** (Módulos/Instalador/Ajuda/Sobre): era togglebutton com ícone pequeno;
+   virou **ListBox `navigation-sidebar` com ícones 22px** (idêntico ao
+   `_build_nav_bar` do Hub), largura 74. Ícone do Instalador alinhado ao Hub
+   (`package-x-generic-symbolic`); seleção troca a área (`row-selected`).
+2. **Sidebar "Ferramentas"**: ganhou o tom mais claro do Hub via CSS
+   `.vigia-sidebar { background-color: @sidebar_bg_color }` + header flat (o Hub
+   tem esse tom por usar `NavigationSplitView`; aqui replicamos a cor).
+3. **Instalador**: agora **só-leitura** — mostra ✓ instalada / ✗ falta por
+   ferramenta (removido o comando + botão Copiar). A instalação é pelo script
+   (`vigia-setup.sh`); a aba virou "segunda verificação".
+Hub: rótulo do rail "Tools" → **"Módulos"** (padronização do nome). Removida a CSS
+antiga do rail (togglebutton) + variável `accent` órfã. Mudança de GUI; suíte
+1121 intacta. vigia-common 0.2.12, vigia-hub 0.7.7.
+
 ---
 
 ## 10. Roadmap

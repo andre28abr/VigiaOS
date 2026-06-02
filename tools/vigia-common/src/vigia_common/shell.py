@@ -157,8 +157,6 @@ def run_product(meta: ProductMeta, modules: list[Module],
     gi.require_version("Adw", "1")
     from gi.repository import Adw, Gdk, Gio, Gtk
 
-    accent = meta.accent
-
     # Largura do conteúdo — mesmo "padrão do Hub" (Adw.Clamp 820 / aperto 640).
     # O Adw.PreferencesPage usa um clamp interno mais estreito (~600); para o
     # conteúdo não ficar espremido no centro (rolagem maior), alargamos todos os
@@ -291,11 +289,12 @@ def run_product(meta: ProductMeta, modules: list[Module],
         intro.set_title("Instalador")
         n_ext = sum(1 for m in modules if m.requires)
         intro.set_description(
-            f"Os {len(modules)} módulos do {meta.name}, por categoria. {n_ext} "
-            "embarcam uma ferramenta externa — cada um mostra se ela está "
-            "instalada e o comando para instalar "
-            f"(plataforma: {package_manager()}). "
-            "Dica: install/blue-deps.sh instala tudo de uma vez."
+            f"Verificação do que está instalado nos {len(modules)} módulos do "
+            f"{meta.name}, por categoria. {n_ext} embarcam uma ferramenta "
+            "externa (✓ instalada / ✗ falta). A instalação é feita pelo script "
+            "— rode no terminal: ./install/vigia-setup.sh "
+            f"(instalador guiado de todos os produtos · plataforma: "
+            f"{package_manager()})."
         )
         refresh = Gtk.Button(label="Reverificar")
         refresh.add_css_class("flat")
@@ -339,36 +338,16 @@ def run_product(meta: ProductMeta, modules: list[Module],
                 lbl.set_hexpand(True)
                 line.append(lbl)
                 box.append(line)
-                if not ok:
-                    cmd = dep_command(dep)
-                    crow = Gtk.Box(
-                        orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-                    crow.set_margin_start(28)
-                    cl = Gtk.Label(label=cmd)
-                    cl.add_css_class("monospace")
-                    cl.add_css_class("caption")
-                    cl.set_wrap(True)
-                    cl.set_xalign(0)
-                    cl.set_hexpand(True)
-                    cl.set_selectable(True)
-                    crow.append(cl)
-                    cp = Gtk.Button.new_from_icon_name("edit-copy-symbolic")
-                    cp.add_css_class("flat")
-                    cp.set_valign(Gtk.Align.CENTER)
-                    cp.set_tooltip_text("Copiar comando")
-                    cp.connect(
-                        "clicked",
-                        lambda _b, c=cmd, w=cp: w.get_clipboard().set(c))
-                    crow.append(cp)
-                    box.append(crow)
-                    if dep.note:
-                        nl = Gtk.Label(label=dep.note)
-                        nl.add_css_class("caption")
-                        nl.add_css_class("dim-label")
-                        nl.set_wrap(True)
-                        nl.set_xalign(0)
-                        nl.set_margin_start(28)
-                        box.append(nl)
+                # Só-leitura: mostramos se está instalado, não como instalar
+                # (a instalação é pelo script). A nota fica como contexto.
+                if dep.note:
+                    nl = Gtk.Label(label=dep.note)
+                    nl.add_css_class("caption")
+                    nl.add_css_class("dim-label")
+                    nl.set_wrap(True)
+                    nl.set_xalign(0)
+                    nl.set_margin_start(28)
+                    box.append(nl)
             return box
 
         def _module_expander(mod: Module) -> Adw.ExpanderRow:
@@ -529,50 +508,65 @@ def run_product(meta: ProductMeta, modules: list[Module],
             elif modules:
                 self._show_module(modules[0])
 
-        # -- rail --
+        # -- rail (mesmo padrão do Vigia Hub: ListBox navigation-sidebar) --
         def _build_rail(self) -> Gtk.Widget:
-            rail = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
-            rail.add_css_class("vigia-rail")
-            rail.set_size_request(96, -1)
-            rail.set_margin_top(10)
-            rail.set_margin_bottom(10)
+            box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+            box.set_size_request(74, -1)
 
-            title = Gtk.Label(label=meta.name)
-            title.add_css_class("caption-heading")  # pequeno, igual o Vigia Hub
-            title.set_margin_bottom(8)
-            title.set_wrap(True)
-            title.set_justify(Gtk.Justification.CENTER)
-            rail.append(title)
+            header_lbl = Gtk.Label(label=meta.name)
+            header_lbl.add_css_class("caption-heading")
+            header_lbl.add_css_class("dim-label")
+            header_lbl.set_wrap(True)
+            header_lbl.set_justify(Gtk.Justification.CENTER)
+            header_lbl.set_margin_top(16)
+            header_lbl.set_margin_bottom(20)
+            box.append(header_lbl)
 
+            nav = Gtk.ListBox()
+            nav.set_selection_mode(Gtk.SelectionMode.SINGLE)
+            nav.add_css_class("navigation-sidebar")
             entries = [
                 ("modulos", "Módulos", "view-grid-symbolic"),
-                ("instalador", "Instalador", "system-software-install-symbolic"),
+                ("instalador", "Instalador", "package-x-generic-symbolic"),
                 ("ajuda", "Ajuda", "help-browser-symbolic"),
                 ("sobre", "Sobre", "help-about-symbolic"),
             ]
-            group_btn = None
-            for name, label, icon in entries:
-                btn = Gtk.ToggleButton()
-                btn.add_css_class("flat")
-                inner = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
-                inner.set_margin_top(6)
-                inner.set_margin_bottom(6)
-                inner.append(Gtk.Image.new_from_icon_name(icon))
+            first = None
+            for name, label, icon_name in entries:
+                row = Gtk.ListBoxRow()
+                row._stack_name = name  # type: ignore[attr-defined]
+                inner = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+                inner.set_margin_top(10)
+                inner.set_margin_bottom(10)
+                inner.set_margin_start(6)
+                inner.set_margin_end(6)
+                icon = Gtk.Image.new_from_icon_name(icon_name)
+                icon.set_pixel_size(22)            # igual o Vigia Hub
+                icon.set_halign(Gtk.Align.CENTER)
+                inner.append(icon)
                 lbl = Gtk.Label(label=label)
                 lbl.add_css_class("caption")
+                lbl.set_halign(Gtk.Align.CENTER)
                 inner.append(lbl)
-                btn.set_child(inner)
-                if group_btn is None:
-                    group_btn = btn
-                    btn.set_active(True)
-                else:
-                    btn.set_group(group_btn)
-                btn.connect(
-                    "toggled",
-                    lambda b, n=name: b.get_active() and self._stack.set_visible_child_name(n),
-                )
-                rail.append(btn)
-            return rail
+                row.set_child(inner)
+                nav.append(row)
+                if first is None:
+                    first = row
+            nav.connect("row-selected", self._on_rail_selected)
+            box.append(nav)
+            spacer = Gtk.Box()
+            spacer.set_vexpand(True)
+            box.append(spacer)
+            if first is not None:
+                nav.select_row(first)
+            return box
+
+        def _on_rail_selected(self, _lb, row) -> None:
+            if row is None:
+                return
+            name = getattr(row, "_stack_name", None)
+            if name:
+                self._stack.set_visible_child_name(name)
 
         # -- área de módulos: sidebar + conteúdo --
         def _build_modules_area(self) -> Gtk.Widget:
@@ -622,7 +616,9 @@ def run_product(meta: ProductMeta, modules: list[Module],
             # Coluna do meio com header "Ferramentas" (igual o Vigia Hub).
             # Sem botões de janela aqui — o X fica no header do conteúdo.
             sidebar_tv = Adw.ToolbarView()
+            sidebar_tv.add_css_class("vigia-sidebar")   # tom mais claro (igual Hub)
             sb_header = Adw.HeaderBar()
+            sb_header.add_css_class("flat")             # transparente sobre a sidebar
             sb_header.set_show_start_title_buttons(False)
             sb_header.set_show_end_title_buttons(False)
             sb_header.set_title_widget(
@@ -666,8 +662,8 @@ def run_product(meta: ProductMeta, modules: list[Module],
 
         def _install_css(self) -> None:
             css = (
-                ".vigia-rail { background: alpha(@window_bg_color, 0.6); }"
-                ".vigia-rail togglebutton:checked { color: " + accent + "; }"
+                # sidebar de Ferramentas no mesmo tom do Vigia Hub (split-view).
+                ".vigia-sidebar { background-color: @sidebar_bg_color; }"
             ).encode()
             provider = Gtk.CssProvider()
             provider.load_from_data(css)
