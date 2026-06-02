@@ -2673,8 +2673,16 @@ André padronizou a 1ª coluna (rail) do VigiaBlue/VigiaRed para 5 itens na orde
 **Módulos · Instalador · Config. · Ajuda · Sobre**. Adicionado o **Config.**
 (faltava) como página placeholder ("Configurações chegam aqui — em breve", ícone
 `preferences-system-symbolic`), reservando o lugar para implementar depois.
-vigia-common 0.2.13. (O Hub já tem Módulos/Instalador/Config./Ajuda; falta só
-acrescentar **Sobre** no rail dele — pendente.)
+vigia-common 0.2.13.
+
+### 2026-06-02 — Hub: "Sobre" promovido a item do rail (padronização completa)
+
+Fecha a padronização dos três: o Hub ganhou **Sobre** no rail (`NAV_MODES`), na
+ordem **Módulos · Instalador · Config. · Ajuda · Sobre** — idêntica ao Blue/Red.
+O conteúdo veio da antiga aba "Sobre" do Config (`_build_settings_about_tab`),
+agora **promovida** a item de topo (`_build_about_page` reusa o widget) e
+**removida** das abas do Config (sem duplicação). vigia-hub 0.7.8. Os três
+produtos têm o mesmo rail de 5 itens.
 
 ---
 
