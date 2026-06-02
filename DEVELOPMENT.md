@@ -2790,9 +2790,10 @@ A pedido, o instalador dos produtos (shell `_installer_page`) deixou de ser uma
 página única e ganhou a mesma estrutura do instalador do Hub — um `ViewSwitcher`
 no header com **Módulos · Atualizações · Sobre** + uma sub-barra de ferramentas:
 
-- **Sub-barra "Embarca:"** — tags monospace com as ferramentas que os módulos
-  embarcam (yara, suricata, volatility3, plaso, …), análoga ao "Wrapper de:" do
-  Hub. Some quando o produto não tem dependências externas.
+- **Sub-barra "Wrapper de:"** — mesma nomenclatura do Hub; mostra o gerenciador
+  de pacotes que o instalador embrulha (`rpm-ostree`/`dnf`, usado pela aba
+  Atualizações), **não** a lista de ferramentas dos módulos. (O nome do pacote
+  de cada ferramenta aparece por módulo, no corpo do ExpanderRow.)
 - **Aba Módulos** — a verificação de dependências de antes, agora com o **nome
   do Pacote** (`pacote: <package>`) em cada dependência no corpo do ExpanderRow,
   e o texto reescrito no tom "curado" do Hub.
