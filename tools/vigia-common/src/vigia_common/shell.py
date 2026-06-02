@@ -458,9 +458,21 @@ def run_product(meta: ProductMeta, modules: list[Module],
         author = Adw.PreferencesGroup()
         author.set_title("Autor")
         author.set_description(
-            "André Augusto Azarias De Souza — DPO / Compliance & GRC · "
-            "Privacy Engineering."
+            "DPO / Encarregado de Dados com mais de 18 anos em gestão "
+            "administrativa, compliance, governança da informação e proteção "
+            "de dados (LGPD); formação dupla em Direito (Anhanguera) e Análise "
+            "e Desenvolvimento de Sistemas (Mackenzie). Conduziu o VigiaOS como "
+            "product owner técnico — traduzindo exigências regulatórias, "
+            "hardening e auditoria numa suíte funcional."
         )
+        name_row = Adw.ActionRow()
+        name_row.set_title("André Augusto Azarias De Souza")
+        name_row.set_subtitle("DPO · Compliance & GRC · Privacy Engineering")
+        name_row.set_subtitle_lines(0)
+        name_row.add_prefix(
+            Gtk.Image.new_from_icon_name("avatar-default-symbolic")
+        )
+        author.add(name_row)
         ln = Adw.ActionRow()
         ln.set_title("LinkedIn")
         ln.set_subtitle("linkedin.com/in/andreaugusto-azariasdesouza")
