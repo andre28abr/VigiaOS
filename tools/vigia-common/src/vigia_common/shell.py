@@ -252,97 +252,148 @@ def run_product(meta: ProductMeta, modules: list[Module],
         return sp
 
     def _installer_page() -> Gtk.Widget:
-        """Checklist real das dependências externas: instalado? + como instalar."""
-        deps = product_dependencies(modules)
+        """Mesmo padrão do Hub: módulos agrupados por categoria, cada um como
+        ExpanderRow (ícone + resumo + descrição em markdown), com o status da
+        sua dependência externa (instalada? como instalar) dobrado no corpo."""
+        from .markdown import md_to_pango
+
+        grouped = modules_by_category(modules, order)
         page = Adw.PreferencesPage()
 
         intro = Adw.PreferencesGroup()
-        intro.set_title("Dependências dos módulos")
-        if deps:
-            intro.set_description(
-                "Cada módulo embarca uma ferramenta open source. Veja o que já "
-                "está instalado e o comando para instalar o que falta "
-                f"(plataforma detectada: {package_manager()})."
-            )
-        else:
-            intro.set_description(
-                "Os módulos prontos deste produto não exigem ferramenta externa."
-            )
+        intro.set_title("Instalador")
+        n_ext = sum(1 for m in modules if m.requires)
+        intro.set_description(
+            f"Os {len(modules)} módulos do {meta.name}, por categoria. {n_ext} "
+            "embarcam uma ferramenta externa — cada um mostra se ela está "
+            "instalada e o comando para instalar "
+            f"(plataforma: {package_manager()}). "
+            "Dica: install/blue-deps.sh instala tudo de uma vez."
+        )
+        refresh = Gtk.Button(label="Reverificar")
+        refresh.add_css_class("flat")
+        refresh.set_valign(Gtk.Align.CENTER)
+        intro.set_header_suffix(refresh)
         page.add(intro)
 
-        if deps:
-            g = Adw.PreferencesGroup()
-            g.set_title("Ferramentas necessárias")
-            refresh = Gtk.Button(label="Reverificar")
-            refresh.add_css_class("flat")
-            g.set_header_suffix(refresh)
-            page.add(g)
-            rows: list[Gtk.Widget] = []
-
-            def _rebuild(*_a):
-                for r in rows:
-                    g.remove(r)
-                rows.clear()
-                ok_n = 0
-                for dep, mods in deps:
-                    ok = dep_installed(dep)
-                    ok_n += 1 if ok else 0
-                    exp = Adw.ExpanderRow()
-                    exp.set_title(dep.label)
-                    exp.set_subtitle(
-                        ("✓ Instalado" if ok else "✗ Não encontrado")
-                        + " · usado por: " + ", ".join(sorted(set(mods)))
-                    )
-                    exp.set_subtitle_lines(0)
-                    img = Gtk.Image.new_from_icon_name(
-                        "emblem-ok-symbolic" if ok else "dialog-warning-symbolic")
-                    if not ok:
-                        img.add_css_class("warning")
-                    exp.add_prefix(img)
+        def _dep_block(mod: Module) -> Gtk.Widget:
+            box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+            hdr = Gtk.Label(label="Dependência")
+            hdr.add_css_class("caption-heading")
+            hdr.set_xalign(0)
+            hdr.set_margin_top(6)
+            box.append(hdr)
+            if not mod.requires:
+                row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+                ic = Gtk.Image.new_from_icon_name("emblem-ok-symbolic")
+                ic.add_css_class("success")
+                row.append(ic)
+                t = Gtk.Label(
+                    label="Não precisa de ferramenta externa — roda direto.")
+                t.set_wrap(True)
+                t.set_xalign(0)
+                t.set_hexpand(True)
+                row.append(t)
+                box.append(row)
+                return box
+            for dep in mod.requires:
+                ok = dep_installed(dep)
+                line = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+                ic = Gtk.Image.new_from_icon_name(
+                    "emblem-ok-symbolic" if ok else "dialog-warning-symbolic")
+                ic.add_css_class("success" if ok else "warning")
+                ic.set_valign(Gtk.Align.START)
+                line.append(ic)
+                lbl = Gtk.Label(
+                    label=f"{dep.label} — "
+                    + ("instalado" if ok else "não encontrado"))
+                lbl.set_wrap(True)
+                lbl.set_xalign(0)
+                lbl.set_hexpand(True)
+                line.append(lbl)
+                box.append(line)
+                if not ok:
                     cmd = dep_command(dep)
-                    cr = Adw.ActionRow()
-                    cr.set_title("Instalar com")
-                    cr.set_subtitle(cmd)
-                    cr.set_subtitle_lines(0)
-                    cr.add_css_class("property")
-                    copy = Gtk.Button.new_from_icon_name("edit-copy-symbolic")
-                    copy.add_css_class("flat")
-                    copy.set_valign(Gtk.Align.CENTER)
-                    copy.set_tooltip_text("Copiar comando")
-                    copy.connect(
+                    crow = Gtk.Box(
+                        orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+                    crow.set_margin_start(28)
+                    cl = Gtk.Label(label=cmd)
+                    cl.add_css_class("monospace")
+                    cl.add_css_class("caption")
+                    cl.set_wrap(True)
+                    cl.set_xalign(0)
+                    cl.set_hexpand(True)
+                    cl.set_selectable(True)
+                    crow.append(cl)
+                    cp = Gtk.Button.new_from_icon_name("edit-copy-symbolic")
+                    cp.add_css_class("flat")
+                    cp.set_valign(Gtk.Align.CENTER)
+                    cp.set_tooltip_text("Copiar comando")
+                    cp.connect(
                         "clicked",
-                        lambda _b, c=cmd, w=copy: w.get_clipboard().set(c))
-                    cr.add_suffix(copy)
-                    exp.add_row(cr)
+                        lambda _b, c=cmd, w=cp: w.get_clipboard().set(c))
+                    crow.append(cp)
+                    box.append(crow)
                     if dep.note:
-                        nr = Adw.ActionRow()
-                        nr.set_title("Observação")
-                        nr.set_subtitle(dep.note)
-                        nr.set_subtitle_lines(0)
-                        nr.add_css_class("property")
-                        exp.add_row(nr)
-                    g.add(exp)
-                    rows.append(exp)
-                g.set_description(
-                    f"{ok_n}/{len(deps)} instaladas. Em sistema atômico, instalar "
-                    "via rpm-ostree exige reiniciar. Dica: rode "
-                    "install/blue-deps.sh para instalar tudo de uma vez.")
+                        nl = Gtk.Label(label=dep.note)
+                        nl.add_css_class("caption")
+                        nl.add_css_class("dim-label")
+                        nl.set_wrap(True)
+                        nl.set_xalign(0)
+                        nl.set_margin_start(28)
+                        box.append(nl)
+            return box
 
-            refresh.connect("clicked", _rebuild)
-            _rebuild()
+        def _module_expander(mod: Module) -> Adw.ExpanderRow:
+            exp = Adw.ExpanderRow()
+            exp.set_title(mod.name)
+            exp.set_subtitle(mod.summary)
+            exp.set_subtitle_lines(0)
+            exp.add_prefix(_img(mod.icon, 36))
+            if mod.requires:
+                ok_all = all(dep_installed(d) for d in mod.requires)
+                pill = Gtk.Label(label="Pronto" if ok_all else "Falta instalar")
+                pill.add_css_class("caption")
+                pill.add_css_class("success" if ok_all else "warning")
+                pill.set_valign(Gtk.Align.CENTER)
+                exp.add_suffix(pill)
 
-        free = [m.name for m in modules if not m.requires and m.status == "pronto"]
-        if free:
-            gf = Adw.PreferencesGroup()
-            gf.set_title("Não precisam de nada extra")
-            gf.set_description("Rodam imediatamente, sem instalar ferramenta.")
-            for name in free:
-                r = Adw.ActionRow()
-                r.set_title(name)
-                r.add_prefix(Gtk.Image.new_from_icon_name("emblem-ok-symbolic"))
-                gf.add(r)
-            page.add(gf)
+            body = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
+            body.set_margin_top(12)
+            body.set_margin_bottom(12)
+            body.set_margin_start(16)
+            body.set_margin_end(16)
+            if mod.description:
+                d = Gtk.Label()
+                d.set_markup(md_to_pango(mod.description))
+                d.set_wrap(True)
+                d.set_xalign(0)
+                d.set_selectable(True)
+                body.append(d)
+            body.append(_dep_block(mod))
 
+            wrapper = Adw.PreferencesRow()
+            wrapper.set_activatable(False)
+            wrapper.set_child(body)
+            exp.add_row(wrapper)
+            return exp
+
+        cat_groups: list[Gtk.Widget] = []
+
+        def _build_groups(*_a):
+            for grp in cat_groups:
+                page.remove(grp)
+            cat_groups.clear()
+            for cat, mods in grouped.items():
+                grp = Adw.PreferencesGroup()
+                grp.set_title(categories.get(cat, cat))
+                for mod in mods:
+                    grp.add(_module_expander(mod))
+                page.add(grp)
+                cat_groups.append(grp)
+
+        refresh.connect("clicked", _build_groups)
+        _build_groups()
         return _content_with_header("Instalador", page)
 
     def _help_page() -> Gtk.Widget:
