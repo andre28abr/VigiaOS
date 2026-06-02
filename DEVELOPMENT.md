@@ -2784,6 +2784,28 @@ notificações** no rodapé da coluna fina, padronizado nos três produtos:
 Testes +10 (`updates_to_notifications`, `module_dep_notifications` em
 `tests/common/test_notices.py`). Suíte **1163**.
 
+### 2026-06-02 — Instalador do Blue/Red com abas no topo (igual ao Hub)
+
+A pedido, o instalador dos produtos (shell `_installer_page`) deixou de ser uma
+página única e ganhou a mesma estrutura do instalador do Hub — um `ViewSwitcher`
+no header com **Módulos · Atualizações · Sobre** + uma sub-barra de ferramentas:
+
+- **Sub-barra "Embarca:"** — tags monospace com as ferramentas que os módulos
+  embarcam (yara, suricata, volatility3, plaso, …), análoga ao "Wrapper de:" do
+  Hub. Some quando o produto não tem dependências externas.
+- **Aba Módulos** — a verificação de dependências de antes, agora com o **nome
+  do Pacote** (`pacote: <package>`) em cada dependência no corpo do ExpanderRow,
+  e o texto reescrito no tom "curado" do Hub.
+- **Aba Atualizações** — **reusa a `UpdatesTab` do Hub**
+  (`vigia_installer.tabs.updates`) via import preguiçoso e guardado (cai num
+  aviso se `vigia_installer` não estiver disponível). Por isso `vigia-blue` e
+  `vigia-red` passam a depender de **`vigia-installer`** (blue 0.0.19, red
+  0.0.3).
+- **Aba Sobre** — página curta sobre o instalador (não confundir com o Sobre do
+  rail; o Hub também tem os dois).
+
+Só GUI (shell), sem mudança de backend nem de testes. vigia-common 0.2.17.
+
 ---
 
 ## 10. Roadmap
