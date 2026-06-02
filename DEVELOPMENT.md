@@ -2518,6 +2518,28 @@ dois caminhos (`_module_page` e `_content_with_header`), então vale para os 7
 módulos **e** a aba Instalador sem editar cada `page.py`. Defensivo (tupla de
 tipos via `getattr`, robusto a versões de libadwaita). vigia-common 0.2.11.
 
+### 2026-06-02 — Instalador guiado do ecossistema (install/vigia-setup.sh)
+
+Sugestão do André: um instalador interativo "desenhado bonito", com tabelas e
+confirmação em cada etapa. Criado **`install/vigia-setup.sh`** — irmão interativo
+do `bootstrap.sh` (que é o não-interativo p/ `curl | bash`). Pure bash + caixas
+Unicode (sem dependência externa); cores e tabelas alinhadas (helpers `rep`/`fit`).
+**3 etapas confirmáveis:**
+1. **Sistema** — detecta atômico vs Workstation (tabela chave/valor), oferece
+   `rpm-ostree upgrade` / `sudo dnf upgrade`.
+2. **Pacotes principais** — tabela curada (pacote · produto · módulo) só dos
+   backends-chave: Hub (clamav, chkrootkit/rkhunter, lynis, aide, firewalld,
+   policycoreutils) + Blue (yara, suricata, volatility3/plaso via pipx, vigia-log
+   via cargo). Instala via rpm-ostree/dnf + pipx + build, com reboot avisado no
+   atômico.
+3. **Interfaces gráficas** — instala os 3 produtos (Hub launcher + 15 tools,
+   VigiaBlue, VigiaRed) via loop no `install-tool.sh` (reusa ícone/.desktop).
+
+Honesto: **VigiaRed aparece como "em construção"** — seus pacotes (nmap, etc.)
+entram quando os módulos chegarem; não instala ferramenta de pentest p/ módulo
+inexistente. Flags `--yes` / `--dry-run`. Não roda como root, não liga serviço
+(minimum surface). Validado via `bash -n` + dry-run.
+
 ---
 
 ## 10. Roadmap
