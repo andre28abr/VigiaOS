@@ -1,0 +1,138 @@
+"""Testes do backend do Vigia IDS (parser eve.json + cmd + análise)."""
+
+from __future__ import annotations
+
+import json
+
+from vigia_blue.modules.ids import backend
+
+
+def _alert_line(sig="ET SCAN Nmap", sev=2, src="1.2.3.4", sport=1234,
+                dst="5.6.7.8", dport=80, cat="Attempted Information Leak"):
+    return json.dumps({
+        "timestamp": "2026-06-01T10:00:00.000+0000",
+        "event_type": "alert",
+        "src_ip": src, "src_port": sport, "dest_ip": dst, "dest_port": dport,
+        "proto": "TCP",
+        "alert": {"signature": sig, "category": cat, "severity": sev,
+                  "signature_id": 2001},
+    })
+
+
+# ============================================================
+# map_severity
+# ============================================================
+
+
+def test_map_severity():
+    assert backend.map_severity(1) == "alto"
+    assert backend.map_severity(2) == "suspeito"
+    assert backend.map_severity(3) == "baixo"
+    assert backend.map_severity(4) == "info"
+    assert backend.map_severity("x") == "suspeito"   # inválido → default
+
+
+# ============================================================
+# parse_eve
+# ============================================================
+
+
+def test_parse_eve_alert():
+    alerts = backend.parse_eve(_alert_line())
+    assert len(alerts) == 1
+    a = alerts[0]
+    assert a.signature == "ET SCAN Nmap"
+    assert a.severity == "suspeito"
+    assert a.src == "1.2.3.4:1234" and a.dest == "5.6.7.8:80"
+    assert a.proto == "TCP" and a.sid == 2001
+
+
+def test_parse_eve_ignores_non_alert():
+    flow = json.dumps({"event_type": "flow", "src_ip": "1.1.1.1"})
+    dns = json.dumps({"event_type": "dns"})
+    text = "\n".join([flow, _alert_line(), dns])
+    assert len(backend.parse_eve(text)) == 1
+
+
+def test_parse_eve_skips_garbage_lines():
+    text = "\n".join(["isto não é json", "", _alert_line(), "{quebrado"])
+    assert len(backend.parse_eve(text)) == 1
+
+
+def test_parse_eve_missing_alert_dict():
+    line = json.dumps({"event_type": "alert", "src_ip": "9.9.9.9"})
+    alerts = backend.parse_eve(line)
+    assert len(alerts) == 1
+    assert alerts[0].signature == "(sem assinatura)"
+
+
+def test_parse_eve_empty():
+    assert backend.parse_eve("") == []
+    assert backend.parse_eve(None) == []
+
+
+def test_endpoint_without_port():
+    line = json.dumps({"event_type": "alert", "src_ip": "9.9.9.9",
+                       "alert": {"signature": "x", "severity": 1}})
+    a = backend.parse_eve(line)[0]
+    assert a.src == "9.9.9.9"   # sem porta
+
+
+# ============================================================
+# build_pcap_cmd
+# ============================================================
+
+
+def test_build_pcap_cmd():
+    cmd = backend.build_pcap_cmd("/tmp/x.pcap", "/tmp/out")
+    assert cmd == ["suricata", "-r", "/tmp/x.pcap", "-l", "/tmp/out"]
+    assert isinstance(cmd, list)
+
+
+# ============================================================
+# analyze_eve
+# ============================================================
+
+
+def test_analyze_eve_missing_file(tmp_path):
+    res = backend.analyze_eve(tmp_path / "nao_existe.json")
+    assert res.error and res.alerts == []
+
+
+def test_analyze_eve_sorts_by_severity(tmp_path):
+    eve = tmp_path / "eve.json"
+    eve.write_text("\n".join([
+        _alert_line(sig="baixa", sev=3),
+        _alert_line(sig="alta", sev=1),
+        _alert_line(sig="media", sev=2),
+    ]))
+    res = backend.analyze_eve(eve)
+    assert len(res.alerts) == 3
+    assert res.alerts[0].signature == "alta"          # mais severo primeiro
+    ranks = [backend.SEVERITY_RANK[a.severity] for a in res.alerts]
+    assert ranks == sorted(ranks, reverse=True)
+
+
+def test_analyze_eve_max_alerts(tmp_path):
+    eve = tmp_path / "eve.json"
+    eve.write_text("\n".join(_alert_line() for _ in range(10)))
+    res = backend.analyze_eve(eve, max_alerts=3)
+    assert len(res.alerts) == 3
+
+
+# ============================================================
+# relatórios
+# ============================================================
+
+
+def test_save_and_list_report(tmp_path, monkeypatch):
+    monkeypatch.setattr(backend, "REPORTS_DIR", tmp_path)
+    res = backend.IdsResult(
+        alerts=[backend.Alert("t", "sig", "cat", "alto", "a", "b", "TCP", 1)],
+        source="/var/log/suricata/eve.json", total_lines=5,
+        started_at="2026-06-01T10:00:00")
+    path = backend.save_report(res)
+    assert path is not None and path.exists()
+    assert (path.stat().st_mode & 0o777) == 0o600
+    recent = backend.list_recent_reports()
+    assert len(recent) == 1 and recent[0]["alerts"][0]["severity"] == "alto"

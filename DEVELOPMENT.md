@@ -2437,6 +2437,40 @@ Registrado (`status="pronto", impl="vigia_blue.modules.siem.page"`). +36 testes
 Pendências: janela temporal real na força-bruta, regras do usuário, notificação
 (libnotify) p/ achado crítico, spec COPR.
 
+### 2026-06-01 — VigiaBlue COMPLETO: 5 módulos finais (Playbooks/Intel/IDS/Memory/Timeline) ✅
+
+A pedido do André ("pode fazer todos"), os **5 módulos restantes do VigiaBlue**,
+todos no padrão YARA/SIEM (backend puro/testável + GUI espelhada + manuais
+leigo/técnico + registry + §9). **VigiaBlue agora tem os 7 módulos prontos.**
+
+Honestidade de escopo: **Playbooks** e **Intel** são auto-contidos (úteis
+offline); **IDS/Memory/Timeline** são *wrappers* — o núcleo testável é o parser +
+montador de comando; rodar de verdade exige a ferramenta externa + um artefato
+(eve.json / dump de RAM / .plaso).
+
+- **Vigia Playbooks** (Resposta a Incidentes) — 5 roteiros de IR pt-BR (invasão,
+  vazamento LGPD, ransomware, conta comprometida, malware) com checklist clicável
+  (`_PlaybookExpander`) + notas → **registro de atendimento** datado (0600), a
+  trilha que a LGPD art. 48 pede. **Sem ferramenta externa.** 12 testes.
+- **Vigia Intel** (Threat Intelligence) — **offline-first**: base local de IOCs
+  (0600) + `check(indicadores, iocs)` (casa IP/domínio/URL/hash/e-mail;
+  URL→host). Importa texto, **OTX** (pulse) e **MISP** (event) de arquivos. 19
+  testes.
+- **Vigia IDS** (Detecção) — lê o **eve.json** (JSONL) do Suricata (de um Suricata
+  ativo) ou roda sobre um **.pcap**; alertas triados. `parse_eve` + `map_severity`
+  + `build_pcap_cmd` puros. 12 testes.
+- **Vigia Memory** (Forense) — **Volatility 3**: 11 plugins (Linux+Windows),
+  `build_vol_cmd` + `parse_vol_json` (array → colunas/linhas) puros; resultado em
+  `ExpanderRow` por linha. Analisa um dump (não captura RAM). 11 testes.
+- **Vigia Timeline** (Forense) — **plaso**: abre export `json_line` (sem plaso),
+  analisa `.plaso` (psort) ou gera de uma pasta (log2timeline+psort).
+  `parse_psort_jsonl` + cmd builders puros. 13 testes.
+
+Padrão comum: argv em LISTA (nunca shell), relatórios/estado **0600**, banner
+quando a ferramenta externa falta, análise em `threading.Thread` → `idle_add`.
+Ícones coloridos já existiam (esqueleto). Suite 1029 → **1096** (+67). blue
+0.0.12.
+
 ---
 
 ## 10. Roadmap
@@ -2803,17 +2837,25 @@ sugerida revisada: **B5 → B1 → (B3 ⇒ B2 ⇒ B6) → B4**.
 Estado real dos produtos novos: esqueletos GUI prontos, módulos sendo
 preenchidos 1 a 1 via a ponte `Module.impl` do shell (`vigia_common.shell`).
 
-**VigiaBlue** (7 módulos):
-- ✅ **Vigia YARA** — caça a malware: scan + alertas amigáveis (ExpanderRow:
-  descrição + severidade) + seletor de conjuntos (Malware / LGPD / Credenciais /
-  Tudo). Pendências: pkexec p/ paths root, aba Regras (baixar da comunidade),
-  scan de PID/memória, package-data + spec COPR.
-- ✅ **Vigia SIEM** — detecção: lê os eventos do core `vigia-log` e aplica **7
-  regras** → alertas triados (força-bruta SSH, sudo, conta nova, falha de
-  serviço, SELinux, pacote, fail2ban), cada um leigo + recomendação. `pkexec`
-  opt-in p/ o audit. 36 testes. Pendências: janela temporal, regras do usuário,
-  notificação, spec COPR.
-- 🔜 IDS · Memory (Volatility) · Timeline (plaso) · Intel (MISP/OTX) · Playbooks.
+**VigiaBlue** (7 módulos) — ✅ **TODOS PRONTOS** (jun/2026):
+- ✅ **Vigia YARA** — caça a malware: scan + alertas amigáveis + seletor de
+  conjuntos (Malware / LGPD / Credenciais / Tudo). 34 testes.
+- ✅ **Vigia SIEM** — detecção: core `vigia-log` + **7 regras** → alertas triados
+  (força-bruta SSH, sudo, conta nova, falha de serviço, SELinux, pacote,
+  fail2ban). `pkexec` opt-in p/ o audit. 36 testes.
+- ✅ **Vigia IDS** — lê o eve.json do Suricata (ou roda sobre um .pcap); alertas
+  triados por severidade. 12 testes.
+- ✅ **Vigia Memory** — Volatility 3: 11 plugins (Linux+Windows); analisa um dump
+  de RAM. 11 testes.
+- ✅ **Vigia Timeline** — plaso: abre export json_line (sem plaso), analisa
+  .plaso ou gera de uma pasta. 13 testes.
+- ✅ **Vigia Intel** — offline-first: base local de IOCs + checagem; importa
+  OTX/MISP/texto. 19 testes.
+- ✅ **Vigia Playbooks** — 5 roteiros de IR + checklist + registro 0600 (apoio à
+  LGPD art. 48). 12 testes.
+
+Pendências gerais do Blue: pkexec p/ paths root (YARA/IDS), janela temporal
+(SIEM), histórico (Memory/Timeline), notificações, specs COPR.
 
 **VigiaRed** (7 módulos): esqueleto pronto. 1º a implementar: **Network Scanner
 (nmap)** — que também monta a infra de **termo de uso / 1ª execução** (Lei

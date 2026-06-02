@@ -13,7 +13,7 @@ META = ProductMeta(
     key="blue",
     name="VigiaBlue",
     app_id="br.com.vigia.Blue",
-    version="0.0.11",
+    version="0.0.12",
     tagline=(
         "Suíte defensiva (blue team / SOC) com interface gráfica moderna — "
         "detecção, caça a ameaças, forense e resposta. Parte do ecossistema "
@@ -51,12 +51,15 @@ MODULES: list[Module] = [
     Module(
         id="ids", name="Vigia IDS", category="detection",
         icon="network-wired-symbolic",
-        summary="Detecção de intrusão de rede (Suricata/Zeek)",
-        description="Painel para IDS de rede: regras, alertas e visão de "
-                    "fluxo, sobre Suricata ou Zeek.",
-        wraps=["suricata", "zeek"],
-        features=["Gestão de regras", "Alertas em tempo real",
-                  "Resumo de fluxos de rede"],
+        summary="Alertas de intrusão de rede (Suricata)",
+        description="Painel para o IDS de rede Suricata: lê o eve.json (de um "
+                    "Suricata ativo) ou roda sobre um .pcap, e mostra os "
+                    "alertas triados por severidade.",
+        wraps=["suricata"],
+        features=["Leitura de eve.json (JSONL)", "Análise de .pcap",
+                  "Alertas triados + histórico"],
+        status="pronto",
+        impl="vigia_blue.modules.ids.page",
     ),
     Module(
         id="yara", name="Vigia YARA", category="hunting",
@@ -74,41 +77,54 @@ MODULES: list[Module] = [
         id="memory", name="Vigia Memory", category="forensics",
         icon="media-flash-symbolic",
         summary="Forense de memória (Volatility 3)",
-        description="Análise de dumps de memória RAM: processos, conexões, "
-                    "injeções e artefatos de malware.",
+        description="Análise de dumps de memória RAM com o Volatility 3: "
+                    "processos, conexões, histórico de comandos e código "
+                    "injetado. Analisa um dump existente (não captura a RAM).",
         wraps=["volatility3"],
-        features=["Lista de processos/conexões do dump",
-                  "Detecção de injeção de código", "Extração de artefatos"],
+        features=["11 plugins (Linux + Windows)",
+                  "Processos, conexões, bash, malfind", "Resultado em tabela"],
+        status="pronto",
+        impl="vigia_blue.modules.memory.page",
     ),
     Module(
         id="timeline", name="Vigia Timeline", category="forensics",
         icon="x-office-calendar-symbolic",
         summary="Linha do tempo forense (plaso)",
-        description="Constrói uma super-timeline de eventos do sistema para "
-                    "reconstruir o que aconteceu e quando.",
-        wraps=["plaso (log2timeline)"],
-        features=["Super-timeline de múltiplas fontes",
-                  "Filtro por janela de tempo", "Exportação para análise"],
+        description="Super-timeline de eventos do sistema (plaso) para "
+                    "reconstruir o que aconteceu e quando. Abre export "
+                    "json_line, analisa .plaso ou gera de uma pasta.",
+        wraps=["plaso (log2timeline + psort)"],
+        features=["Abrir export json_line (sem plaso)",
+                  "Gerar de pasta/arquivo ou .plaso",
+                  "Eventos em ordem cronológica"],
+        status="pronto",
+        impl="vigia_blue.modules.timeline.page",
     ),
     Module(
         id="intel", name="Vigia Intel", category="intel",
         icon="applications-internet-symbolic",
-        summary="Feeds de inteligência de ameaças",
-        description="Integra feeds de threat intel (IOCs) para enriquecer "
-                    "alertas e checar indicadores contra o ambiente.",
-        wraps=["MISP", "AlienVault OTX"],
-        features=["Importação de IOCs", "Enriquecimento de alertas",
-                  "Checagem de indicadores locais"],
+        summary="Base local de IOCs + checagem (offline)",
+        description="Inteligência de ameaças local (offline-first): mantém uma "
+                    "base de IOCs (IPs/domínios/hashes/e-mails maliciosos) e "
+                    "checa indicadores contra ela. Importa de texto, OTX e MISP.",
+        wraps=["IOCs locais", "OTX", "MISP"],
+        features=["Checagem de indicadores offline", "Importação OTX/MISP/texto",
+                  "Base local 0600"],
+        status="pronto",
+        impl="vigia_blue.modules.intel.page",
     ),
     Module(
         id="playbooks", name="Vigia Playbooks", category="response",
         icon="emblem-documents-symbolic",
         summary="Playbooks de resposta a incidentes",
         description="Roteiros guiados de resposta a incidentes (contenção, "
-                    "erradicação, recuperação) com trilha de auditoria.",
+                    "erradicação, recuperação, notificação) com trilha de "
+                    "auditoria 0600 — apoio à LGPD art. 48.",
         wraps=["playbooks internos"],
-        features=["Roteiros passo a passo", "Registro de ações (LGPD)",
+        features=["5 roteiros passo a passo", "Checklist + registro (LGPD)",
                   "Modelos por tipo de incidente"],
+        status="pronto",
+        impl="vigia_blue.modules.playbooks.page",
     ),
 ]
 
