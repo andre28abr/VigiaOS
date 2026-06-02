@@ -5,7 +5,7 @@
 %global mod_name vigia_common
 
 Name:           %{pkg_name}
-Version:        0.2.14
+Version:        0.2.15
 Release:        1%{?dist}
 Summary:        Helpers compartilhados entre as ferramentas do VigiaOS
 License:        Apache-2.0
@@ -53,6 +53,10 @@ cd tools/vigia-common
 %{python3_sitelib}/%{mod_name}-*.dist-info/
 
 %changelog
+* Tue Jun 02 2026 André Augusto Azarias de Souza <andre@vigia.local> - 0.2.15-1
+- shell: instalador dos produtos no mesmo padrao visual do Catalogo do Hub —
+  badge de status como prefixo (PRONTO/FALTA), sem o icone colorido do modulo.
+
 * Tue Jun 02 2026 André Augusto Azarias de Souza <andre@vigia.local> - 0.2.14-1
 - shell: pagina 'Sobre' dos produtos (Blue/Red) com a bio completa do autor
   (paridade com o Vigia Hub) — descricao longa + linha nome/avatar.

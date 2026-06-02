@@ -2694,6 +2694,16 @@ e GitHub que já existiam. O grupo de produto (versão · para quem é · ecossi
 e o aviso legal (Red) seguem como estavam. Uma edição no shell atualiza os dois
 produtos de uma vez. vigia-common 0.2.14.
 
+### 2026-06-02 — Instalador do Blue/Red no estilo do Catálogo do Hub
+
+A pedido, o instalador dos produtos (shell `_installer_page`) abandonou o ícone
+colorido do módulo e passou a usar o **mesmo padrão visual do Catálogo do Hub**:
+cada módulo é um `ExpanderRow` com um **badge de status como prefixo**
+(`caption-heading` verde **PRONTO** / âmbar **FALTA**), título + resumo, e o
+bloco de dependência dobrado no corpo. Sai o `pill` da direita. A aba **Extensões**
+segue exclusiva do Hub (faz mais sentido lá); **Sobre** já está nos três.
+vigia-common 0.2.15.
+
 ---
 
 ## 10. Roadmap
