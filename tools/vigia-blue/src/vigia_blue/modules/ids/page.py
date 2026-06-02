@@ -16,6 +16,8 @@ gi.require_version("Adw", "1")
 
 from gi.repository import Adw, GLib, Gtk  # noqa: E402
 
+from vigia_common.platform import install_hint  # noqa: E402
+
 from . import backend  # noqa: E402
 
 _SEVERITY = {
@@ -127,7 +129,8 @@ class _AlertsView(Gtk.Box):
     def _refresh_banner(self) -> None:
         if not self._eve_path and not backend.suricata_available():
             self._banner.set_title(
-                "Nenhum eve.json encontrado e Suricata ausente — veja a aba Sobre.")
+                "Nenhum eve.json encontrado e Suricata ausente. Instale: "
+                + install_hint("suricata"))
             self._banner.set_revealed(True)
         else:
             self._banner.set_revealed(False)

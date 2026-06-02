@@ -2471,6 +2471,31 @@ quando a ferramenta externa falta, análise em `threading.Thread` → `idle_add`
 Ícones coloridos já existiam (esqueleto). Suite 1029 → **1096** (+67). blue
 0.0.12.
 
+### 2026-06-02 — VigiaBlue: página Instalador real + checagem de dependências
+
+André pediu pra verificar se cada módulo tem sua ferramenta instalada e o que
+falta pra rodar autônomo. **5 dos 7** módulos embarcam binário externo
+(YARA→`yara`, SIEM→`vigia-log`, IDS→`suricata`, Memory→`volatility3`,
+Timeline→`plaso`); **Intel e Playbooks não precisam de nada**. Antes: a página
+"Instalador" do shell era um placeholder morto e o IDS nem mostrava como instalar
+o Suricata.
+
+- **`vigia_common.shell`**: nova dataclass **`Dependency`** (label, checks[], kind
+  `rpm|pip|source`, package, install, note) + campo **`Module.requires`** +
+  helpers puros `dep_installed()`, `dep_command()` (rpm→`install_hint`
+  platform-aware, pip→`pipx`, source→comando literal), `product_dependencies()`.
+  A página **Instalador** virou **real**: checklist por ferramenta (✓ instalado /
+  ✗ falta · usado por), comando de instalação + botão **Copiar**, **Reverificar**,
+  e lista dos módulos sem dep. Reusável pelo VigiaRed.
+- **registry (blue)**: declara `requires` nos 5 módulos com dep.
+- **IDS**: banner agora mostra o comando (`install_hint("suricata")`).
+- **`install/blue-deps.sh`**: instalador de **1 comando** — yara+suricata
+  (rpm-ostree/dnf), volatility3+plaso (pipx), vigia-log (cargo build), detectando
+  atomic vs Workstation e avisando do reboot do Silverblue (--no-forensics /
+  --no-core).
+- +11 testes (helpers + registry requires). Suite 1096 → **1107**. vigia-common
+  0.2.9, blue 0.0.13.
+
 ---
 
 ## 10. Roadmap
@@ -2854,8 +2879,14 @@ preenchidos 1 a 1 via a ponte `Module.impl` do shell (`vigia_common.shell`).
 - ✅ **Vigia Playbooks** — 5 roteiros de IR + checklist + registro 0600 (apoio à
   LGPD art. 48). 12 testes.
 
+**Dependências externas**: a aba **Instalador** do VigiaBlue checa cada
+ferramenta (✓/✗ + comando) e `install/blue-deps.sh` instala tudo de uma vez
+(yara/suricata via rpm-ostree·dnf, volatility3/plaso via pipx, vigia-log via
+cargo). Só Intel e Playbooks rodam sem nada externo.
+
 Pendências gerais do Blue: pkexec p/ paths root (YARA/IDS), janela temporal
-(SIEM), histórico (Memory/Timeline), notificações, specs COPR.
+(SIEM), histórico (Memory/Timeline), notificações, specs COPR, instalação
+1-clique a partir da própria aba Instalador (hoje mostra o comando p/ copiar).
 
 **VigiaRed** (7 módulos): esqueleto pronto. 1º a implementar: **Network Scanner
 (nmap)** — que também monta a infra de **termo de uso / 1ª execução** (Lei
