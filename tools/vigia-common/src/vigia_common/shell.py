@@ -23,12 +23,27 @@ Uso (no `__main__` do produto):
 from __future__ import annotations
 
 import os
+import shutil
 from dataclasses import dataclass, field
+
+from .platform import install_hint, package_manager
 
 
 # ============================================================
 # Dados (puro — sem GTK, testável headless)
 # ============================================================
+
+
+@dataclass(frozen=True)
+class Dependency:
+    """Ferramenta externa que um módulo embarca (usada na página Instalador)."""
+
+    label: str                       # "YARA", "Suricata", "Volatility 3"…
+    checks: tuple[str, ...]          # binários; instalada se algum existe no PATH
+    kind: str = "rpm"                # "rpm" | "pip" | "source"
+    package: str = ""                # rpm: nome do pacote; pip: pacote pipx/pip
+    install: str = ""                # comando literal (override; usado p/ "source")
+    note: str = ""                   # observação opcional
 
 
 @dataclass(frozen=True)
@@ -47,6 +62,8 @@ class Module:
     # Módulo Python que exporta build_content() -> Gtk.Widget. Quando definido,
     # o shell embarca a GUI real do módulo em vez da página "Em breve".
     impl: str | None = None
+    # Ferramentas externas que o módulo precisa (página Instalador checa/instala).
+    requires: tuple[Dependency, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -93,6 +110,37 @@ def count_by_status(modules: list[Module]) -> dict[str, int]:
     for m in modules:
         out[m.status] = out.get(m.status, 0) + 1
     return out
+
+
+def dep_installed(dep: Dependency) -> bool:
+    """True se algum dos binários da dependência está no PATH."""
+    return any(shutil.which(b) for b in dep.checks)
+
+
+def dep_command(dep: Dependency) -> str:
+    """Comando de instalação conforme o tipo + a plataforma (rpm-ostree/dnf/pipx)."""
+    if dep.install:
+        return dep.install
+    if dep.kind == "pip":
+        return f"pipx install {dep.package}"
+    return install_hint(dep.package)
+
+
+def product_dependencies(
+    modules: list[Module],
+) -> list[tuple[Dependency, list[str]]]:
+    """Dependências únicas do produto + quais módulos usam cada uma (ordem estável)."""
+    order: list[str] = []
+    deps: dict[str, Dependency] = {}
+    users: dict[str, list[str]] = {}
+    for m in modules:
+        for d in m.requires:
+            if d.label not in deps:
+                deps[d.label] = d
+                users[d.label] = []
+                order.append(d.label)
+            users[d.label].append(m.name)
+    return [(deps[k], users[k]) for k in order]
 
 
 # ============================================================
@@ -204,16 +252,98 @@ def run_product(meta: ProductMeta, modules: list[Module],
         return sp
 
     def _installer_page() -> Gtk.Widget:
-        counts = count_by_status(modules)
-        n = len(modules)
-        sp = _placeholder(
-            "system-software-install-symbolic",
-            "Instalador",
-            f"O {meta.name} terá {n} módulos. Aqui você vai instalar e configurar "
-            "cada um (1 clique, rpm-ostree/dnf), como no Vigia Hub.\n\n"
-            f"Status atual: {counts.get('planejado', 0)} planejados.",
-        )
-        return _content_with_header("Instalador", sp)
+        """Checklist real das dependências externas: instalado? + como instalar."""
+        deps = product_dependencies(modules)
+        page = Adw.PreferencesPage()
+
+        intro = Adw.PreferencesGroup()
+        intro.set_title("Dependências dos módulos")
+        if deps:
+            intro.set_description(
+                "Cada módulo embarca uma ferramenta open source. Veja o que já "
+                "está instalado e o comando para instalar o que falta "
+                f"(plataforma detectada: {package_manager()})."
+            )
+        else:
+            intro.set_description(
+                "Os módulos prontos deste produto não exigem ferramenta externa."
+            )
+        page.add(intro)
+
+        if deps:
+            g = Adw.PreferencesGroup()
+            g.set_title("Ferramentas necessárias")
+            refresh = Gtk.Button(label="Reverificar")
+            refresh.add_css_class("flat")
+            g.set_header_suffix(refresh)
+            page.add(g)
+            rows: list[Gtk.Widget] = []
+
+            def _rebuild(*_a):
+                for r in rows:
+                    g.remove(r)
+                rows.clear()
+                ok_n = 0
+                for dep, mods in deps:
+                    ok = dep_installed(dep)
+                    ok_n += 1 if ok else 0
+                    exp = Adw.ExpanderRow()
+                    exp.set_title(dep.label)
+                    exp.set_subtitle(
+                        ("✓ Instalado" if ok else "✗ Não encontrado")
+                        + " · usado por: " + ", ".join(sorted(set(mods)))
+                    )
+                    exp.set_subtitle_lines(0)
+                    img = Gtk.Image.new_from_icon_name(
+                        "emblem-ok-symbolic" if ok else "dialog-warning-symbolic")
+                    if not ok:
+                        img.add_css_class("warning")
+                    exp.add_prefix(img)
+                    cmd = dep_command(dep)
+                    cr = Adw.ActionRow()
+                    cr.set_title("Instalar com")
+                    cr.set_subtitle(cmd)
+                    cr.set_subtitle_lines(0)
+                    cr.add_css_class("property")
+                    copy = Gtk.Button.new_from_icon_name("edit-copy-symbolic")
+                    copy.add_css_class("flat")
+                    copy.set_valign(Gtk.Align.CENTER)
+                    copy.set_tooltip_text("Copiar comando")
+                    copy.connect(
+                        "clicked",
+                        lambda _b, c=cmd, w=copy: w.get_clipboard().set(c))
+                    cr.add_suffix(copy)
+                    exp.add_row(cr)
+                    if dep.note:
+                        nr = Adw.ActionRow()
+                        nr.set_title("Observação")
+                        nr.set_subtitle(dep.note)
+                        nr.set_subtitle_lines(0)
+                        nr.add_css_class("property")
+                        exp.add_row(nr)
+                    g.add(exp)
+                    rows.append(exp)
+                g.set_description(
+                    f"{ok_n}/{len(deps)} instaladas. Em sistema atômico, instalar "
+                    "via rpm-ostree exige reiniciar. Dica: rode "
+                    "install/blue-deps.sh para instalar tudo de uma vez.")
+
+            refresh.connect("clicked", _rebuild)
+            _rebuild()
+
+        free = [m.name for m in modules if not m.requires and m.status == "pronto"]
+        if free:
+            gf = Adw.PreferencesGroup()
+            gf.set_title("Não precisam de nada extra")
+            gf.set_description("Rodam imediatamente, sem instalar ferramenta.")
+            for name in free:
+                r = Adw.ActionRow()
+                r.set_title(name)
+                r.add_prefix(Gtk.Image.new_from_icon_name("emblem-ok-symbolic"))
+                gf.add(r)
+            page.add(gf)
+
+        return _content_with_header("Instalador", page)
 
     def _help_page() -> Gtk.Widget:
         sp = _placeholder(

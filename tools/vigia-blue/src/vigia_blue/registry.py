@@ -7,13 +7,13 @@ SIEM-lite. Os backends entram depois, módulo a módulo.
 
 from __future__ import annotations
 
-from vigia_common.shell import Module, ProductMeta
+from vigia_common.shell import Dependency, Module, ProductMeta
 
 META = ProductMeta(
     key="blue",
     name="VigiaBlue",
     app_id="br.com.vigia.Blue",
-    version="0.0.12",
+    version="0.0.13",
     tagline=(
         "Suíte defensiva (blue team / SOC) com interface gráfica moderna — "
         "detecção, caça a ameaças, forense e resposta. Parte do ecossistema "
@@ -47,6 +47,11 @@ MODULES: list[Module] = [
                   "Alertas leigos + recomendação + histórico"],
         status="pronto",
         impl="vigia_blue.modules.siem.page",
+        requires=(Dependency(
+            "vigia-log (core do Activity Log)", ("vigia-log",), "source",
+            install="cd tools/activity-log && cargo build --release && "
+                    "sudo install -m 0755 target/release/vigia-log /usr/local/bin/",
+            note="Mesmo motor do módulo Activity Log do VigiaHub."),),
     ),
     Module(
         id="ids", name="Vigia IDS", category="detection",
@@ -60,6 +65,7 @@ MODULES: list[Module] = [
                   "Alertas triados + histórico"],
         status="pronto",
         impl="vigia_blue.modules.ids.page",
+        requires=(Dependency("Suricata", ("suricata",), "rpm", "suricata"),),
     ),
     Module(
         id="yara", name="Vigia YARA", category="hunting",
@@ -72,6 +78,7 @@ MODULES: list[Module] = [
                   "Quarentena opcional do achado"],
         status="pronto",
         impl="vigia_blue.modules.yara.page",
+        requires=(Dependency("YARA", ("yara",), "rpm", "yara"),),
     ),
     Module(
         id="memory", name="Vigia Memory", category="forensics",
@@ -85,6 +92,8 @@ MODULES: list[Module] = [
                   "Processos, conexões, bash, malfind", "Resultado em tabela"],
         status="pronto",
         impl="vigia_blue.modules.memory.page",
+        requires=(Dependency("Volatility 3", ("vol", "vol.py", "volatility3"),
+                             "pip", "volatility3"),),
     ),
     Module(
         id="timeline", name="Vigia Timeline", category="forensics",
@@ -99,6 +108,8 @@ MODULES: list[Module] = [
                   "Eventos em ordem cronológica"],
         status="pronto",
         impl="vigia_blue.modules.timeline.page",
+        requires=(Dependency("plaso", ("log2timeline.py", "psort.py",
+                                       "log2timeline"), "pip", "plaso"),),
     ),
     Module(
         id="intel", name="Vigia Intel", category="intel",
