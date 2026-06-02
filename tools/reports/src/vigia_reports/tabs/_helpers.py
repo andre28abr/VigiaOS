@@ -21,8 +21,8 @@ from vigia_common.helpers import (
 )
 
 # Customizado para esta tool (largura/aperto do clamp)
-CONTENT_MAX_WIDTH = 800
-CONTENT_TIGHTENING = 600
+CONTENT_MAX_WIDTH = 1100
+CONTENT_TIGHTENING = 900
 
 
 def make_clamp(child: Gtk.Widget) -> Adw.Clamp:

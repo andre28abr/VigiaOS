@@ -11,7 +11,7 @@ v0.1.0 — biblioteca interna. Sem GUI, sem entry point.
 
 ### `vigia_common.helpers`
 
-- `make_clamp(child, max_width=820, tightening=640)` — wrapper de
+- `make_clamp(child, max_width=1100, tightening=900)` — wrapper de
   `Adw.Clamp` com defaults da Vigia
 - `show_error(parent, heading, message)` — `Adw.AlertDialog` modal
 - `show_info(parent, heading, message)` — variante info
@@ -38,8 +38,8 @@ Constantes de layout padronizadas (margens, spacing) usadas pelas tools:
 - `MARGIN_HEADER_DESC_BOTTOM = 24`
 - `MARGIN_GROUP_TOP = 24`
 - `MARGIN_ACTION_BOX_TOP = 16`
-- `CONTENT_MAX_WIDTH = 820`
-- `CONTENT_TIGHTENING = 640`
+- `CONTENT_MAX_WIDTH = 1100`
+- `CONTENT_TIGHTENING = 900`
 
 ## Setup
 

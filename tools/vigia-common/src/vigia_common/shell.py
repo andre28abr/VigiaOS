@@ -159,12 +159,13 @@ def run_product(meta: ProductMeta, modules: list[Module],
     from .notifications_bell import NotificationsBell
     from .notices import module_dep_notifications
 
-    # Largura do conteúdo — mesmo "padrão do Hub" (Adw.Clamp 820 / aperto 640).
-    # O Adw.PreferencesPage usa um clamp interno mais estreito (~600); para o
-    # conteúdo não ficar espremido no centro (rolagem maior), alargamos todos os
-    # clamps da árvore — vale para os módulos e para a aba Instalador de uma vez.
-    CONTENT_MAX_WIDTH = 820
-    CONTENT_TIGHTENING = 640
+    # Largura do conteúdo — padrão único do ecossistema (Adw.Clamp 1100 / aperto
+    # 900), igual em todas as tools e nos três produtos. O Adw.PreferencesPage
+    # usa um clamp interno mais estreito (~600); pra o conteúdo não ficar
+    # espremido no centro (rolagem maior, sobra grande nas laterais), alargamos
+    # todos os clamps da árvore — vale pros módulos e pra aba Instalador.
+    CONTENT_MAX_WIDTH = 1100
+    CONTENT_TIGHTENING = 900
     _CLAMP_TYPES = tuple(
         t for t in (getattr(Adw, "Clamp", None),
                     getattr(Adw, "ClampScrollable", None))

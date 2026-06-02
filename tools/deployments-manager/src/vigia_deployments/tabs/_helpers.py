@@ -15,8 +15,8 @@ from vigia_common.helpers import (
     make_clamp as _make_clamp_base,
 )
 
-CONTENT_MAX_WIDTH = 820
-CONTENT_TIGHTENING = 640
+CONTENT_MAX_WIDTH = 1100
+CONTENT_TIGHTENING = 900
 
 
 def make_clamp(child: Gtk.Widget) -> Adw.Clamp:
