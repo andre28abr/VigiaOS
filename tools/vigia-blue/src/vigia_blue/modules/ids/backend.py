@@ -141,6 +141,78 @@ def parse_eve(text: str) -> list[Alert]:
 
 
 # ============================================================
+# Explicação amigável (puro) — "o que é" cada alerta, p/ leigo (como no YARA)
+# ============================================================
+
+# Descrições por categoria (classtype) do Suricata. Cobre as comuns; o resto cai
+# num texto por severidade. Linguagem simples.
+_CATEGORY_PT = {
+    "generic protocol command decode":
+        "O Suricata viu algo fora do padrão no protocolo da rede. Em geral é "
+        "ruído da captura ou da própria rede — raramente um ataque.",
+    "potentially bad traffic":
+        "Tráfego com características potencialmente maliciosas. Vale um olhar, "
+        "mas pode ser falso positivo.",
+    "attempted information leak":
+        "Alguém pode ter tentado obter informação que não deveria — típico de "
+        "varredura/sondagem de rede.",
+    "information leak":
+        "Possível vazamento de informação do seu sistema para fora.",
+    "misc activity":
+        "Atividade diversa que o Suricata marcou como digna de nota. Risco "
+        "baixo na maioria dos casos.",
+    "misc attack":
+        "Possível atividade de ataque (categoria genérica).",
+    "a network trojan was detected":
+        "Sinal de trojan/malware na rede — comunicação típica de máquina "
+        "infectada. Leve a sério.",
+    "malware command and control activity detected":
+        "Comunicação com servidor de comando-e-controle (C2) de malware — a "
+        "máquina pode estar infectada. Grave.",
+    "attempted administrator privilege gain":
+        "Tentativa de ganhar privilégio de administrador (escalonamento).",
+    "attempted user privilege gain":
+        "Tentativa de ganhar acesso/privilégio no sistema.",
+    "web application attack":
+        "Ataque a uma aplicação web (ex.: SQL injection, XSS).",
+    "detection of a network scan":
+        "Alguém está varrendo a rede procurando portas/serviços abertos "
+        "(reconhecimento).",
+    "attempted denial of service":
+        "Tentativa de negação de serviço (DoS) — sobrecarregar/derrubar um serviço.",
+    "denial of service":
+        "Atividade de negação de serviço (DoS) em andamento.",
+    "executable code was detected":
+        "Código executável trafegando na rede — pode ser download de malware.",
+    "not suspicious traffic":
+        "Tráfego considerado normal pelo Suricata.",
+}
+
+_SEVERITY_PT = {
+    "alto": "Alerta de severidade ALTA — trate como prioridade e investigue.",
+    "suspeito": "Comportamento suspeito — vale investigar (pode ser falso positivo).",
+    "baixo": "Severidade baixa — geralmente ruído de rede ou evento informativo.",
+    "info": "Evento informativo.",
+}
+
+
+def explain(alert: Alert) -> str:
+    """Descrição amigável (pt-BR) do que é o alerta — para leigo, como no YARA."""
+    if "invalid checksum" in (alert.signature or "").lower():
+        return ("Checksum inválido no pacote. Quase sempre é um artefato de "
+                "como o tráfego foi capturado (a placa de rede recalcula o "
+                "checksum depois, então na captura ele aparece 'errado') — "
+                "inofensivo, não é ataque.")
+    cat = (alert.category or "").strip().lower()
+    if cat in _CATEGORY_PT:
+        return _CATEGORY_PT[cat]
+    return _SEVERITY_PT.get(
+        alert.severity,
+        "Alerta de rede do Suricata. Veja a categoria e a assinatura abaixo "
+        "para o contexto técnico.")
+
+
+# ============================================================
 # Command builder (puro)
 # ============================================================
 

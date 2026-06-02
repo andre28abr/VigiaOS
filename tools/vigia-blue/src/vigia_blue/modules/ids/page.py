@@ -264,6 +264,7 @@ class _AlertsView(Gtk.Box):
         if css in ("warning", "error"):
             pill.add_css_class(css)
         exp.add_suffix(pill)
+        exp.add_row(_prop("O que é", backend.explain(a)))
         exp.add_row(_prop("Origem", a.src))
         exp.add_row(_prop("Destino", a.dest))
         exp.add_row(_prop("Protocolo", a.proto))

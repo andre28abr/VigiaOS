@@ -51,6 +51,8 @@ Precisa do `suricata` + `tcpdump` instalados.
 ### Lendo os resultados
 Cada alerta é um **botão**: aparece o nome do ataque detectado e a **gravidade**
 (Info / Baixo / Suspeito / Alto). **Clique** para ver:
+- **O que é** — explicação em português do que aquele alerta significa (ex.:
+  *"checksum inválido geralmente é ruído da captura, não um ataque"*);
 - **Origem** e **Destino** (quem falou com quem, IP e porta);
 - **Protocolo**;
 - **Quando** aconteceu;
