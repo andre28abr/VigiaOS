@@ -2622,6 +2622,26 @@ captura / offload da placa de rede — inofensivo, não é ataque). A GUI mostra
 **"O que é"** como 1ª linha do `ExpanderRow` (antes de Origem/Destino/Protocolo/
 Quando/SID). +4 testes. Suite 1110 → 1114. Manual leigo atualizado. blue 0.0.16.
 
+### 2026-06-02 — Vigia IDS: captura por botão (pkexec) + revisão geral
+
+André pediu pra capturar tráfego pela GUI (sem terminal) e deixar tudo mais
+intuitivo. Grande revisão do módulo:
+- **Captura ao vivo**: botões **30s / 1min / 5min** na fonte de alertas →
+  `capture_and_analyze(seconds)` roda o helper **`install/_ids_capture.sh`** via
+  **pkexec** (1 diálogo): `tcpdump` captura → `suricata` analisa → `chown` devolve
+  a posse ao usuário. O `.pcap` fica em `~/teste/ids/` (convenção). Guardas no
+  helper (segundos numérico, dir sob `~/teste/ids/` p/ evitar `chown -R` perigoso).
+- **Agrupamento**: `group_alerts()` junta alertas idênticos por assinatura
+  ("invalid checksum ×6"), ordena por severidade+contagem, com amostras de
+  origem→destino — acaba com a poluição de repetidos.
+- **Resumo + filtro**: resumo por severidade (`severity_counts`) + toggle
+  **Esconder ruído** (oculta < Suspeito).
+- `explain()` passou a aceitar `Alert` OU `AlertGroup`; novo `tcpdump_available()`.
+- +7 testes. Suite 1114 → **1121**. Manuais leigo/técnico. blue 0.0.17.
+
+Pendência: empacotar o helper p/ instalação não-editável (hoje resolve via
+`parents[6]` do repo — funciona no editable).
+
 ---
 
 ## 10. Roadmap

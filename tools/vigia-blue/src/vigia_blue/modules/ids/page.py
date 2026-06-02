@@ -66,6 +66,8 @@ class _AlertsView(Gtk.Box):
     def __init__(self) -> None:
         super().__init__(orientation=Gtk.Orientation.VERTICAL)
         self._running = False
+        self._last_result: backend.IdsResult | None = None
+        self._hide_noise = False
         found = backend.find_eve()
         self._eve_path: str | None = str(found) if found else None
 
@@ -109,6 +111,21 @@ class _AlertsView(Gtk.Box):
         pcap_row.add_suffix(pcap_btn)
         self._pcap_btn = pcap_btn
         g.add(pcap_row)
+
+        cap_row = Adw.ActionRow()
+        cap_row.set_title("Capturar tráfego agora")
+        cap_row.set_subtitle(
+            "Grava a sua rede por alguns segundos e já analisa (pede senha)")
+        cap_row.set_subtitle_lines(0)
+        cap_row.add_prefix(Gtk.Image.new_from_icon_name("media-record-symbolic"))
+        self._cap_buttons: list[Gtk.Button] = []
+        for _txt, _secs in (("30s", 30), ("1 min", 60), ("5 min", 300)):
+            b = Gtk.Button(label=_txt)
+            b.set_valign(Gtk.Align.CENTER)
+            b.connect("clicked", self._on_capture, _secs)
+            cap_row.add_suffix(b)
+            self._cap_buttons.append(b)
+        g.add(cap_row)
         page.add(g)
 
         g_action = Adw.PreferencesGroup()
@@ -126,6 +143,11 @@ class _AlertsView(Gtk.Box):
 
         self._results = Adw.PreferencesGroup()
         self._results.set_title("Alertas")
+        self._noise_toggle = Gtk.ToggleButton(label="Esconder ruído")
+        self._noise_toggle.add_css_class("flat")
+        self._noise_toggle.set_tooltip_text("Mostrar só severidade Suspeito ou maior")
+        self._noise_toggle.connect("toggled", self._on_filter)
+        self._results.set_header_suffix(self._noise_toggle)
         page.add(self._results)
         self._rows: list[Gtk.Widget] = []
         self._set_empty(
@@ -134,15 +156,24 @@ class _AlertsView(Gtk.Box):
         self._refresh_banner()
 
     def _refresh_banner(self) -> None:
-        if not self._eve_path and not backend.suricata_available():
+        suri = backend.suricata_available()
+        if not self._eve_path and not suri:
             self._banner.set_title(
                 "Nenhum eve.json encontrado e Suricata ausente. Instale: "
                 + install_hint("suricata"))
             self._banner.set_revealed(True)
         else:
             self._banner.set_revealed(False)
-        self._run_btn.set_sensitive(bool(self._eve_path))
-        self._pcap_btn.set_sensitive(backend.suricata_available())
+        busy = self._running
+        self._run_btn.set_sensitive(bool(self._eve_path) and not busy)
+        self._pcap_btn.set_sensitive(suri and not busy)
+        tdump = backend.tcpdump_available()
+        for b in self._cap_buttons:
+            b.set_sensitive(suri and tdump and not busy)
+            b.set_tooltip_text(
+                "Precisa do tcpdump instalado" if not tdump
+                else "Precisa do Suricata instalado" if not suri
+                else "Captura e analisa o seu tráfego")
 
     def _add(self, row: Gtk.Widget) -> None:
         self._results.add(row)
@@ -193,22 +224,25 @@ class _AlertsView(Gtk.Box):
         except GLib.Error:
             return
         if f and f.get_path():
-            self._start(lambda: backend.analyze_pcap(f.get_path()))
+            path = f.get_path()
+            self._start(lambda: backend.analyze_pcap(path),
+                        "Analisando a captura (pode pedir senha)…")
 
     # -- run --
     def _on_run_eve(self, _btn: Gtk.Button) -> None:
         if self._eve_path:
             path = self._eve_path
-            self._start(lambda: backend.analyze_eve(path))
+            self._start(lambda: backend.analyze_eve(path),
+                        "Analisando o eve.json…")
 
-    def _start(self, work) -> None:
+    def _start(self, work, busy: str = "Analisando…") -> None:
         if self._running:
             return
         self._running = True
-        self._run_btn.set_sensitive(False)
-        self._pcap_btn.set_sensitive(False)
+        self._last_result = None
+        self._refresh_banner()          # desabilita os botões enquanto roda
         self._spinner.start()
-        self._set_empty("Analisando…")
+        self._set_empty(busy)
         threading.Thread(target=self._worker, args=(work,), daemon=True).start()
 
     def _worker(self, work) -> None:
@@ -219,41 +253,80 @@ class _AlertsView(Gtk.Box):
     def _apply(self, result: backend.IdsResult) -> bool:
         self._running = False
         self._spinner.stop()
+        self._last_result = result
+        backend.save_report(result)
         self._refresh_banner()
+        self._render()
+        return False
+
+    def _render(self) -> None:
+        """(Re)desenha os resultados: agrupados, com resumo e filtro de ruído."""
         self._clear()
         self._results.set_description(None)
+        r = self._last_result
+        if r is None:
+            return
 
-        if result.error:
+        if r.error:
             row = Adw.ActionRow()
             row.set_title("Não foi possível analisar")
-            row.set_subtitle(result.error)
+            row.set_subtitle(r.error)
             row.set_subtitle_lines(0)
             row.add_prefix(Gtk.Image.new_from_icon_name("dialog-error-symbolic"))
             self._add(row)
-            return False
+            return
 
-        if not result.alerts:
+        if not r.alerts:
             self._results.set_description(
-                f"Nenhum alerta. {result.total_lines} linha(s) lidas · "
-                f"{result.elapsed_sec:.1f}s.")
+                f"Nenhum alerta. {r.total_lines} linha(s) lidas · "
+                f"{r.elapsed_sec:.1f}s.")
             row = Adw.ActionRow()
             row.set_title("Nenhum alerta de intrusão na fonte analisada.")
             row.add_prefix(Gtk.Image.new_from_icon_name("emblem-ok-symbolic"))
             self._add(row)
-            return False
+            return
 
+        all_groups = backend.group_alerts(r.alerts)
+        shown = all_groups
+        if self._hide_noise:
+            shown = [g for g in all_groups
+                     if backend.SEVERITY_RANK.get(g.severity, 0) >= 2]
+        counts = backend.severity_counts(r.alerts)
+        resumo = " · ".join(
+            f"{counts[s]} {_sev(s)[0].lower()}"
+            for s in ("critico", "alto", "suspeito", "baixo", "info")
+            if counts.get(s))
+        hidden = len(all_groups) - len(shown)
+        extra = f" · {hidden} tipo(s) de ruído ocultos" if (
+            self._hide_noise and hidden) else ""
         self._results.set_description(
-            f"{len(result.alerts)} alerta(s) · {result.total_lines} linha(s) · "
-            f"{result.elapsed_sec:.1f}s. Clique num alerta para ver os detalhes.")
-        for a in result.alerts:
-            self._add(self._alert_row(a))
-        return False
+            f"{len(r.alerts)} alerta(s) em {len(all_groups)} tipo(s) · {resumo}"
+            f"{extra} · {r.elapsed_sec:.1f}s. Clique num tipo para ver detalhes.")
 
-    def _alert_row(self, a: backend.Alert) -> Adw.ExpanderRow:
-        label, icon, css = _sev(a.severity)
+        if not shown:
+            row = Adw.ActionRow()
+            row.set_title("Só ruído de baixa severidade — nada acima de 'Baixo'.")
+            row.add_prefix(Gtk.Image.new_from_icon_name("emblem-ok-symbolic"))
+            self._add(row)
+            return
+        for g in shown:
+            self._add(self._group_row(g))
+
+    def _on_filter(self, btn: Gtk.ToggleButton) -> None:
+        self._hide_noise = btn.get_active()
+        if self._last_result is not None:
+            self._render()
+
+    def _on_capture(self, _btn: Gtk.Button, seconds: int) -> None:
+        self._start(
+            lambda: backend.capture_and_analyze(seconds),
+            f"Capturando {seconds}s de tráfego… (vai pedir a senha)")
+
+    def _group_row(self, g: backend.AlertGroup) -> Adw.ExpanderRow:
+        label, icon, css = _sev(g.severity)
         exp = Adw.ExpanderRow()
-        exp.set_title(a.signature)
-        exp.set_subtitle(a.category or "—")
+        exp.set_title(g.signature + (f"   ({g.count}×)" if g.count > 1 else ""))
+        exp.set_subtitle(g.category or "—")
         exp.set_subtitle_lines(0)
         img = Gtk.Image.new_from_icon_name(icon)
         if css in ("warning", "error"):
@@ -264,12 +337,14 @@ class _AlertsView(Gtk.Box):
         if css in ("warning", "error"):
             pill.add_css_class(css)
         exp.add_suffix(pill)
-        exp.add_row(_prop("O que é", backend.explain(a)))
-        exp.add_row(_prop("Origem", a.src))
-        exp.add_row(_prop("Destino", a.dest))
-        exp.add_row(_prop("Protocolo", a.proto))
-        exp.add_row(_prop("Quando", a.timestamp))
-        exp.add_row(_prop("Assinatura (SID)", str(a.sid)))
+        exp.add_row(_prop("O que é", backend.explain(g)))
+        if g.count > 1:
+            exp.add_row(_prop("Ocorrências", f"{g.count} vezes"))
+        if g.endpoints:
+            exp.add_row(_prop("Origem → destino", "\n".join(g.endpoints)))
+        exp.add_row(_prop("Protocolo", g.proto))
+        exp.add_row(_prop("Quando", g.when))
+        exp.add_row(_prop("Assinatura (SID)", str(g.sid)))
         return exp
 
 

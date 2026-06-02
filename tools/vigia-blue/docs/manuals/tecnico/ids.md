@@ -5,12 +5,16 @@ Módulo de **Detecção** do **VigiaBlue**. Painel de leitura para o IDS de rede
 `event_type=="alert"` triados por severidade — mesmo padrão visual do Vigia
 SIEM/YARA.
 
-## Dois modos
+## Três modos
 
 1. **Ler eve.json existente** (de um Suricata em execução). **Não** exige o
    Suricata instalado — é só leitura de arquivo.
 2. **Analisar um pcap**: roda `suricata -r <pcap> -l <outdir>` e lê o `eve.json`
-   gerado (exige `suricata`).
+   gerado. O Suricata é ferramenta de root → `analyze_pcap` cai em **pkexec** se
+   faltar permissão (`_needs_root`).
+3. **Capturar tráfego ao vivo**: `capture_and_analyze(seconds)` roda o helper
+   `install/_ids_capture.sh` via **pkexec** (UM diálogo) — captura com `tcpdump`,
+   roda o Suricata e devolve a posse ao usuário. O `.pcap` fica em `~/teste/ids/`.
 
 ## Arquivos
 
@@ -50,12 +54,14 @@ Toca disco/sistema:
 ## GUI (`page.py`)
 
 `build_content()` → `ToolbarView` + `ViewSwitcher` (Alertas / Histórico / Sobre).
-- **Alertas** (`_AlertsView`): linha do `eve.json` (auto-detectado via `find_eve`
-  ou escolhido por `Gtk.FileDialog`), botão **Analisar eve.json**, e uma linha
-  separada **Analisar .pcap** (habilitada só se `suricata_available()`). A análise
-  roda em `threading.Thread` → `idle_add`. Banner se faltar eve.json **e**
-  Suricata. Alerta = `ExpanderRow` (assinatura + categoria + pílula; expande
-  Origem/Destino/Protocolo/Quando/SID).
+- **Alertas** (`_AlertsView`): três fontes — `eve.json` (auto via `find_eve` ou
+  `Gtk.FileDialog`, abre em /var/log/suricata), **.pcap**, e **Capturar tráfego
+  agora** (botões 30s/1min/5min → `capture_and_analyze`). Tudo em
+  `threading.Thread` → `idle_add`. Resultado **agrupado** por assinatura
+  (`group_alerts`), com **resumo por severidade** e toggle **Esconder ruído**
+  (oculta < Suspeito). Cada grupo = `ExpanderRow` com **O que é** (`explain`,
+  texto leigo por categoria/`invalid checksum`), Ocorrências (N×), Origem→destino
+  (amostras), Protocolo, Quando, SID.
 - **Histórico**: `list_recent_reports()`.
 
 ## Privilégio / LGPD
@@ -66,7 +72,8 @@ Toca disco/sistema:
 
 ## Pendências (próximos passos)
 
-1. **pkexec** para ler eve.json em `/var/log/suricata` quando sem permissão.
-2. Filtros (por severidade, por IP, por assinatura) e agrupamento por SID.
-3. Live tail do eve.json (acompanhar em tempo real).
-4. Gestão de regras do Suricata (habilitar/atualizar rulesets).
+1. **pkexec** na rota eve.json direta (`/var/log/suricata`) — a .pcap e a captura
+   já usam; falta a leitura do eve.json de um Suricata ativo.
+2. Live tail do eve.json (acompanhar em tempo real).
+3. Gestão de regras do Suricata (hoje depende de `suricata-update`).
+4. Empacotar o helper `_ids_capture.sh` para instalação não-editável.
