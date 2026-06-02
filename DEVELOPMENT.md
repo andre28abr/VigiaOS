@@ -2554,6 +2554,24 @@ que não é pacote instalável). **Ganho:** módulo novo com `requires` declarad
 aparece sozinho na tabela do script **e** na aba Instalador da GUI — uma fonte de
 verdade só, sem duplicação. +1 teste (contrato do `_deps.py`). Suite 1107 → 1108.
 
+### 2026-06-02 — Vigia IDS: tela mais clara + teste seguro (ids-demo.sh)
+
+André perguntou como o IDS funciona e por que o seletor "não mostra nada". Era
+mal-entendido legítimo: o módulo **não gera** o eve.json — quem gera é um Suricata
+em execução; sem ele, o arquivo não existe. Dois ajustes:
+- **GUI (`page.py`)**: a descrição da fonte agora explica que o eve.json vem de um
+  Suricata rodando (o módulo só LÊ); o `.pcap` é marcado como "jeito fácil de
+  testar"; o estado vazio orienta pro `.pcap`; e o seletor de eve.json já abre em
+  `/var/log/suricata` (via `Gio.File.query_exists`).
+- **`install/ids-demo.sh`**: gera um `.pcap` de teste **seguro** — acessa o
+  `testmynids.org` (dispara "GPL ATTACK_RESPONSE id check returned root", o "EICAR
+  dos IDS"), captura via `tcpdump`, roda `suricata-update` se faltar regra, e
+  **auto-verifica** (roda o suricata no pcap e conta alertas). O usuário abre o
+  `.pcap` no Vigia IDS e vê o alerta. Manual leigo atualizado. blue 0.0.14.
+
+Também esclarecido (pergunta do André): o IDS **não conflita com o firewall** —
+é passivo (só observa); o firewall bloqueia. São complementares.
+
 ---
 
 ## 10. Roadmap

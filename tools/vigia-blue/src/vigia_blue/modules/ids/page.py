@@ -14,7 +14,7 @@ import gi
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 
-from gi.repository import Adw, GLib, Gtk  # noqa: E402
+from gi.repository import Adw, Gio, GLib, Gtk  # noqa: E402
 
 from vigia_common.platform import install_hint  # noqa: E402
 
@@ -79,12 +79,16 @@ class _AlertsView(Gtk.Box):
         g = Adw.PreferencesGroup()
         g.set_title("Fonte dos alertas")
         g.set_description(
-            "Leia o eve.json de um Suricata em execução, ou analise um arquivo "
-            ".pcap (precisa do Suricata instalado)."
+            "O eve.json é criado por um Suricata em execução — não por este "
+            "módulo (ele só LÊ os alertas). Sem um Suricata rodando esse arquivo "
+            "não existe (por isso o seletor pode não achar nada). Para testar "
+            "agora, use \"Analisar um arquivo .pcap\" — o jeito mais fácil."
         )
         self._eve_row = Adw.ActionRow()
         self._eve_row.set_title("Arquivo eve.json")
-        self._eve_row.set_subtitle(self._eve_path or "Nenhum encontrado — selecione")
+        self._eve_row.set_subtitle(
+            self._eve_path
+            or "Nenhum encontrado (normal se o Suricata não está rodando)")
         self._eve_row.set_subtitle_lines(0)
         self._eve_row.add_prefix(Gtk.Image.new_from_icon_name("text-x-generic-symbolic"))
         pick = Gtk.Button(label="Selecionar")
@@ -95,7 +99,7 @@ class _AlertsView(Gtk.Box):
 
         pcap_row = Adw.ActionRow()
         pcap_row.set_title("Analisar um arquivo .pcap")
-        pcap_row.set_subtitle("Roda o Suricata sobre a captura")
+        pcap_row.set_subtitle("Roda o Suricata sobre a captura — jeito fácil de testar")
         pcap_row.set_subtitle_lines(0)
         pcap_row.add_prefix(Gtk.Image.new_from_icon_name("network-wired-symbolic"))
         pcap_btn = Gtk.Button(label="Selecionar .pcap")
@@ -123,7 +127,9 @@ class _AlertsView(Gtk.Box):
         self._results.set_title("Alertas")
         page.add(self._results)
         self._rows: list[Gtk.Widget] = []
-        self._set_empty("Selecione uma fonte e clique em Analisar.")
+        self._set_empty(
+            "Nenhuma análise ainda. Sem Suricata rodando não há eve.json — "
+            "o jeito fácil de testar é escolher um arquivo .pcap acima.")
         self._refresh_banner()
 
     def _refresh_banner(self) -> None:
@@ -158,7 +164,11 @@ class _AlertsView(Gtk.Box):
     # -- pickers --
     def _on_pick_eve(self, _btn: Gtk.Button) -> None:
         dialog = Gtk.FileDialog()
-        dialog.set_title("Escolha o eve.json")
+        dialog.set_title("Escolha o eve.json (ex.: /var/log/suricata/eve.json)")
+        # abre já na pasta padrão do Suricata, se existir
+        eve_dir = Gio.File.new_for_path("/var/log/suricata")
+        if eve_dir.query_exists(None):
+            dialog.set_initial_folder(eve_dir)
         dialog.open(self.get_root(), None, self._on_eve_chosen)
 
     def _on_eve_chosen(self, dialog: Gtk.FileDialog, result) -> None:
