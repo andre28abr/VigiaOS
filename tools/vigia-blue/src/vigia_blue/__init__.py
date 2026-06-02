@@ -1,4 +1,4 @@
 """VigiaBlue — Suíte defensiva (blue team / SOC) — ecossistema VigiaOS. Esqueleto do ecossistema VigiaOS."""
 
-__version__ = "0.0.18"
+__version__ = "0.0.20"
 __app_id__ = "br.com.vigia.Blue"

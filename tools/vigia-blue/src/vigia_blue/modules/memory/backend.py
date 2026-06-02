@@ -10,13 +10,16 @@ Partes PURAS (testáveis headless, sem volatility e sem gi):
 - `build_vol_cmd(dump, plugin)` — argv (lista, nunca shell string).
 - `parse_vol_json(text)` — JSON do Volatility → (colunas, linhas).
 
-> Forense de memória exige um **dump capturado**. O Vigia Memory não captura a
-> RAM — ele analisa um dump existente. (Capturar exige root + ferramenta própria.)
+> Forense de memória exige um **dump capturado**. O Vigia Memory analisa um dump
+> existente **e** pode capturar a RAM desta máquina (AVML via pkexec — ver
+> `capture_dump`). A captura exige root e o binário AVML.
 """
 
 from __future__ import annotations
 
+import getpass
 import json
+import os
 import shutil
 import time
 from dataclasses import dataclass, field
@@ -190,3 +193,102 @@ def run_plugin(dump: Path | str, plugin: str, timeout: int = 600,
     result.columns = columns
     result.rows = rows[:max_rows]
     return result
+
+
+# ============================================================
+# Captura de dump (AVML via pkexec) — opcional, exige root
+# ============================================================
+
+# Onde os dumps capturados ficam (padrão do projeto: ~/teste/<modulo>/).
+TEST_DIR = Path.home() / "teste" / "memory"
+
+# Helper rodado via pkexec (root): AVML captura a RAM + devolve a posse.
+_CAPTURE_HELPER = (
+    Path(__file__).resolve().parents[6] / "install" / "_mem_capture.sh"
+)
+
+# AVML não vem em repo (binário estático da Microsoft). Procuramos no PATH e em
+# locais comuns de instalação do usuário.
+_AVML_EXTRA_PATHS = [
+    Path.home() / ".local" / "bin" / "avml",
+    Path("/usr/local/bin/avml"),
+    Path("/usr/bin/avml"),
+]
+
+
+@dataclass
+class CaptureResult:
+    ok: bool = False
+    path: str = ""
+    error: str = ""
+    elapsed_sec: float = 0.0
+
+
+def avml_path() -> str | None:
+    """Caminho do AVML (PATH ou locais comuns) ou None."""
+    found = shutil.which("avml")
+    if found:
+        return found
+    for p in _AVML_EXTRA_PATHS:
+        try:
+            if p.is_file() and os.access(p, os.X_OK):
+                return str(p)
+        except OSError:
+            continue
+    return None
+
+
+def avml_available() -> bool:
+    return avml_path() is not None
+
+
+def avml_install_hint() -> str:
+    return ("AVML não encontrado. Rode ./install/blue-deps.sh (baixa o binário "
+            "oficial da Microsoft em ~/.local/bin/avml) — ou instale o AVML "
+            "manualmente.")
+
+
+def default_dump_path() -> Path:
+    """Caminho do dump a capturar (~/teste/memory/captura-<timestamp>.lime)."""
+    stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    return TEST_DIR / f"captura-{stamp}.lime"
+
+
+def build_capture_cmd(out_path: Path | str, avml: str,
+                      owner: str | None = None) -> list[str]:
+    """Argv do helper de captura via pkexec (lista — nunca shell string)."""
+    return ["pkexec", str(_CAPTURE_HELPER), str(avml), str(out_path),
+            owner or getpass.getuser()]
+
+
+def capture_dump(timeout: int = 900) -> CaptureResult:
+    """Captura a RAM desta máquina via AVML (helper privilegiado, UM diálogo
+    polkit). Salva em ~/teste/memory/ com permissão 0600 (o dump tem dados
+    sensíveis). Nunca levanta."""
+    res = CaptureResult()
+    t0 = time.monotonic()
+    avml = avml_path()
+    if not avml:
+        res.error = avml_install_hint()
+        return res
+    if not _CAPTURE_HELPER.is_file():
+        res.error = "Script de captura não encontrado (instalação não-editável?)."
+        return res
+    try:
+        TEST_DIR.mkdir(parents=True, exist_ok=True)
+    except OSError as e:
+        res.error = f"Não consegui criar ~/teste/memory ({e})."
+        return res
+    out = default_dump_path()
+    rc, _out, err = proc.run(build_capture_cmd(out, avml), timeout=timeout)
+    res.elapsed_sec = round(time.monotonic() - t0, 2)
+    if rc in (126, 127):
+        res.error = "Autenticação cancelada (pkexec)."
+        return res
+    if rc != 0 or not out.is_file():
+        res.error = (err.strip() or "A captura falhou — o AVML não conseguiu ler "
+                     "a memória física desta máquina.")[:400]
+        return res
+    res.ok = True
+    res.path = str(out)
+    return res

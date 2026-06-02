@@ -8,6 +8,7 @@ Roda um plugin do Volatility sobre um dump, em thread → `GLib.idle_add`. GTK s
 from __future__ import annotations
 
 import threading
+from pathlib import Path
 
 import gi
 
@@ -67,6 +68,30 @@ class _AnalyzeView(Gtk.Box):
         g.add(self._dump_row)
         page.add(g)
 
+        # Captura nativa (opcional) — AVML via pkexec.
+        g_cap = Adw.PreferencesGroup()
+        g_cap.set_title("Capturar agora (opcional)")
+        g_cap.set_description(
+            "Não tem um dump? Capture a RAM desta máquina agora com o AVML "
+            "(pede senha de admin). O arquivo vai pra ~/teste/memory/ e já "
+            "entra como dump selecionado.")
+        self._cap_row = Adw.ActionRow()
+        self._cap_row.set_title("Capturar memória desta máquina")
+        self._cap_row.set_subtitle_lines(0)
+        self._cap_row.add_prefix(
+            Gtk.Image.new_from_icon_name("camera-photo-symbolic"))
+        cap_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        cap_box.set_valign(Gtk.Align.CENTER)
+        self._cap_spinner = Gtk.Spinner()
+        cap_box.append(self._cap_spinner)
+        self._cap_btn = Gtk.Button(label="Capturar")
+        self._cap_btn.set_valign(Gtk.Align.CENTER)
+        self._cap_btn.connect("clicked", self._on_capture)
+        cap_box.append(self._cap_btn)
+        self._cap_row.add_suffix(cap_box)
+        g_cap.add(self._cap_row)
+        page.add(g_cap)
+
         g_plug = Adw.PreferencesGroup()
         g_plug.set_title("O que analisar")
         self._combo = Adw.ComboRow()
@@ -101,6 +126,7 @@ class _AnalyzeView(Gtk.Box):
         self._rows: list[Gtk.Widget] = []
         self._set_empty("Selecione um dump e um plugin, e clique em Analisar.")
         self._refresh_banner()
+        self._refresh_capture()
 
     def _refresh_banner(self) -> None:
         if not backend.vol_available():
@@ -149,6 +175,48 @@ class _AnalyzeView(Gtk.Box):
             self._dump = f.get_path()
             self._dump_row.set_title(f.get_basename() or self._dump)
             self._dump_row.set_subtitle(self._dump)
+
+    # ---- captura nativa (AVML via pkexec) ----
+
+    def _refresh_capture(self) -> None:
+        if backend.avml_available():
+            self._cap_row.set_subtitle(
+                "Usa o AVML · pede senha de admin · salva em ~/teste/memory/.")
+            self._cap_btn.set_sensitive(not self._running)
+        else:
+            self._cap_row.set_subtitle(backend.avml_install_hint())
+            self._cap_btn.set_sensitive(False)
+
+    def _on_capture(self, _btn: Gtk.Button) -> None:
+        if self._running or not backend.avml_available():
+            return
+        self._running = True
+        self._cap_btn.set_sensitive(False)
+        self._run_btn.set_sensitive(False)
+        self._cap_spinner.start()
+        self._cap_row.set_subtitle(
+            "Capturando a RAM… pode demorar e vai pedir a senha de admin.")
+        threading.Thread(target=self._cap_worker, daemon=True).start()
+
+    def _cap_worker(self) -> None:
+        res = backend.capture_dump()
+        GLib.idle_add(self._cap_done, res)
+
+    def _cap_done(self, res: "backend.CaptureResult") -> bool:
+        self._running = False
+        self._cap_spinner.stop()
+        self._refresh_banner()
+        self._refresh_capture()
+        if res.ok:
+            self._dump = res.path
+            self._dump_row.set_title(Path(res.path).name)
+            self._dump_row.set_subtitle(res.path)
+            self._cap_row.set_subtitle(
+                f"Capturado em {res.elapsed_sec:.0f}s — já selecionado. "
+                "Escolha um plugin e clique em Analisar.")
+        else:
+            self._cap_row.set_subtitle(f"Falha: {res.error}")
+        return False
 
     def _on_run(self, _btn: Gtk.Button) -> None:
         if self._running:
@@ -238,11 +306,20 @@ def _build_about() -> Gtk.Widget:
     row.add_prefix(Gtk.Image.new_from_icon_name("application-x-executable-symbolic"))
     g.add(row)
     cap = Adw.ActionRow()
-    cap.set_title("Como capturar um dump")
-    cap.set_subtitle("Linux: AVML ou LiME (exigem root). O Vigia Memory analisa "
-                     "o dump — ele não captura a RAM.")
+    cap.set_title("Capturar a memória (nativo)")
+    cap.set_subtitle("Na aba Análise, o botão Capturar usa o AVML (pede senha de "
+                     "admin) e salva o dump em ~/teste/memory/. Precisa do AVML "
+                     "instalado — ./install/blue-deps.sh baixa o oficial.")
     cap.set_subtitle_lines(0)
-    cap.add_prefix(Gtk.Image.new_from_icon_name("dialog-information-symbolic"))
+    cap.add_prefix(Gtk.Image.new_from_icon_name("camera-photo-symbolic"))
     g.add(cap)
+    sym = Adw.ActionRow()
+    sym.set_title("Dumps de Linux precisam de símbolos do kernel")
+    sym.set_subtitle("Para analisar um dump de Linux, o Volatility 3 precisa de "
+                     "um 'mapa' do kernel (ISF). Se faltar, a análise mostra um "
+                     "erro de símbolos — é a parte chata da forense no Linux.")
+    sym.set_subtitle_lines(0)
+    sym.add_prefix(Gtk.Image.new_from_icon_name("dialog-warning-symbolic"))
+    g.add(sym)
     page.add(g)
     return page

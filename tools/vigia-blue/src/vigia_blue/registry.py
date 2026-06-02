@@ -96,8 +96,14 @@ MODULES: list[Module] = [
                   "Processos, conexões, bash, malfind", "Resultado em tabela"],
         status="pronto",
         impl="vigia_blue.modules.memory.page",
-        requires=(Dependency("Volatility 3", ("vol", "vol.py", "volatility3"),
-                             "pip", "volatility3"),),
+        requires=(
+            Dependency("Volatility 3", ("vol", "vol.py", "volatility3"),
+                       "pip", "volatility3"),
+            Dependency("AVML", ("avml",), "source", "avml",
+                       install="./install/blue-deps.sh",
+                       note="Para capturar a RAM (botão Capturar). "
+                            "Binário oficial da Microsoft."),
+        ),
     ),
     Module(
         id="timeline", name="Vigia Timeline", category="forensics",
