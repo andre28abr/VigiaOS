@@ -3339,6 +3339,29 @@ Pendências gerais do Blue: pkexec p/ paths root (YARA/IDS), janela temporal
   LGPD" do Reports.
 - **Status: planejado** (decidido jun/2026; após os módulos atuais de Blue/Red).
 
+### 10.8 Pasta de demonstração / testes opcional (pós-finalização) — PLANEJADO
+
+A pedido do André (jun/2026), **quando o ecossistema estiver finalizado**: criar
+uma **pasta de demonstração** instalável como **opcional**, com **dados de
+exemplo seguros** que exercitam **todas as funções** do Vigia (Hub + Blue + Red)
+— para demonstração/validação ponta a ponta da aplicação.
+
+- **Evolui o `install/test-samples.sh`** (hoje cobre yara/intel/timeline/ids em
+  `~/teste/<modulo>/`) para um **pack completo, curado e seguro**:
+  - **Blue**: amostras YARA (EICAR/PII fake), `.pcap` do IDS, IOCs do Intel,
+    export do Timeline, logs do SIEM, e um **dump de RAM de exemplo** pro Memory.
+    Preferir **dump de Windows x86_64** (símbolos automáticos, roda em qualquer
+    host — inclusive ARM64) ou Linux x86_64; **não** depender de dump ARM64
+    (limitação upstream do Volatility — ver §9 "ARM64").
+  - **Hub**: amostras p/ Reports (modelo de conformidade), File Integrity
+    (baseline de teste), etc.
+  - **Red**: alvos/escopos de exemplo seguros (quando os módulos existirem).
+- **Opcional na instalação** — flag no `vigia-setup.sh` (ex.: `--demo` /
+  `--samples`), gravando em `~/teste/` (fora do repo, padrão do projeto).
+- **Objetivo**: alguém abre o Vigia, instala o pack, e **vê cada função operando**
+  sem precisar caçar dados reais — ótimo p/ demonstração ao escritório/cliente.
+- **Status: planejado — fazer POR ÚLTIMO**, quando tudo estiver pronto.
+
 ---
 
 ## 11. Lições aprendidas
