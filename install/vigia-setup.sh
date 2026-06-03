@@ -251,23 +251,41 @@ done
 ptop
 prow "Produto"   "Pkgs" "O que instala"
 psep
-prow "Hub (launcher + tools)" "${#HUB_MODS[@]}"  "15 tools + launcher"
+prow "Hub (launcher + tools)" "${#HUB_MODS[@]}"  "14 tools embarcadas + launcher"
 prow "VigiaBlue"              "${#BLUE_MODS[@]}" "7 modulos prontos"
 prow "VigiaRed"              "${#RED_MODS[@]}"  "esqueleto (em breve)"
 pbot
-echo "  ${DIM}Instala via pip --user (editável) + registra ícone no menu do GNOME.${NC}"
+echo "  ${DIM}pip --user (editável). Só os 3 PRODUTOS viram ícone (pasta Vigia);${NC}"
+echo "  ${DIM}as ferramentas rodam embarcadas no Hub.${NC}"
 
 echo
 if confirm "Instalar as interfaces gráficas dos três produtos?" y; then
+    # Produtos (Hub/Blue/Red) → COM ícone; ferramentas → --no-icon (embarcadas).
     for name in "${HUB_MODS[@]}" "${BLUE_MODS[@]}" "${RED_MODS[@]}"; do
+        case "$name" in
+            vigia-hub|vigia-blue|vigia-red) ICON_FLAG="" ;;
+            *)                              ICON_FLAG="--no-icon" ;;
+        esac
         printf "  %-24s " "$name"
         if [[ $DRY_RUN -eq 1 ]]; then echo "${DIM}(dry-run)${NC}"; continue; fi
-        if "$SCRIPT_DIR/install-tool.sh" "$name" >"/tmp/vigia-setup-$name.log" 2>&1; then
+        if "$SCRIPT_DIR/install-tool.sh" $ICON_FLAG "$name" >"/tmp/vigia-setup-$name.log" 2>&1; then
             echo "${GREEN}✓${NC}"; DONE_GUI+=("$name")
         else
             echo "${RED}✗${NC} ${DIM}(log: /tmp/vigia-setup-$name.log)${NC}"; FAIL_GUI+=("$name")
         fi
     done
+    # Agrupa os 3 produtos numa pasta "Vigia" no grid de apps do GNOME.
+    if [[ $DRY_RUN -eq 0 ]] && command -v gsettings >/dev/null 2>&1; then
+        AF="org.gnome.desktop.app-folders"
+        kids=$(gsettings get "$AF" folder-children 2>/dev/null || echo "[]")
+        if [[ "$kids" != *"'Vigia'"* ]]; then
+            kids=$(python3 -c "import sys,ast; l=ast.literal_eval(sys.argv[1]) if sys.argv[1].startswith('[') else []; l.append('Vigia'); print(repr(l))" "$kids" 2>/dev/null)
+            [ -n "$kids" ] && gsettings set "$AF" folder-children "$kids" 2>/dev/null || true
+        fi
+        VF="$AF.folder:/org/gnome/desktop/app-folders/folders/Vigia/"
+        gsettings set "$VF" name 'Vigia' 2>/dev/null || true
+        gsettings set "$VF" apps "['br.com.vigia.Hub.desktop', 'br.com.vigia.Blue.desktop', 'br.com.vigia.Red.desktop']" 2>/dev/null || true
+    fi
 else
     warn "pulando instalação das interfaces."
 fi

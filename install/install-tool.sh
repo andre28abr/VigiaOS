@@ -61,6 +61,10 @@ usage() {
 }
 
 # ---- args -----------------------------------------------------------------
+# --no-icon: instala via pip mas NÃO registra .desktop/ícone (módulo embarcado).
+NO_ICON=0
+if [ "${1:-}" = "--no-icon" ]; then NO_ICON=1; shift; fi
+
 if [ $# -ne 1 ]; then
     usage
     exit 1
@@ -98,29 +102,31 @@ info "Instalando vigia-common (dependência compartilhada)..."
 info "Instalando módulo '$TOOL'..."
 (cd "$TOOL_DIR" && python3 -m pip install --user -e . -q)
 
-# ---- registra .desktop + ícone no GNOME do usuário ------------------------
-info "Registrando atalho + ícone no menu do GNOME..."
-mkdir -p "$APPS_DIR" "$ICONS_DIR"
-install -Dpm 0644 "$TOOL_DIR"/data/*.desktop "$APPS_DIR"/
-if compgen -G "$TOOL_DIR/data/*.svg" >/dev/null 2>&1; then
-    install -Dpm 0644 "$TOOL_DIR"/data/*.svg "$ICONS_DIR"/
+# ---- registra .desktop + ícone no GNOME (a não ser que --no-icon) ---------
+if [ $NO_ICON -eq 1 ]; then
+    info "Instalado SEM ícone próprio (roda embarcado no Hub)."
+else
+    info "Registrando atalho + ícone no menu do GNOME..."
+    mkdir -p "$APPS_DIR" "$ICONS_DIR"
+    install -Dpm 0644 "$TOOL_DIR"/data/*.desktop "$APPS_DIR"/
+    if compgen -G "$TOOL_DIR/data/*.svg" >/dev/null 2>&1; then
+        install -Dpm 0644 "$TOOL_DIR"/data/*.svg "$ICONS_DIR"/
+    fi
+    # Atualiza caches. gtk-update-icon-cache EXIGE um index.theme no diretório do
+    # tema; em ~/.local ele costuma faltar — e sem ele o cache não reconstrói,
+    # então ícones novos ficam invisíveis. Copia o do sistema e força rebuild.
+    HICOLOR_DIR="$HOME/.local/share/icons/hicolor"
+    [ -f "$HICOLOR_DIR/index.theme" ] || cp /usr/share/icons/hicolor/index.theme "$HICOLOR_DIR/" 2>/dev/null || true
+    update-desktop-database "$APPS_DIR" >/dev/null 2>&1 || true
+    gtk-update-icon-cache -f "$HICOLOR_DIR" >/dev/null 2>&1 || true
 fi
-
-# Atualiza caches. gtk-update-icon-cache EXIGE um index.theme no diretório do
-# tema; em ~/.local ele costuma faltar — e sem ele o cache não reconstrói, então
-# ícones novos ficam invisíveis (o GNOME mostra um ícone genérico). Copia o do
-# sistema se faltar e força o rebuild (-f).
-HICOLOR_DIR="$HOME/.local/share/icons/hicolor"
-[ -f "$HICOLOR_DIR/index.theme" ] || cp /usr/share/icons/hicolor/index.theme "$HICOLOR_DIR/" 2>/dev/null || true
-update-desktop-database "$APPS_DIR" >/dev/null 2>&1 || true
-gtk-update-icon-cache -f "$HICOLOR_DIR" >/dev/null 2>&1 || true
 
 # ---- fim ------------------------------------------------------------------
 EXEC_CMD=$(grep -m1 '^Exec=' "$TOOL_DIR"/data/*.desktop | head -1 | cut -d= -f2-)
 APP_NAME=$(grep -m1 '^Name=' "$TOOL_DIR"/data/*.desktop | head -1 | cut -d= -f2-)
 echo
-info "Pronto. '$TOOL' instalado isoladamente."
-echo "  ${DIM}• No menu do GNOME:${NC} procure por ${BOLD}${APP_NAME:-$TOOL}${NC} (tecle Super e digite)"
+info "Pronto. '$TOOL' instalado."
+[ $NO_ICON -eq 0 ] && echo "  ${DIM}• No menu do GNOME:${NC} procure por ${BOLD}${APP_NAME:-$TOOL}${NC} (tecle Super e digite)"
 echo "  ${DIM}• No terminal:${NC}      ${BOLD}${EXEC_CMD:-$TOOL}${NC}"
 echo
 echo "${DIM}Se o ícone não aparecer na hora, faça logout/login (cache do GNOME).${NC}"
