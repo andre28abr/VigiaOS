@@ -407,7 +407,7 @@ MANUAL_ENTRIES: list[ManualEntry] = [
     ManualEntry("hardening-checks", "Hardening Checks", "applications-system-symbolic"),
     ManualEntry("reports", "Reports", "document-edit-symbolic"),
     ManualEntry("file-integrity", "File Integrity", "drive-harddisk-symbolic"),
-    ManualEntry("tool-installer", "Tool Installer", "package-x-generic-symbolic"),
+    ManualEntry("tool-installer", "Atualizações", "software-update-available-symbolic"),
     ManualEntry("dns-manager", "DNS Manager", "network-server-symbolic"),
     ManualEntry("capabilities-inspector", "Capabilities Inspector", "preferences-system-symbolic"),
     ManualEntry("antivirus", "Antivirus", "security-medium-symbolic"),

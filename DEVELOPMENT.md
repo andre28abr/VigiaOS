@@ -2944,6 +2944,31 @@ Mantido de propósito: o SIEM (vigia-blue) ainda lista `rpm-ostree` entre os
 gerenciadores de pacote que **detecta** (junto de dnf/yum/dpkg/flatpak).
 Suíte: 1101 testes verdes.
 
+### 2026-06-03 — Pós-migração: instalação completa + UX dos produtos
+
+Validação na VM Fedora Workstation **ARM** (M1) + ajustes de instalação/UX:
+
+- **Modelo de instalação correto**: o GNOME mostra só os **3 produtos**
+  (Vigia Hub, VigiaBlue, VigiaRed) numa **pasta "Vigia"** (gsettings
+  app-folders); as 14 ferramentas são instaladas (pip) mas rodam
+  **embarcadas** no Hub, sem ícone solto. `bootstrap.sh` separa
+  VIGIA_PRODUCTS (com ícone) de VIGIA_MODULES (sem ícone) + cria a pasta.
+- **Instalação completa num comando**: o bootstrap compila o core Rust
+  `vigia-log` (Activity Log) e roda o `blue-deps.sh` no fim (yara, suricata,
+  volatility3, plaso, AVML, dwarf2json) → VigiaBlue 100% funcional.
+- **AVML por arquitetura**: baixa `avml-aarch64` no ARM (antes era x86 fixo).
+- **Flatpaks um a um**: um app sem build ARM (ex: Signal) não derruba o lote.
+- **chkrootkit** (e backends com .desktop próprio): escondidos do menu com
+  override NoDisplay (o binário continua — o Vigia o usa por baixo).
+- **`install/uninstall.sh`** (novo): remove o Vigia do usuário (pip + ícones +
+  pasta + estado); flags `--backends`/`--flatpaks`/`--all`.
+- **Rail "Instalador" → "Atualizações"** nos 3 produtos: vira só [Atualizações
+  + Sobre]. Removidos o Catálogo (redundante com a bolinha verde/vermelha de
+  disponibilidade por módulo, agora também no Blue/Red) e as Extensões de
+  navegador. Apagados browse.py/extensions.py/browser_extensions.py.
+
+Suíte: 1069 testes verdes.
+
 ---
 
 ## 10. Roadmap
