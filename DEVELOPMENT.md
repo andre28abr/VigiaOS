@@ -49,11 +49,11 @@ software por cima (layered + flatpak).
 advocacia** — ambiente onde clientes confiam dados sensíveis e o
 profissional precisa demonstrar diligência.
 
-**Estado atual** (2026-05-28): **15 ferramentas focadas em LGPD/escritório**
+**Estado atual** (2026-06): **14 ferramentas focadas em LGPD/escritório**
 integradas via Hub com layout master-detail-content (3 painéis) + categorias +
-modo embedded. Limpeza 2026-05-27 removeu 3 tools fora do escopo (Network
-Scanner, Firmware Analyzer, VPN Manager) e mergeou Hash Tools no File Integrity.
-Em 2026-05-28 adicionada **Deployments Manager** (rpm-ostree GUI).
+modo embedded, rodando em **Fedora Workstation** (dnf). Limpeza 2026-05-27
+removeu 3 tools fora do escopo (Network Scanner, Firmware Analyzer, VPN Manager)
+e mergeou Hash Tools no File Integrity.
 
 | # | Ferramenta | Versão | Stack | Status |
 |---|---|---|---|---|
@@ -64,16 +64,15 @@ Em 2026-05-28 adicionada **Deployments Manager** (rpm-ostree GUI).
 | 5 | **SELinux Manager** | v0.2.1 | Python + GTK4 | 🟢 6 tabs + pt-BR + audit2allow + lazy tabs |
 | 6 | **Firewall Manager** | v0.1.0 | Python + GTK4 | 🟡 Status + zones CRUD |
 | 7 | **Network Monitor** | v0.1.1 | Python + GTK4 | 🟡 Conexões + modo admin + auto-refresh smart |
-| 8 | **Hardening Checks** | v0.1.5 | Python + GTK4 | 🟢 Lynis wrapper + perfil Silverblue |
+| 8 | **Hardening Checks** | v0.1.5 | Python + GTK4 | 🟢 Lynis wrapper (auditoria de hardening) |
 | 9 | **Reports** | v0.2.7 | Python + Jinja2 + SVG | 🟢 6 modelos + gráficos SVG + selo SHA-256 + identidade + agendamento mensal |
 | 10 | **File Integrity** | v0.2.6 | Python + GTK4 | 🟢 AIDE (sistema) + Hash ad-hoc (user) — 6 tabs |
-| 11 | **Tool Installer** | v0.3.6 | Python + GTK4 | 🟢 Catálogo rpm-ostree + Extensoes navegador (FOSS) |
+| 11 | **Tool Installer** | v0.4.2 | Python + GTK4 | 🟢 Catálogo dnf (1-click) + Extensoes navegador (FOSS) |
 | 12 | **DNS Manager** | v0.4.3 | Python + GTK4 | 🟢 dnscrypt-proxy only — 11 servers curados |
 | 13 | **Capabilities Inspector** | v0.1.2 | Python + GTK4 | 🟢 getcap audit + catálogo pt-BR de 41 caps |
 | 14 | **Antivirus** | v0.1.4 | Python + GTK4 | 🟢 ClamAV wrapper — substitui clamtk |
 | 15 | **Dashboard** | v0.4.2 | Python + GTK4 + Cairo | 🟢 Tempo real + per-process I/O + alertas + inspetor syscalls + banda/processo + selo plataforma |
 | 16 | **Rootkit Scanner** | v0.2.2 | Python + GTK4 | 🟢 chkrootkit + rkhunter — pattern PreferencesGroup |
-| 17 | **Deployments Manager** | v0.1.2 | Python + GTK4 | 🟢 rpm-ostree deployments (rollback/pin/cleanup) + labels/notas LGPD |
 
 **Removidas na limpeza 2026-05-27** (foco LGPD/escritorio):
 - ~~Network Scanner (nmap)~~ — fora do escopo + risco etico
@@ -86,20 +85,20 @@ Em 2026-05-28 adicionada **Deployments Manager** (rpm-ostree GUI).
 
 ---
 
-## 2. Evolução: v1 → v2 → toolkit completo
+## 2. Evolução do projeto
 
-### 2.1 v1 (BlueBuild distro) → v2 (toolkit) — pivot em 2026-05-22
+### 2.1 Suíte de ferramentas sobre Fedora vanilla
 
-A **v1** era uma distro completa buildada via BlueBuild — imagem container
-publicada no GHCR, usuário rebasava com `rpm-ostree rebase`. Funcionava mas
-trazia custos: manter pipeline de imagem (cosign, GHCR, runners ARM), brigar
-com upstream Silverblue a cada release, e bug-surface próprio (theme, dconf,
-GTK CSS — todos foram fontes de erros).
+O VigiaOS é uma **suíte de ferramentas** (não uma distro): em vez de manter um
+sistema custom, entrega GUIs que rodam sobre o **Fedora vanilla**, deixando o
+sistema-base por conta da Red Hat e construindo só o diferencial por cima.
+Menos custo de manutenção, mais valor entregue.
 
-A **v2** elimina a imagem e foca no que diferencia: ferramentas próprias
-rodando sobre Silverblue vanilla. A v1 está preservada em
-[`legacy/v1-distro`](https://github.com/andre28abr/VigiaOS/tree/legacy/v1-distro)
-para consulta.
+> **Migração de plataforma (2026-06)**: o projeto mirava o **Fedora Silverblue**
+> (atômico/imutável), mas **migrou de vez para o Fedora Workstation**. Motivo
+> técnico: o ferramental de forense (Volatility, plaso, símbolos de kernel) e a
+> velocidade de iteração sofrem no modelo atômico — instalar uma lib exige
+> toolbox e reboot. No Workstation tudo instala direto com `dnf`, na hora.
 
 ### 2.2 Expansão do toolkit (2026-05-22 a 2026-05-25)
 
@@ -253,7 +252,6 @@ nav fina    sidebar média          content rico
 - `monitoramento` — Dashboard, Activity Log, NetMon
 - `privacidade` — Privacy Controls, DNS
 - `defesa` — SELinux, Firewall, Hardening Checks, File Integrity, Capabilities, Rootkit Scanner, Antivirus
-- `sistema` — Deployments Manager
 - `relatorios` — Reports
 
 **Tool Installer** (categoria à parte, ícone fixo na nav fina): aparece como
@@ -488,11 +486,10 @@ baseline-diff de diretórios em escopo de usuário — fusão do antigo Hash Too
 Sobre. As 3 últimas (Hash/Verificar/Baseline) vieram do merge com Hash Tools —
 escopo de usuário, sem root, complementam o AIDE de sistema.
 
-**Perfil Silverblue customizado** (`3bc9057`): AIDE padrão do Fedora vasculha
-`/usr` que é read-only no Silverblue (ruído inútil). Perfil custom foca em:
-- `/etc` (configs mutáveis)
-- `/root` (home do admin)
-- `/var/spool/cron`, `/etc/crontab`, `/etc/cron.d`
+**Perfil AIDE**: usa o config padrão do sistema (`/etc/aide.conf`), que cobre
+`/usr`, `/boot`, `/etc`, binários — cobertura completa no Fedora Workstation
+(todos esses paths são mutáveis e devem ser monitorados). *(O antigo "perfil
+Silverblue", que excluía `/usr`/`/boot`, foi removido na migração 2026-06.)*
 
 **Exclude path** (polish v0.2, `e5011e4`): `/etc/systemd/system.control/` —
 arquivos gerados pelo systemd ao aplicar `CPUWeight`/`MemoryLow` em slices,
@@ -741,31 +738,6 @@ thread + `GLib.idle_add` (igual Antivirus). Saída estilo terminal.
 
 ---
 
-### 5.17 Vigia Deployments Manager (`tools/deployments-manager/`, v0.1.2)
-
-**Função**: GUI para os **deployments do `rpm-ostree`** — os snapshots
-imutáveis que aparecem no GRUB. Lista (atual/rollback/staged/pinados),
-rollback, pin/unpin, cleanup e alerta de `/boot` cheio.
-
-**Stack**: Python + PyGObject + GTK4 + libadwaita.
-
-**Tabs**: Deployments (lista + ações) + Limpeza (cleanup + alerta `/boot`) +
-Sobre.
-
-**Operações** (elevadas via `pkexec`): `rpm-ostree rollback`,
-`rpm-ostree cleanup -p -r -m`, pin/unpin. Alerta de `/boot`: banner amarelo
->70%, vermelho >85%.
-
-**Labels + notas LGPD**: rpm-ostree não suporta nome custom nativo; o Vigia
-guarda labels/notas por checksum em `~/.config/vigia-deployments/state.json`
-(`chmod 0600`) — display-only, como evidência de processo de mudanças.
-
-**Histórico nativo**: checksums + timestamps do próprio rpm-ostree.
-
-**Wrapper de**: `rpm-ostree`.
-
----
-
 ## 6. Padrões e convenções comuns
 
 ### 6.1 Stack consistente
@@ -984,12 +956,12 @@ done
 
 ---
 
-## 8. Setup numa máquina nova (Silverblue limpa)
+## 8. Setup numa máquina nova (Fedora Workstation)
 
-### 8.1 Layer dependencies via rpm-ostree
+### 8.1 Dependências via dnf
 
 ```bash
-sudo rpm-ostree install \
+sudo dnf install -y \
     git rust cargo \
     python3-gobject python3-pip \
     libadwaita gtk4 \
@@ -997,7 +969,7 @@ sudo rpm-ostree install \
     dnscrypt-proxy \
     clamav clamav-update \
     chkrootkit rkhunter
-systemctl reboot
+# dnf aplica na hora — sem reboot.
 
 # Nota: o hashing ad-hoc (aba Hash do File Integrity) usa hashlib do Python
 # puro — nao precisa instalar nada. AIDE cuida do baseline de integridade.
@@ -1022,7 +994,7 @@ sudo install -m 0755 target/release/vigia-log /usr/local/bin/vigia-log
 for d in vigia-hub privacy-controls selinux-gui firewall-gui netmon-gui \
          hardening-checks reports file-integrity tool-installer \
          dns-manager capabilities-inspector activity-log-gui \
-         antivirus dashboard rootkit-scanner deployments-manager; do
+         antivirus dashboard rootkit-scanner; do
   (cd ../$d && pip install --user -e .)
 done
 
@@ -1030,8 +1002,7 @@ done
 for tool in vigia-hub vigia-privacy vigia-selinux vigia-firewall vigia-netmon \
             vigia-hardening vigia-reports vigia-integrity vigia-installer \
             vigia-dns vigia-caps vigia-log-gui \
-            vigia-antivirus vigia-dashboard vigia-rootkit \
-            vigia-deployments; do
+            vigia-antivirus vigia-dashboard vigia-rootkit; do
   sudo ln -sf "$HOME/.local/bin/$tool" /usr/local/bin/$tool
 done
 
@@ -1043,19 +1014,16 @@ gtk-update-icon-cache ~/.local/share/icons/hicolor 2>/dev/null || true
 update-desktop-database ~/.local/share/applications 2>/dev/null || true
 ```
 
-### 8.3 install/bootstrap.sh (one-shot, auto-detecta a plataforma)
+### 8.3 install/bootstrap.sh (one-shot, Fedora Workstation)
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/andre28abr/VigiaOS/main/install/bootstrap.sh | bash
-# Em sistema atômico: systemctl reboot ao final
 ```
 
-Detecta atomic (`/run/ostree-booted`) vs Workstation e usa `rpm-ostree`
-ou `dnf`. Instala deps + backends (lynis/clamav/…) + clona o repo + pip
-installs as 16 tools + registra `.desktop`/ícones no GNOME + Flatpaks de
-privacidade. **Não liga serviços** (tor/fail2ban/dnscrypt off — opt-in
-nas tools). Guias por plataforma em `install/silverblue/` e
-`install/workstation/`.
+Instala deps + backends (lynis/clamav/…) via `dnf` + clona o repo + pip
+installs as 14 tools + registra `.desktop`/ícones no GNOME + Flatpaks de
+privacidade. dnf aplica na hora — **sem reboot**. **Não liga serviços**
+(tor/fail2ban/dnscrypt off — opt-in nas tools).
 
 ---
 
@@ -1063,9 +1031,8 @@ nas tools). Guias por plataforma em `install/silverblue/` e
 
 > Ordem cronológica. Cada entrada cobre uma "release" ou iteração significativa.
 
-### 2026-05-22 — Pivot v1 → v2 (distro → toolkit)
-- Branch `legacy/v1-distro` preserva v1 (BlueBuild image)
-- `main` resetado para layout toolkit
+### 2026-05-22 — Início do toolkit
+- `main` com o layout de toolkit (suíte de ferramentas sobre Fedora vanilla)
 - `bootstrap.sh` substituiu `install.sh`
 - Activity Log começou como primeira ferramenta
 
@@ -2950,6 +2917,33 @@ Volatility 3** (upstream), não o Vigia nem os símbolos. Decisões:
 Conclusão prática: o pipeline (captura + símbolos) **funciona**; o gargalo é o
 motor ARM64 do Volatility. vigia-blue 0.0.25.
 
+### 2026-06-03 — Migração Silverblue → Fedora Workstation (dnf-only)
+
+Pivô de plataforma: o VigiaOS abandonou o Fedora Atomic/Silverblue e passou a
+mirar **só o Fedora Workstation** (dnf). Motivo: o ferramental de forense
+(Volatility, plaso, símbolos de kernel) e a velocidade de iteração sofrem no
+modelo atômico (toolbox + reboot pra cada lib). No Workstation tudo instala
+direto com `dnf`, na hora.
+
+Em 6 fases (commits `e1ee4e1`→`02fa84b`):
+1. `platform.py` → Workstation/dnf (virada de chave; `is_atomic()` removida de
+   vez quando os chamadores zeraram).
+2. **Tool Installer** dnf-only — removido o conceito de "mudanças pendentes /
+   reboot pra aplicar" (era rpm-ostree).
+3. **Deployments Manager removido** — gerenciava deployments rpm-ostree, que
+   não existem no Workstation. (Restauração no Workstation = snapshot btrfs;
+   reavaliar como módulo futuro.)
+4. Código morto rpm-ostree limpo em todos os tools (tray, dashboard, scripts de
+   install, **perfil Silverblue do File Integrity** → agora AIDE padrão, que
+   cobre /usr+/boot) + textos de UI Workstation/dnf.
+5. Docs (README/DEVELOPMENT/AUTHOR/manuais) Workstation-first + esta narrativa;
+   `install/{silverblue,workstation}/` removidos (uma plataforma só).
+6. Limpeza de branches/tags + validação em instalação limpa x86_64.
+
+Mantido de propósito: o SIEM (vigia-blue) ainda lista `rpm-ostree` entre os
+gerenciadores de pacote que **detecta** (junto de dnf/yum/dpkg/flatpak).
+Suíte: 1101 testes verdes.
+
 ---
 
 ## 10. Roadmap
@@ -3219,13 +3213,10 @@ shell script que roda **antes**: atualiza o sistema + instala tudo.
 André: verificar se o Hub roda também no **Fedora Workstation
 tradicional** (dnf), e fazer o mesmo script de instalação.
 
-- **Hoje**: **atomic-only**. `bootstrap.sh` faz `exit 1` se não achar
-  `rpm-ostree`. **24 arquivos .py** chamam `rpm-ostree`. **Não existe
-  detecção de distro** em lugar nenhum.
-- **Bloqueios reais**: **Deployments Manager** é intrinsecamente
-  atômico (deployments rpm-ostree não existem no Workstation). Tool
-  Installer usa `pkexec rpm-ostree install` (+ reboot) — no Workstation
-  seria `dnf install` (sem reboot, sem tab Pendentes).
+- **✅ Concluído (migração 2026-06)**: o VigiaOS roda **só no Fedora
+  Workstation** (dnf). O Deployments Manager (atômico) foi removido; o Tool
+  Installer usa `pkexec dnf install -y` (sem reboot, sem aba Pendentes); os
+  caminhos rpm-ostree saíram do código. Ver §9 e §2.1.
 - **Trabalho**: (a) helper `is_atomic()` em `vigia-common` (checar
   `/run/ostree-booted` ou presença de `rpm-ostree`); (b) abstrair o
   backend de install (rpm-ostree ↔ dnf); (c) esconder/adaptar tools
@@ -3611,7 +3602,7 @@ mesmo pkexec.
 
 ### AIDE: 10+ "modificações" em `/etc/systemd/system.control/`
 Bug histórico (corrigido em v0.1.3): arquivos voláteis do systemd.
-Solução foi excluir do perfil Silverblue.
+Solução foi excluir esses paths voláteis do AIDE.
 
 ### VPN dialog: não consigo colar com Ctrl+V
 Bug histórico (corrigido em v0.1.1 do VPN Manager): TextView abria sem
@@ -3646,8 +3637,7 @@ pip install --user -e .
 for tool in vigia-hub vigia-privacy vigia-selinux vigia-firewall vigia-netmon \
             vigia-hardening vigia-reports vigia-integrity vigia-installer \
             vigia-dns vigia-caps vigia-log-gui \
-            vigia-antivirus vigia-dashboard vigia-rootkit \
-            vigia-deployments; do
+            vigia-antivirus vigia-dashboard vigia-rootkit; do
   sudo ln -sf "$HOME/.local/bin/$tool" /usr/local/bin/$tool
 done
 
