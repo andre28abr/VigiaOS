@@ -544,7 +544,7 @@ def run_product(meta: ProductMeta, modules: list[Module],
             entries = [
                 ("modulos", "Módulos", "view-grid-symbolic"),
                 ("instalador", "Atualizações", "software-update-available-symbolic"),
-                ("config", "Config.", "preferences-system-symbolic"),
+                ("config", "Configurações", "preferences-system-symbolic"),
                 ("ajuda", "Ajuda", "help-browser-symbolic"),
                 ("sobre", "Sobre", "help-about-symbolic"),
             ]
@@ -564,6 +564,8 @@ def run_product(meta: ProductMeta, modules: list[Module],
                 lbl = Gtk.Label(label=label)
                 lbl.add_css_class("caption")
                 lbl.set_halign(Gtk.Align.CENTER)
+                lbl.set_wrap(True)
+                lbl.set_justify(Gtk.Justification.CENTER)
                 inner.append(lbl)
                 row.set_child(inner)
                 nav.append(row)
