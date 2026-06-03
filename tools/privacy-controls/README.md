@@ -43,12 +43,11 @@ Quando você flipa um toggle de **Rede**:
 - v0.4 vai mover para D-Bus service + polkit policy com `auth_admin_keep` (cache ~5min)
 - DNS over TLS toggle fica para v0.4 (mais complexo, precisa editar arquivo de config + restart resolved)
 
-## Setup na VM (Silverblue)
+## Setup na VM (Fedora Workstation)
 
-PyGObject e libadwaita ja vem com GNOME no Silverblue. Se faltar:
+PyGObject e libadwaita ja vem com GNOME no Fedora Workstation. Se faltar:
 ```bash
-sudo rpm-ostree install python3-gobject libadwaita
-systemctl reboot
+sudo dnf install python3-gobject libadwaita
 ```
 
 ### Opcao A — rodar direto sem instalar (mais rapido para testar)

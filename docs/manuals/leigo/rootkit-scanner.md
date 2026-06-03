@@ -76,7 +76,7 @@ máximo é perder uns minutos de espera.
 **Limpo** (tudo verde) — nenhum sinal de rootkit. Sistema OK.
 
 **Warning** (amarelo) — **possível** falso positivo. Causas comuns:
-- Você fez `rpm-ostree upgrade` recente e alguns arquivos mudaram
+- Você fez `sudo dnf upgrade` recente e alguns arquivos mudaram
 - Você tem drivers proprietários (NVIDIA, VirtualBox) instalados
 - Sua configuração SSH é diferente do padrão (pode estar OK)
 
@@ -90,8 +90,6 @@ Se aparecer:
 4. **Compare com o File Integrity** (AIDE) — outra tool do Vigia que
    vê mudanças em arquivos importantes.
 5. **Considere reinstalar o sistema** se realmente foi comprometido.
-   Em sistemas atômicos (Silverblue), isso pode ser facilitado pelo
-   **Deployments Manager** (voltar pra deployment anterior).
 
 **Importante**: warnings são comuns e muitas vezes inofensivos. Não
 entre em pânico. Confirme com o outro scanner e com o File Integrity
@@ -110,7 +108,7 @@ sério.
 
 Se **só um** acusa, é provavelmente **falso positivo** — confirma
 checando o nome do teste no Google. Muitos warnings no rkhunter
-são "esperados" em sistemas modernos (Silverblue, Bluefin, etc).
+são "esperados" em sistemas Linux modernos.
 
 E **mantenha a base do rkhunter atualizada** rodando periodicamente
 no terminal:

@@ -21,8 +21,8 @@ a partir de `journalctl`, `last` e `lastb` — pensado para auditoria LGPD.
 
 > Nota sobre WeasyPrint: o projeto explicitamente **não** usa
 > WeasyPrint/ReportLab para gerar PDF nativamente. A racional está no
-> `tabs/about.py`: o stack (libcairo+pango+gdk-pixbuf) é problemático em
-> Silverblue. O navegador imprime o mesmo HTML com fidelidade idêntica.
+> `tabs/about.py`: o stack (libcairo+pango+gdk-pixbuf) é chato de instalar
+> e manter. O navegador imprime o mesmo HTML com fidelidade idêntica.
 
 ## Arquitetura interna
 

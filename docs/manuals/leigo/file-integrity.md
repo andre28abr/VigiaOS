@@ -64,16 +64,12 @@ grandes (o resultado é o mesmo).
 ## O que cada parte faz
 
 - **Baseline**: é a "foto" inicial. Sem ela, não há o que comparar. Ele
-  guarda hashes SHA256 de todos os arquivos do sistema (com o perfil
-  Silverblue, foca em `/etc`, `/root`, e cron jobs).
+  guarda hashes SHA256 de todos os arquivos do sistema (`/usr`, `/boot`,
+  `/etc`, `/root`, e cron jobs — cobertura completa).
 - **Verificar**: compara o estado atual com a foto. Se zero diferenças,
   está tudo certo.
 - **Atualizar baseline**: depois de uma atualização **legítima** do
   sistema, você confirma "isso foi eu" e tira uma foto nova.
-- **Perfil Silverblue**: a ferramenta vem com um modo otimizado pro
-  Fedora Silverblue (que é o sistema do Vigia). Sem ele, o AIDE encheria
-  você de alarmes falsos a cada atualização. **Recomendado: ligar o
-  perfil Silverblue.**
 
 ## Posso quebrar alguma coisa?
 
@@ -96,10 +92,9 @@ baseline" pra aceitar.
 **Crie o baseline assim que instalar o Vigia, antes de começar a usar o
 computador pra valer.** Assim a foto inicial pega o sistema limpo.
 
-E **escolha o perfil Silverblue** na aba Status. Sem ele, você vai
-levar centenas de alarmes falsos a cada atualização do sistema, e vai
-desistir de usar a ferramenta. Com o perfil Silverblue, você só é
-alertado quando algo realmente importa.
+Depois de cada atualização do sistema, lembre de **validar as mudanças e
+refazer o baseline** — assim você só é alertado quando algo realmente
+importa.
 
 Pra advogados: a aba **Baseline** (hash de pasta) é ótima pra
 **cadeia de custódia**. Antes de mandar evidência pra outro escritório,

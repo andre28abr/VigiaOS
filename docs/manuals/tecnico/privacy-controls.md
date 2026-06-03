@@ -90,7 +90,7 @@ Versão + lista de pacotes wrappados (`dconf`, `systemctl`) + onde ficam os dado
 
 ## Quando usar
 
-- Você **acabou de instalar** o Silverblue e quer ajustar privacidade em **um lugar só** (em vez de Settings + dconf-editor + systemctl)
+- Você **acabou de instalar** o Fedora Workstation e quer ajustar privacidade em **um lugar só** (em vez de Settings + dconf-editor + systemctl)
 - Você vai usar a máquina em escritório com LGPD e precisa ligar firewall + esconder notificações na lock screen
 - Você quer demonstrar para auditoria que telemetria GNOME está off
 - Você vai conectar em rede pública e quer **desligar SSH** + ligar **firewall** rápido

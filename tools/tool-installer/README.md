@@ -1,14 +1,14 @@
 # Vigia Tool Installer
 
-Catalogo curado de **ferramentas de seguranca** para Fedora Silverblue, com **one-click install** via `rpm-ostree`. Parte do [VigiaOS](../../README.md).
+Catalogo curado de **ferramentas de seguranca** para Fedora Workstation, com **one-click install** via `dnf`. Parte do [VigiaOS](../../README.md).
 
 ## Por que existe
 
-Silverblue e' atomico: `dnf install` nao funciona — voce usa `rpm-ostree install` que cria uma camada e precisa de reboot. Os pacotes ficam pendentes ate reiniciar. Essa tool da:
+Instalar ferramentas de seguranca pela CLI exige lembrar nomes de pacote e abrir terminal. Essa tool da:
 
 - **Catalogo curado** (16 ferramentas) com descricao em pt-BR e contexto ("por que voce quer isso")
-- **Status visual** por item: disponivel / instalado / instalacao pendente / remocao pendente
-- **One-click**: clica *Instalar* → polkit pede senha 1x → rpm-ostree stages a mudanca → tab *Pendentes* mostra com botao *Reiniciar*
+- **Status visual** por item: disponivel / instalado
+- **One-click**: clica *Instalar* → polkit pede senha 1x → `dnf install -y` aplica na hora (sem reboot)
 - Sem precisar abrir terminal nem lembrar nomes de pacote
 
 ## Categorias do catalogo
@@ -36,11 +36,11 @@ Ou via Vigia Hub.
 ## Fluxo tipico
 
 1. **Catalogo** → procura uma ferramenta (search funciona por nome, pacote, descricao, "why")
-2. Clica `Instalar` → polkit pede senha (1x) → progress pulsante 1-5 min (rpm-ostree resolve deps + baixa + layer)
-3. Status vira **PENDENTE** + badge amber
-4. Vai pra aba **Pendentes** → ve a lista de mudancas pending
-5. Clica `Reiniciar agora` → reboot
-6. Apos boot, ferramenta esta disponivel no PATH
+2. Clica `Instalar` → polkit pede senha (1x) → progress pulsante 1-5 min (dnf resolve deps + baixa + instala)
+3. `dnf install -y` aplica na hora — status vira **INSTALADO**
+4. Ferramenta ja esta disponivel no PATH (sem reboot)
+
+A aba **Atualizacoes** checa updates do sistema (`dnf check-update`) e aplica em 1 clique (`dnf upgrade -y`), tambem na hora.
 
 ## Estrutura
 
@@ -53,27 +53,27 @@ tools/tool-installer/
 └── src/vigia_installer/
     ├── __init__.py / __main__.py / app.py
     ├── catalog.py          # CatalogEntry dataclass + lista curada
-    ├── backend.py          # rpm-ostree wrapper
+    ├── backend.py          # dnf wrapper (install/remove/check-update/upgrade)
     ├── window.py
     └── tabs/
         ├── _helpers.py
         ├── browse.py       # catalogo categorizado + install/uninstall
-        └── pending.py      # hero card de pending + reboot button
+        └── updates.py      # hero card de atualizacoes + dnf upgrade
 ```
 
 ## Atencao
 
-- `rpm-ostree install` modifica o sistema em camadas. **Sempre precisa reboot** para aplicar.
+- `dnf install` aplica a mudanca **na hora**, sem reboot.
 - Instalar muitos pacotes de uma vez **e' mais eficiente** que um por um — proximas versoes terao multi-select.
-- Para reverter uma camada inteira sem desinstalar pacotes um por um: `rpm-ostree reset` (volta pra imagem base).
-- Para ver o que esta layered no momento: `rpm-ostree status` na CLI.
+- Para desinstalar um pacote: `sudo dnf remove <pkg>` (ou o botao *Remover* no catalogo).
+- Para ver o historico de transacoes: `dnf history` na CLI.
 
 ## Roadmap (v0.2+)
 
-- **Multi-select** com checkboxes + botao "Instalar selecionadas" (1 transacao rpm-ostree)
+- **Multi-select** com checkboxes + botao "Instalar selecionadas" (1 transacao dnf)
 - Detecao de **dependencias recomendadas** (ex: clamav + clamtk juntos)
 - **Search server-side** opcional (consultar dnf repos para pacotes nao curados)
-- **Estatisticas**: tempo medio de instalacao, espaco usado por camada
+- **Estatisticas**: tempo medio de instalacao, espaco usado por pacote
 - **Snapshots**: salvar uma combinacao instalada como "preset" (ex: preset "Forense", "Penetracao")
-- **Verificacao de assinatura GPG** explicita antes de instalar (rpm-ostree ja faz, mas mostrar pro user)
+- **Verificacao de assinatura GPG** explicita antes de instalar (dnf ja faz, mas mostrar pro user)
 - Integracao com **Activity Log**: mostra na timeline quando um install foi feito

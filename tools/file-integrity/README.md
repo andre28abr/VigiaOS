@@ -22,8 +22,7 @@ Util para **escritorio de advocacia** demonstrar postura LGPD (controle de integ
 ## Pre-requisitos
 
 ```bash
-rpm-ostree install aide
-systemctl reboot
+sudo dnf install aide
 ```
 
 ## Como rodar
@@ -40,7 +39,7 @@ Ou via Vigia Hub.
 
 1. **Primeira vez**: aba `Status` → botao `Criar baseline` (demora 5-30 min dependendo do sistema)
 2. **Periodicamente**: botao `Verificar` (3-10 min). Se zerou → tudo integro. Se mudou → ver aba `Mudancas`.
-3. **Apos `rpm-ostree upgrade`**: as mudancas serao esperadas → botao `Re-baseline` aceita
+3. **Apos `sudo dnf upgrade`**: as mudancas serao esperadas → botao `Re-baseline` aceita
 4. **Mudancas inesperadas**: NAO clique re-baseline. Investigue antes (compare com Activity Log, veja sudo invocations no Reports).
 
 ## Estrutura

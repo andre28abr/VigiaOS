@@ -169,7 +169,7 @@ def _run_scan_streaming(
 - **Após comportamento anômalo** do sistema (alto uso de CPU sem causa,
   conexões de rede estranhas, arquivos modificados).
 - **Periodicamente** (1x/mês) como audit baseline.
-- **Após `rpm-ostree upgrade` major** ou rebase pra outra variant.
+- **Após `sudo dnf upgrade` major** do sistema.
 - **Combinado com File Integrity** (AIDE) pra cross-check de mudanças
   em binários.
 
@@ -177,7 +177,7 @@ def _run_scan_streaming(
 
 - **Limpo**: nenhum sinal. Sistema OK.
 - **Warning**: possível falso positivo. Causas comuns:
-  - Arquivos modificados após `rpm-ostree upgrade`
+  - Arquivos modificados após `sudo dnf upgrade`
   - Módulos proprietários (NVIDIA, VirtualBox)
   - Configs SSH OK no contexto específico
 - **Infected**: alta probabilidade de comprometimento.
@@ -192,8 +192,6 @@ def _run_scan_streaming(
   — não pegam rootkits zero-day ou customizados.
 - rkhunter gera **muitos falsos-positivos** em sistemas modernos
   (esperado — atualize `rkhunter.dat` periodicamente).
-- Em Silverblue, alguns checks de filesystem reportam diff porque
-  rootfs é imutável — esperado.
 - Scans precisam de pkexec a cada execução (sem cache de auth).
 - Limite de `raw_output` salvo: 1 MB em memória, 256 KB persistido.
 

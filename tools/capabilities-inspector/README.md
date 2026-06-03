@@ -17,7 +17,7 @@ Auditoria de **Linux capabilities** (via `getcap`) com UI GTK4. Parte do [VigiaO
 which getcap
 ```
 
-`getcap` faz parte do pacote `libcap` que vem por padrao em Fedora Silverblue.
+`getcap` faz parte do pacote `libcap` que vem por padrao em Fedora Workstation.
 
 ## Como rodar
 

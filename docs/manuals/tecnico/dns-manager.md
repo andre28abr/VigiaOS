@@ -162,8 +162,8 @@ systemctl enable --now systemd-resolved
 
 ## Limitações conhecidas
 
-- Requer `dnscrypt-proxy` instalado (rpm-ostree -> reboot). Hero mostra
-  "não instalado" se ausente.
+- Requer `dnscrypt-proxy` instalado (via `dnf` ou Tool Installer). Hero
+  mostra "não instalado" se ausente.
 - Editar `/etc/dnscrypt-proxy/dnscrypt-proxy.toml` direto durante uso
   da tool pode causar diff em key insertion (Vigia usa regex line-based,
   não re-serializa o TOML inteiro).

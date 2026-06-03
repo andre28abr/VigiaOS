@@ -104,10 +104,9 @@ você vai precisar passar pelo **Instalador de Ferramentas** primeiro.
 Pra um escritório de advocacia que precisa cumprir LGPD:
 
 1. **Instalador de Ferramentas** -> instale `dnscrypt-proxy`
-2. Reinicie.
-3. **DNS Manager** -> Status -> "Ativar dnscrypt-proxy".
-4. **DNS Manager** -> Provedores -> "Mullvad AdBlock". Aplicar.
-5. Pronto. Tracking corporate bloqueado, queries DNS criptografadas e
+2. **DNS Manager** -> Status -> "Ativar dnscrypt-proxy".
+3. **DNS Manager** -> Provedores -> "Mullvad AdBlock". Aplicar.
+4. Pronto. Tracking corporate bloqueado, queries DNS criptografadas e
    anônimas, sem precisar instalar Pi-hole em hardware separado.
 
 Pra testar se está funcionando: visite **https://dnsleaktest.com**.

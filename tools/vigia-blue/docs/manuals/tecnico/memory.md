@@ -28,7 +28,7 @@ tools/vigia-blue/docs/manuals/{leigo,tecnico}/memory.md
   `./install/blue-deps.sh` baixa o binário oficial da Microsoft.
 - **dwarf2json** (`dwarf2json`) — gera os **símbolos (ISF)** pra análise de dump
   Linux. `./install/blue-deps.sh` instala via `go install` (precisa de Go). No
-  Silverblue, o caminho mais limpo é gerar os símbolos num toolbox.
+  Fedora Workstation, instala direto via `sudo dnf install -y golang dnf-plugins-core`.
 
 ## Backend (`backend.py`)
 
@@ -70,7 +70,8 @@ Toca o sistema:
 - **`generate_symbols(dump) -> SymbolsResult`** — se `dwarf2json` + vmlinux
   existem, gera o ISF (`dwarf2json linux --elf …` com stdout→arquivo, sem shell)
   em `~/teste/memory/symbols/linux/<release>.json`; senão devolve `steps`
-  (passo a passo com toolbox). `build_vol_cmd(..., symbols_dir=SYMBOLS_DIR)`
+  (passo a passo via `dnf`: `golang` + `dwarf2json` + `debuginfo-install
+  kernel-core`). `build_vol_cmd(..., symbols_dir=SYMBOLS_DIR)`
   passa `-s` pro vol achar o ISF gerado. A GUI mostra o botão **Preparar
   símbolos** quando o erro é de símbolos.
 
@@ -97,8 +98,8 @@ Toca o sistema:
 2. Render em **tabela real** (`Gtk.ColumnView`) com ordenação por coluna.
 3. **Símbolos (ISF) sem debuginfo** — o assistente `generate_symbols` já gera o
    ISF quando há dwarf2json + vmlinux, e guia o resto. Falta o caminho que
-   dispensa o `kernel-debuginfo` (pesado no Silverblue): gerar o ISF a partir do
-   **BTF** (`/sys/kernel/btf/vmlinux`) — fecharia o ciclo sem toolbox.
+   dispensa o `kernel-debuginfo` (pesado): gerar o ISF a partir do
+   **BTF** (`/sys/kernel/btf/vmlinux`) — fecharia o ciclo sem precisar do debuginfo.
 4. ~~Capturar dump local (AVML + pkexec)~~ — **feito** (botão Capturar).
 5. ~~Assistente de símbolos (ISF) p/ Linux~~ — **feito** (botão Preparar símbolos;
    auto-gera com dwarf2json/debuginfo ou mostra o passo a passo).
