@@ -3360,6 +3360,14 @@ exemplo seguros** que exercitam **todas as funções** do Vigia (Hub + Blue + Re
   `--samples`), gravando em `~/teste/` (fora do repo, padrão do projeto).
 - **Objetivo**: alguém abre o Vigia, instala o pack, e **vê cada função operando**
   sem precisar caçar dados reais — ótimo p/ demonstração ao escritório/cliente.
+- **README do pack, em 2 registros** (padrão dos manuais do projeto): cada
+  artefato/teste documentado com **o que ele faz** + **o que o usuário deve
+  esperar** (qual resultado aparece na tela). **Duas versões**: uma **técnica**
+  e uma **leiga (facilitada)**.
+  - Ex. leigo: "o `eicar.txt` é um falso-malware de teste — ao escanear com o
+    Vigia YARA, deve aparecer **1 alerta vermelho**".
+  - Ex. técnico: assinatura/EICAR, regra que casa, plugin/CLI por trás, caminho
+    do artefato, saída esperada.
 - **Status: planejado — fazer POR ÚLTIMO**, quando tudo estiver pronto.
 
 ---
