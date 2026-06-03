@@ -42,7 +42,10 @@ hr()    { echo "${DIM}--------------------------------------------------${NC}"; 
 
 # ---- detecta plataforma ---------------------------------------------------
 if [ -f /run/ostree-booted ]; then
-    ATOMIC=1; PLATFORM="Fedora Atomic (Silverblue/Kinoite/…)"; PM="rpm-ostree"
+    ATOMIC=1; PM="rpm-ostree"
+    # variante REAL (Silverblue/Kinoite/…) do /etc/os-release
+    _V="$(sed -n 's/^VARIANT=//p' /etc/os-release 2>/dev/null | tr -d '"' | head -1)"
+    PLATFORM="Fedora ${_V:-Atomic} (atômico)"
 else
     ATOMIC=0; PLATFORM="Fedora Workstation (tradicional)"; PM="dnf"
 fi

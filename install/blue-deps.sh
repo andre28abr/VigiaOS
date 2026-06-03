@@ -63,7 +63,11 @@ declare -a DONE=() SKIPPED=() FAILED=()
 # ---- plataforma ------------------------------------------------------------
 if [[ -f /run/ostree-booted ]]; then
     ATOMIC=1
-    info "Sistema ${BOLD}atômico${NC} detectado (Silverblue/Kinoite/…) — usando rpm-ostree."
+    # Variante REAL (Silverblue/Kinoite/Bluefin/…) lida do /etc/os-release —
+    # não é detecção de desktop, é só o rótulo do sistema.
+    VARIANT_LABEL="$(sed -n 's/^VARIANT=//p' /etc/os-release 2>/dev/null | tr -d '"' | head -1)"
+    [[ -z "$VARIANT_LABEL" ]] && VARIANT_LABEL="Atomic"
+    info "Sistema ${BOLD}atômico${NC} detectado: ${BOLD}${VARIANT_LABEL}${NC} — usando rpm-ostree."
 else
     ATOMIC=0
     info "Sistema ${BOLD}tradicional${NC} detectado — usando dnf."
