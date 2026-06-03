@@ -2,8 +2,8 @@
 
 `run(cmd, timeout)` roda um comando capturando stdout/stderr e NUNCA levanta:
 timeout ou binário ausente viram `(1, "", "")`. Centraliza o padrão idêntico
-que estava duplicado em ~8 backends (antivirus, capabilities, deployments,
-rootkit, dns, reports).
+que estava duplicado em ~7 backends (antivirus, capabilities, rootkit,
+dns, reports).
 
 Convenção de segurança do projeto: `cmd` é SEMPRE uma lista de argumentos
 (nunca string com `shell=True`) — sem superfície de injeção de shell.

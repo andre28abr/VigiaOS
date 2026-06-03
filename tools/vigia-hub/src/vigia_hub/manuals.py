@@ -412,5 +412,4 @@ MANUAL_ENTRIES: list[ManualEntry] = [
     ManualEntry("capabilities-inspector", "Capabilities Inspector", "preferences-system-symbolic"),
     ManualEntry("antivirus", "Antivirus", "security-medium-symbolic"),
     ManualEntry("rootkit-scanner", "Rootkit Scanner", "dialog-warning-symbolic"),
-    ManualEntry("deployments-manager", "Deployments Manager", "drive-multidisk-symbolic"),
 ]

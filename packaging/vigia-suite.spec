@@ -7,7 +7,7 @@
 Name:           %{pkg_name}
 Version:        0.2.0
 Release:        1%{?dist}
-Summary:        Suite completa de seguranca para Fedora Atomic (metapackage)
+Summary:        Suite completa de seguranca para Fedora Workstation (metapackage)
 License:        Apache-2.0
 URL:            https://github.com/andre28abr/VigiaOS
 Source0:        %{url}/archive/v%{version}.tar.gz#/VigiaOS-%{version}.tar.gz
@@ -39,9 +39,6 @@ Requires:       vigia-caps >= 0.1.0
 Requires:       vigia-antivirus >= 0.1.1
 Requires:       vigia-rootkit >= 0.2.0
 
-# Sistema
-Requires:       vigia-deployments >= 0.1.1
-
 # Relatorios
 Requires:       vigia-reports >= 0.1.1
 
@@ -49,8 +46,8 @@ Requires:       vigia-reports >= 0.1.1
 Requires:       vigia-installer >= 0.1.0
 
 %description
-VigiaOS — metapackage que instala o Vigia Hub + as 14 ferramentas de
-seguranca/monitoramento + o Tool Installer (16 apps no total) numa
+VigiaOS — metapackage que instala o Vigia Hub + as 13 ferramentas de
+seguranca/monitoramento + o Tool Installer (15 apps no total) numa
 unica operacao.
 
 Apos instalacao, abra "Vigia Hub" no menu GNOME para acessar todas
@@ -61,11 +58,10 @@ Categorias:
 - Privacidade:   Privacy Controls, DNS Manager
 - Defesa:        SELinux, Firewall, Hardening Checks, File Integrity,
                  Capabilities Inspector, Rootkit Scanner, Antivirus
-- Sistema:       Deployments Manager (rpm-ostree)
 - Relatorios:    Reports (PDF/HTML LGPD)
 - Catalogo:      Tool Installer (16 pacotes curados + extensoes)
 
-Compatibilidade: Fedora Silverblue, Kinoite, Bluefin, Bazzite, Aurora.
+Compatibilidade: Fedora Workstation 40+.
 
 %prep
 # Metapackage — nada para preparar.
@@ -83,7 +79,7 @@ Compatibilidade: Fedora Silverblue, Kinoite, Bluefin, Bazzite, Aurora.
 * Thu May 29 2026 André Augusto Azarias de Souza <andre@vigia.local> - 0.2.0-1
 - Remove tools descontinuadas (VPN, Network Scanner, Firmware, Hash Tools)
 - Renomeia vigia-capabilities -> vigia-caps
-- Adiciona vigia-rootkit e vigia-deployments
+- Adiciona vigia-rootkit
 - Metapackage agora cobre as 14 ferramentas + Instalador
 
 * Mon May 26 2026 André Augusto Azarias de Souza <andre@vigia.local> - 0.1.0-1

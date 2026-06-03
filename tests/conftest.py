@@ -46,7 +46,6 @@ TOOLS = [
     "antivirus",
     "dashboard",
     "rootkit-scanner",
-    "deployments-manager",
     "vigia-red",
     "vigia-blue",
 ]
