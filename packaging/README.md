@@ -5,7 +5,7 @@ Suite via COPR (Cool Other Package Repo, do Fedora).
 
 ## Estado
 
-- **19 spec files** no total (metapackage `vigia-suite` + lib `vigia-common` + core Rust `vigia-activity-log` + 16 specs Python)
+- **18 spec files** no total (metapackage `vigia-suite` + lib `vigia-common` + core Rust `vigia-activity-log` + 15 specs Python)
 - `Makefile` com targets para SRPM, RPM local e push COPR
 - **COPR ainda não foi ativado** — requer setup manual (instruções abaixo)
 
@@ -16,34 +16,18 @@ Suite via COPR (Cool Other Package Repo, do Fedora).
 > projeto, fazer build). Por enquanto, instale via
 > `pip install --user -e .` — ver [README principal](../README.md).
 
-Quando o COPR estiver publicado, em Silverblue/Kinoite/Bluefin/etc.:
+Quando o COPR estiver publicado, no **Fedora Workstation**:
 
 ```bash
-# 1. Habilita o repo (substitui $(rpm -E %fedora) pela versao detectada)
-sudo wget -O /etc/yum.repos.d/_copr_andre28abr-vigia.repo \
-    "https://copr.fedorainfracloud.org/coprs/andre28abr/vigia/repo/fedora-$(rpm -E %fedora)/andre28abr-vigia-fedora-$(rpm -E %fedora).repo"
+# Habilita o repo COPR
+sudo dnf copr enable andre28abr/vigia
 
-# 2. Instala a suite completa (metapackage com todo o VigiaOS)
-sudo rpm-ostree install vigia-suite
-sudo systemctl reboot
+# Instala a suite completa (metapackage com todo o VigiaOS)
+sudo dnf install vigia-suite
 
 # OU instala tools individuais
-sudo rpm-ostree install vigia-dashboard vigia-antivirus
-sudo systemctl reboot
+sudo dnf install vigia-dashboard vigia-antivirus
 ```
-
-Em Fedora não-atomic (Workstation, KDE Plasma, etc.):
-
-```bash
-sudo dnf copr enable andre28abr/vigia
-sudo dnf install vigia-suite
-```
-
-> **Nota sobre rpm-ostree**: ao contrário do `dnf`, o `rpm-ostree`
-> NÃO tem subcomando `copr`. Para habilitar repos COPR em Silverblue
-> você precisa baixar o `.repo` direto (método acima) — ou instalar
-> `dnf` overlay primeiro (`sudo rpm-ostree install dnf && reboot`)
-> e usar `sudo dnf copr enable ...`.
 
 ## Lista de specs
 
@@ -67,7 +51,6 @@ sudo dnf install vigia-suite
 | `vigia-caps` | 0.1.0 | getcap |
 | `vigia-antivirus` | 0.1.1 | ClamAV |
 | `vigia-rootkit` | 0.2.0 | chkrootkit + rkhunter |
-| `vigia-deployments` | 0.1.1 | rpm-ostree snapshots |
 
 ## Para o mantenedor (build + submit ao COPR)
 
@@ -80,7 +63,7 @@ make copr-setup    # imprime instruções
 **Resumo**:
 1. Criar conta em https://copr.fedorainfracloud.org/
 2. Criar projeto `vigia` (chroots: fedora-40/41/42 x86_64/aarch64)
-3. Instalar `copr-cli` (`sudo rpm-ostree install copr-cli`)
+3. Instalar `copr-cli` (`sudo dnf install copr-cli`)
 4. Configurar token em `~/.config/copr` (chmod 0600)
 
 ### Build local + sanity check
@@ -161,7 +144,6 @@ packaging/
 ├── vigia-caps.spec
 ├── vigia-antivirus.spec
 ├── vigia-rootkit.spec
-├── vigia-deployments.spec
 │
 ├── vigia-log.desktop               # pre-existente (Activity Log core)
 └── vigia-log.svg                   # pre-existente
@@ -175,14 +157,14 @@ packaging/
 - [ ] Instalar copr-cli + configurar token
 - [ ] `make copr-push` inicial
 - [ ] Configurar webhook SCM
-- [ ] Testar instalação em VM limpa de Silverblue
+- [ ] Testar instalação em VM limpa de Fedora Workstation
 - [ ] AppStream metadata em `data/<app-id>.appdata.xml`
   (para integração com GNOME Software)
 - [ ] Submeter Activity Log para Fedora Workstation Software
 
 ## Detalhes técnicos
 
-### Specs Python (16 specs)
+### Specs Python (15 specs)
 
 Padrão comum:
 - `BuildArch: noarch` — sem código nativo
@@ -201,7 +183,7 @@ Spec separado (`vigia-activity-log.spec`) porque é Rust.
 
 ### Metapackage `vigia-suite`
 
-Sem `%files`, apenas `Requires:` listando todos os 18 pacotes.
+Sem `%files`, apenas `Requires:` listando todos os pacotes.
 Garante versão mínima de cada. Útil para "instalar tudo de uma vez".
 
 ### Dependências entre pacotes
@@ -214,7 +196,6 @@ Pacotes que wrappam tools upstream declaram esses como `Requires`:
 - `vigia-selinux` → `policycoreutils-python-utils`, `setools-console`, `audit`
 - `vigia-antivirus` → `clamav`, `clamav-update`
 - `vigia-rootkit` → `chkrootkit`, `rkhunter`
-- `vigia-deployments` → `rpm-ostree`
 - `vigia-integrity` → `aide`
 - etc.
 
