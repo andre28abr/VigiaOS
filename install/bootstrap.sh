@@ -67,10 +67,14 @@ DEPS_BACKENDS=(
     md5deep                               # forense (binarios hashdeep/sha256deep)
 )
 
-# Ferramentas Vigia (dirs em tools/). vigia-common primeiro (dep das outras).
-VIGIA_TOOLS=(
+# PRODUTOS: os ÚNICOS que ganham ícone no menu do GNOME (numa pasta "Vigia").
+# Tudo roda DENTRO deles — as ferramentas são embarcadas, não apps soltos.
+VIGIA_PRODUCTS=(vigia-hub vigia-blue vigia-red)
+# MÓDULOS: instalados via pip pra rodar EMBARCADOS no Hub — SEM ícone próprio.
+# vigia-common primeiro (dep de todos os outros).
+VIGIA_MODULES=(
     vigia-common
-    vigia-hub dashboard activity-log-gui privacy-controls dns-manager
+    dashboard activity-log-gui privacy-controls dns-manager
     selinux-gui firewall-gui netmon-gui hardening-checks reports
     file-integrity tool-installer capabilities-inspector rootkit-scanner
     antivirus
@@ -100,7 +104,8 @@ hr
 info "Vai instalar (${PM}):"
 echo "  ${DIM}runtime:${NC}  ${DEPS_CORE[*]}"
 echo "  ${DIM}backends:${NC} ${DEPS_BACKENDS[*]}"
-echo "  ${DIM}tools:${NC}    ${#VIGIA_TOOLS[@]} ferramentas Vigia (pip --user) + atalhos no GNOME"
+echo "  ${DIM}produtos:${NC} ${VIGIA_PRODUCTS[*]} (ícones no menu, pasta Vigia)"
+echo "  ${DIM}módulos:${NC}  ${#VIGIA_MODULES[@]} ferramentas embarcadas (pip --user, sem ícone solto)"
 echo "  ${DIM}flatpaks:${NC} ${FLATPAKS[*]}"
 echo
 warn "Nenhum servico sera LIGADO (fail2ban/dnscrypt off — opt-in nas tools)."
@@ -127,24 +132,30 @@ if [ "$CLONE_NEEDED" = "1" ]; then
     fi
 fi
 
-# ---- 3. instala as ferramentas Vigia (pip --user) + atalhos ---------------
+# ---- 3. instala os produtos + módulos (pip --user) ------------------------
 hr
-info "Instalando os ${#VIGIA_TOOLS[@]} pacotes Vigia (pip --user)..."
+info "Instalando o Vigia (pip --user)..."
 APPS_DIR="$HOME/.local/share/applications"
 ICONS_DIR="$HOME/.local/share/icons/hicolor/scalable/apps"
 mkdir -p "$APPS_DIR" "$ICONS_DIR"
-for t in "${VIGIA_TOOLS[@]}"; do
+
+# 3a. pip install de TUDO (módulos primeiro — common é dep — depois produtos).
+#     NENHUM registra ícone aqui: as ferramentas rodam embarcadas no Hub.
+for t in "${VIGIA_MODULES[@]}" "${VIGIA_PRODUCTS[@]}"; do
     tdir="$REPO_DIR/tools/$t"
     [ -d "$tdir" ] || { warn "tools/$t nao encontrada — pulando."; continue; }
     (cd "$tdir" && python3 -m pip install --user -e . -q) \
         && echo "  ${GREEN}ok${NC} $t" || warn "falha no pip de $t"
-    # Registra .desktop + icone (so' tools com GUI tem data/)
-    if compgen -G "$tdir/data/*.desktop" >/dev/null 2>&1; then
-        install -Dpm 0644 "$tdir"/data/*.desktop "$APPS_DIR"/ 2>/dev/null || true
-    fi
-    if compgen -G "$tdir/data/*.svg" >/dev/null 2>&1; then
-        install -Dpm 0644 "$tdir"/data/*.svg "$ICONS_DIR"/ 2>/dev/null || true
-    fi
+done
+
+# 3b. ÍCONE no menu SÓ pros 3 produtos (Hub/Blue/Red). As ferramentas não
+#     viram apps soltos — abrem dentro do Hub.
+for p in "${VIGIA_PRODUCTS[@]}"; do
+    pdir="$REPO_DIR/tools/$p"
+    compgen -G "$pdir/data/*.desktop" >/dev/null 2>&1 \
+        && install -Dpm 0644 "$pdir"/data/*.desktop "$APPS_DIR"/ 2>/dev/null || true
+    compgen -G "$pdir/data/*.svg" >/dev/null 2>&1 \
+        && install -Dpm 0644 "$pdir"/data/*.svg "$ICONS_DIR"/ 2>/dev/null || true
 done
 # gtk-update-icon-cache exige um index.theme no dir do tema; em ~/.local ele
 # costuma faltar e o cache nao reconstroi (icones novos ficam invisiveis no
@@ -153,6 +164,19 @@ HICOLOR_DIR="$HOME/.local/share/icons/hicolor"
 [ -f "$HICOLOR_DIR/index.theme" ] || cp /usr/share/icons/hicolor/index.theme "$HICOLOR_DIR/" 2>/dev/null || true
 update-desktop-database "$APPS_DIR" >/dev/null 2>&1 || true
 gtk-update-icon-cache -f "$HICOLOR_DIR" >/dev/null 2>&1 || true
+
+# 3c. Agrupa os 3 produtos numa pasta "Vigia" no grid de apps do GNOME.
+if command -v gsettings >/dev/null 2>&1; then
+    AF="org.gnome.desktop.app-folders"
+    kids=$(gsettings get "$AF" folder-children 2>/dev/null || echo "[]")
+    if [[ "$kids" != *"'Vigia'"* ]]; then
+        kids=$(python3 -c "import sys,ast; l=ast.literal_eval(sys.argv[1]) if sys.argv[1].startswith('[') else []; l.append('Vigia'); print(repr(l))" "$kids" 2>/dev/null)
+        [ -n "$kids" ] && gsettings set "$AF" folder-children "$kids" 2>/dev/null || true
+    fi
+    VF="$AF.folder:/org/gnome/desktop/app-folders/folders/Vigia/"
+    gsettings set "$VF" name 'Vigia' 2>/dev/null || true
+    gsettings set "$VF" apps "['br.com.vigia.Hub.desktop', 'br.com.vigia.Blue.desktop', 'br.com.vigia.Red.desktop']" 2>/dev/null || true
+fi
 
 # ---- 4. Flatpaks ----------------------------------------------------------
 hr
@@ -180,6 +204,7 @@ echo
 echo "${DIM}Nenhum servico foi ligado. Ative o que quiser nas ferramentas:${NC}"
 echo "${DIM}  • fail2ban → Privacy Controls    • DNS encriptado → DNS Manager${NC}"
 echo
-echo "${BOLD}Pronto — sem reboot.${NC} Abra o ${BOLD}Vigia Hub${NC} pelo menu do GNOME"
-echo "${DIM}(ou rode ${BOLD}vigia-hub${NC}${DIM} no terminal).${NC}"
+echo "${BOLD}Pronto — sem reboot.${NC} No menu de aplicativos do GNOME, abra a pasta"
+echo "${BOLD}Vigia${NC} — lá estão os 3 produtos: ${BOLD}Vigia Hub${NC}, ${BOLD}VigiaBlue${NC} e ${BOLD}VigiaRed${NC}."
+echo "${DIM}(as ferramentas rodam embarcadas dentro deles; no terminal: vigia-hub)${NC}"
 echo
