@@ -96,7 +96,7 @@ def find_terminal() -> tuple[str, list[str]] | None:
 NAV_MODES = [
     ("tools", "Módulos", "view-grid-symbolic"),
     ("installer", "Atualizações", "software-update-available-symbolic"),
-    ("settings", "Config.", "preferences-system-symbolic"),
+    ("settings", "Configurações", "preferences-system-symbolic"),
     ("help", "Ajuda", "help-browser-symbolic"),
     ("about", "Sobre", "help-about-symbolic"),
 ]
@@ -218,6 +218,8 @@ class VigiaHubWindow(Adw.ApplicationWindow):
             lbl = Gtk.Label(label=label)
             lbl.add_css_class("caption")
             lbl.set_halign(Gtk.Align.CENTER)
+            lbl.set_wrap(True)
+            lbl.set_justify(Gtk.Justification.CENTER)
             inner.append(lbl)
 
             row.set_child(inner)
