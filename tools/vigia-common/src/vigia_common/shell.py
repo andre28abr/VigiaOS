@@ -118,7 +118,7 @@ def dep_installed(dep: Dependency) -> bool:
 
 
 def dep_command(dep: Dependency) -> str:
-    """Comando de instalação conforme o tipo + a plataforma (rpm-ostree/dnf/pipx)."""
+    """Comando de instalação conforme o tipo da dependência (dnf ou pipx)."""
     if dep.install:
         return dep.install
     if dep.kind == "pip":
@@ -540,7 +540,7 @@ def run_product(meta: ProductMeta, modules: list[Module],
         def _wrapper_bar() -> Gtk.Widget:
             # Igual o Hub (WRAPPED_PACKAGES): mostra a ferramenta principal que
             # o instalador embrulha — aqui, o gerenciador de pacotes que a aba
-            # Atualizações usa (rpm-ostree no Silverblue / dnf no Workstation).
+            # Atualizações usa (o dnf, no Fedora Workstation).
             bar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
             bar.set_margin_start(12)
             bar.set_margin_end(12)

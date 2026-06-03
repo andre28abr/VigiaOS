@@ -199,20 +199,7 @@ class TestTrayCanWork:
 
 
 class TestCommands:
-    def test_install_command_atomic(self, monkeypatch):
-        import vigia_common.platform as plat
-        monkeypatch.setattr(plat, "is_atomic", lambda: True)
-        cmd = checks.install_command()
-        assert cmd[0] == "pkexec"
-        assert cmd[1] == "rpm-ostree"
-        assert cmd[2] == "install"
-        # Tem os 2 pacotes
-        assert "libayatana-appindicator-gtk3" in cmd
-        assert "gnome-shell-extension-appindicator" in cmd
-
-    def test_install_command_workstation(self, monkeypatch):
-        import vigia_common.platform as plat
-        monkeypatch.setattr(plat, "is_atomic", lambda: False)
+    def test_install_command_uses_dnf(self):
         cmd = checks.install_command()
         assert cmd[0] == "pkexec"
         assert cmd[1] == "dnf"

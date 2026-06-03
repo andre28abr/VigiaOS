@@ -1245,9 +1245,6 @@ class VigiaHubWindow(Adw.ApplicationWindow):
                 "• A extensão AppIndicator está instalada mas <b>desativada</b>."
             )
 
-        if not check.has_lib or not check.has_extension:
-            body_parts.append("\n\nA instalação requer <b>reboot</b> (Silverblue overlay).")
-
         body = "\n".join(body_parts)
 
         dlg = Adw.AlertDialog(heading="Habilitar ícone na bandeja")
@@ -1273,24 +1270,15 @@ class VigiaHubWindow(Adw.ApplicationWindow):
             self._enable_tray_extension()
 
     def _run_tray_install(self) -> None:
-        """Lanca o install dos pacotes do tray em background (rpm-ostree
-        em sistema atomico, dnf no Workstation)."""
+        """Lanca o install dos pacotes do tray em background (dnf)."""
         import subprocess
-        from vigia_common.platform import needs_reboot_to_apply
         cmd = install_command()
         try:
             subprocess.Popen(cmd)
-            if needs_reboot_to_apply():
-                msg = (
-                    "Acompanhe a senha de admin (pkexec). Ao terminar, "
-                    "<b>reinicie o sistema</b> pra a biblioteca ficar "
-                    "disponível. Depois ative a extensão e religue o switch."
-                )
-            else:
-                msg = (
-                    "Acompanhe a senha de admin (pkexec). Ao terminar, ative "
-                    "a extensão AppIndicator e religue o switch (sem reboot)."
-                )
+            msg = (
+                "Acompanhe a senha de admin (pkexec). Ao terminar, ative "
+                "a extensão AppIndicator e religue o switch (sem reboot)."
+            )
             self._show_settings_error("Instalação iniciada", msg)
         except OSError as e:
             self._show_settings_error(
