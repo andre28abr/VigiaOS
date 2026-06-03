@@ -2883,6 +2883,30 @@ Pendência conhecida: análise de dump **Linux** ainda precisa dos **símbolos d
 kernel (ISF)** — é o próximo passo pra fechar capturar→analisar no Linux.
 vigia-blue 0.0.20 (alinha pyproject/__init__). Suíte **1169**.
 
+### 2026-06-02 — Vigia Memory: assistente de símbolos (ISF) pra dump Linux
+
+Fecha (quase) o ciclo da forense de memória no Linux. O erro
+`...kernel.symbol_table_name` é falta de **símbolos do kernel (ISF)** — agora,
+quando ele acontece, a aba Análise mostra um botão **Preparar símbolos** em vez
+do erro cru:
+
+- **backend**: `is_symbols_error()`, `dump_banner()` (via `vol banners.Banners`,
+  não precisa de símbolos), `_release_from_banner()`, `_find_vmlinux()`,
+  `dwarf2json_path()`, `generate_symbols() -> SymbolsResult`. Se `dwarf2json` +
+  um `vmlinux` (kernel-debuginfo) existem, **gera o ISF** (`dwarf2json linux
+  --elf` com stdout→arquivo, sem shell) em `~/teste/memory/symbols/linux/`;
+  senão, devolve o **passo a passo copiável** (toolbox) pro kernel exato do dump.
+  `build_vol_cmd` ganhou `symbols_dir` (passa `-s` pro vol achar o ISF gerado).
+  +10 testes.
+- **page**: erro de símbolos → card amigável + botão **Preparar símbolos**
+  (worker → gera ou mostra os passos num ExpanderRow).
+- **blue-deps.sh**: instala `dwarf2json` via `go install` (seção 5).
+
+Limitação honesta: no **Silverblue** o `kernel-debuginfo` falta e é pesado, então
+o caminho real costuma ser o **toolbox** (que o assistente ensina). Próximo passo
+pra dispensar o debuginfo: gerar o ISF a partir do **BTF** (`/sys/kernel/btf`).
+vigia-blue 0.0.21. Suíte **1179**.
+
 ---
 
 ## 10. Roadmap

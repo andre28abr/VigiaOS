@@ -26,6 +26,9 @@ tools/vigia-blue/docs/manuals/{leigo,tecnico}/memory.md
 - **AVML** (`avml`) — a **captura** (opcional). `avml_path()` procura no PATH e
   em `~/.local/bin` / `/usr/local/bin`. Sem ele, o botão Capturar fica desligado.
   `./install/blue-deps.sh` baixa o binário oficial da Microsoft.
+- **dwarf2json** (`dwarf2json`) — gera os **símbolos (ISF)** pra análise de dump
+  Linux. `./install/blue-deps.sh` instala via `go install` (precisa de Go). No
+  Silverblue, o caminho mais limpo é gerar os símbolos num toolbox.
 
 ## Backend (`backend.py`)
 
@@ -57,6 +60,20 @@ Toca o sistema:
   formato LiME e o helper devolve a posse ao usuário com **0600** (dump = dados
   sensíveis). Nunca levanta; trata pkexec cancelado (rc 126/127).
 
+### Símbolos (ISF, `generate_symbols`) — pra analisar dump Linux
+
+- **`is_symbols_error(text)`** — reconhece o erro do Volatility por falta de ISF
+  (`symbol_table_name` / "Unable to validate the plugin requirements").
+- **`dump_banner(dump)`** — `vol banners.Banners` (não precisa de símbolos) →
+  string `Linux version …`; `_release_from_banner` extrai o release.
+- **`_find_vmlinux(release)`** — procura o vmlinux com DWARF (kernel-debuginfo).
+- **`generate_symbols(dump) -> SymbolsResult`** — se `dwarf2json` + vmlinux
+  existem, gera o ISF (`dwarf2json linux --elf …` com stdout→arquivo, sem shell)
+  em `~/teste/memory/symbols/linux/<release>.json`; senão devolve `steps`
+  (passo a passo com toolbox). `build_vol_cmd(..., symbols_dir=SYMBOLS_DIR)`
+  passa `-s` pro vol achar o ISF gerado. A GUI mostra o botão **Preparar
+  símbolos** quando o erro é de símbolos.
+
 ## GUI (`page.py`)
 
 `build_content()` → `ToolbarView` + `ViewSwitcher` (Análise / Sobre).
@@ -78,7 +95,10 @@ Toca o sistema:
 
 1. **Histórico** de análises (0600), como nos demais módulos.
 2. Render em **tabela real** (`Gtk.ColumnView`) com ordenação por coluna.
-3. **Símbolos (ISF) automáticos p/ Linux** — gerar/baixar o symbol pack do kernel
-   do dump (hoje, sem símbolos, a análise de dump Linux falha). Próximo passo p/
-   fechar o ciclo capturar→analisar no Linux.
+3. **Símbolos (ISF) sem debuginfo** — o assistente `generate_symbols` já gera o
+   ISF quando há dwarf2json + vmlinux, e guia o resto. Falta o caminho que
+   dispensa o `kernel-debuginfo` (pesado no Silverblue): gerar o ISF a partir do
+   **BTF** (`/sys/kernel/btf/vmlinux`) — fecharia o ciclo sem toolbox.
 4. ~~Capturar dump local (AVML + pkexec)~~ — **feito** (botão Capturar).
+5. ~~Assistente de símbolos (ISF) p/ Linux~~ — **feito** (botão Preparar símbolos;
+   auto-gera com dwarf2json/debuginfo ou mostra o passo a passo).

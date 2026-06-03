@@ -21,6 +21,7 @@ import getpass
 import json
 import os
 import shutil
+import subprocess
 import time
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -116,13 +117,20 @@ def vol_available() -> bool:
 # ============================================================
 
 
-def build_vol_cmd(dump: Path | str, plugin: str, vol_bin: str | None = None) -> list[str]:
+def build_vol_cmd(dump: Path | str, plugin: str, vol_bin: str | None = None,
+                  symbols_dir: Path | str | None = None) -> list[str]:
     """Argv do Volatility (lista — nunca shell string).
 
-    `vol -f <dump> -r json <plugin>` → saída JSON parseável.
+    `vol [-s <symbols>] -f <dump> -r json <plugin>` → saída JSON parseável.
+    `symbols_dir` (se existir) é passado com `-s`: é onde colocamos os ISF do
+    kernel Linux que geramos (ver `generate_symbols`).
     """
     b = vol_bin or vol_binary() or "vol"
-    return [b, "-f", str(dump), "-r", "json", str(plugin)]
+    cmd = [b]
+    if symbols_dir and Path(symbols_dir).is_dir():
+        cmd += ["-s", str(symbols_dir)]
+    cmd += ["-f", str(dump), "-r", "json", str(plugin)]
+    return cmd
 
 
 # ============================================================
@@ -183,7 +191,8 @@ def run_plugin(dump: Path | str, plugin: str, timeout: int = 600,
         return result
 
     t0 = time.monotonic()
-    rc, out, err = proc.run(build_vol_cmd(dump, plugin), timeout=timeout)
+    rc, out, err = proc.run(
+        build_vol_cmd(dump, plugin, symbols_dir=SYMBOLS_DIR), timeout=timeout)
     result.elapsed_sec = round(time.monotonic() - t0, 2)
     result.raw_tail = (out or err or "")[-2000:]
 
@@ -292,3 +301,153 @@ def capture_dump(timeout: int = 900) -> CaptureResult:
     res.ok = True
     res.path = str(out)
     return res
+
+
+# ============================================================
+# Símbolos do kernel (ISF) — pra analisar dumps de Linux
+# ============================================================
+
+# O Volatility procura símbolos extras passados via `-s`. Geramos os ISF do
+# kernel aqui e apontamos o vol pra cá (ver build_vol_cmd / run_plugin).
+SYMBOLS_DIR = TEST_DIR / "symbols"
+
+_DWARF2JSON_EXTRA = [
+    Path.home() / ".local" / "bin" / "dwarf2json",
+    Path("/usr/local/bin/dwarf2json"),
+]
+
+
+@dataclass
+class SymbolsResult:
+    ok: bool = False
+    banner: str = ""        # "Linux version 6.x ..."
+    release: str = ""       # "6.x.x-..." extraído do banner
+    isf_path: str = ""      # ISF gerado (quando ok)
+    message: str = ""       # resumo pro usuário
+    steps: str = ""         # passos copiáveis (quando não dá pra automatizar)
+
+
+def is_symbols_error(text: str) -> bool:
+    """True se o erro do Volatility é falta de símbolos do kernel (ISF)."""
+    t = (text or "").lower()
+    return ("symbol_table_name" in t
+            or "unable to validate the plugin requirements" in t)
+
+
+def dwarf2json_path() -> str | None:
+    found = shutil.which("dwarf2json")
+    if found:
+        return found
+    for p in _DWARF2JSON_EXTRA:
+        try:
+            if p.is_file() and os.access(p, os.X_OK):
+                return str(p)
+        except OSError:
+            continue
+    return None
+
+
+def _release_from_banner(banner: str) -> str:
+    """'Linux version 6.8.0-... (builder@…)' → '6.8.0-...'."""
+    parts = (banner or "").split()
+    if len(parts) >= 3 and parts[0] == "Linux" and parts[1] == "version":
+        return parts[2]
+    return ""
+
+
+def dump_banner(dump: Path | str, timeout: int = 300) -> str:
+    """Banner do kernel do dump (`vol banners.Banners` — NÃO precisa de
+    símbolos). Retorna a string 'Linux version …' ou ''."""
+    b = vol_binary()
+    if not b or not Path(dump).is_file():
+        return ""
+    _rc, out, _err = proc.run(
+        [b, "-f", str(dump), "-r", "json", "banners.Banners"], timeout=timeout)
+    _cols, rows = parse_vol_json(out)
+    for r in rows:
+        for v in r.values():
+            if isinstance(v, str) and "Linux version" in v:
+                return v.strip()
+    return ""
+
+
+def _find_vmlinux(release: str) -> str | None:
+    """Procura um vmlinux com DWARF (kernel-debuginfo) pro release."""
+    if not release:
+        return None
+    for c in (Path(f"/usr/lib/debug/lib/modules/{release}/vmlinux"),
+              Path(f"/usr/lib/debug/usr/lib/modules/{release}/vmlinux"),
+              Path(f"/lib/modules/{release}/build/vmlinux")):
+        if c.is_file():
+            return str(c)
+    return None
+
+
+def symbols_steps(release: str) -> str:
+    """Passos copiáveis pra gerar os símbolos (Fedora, via toolbox)."""
+    rel = release or "$(uname -r)"
+    return (
+        "No Fedora, gere os símbolos num toolbox (não suja o sistema):\n\n"
+        "  toolbox create -y && toolbox enter\n"
+        f"  sudo dnf -y debuginfo-install kernel-core-{rel}\n"
+        "  # com o dwarf2json instalado, rode:\n"
+        "  mkdir -p ~/teste/memory/symbols/linux\n"
+        f"  dwarf2json linux --elf /usr/lib/debug/lib/modules/{rel}/vmlinux \\\n"
+        f"    > ~/teste/memory/symbols/linux/{rel}.json\n\n"
+        "Depois clique em Preparar símbolos de novo (ou direto em Analisar)."
+    )
+
+
+def generate_symbols(dump: Path | str) -> SymbolsResult:
+    """Tenta gerar o ISF do kernel do dump. Automatiza se dwarf2json + um
+    vmlinux (debuginfo) existirem; senão devolve os passos. Nunca levanta."""
+    res = SymbolsResult()
+    res.banner = dump_banner(dump)
+    res.release = _release_from_banner(res.banner)
+    if not res.banner:
+        res.message = ("Não consegui ler o banner do kernel no dump. Ele é de "
+                       "Linux? A captura terminou direito?")
+        return res
+    if not dwarf2json_path():
+        res.message = ("Falta o dwarf2json (gera os símbolos a partir do "
+                       "kernel). Rode ./install/blue-deps.sh.")
+        res.steps = symbols_steps(res.release)
+        return res
+    vmlinux = _find_vmlinux(res.release)
+    if not vmlinux:
+        res.message = (f"Identifiquei o kernel do dump ({res.release}), mas "
+                       "falta o vmlinux com símbolos (kernel-debuginfo).")
+        res.steps = symbols_steps(res.release)
+        return res
+    out_dir = SYMBOLS_DIR / "linux"
+    try:
+        out_dir.mkdir(parents=True, exist_ok=True)
+    except OSError as e:
+        res.message = f"Não consegui criar {out_dir} ({e})."
+        return res
+    out_json = out_dir / f"{res.release}.json"
+    try:
+        with open(out_json, "wb") as f:
+            rc = subprocess.run(
+                [dwarf2json_path(), "linux", "--elf", vmlinux],
+                stdout=f, stderr=subprocess.PIPE, timeout=1800).returncode
+    except (OSError, subprocess.SubprocessError) as e:
+        _unlink(out_json)
+        res.message = f"O dwarf2json falhou ({e})."
+        return res
+    if rc != 0 or not out_json.is_file() or out_json.stat().st_size == 0:
+        _unlink(out_json)
+        res.message = "O dwarf2json não gerou os símbolos (vmlinux sem DWARF?)."
+        return res
+    res.ok = True
+    res.isf_path = str(out_json)
+    res.message = (f"Símbolos gerados para {res.release}. Clique em Analisar de "
+                   "novo — agora deve funcionar.")
+    return res
+
+
+def _unlink(p: Path) -> None:
+    try:
+        p.unlink()
+    except OSError:
+        pass

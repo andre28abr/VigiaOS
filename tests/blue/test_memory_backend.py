@@ -163,3 +163,95 @@ def test_capture_dump_no_avml(monkeypatch):
     res = backend.capture_dump()
     assert res.ok is False
     assert "avml" in res.error.lower()
+
+
+# ============================================================
+# Símbolos do kernel (ISF)
+# ============================================================
+
+
+def test_is_symbols_error():
+    assert backend.is_symbols_error(
+        "Unable to validate the plugin requirements: "
+        "['plugins.PsList.kernel.symbol_table_name']") is True
+    assert backend.is_symbols_error("symbol_table_name missing") is True
+    assert backend.is_symbols_error("Dump não encontrado") is False
+    assert backend.is_symbols_error("") is False
+
+
+def test_release_from_banner():
+    b = "Linux version 6.8.0-1.fc40.x86_64 (builder@fedora) (gcc ...) #1 SMP"
+    assert backend._release_from_banner(b) == "6.8.0-1.fc40.x86_64"
+    assert backend._release_from_banner("lixo") == ""
+    assert backend._release_from_banner("") == ""
+
+
+def test_symbols_steps_includes_release():
+    s = backend.symbols_steps("6.8.0-1.fc40.x86_64")
+    assert "6.8.0-1.fc40.x86_64" in s
+    assert "dwarf2json" in s
+    assert "$(uname -r)" in backend.symbols_steps("")
+
+
+def test_dwarf2json_path_via_which(monkeypatch):
+    monkeypatch.setattr(
+        backend.shutil, "which",
+        lambda b: "/usr/bin/dwarf2json" if b == "dwarf2json" else None)
+    assert backend.dwarf2json_path() == "/usr/bin/dwarf2json"
+
+
+def test_dwarf2json_path_absent(monkeypatch):
+    monkeypatch.setattr(backend.shutil, "which", lambda _b: None)
+    monkeypatch.setattr(backend, "_DWARF2JSON_EXTRA", [])
+    assert backend.dwarf2json_path() is None
+
+
+def test_build_vol_cmd_with_symbols(tmp_path):
+    cmd = backend.build_vol_cmd("/d.lime", "linux.pslist.PsList", vol_bin="vol",
+                                symbols_dir=tmp_path)
+    assert cmd == ["vol", "-s", str(tmp_path), "-f", "/d.lime", "-r", "json",
+                   "linux.pslist.PsList"]
+    cmd2 = backend.build_vol_cmd("/d.lime", "linux.pslist.PsList", vol_bin="vol",
+                                 symbols_dir=tmp_path / "nope")
+    assert "-s" not in cmd2
+
+
+def test_dump_banner_parses_linux_version(monkeypatch, tmp_path):
+    dump = tmp_path / "d.lime"
+    dump.write_text("x")
+    monkeypatch.setattr(backend, "vol_binary", lambda: "vol")
+    fake = json.dumps([{"Banner": "Linux version 6.8.0-1.fc40 (b@f)"}])
+    monkeypatch.setattr(backend.proc, "run", lambda *a, **k: (0, fake, ""))
+    assert backend.dump_banner(dump) == "Linux version 6.8.0-1.fc40 (b@f)"
+
+
+def test_generate_symbols_no_banner(monkeypatch, tmp_path):
+    dump = tmp_path / "d.lime"
+    dump.write_text("x")
+    monkeypatch.setattr(backend, "dump_banner", lambda _d, **k: "")
+    res = backend.generate_symbols(dump)
+    assert res.ok is False and "banner" in res.message.lower()
+
+
+def test_generate_symbols_no_dwarf2json(monkeypatch, tmp_path):
+    dump = tmp_path / "d.lime"
+    dump.write_text("x")
+    monkeypatch.setattr(backend, "dump_banner",
+                        lambda _d, **k: "Linux version 6.8.0-1.fc40 (b@f)")
+    monkeypatch.setattr(backend, "dwarf2json_path", lambda: None)
+    res = backend.generate_symbols(dump)
+    assert res.ok is False
+    assert res.steps and "6.8.0-1.fc40" in res.steps
+
+
+def test_generate_symbols_no_vmlinux(monkeypatch, tmp_path):
+    dump = tmp_path / "d.lime"
+    dump.write_text("x")
+    monkeypatch.setattr(backend, "dump_banner",
+                        lambda _d, **k: "Linux version 6.8.0-1.fc40 (b@f)")
+    monkeypatch.setattr(backend, "dwarf2json_path", lambda: "/usr/bin/dwarf2json")
+    monkeypatch.setattr(backend, "_find_vmlinux", lambda _r: None)
+    res = backend.generate_symbols(dump)
+    assert res.ok is False
+    assert "debuginfo" in res.message.lower() or "vmlinux" in res.message.lower()
+    assert res.steps
