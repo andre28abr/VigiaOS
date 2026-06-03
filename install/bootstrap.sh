@@ -81,7 +81,7 @@ VIGIA_TOOLS=(
     vigia-hub dashboard activity-log-gui privacy-controls dns-manager
     selinux-gui firewall-gui netmon-gui hardening-checks reports
     file-integrity tool-installer capabilities-inspector rootkit-scanner
-    antivirus deployments-manager
+    antivirus
 )
 
 # Flatpaks de privacidade/produtividade (escopo user). Opcional, mas curado.

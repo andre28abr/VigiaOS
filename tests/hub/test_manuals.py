@@ -22,14 +22,12 @@ class TestManualEntries:
     def test_has_overview_first(self):
         assert manuals.MANUAL_ENTRIES[0].tool_id == "_overview"
 
-    def test_includes_all_17_tools_plus_overview(self):
-        # 17 tools + 1 overview = 18
+    def test_includes_tools_plus_overview(self):
         ids = [e.tool_id for e in manuals.MANUAL_ENTRIES]
         # Sample verificacoes
         assert "vigia-hub" in ids
         assert "antivirus" in ids
         assert "activity-log" in ids
-        assert "deployments-manager" in ids
         assert "rootkit-scanner" in ids
         assert "dashboard" in ids
 

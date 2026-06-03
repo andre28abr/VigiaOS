@@ -1,7 +1,7 @@
 """Persistência de estado em JSON — escrita atômica com permissão 0600 (LGPD).
 
 Os arquivos de estado das ferramentas podem guardar achados sensíveis (paths
-infectados, deployments, hashes de baseline). Este módulo centraliza a
+infectados, hashes de baseline). Este módulo centraliza a
 *mecânica de filesystem* que estava duplicada em vários backends — a parte
 chata e propensa a erro (dir pai 0700, escrita atômica, chmod 0600):
 

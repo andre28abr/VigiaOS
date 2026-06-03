@@ -46,7 +46,6 @@ BACKUP_DIR = DATA_HOME / "vigia-hub" / "backups"
 _SOURCES: list[tuple[str, str, str]] = [
     ("Configurações do Hub", "config", "vigia-hub"),
     ("Alertas e integridade", "config", "vigia"),
-    ("Deployments", "config", "vigia-deployments"),
     ("Tool Installer", "config", "vigia-installer"),
     ("Antivírus (relatórios)", "data", "vigia-antivirus"),
     ("Hashes (baselines)", "data", "vigia-hash"),

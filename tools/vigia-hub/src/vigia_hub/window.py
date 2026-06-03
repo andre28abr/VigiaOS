@@ -43,7 +43,6 @@ from .registry import (
     TOOLS,
     ToolEntry,
     tools_by_category,
-    visible_tools,
 )
 from .auth import (
     check_auth_async,
@@ -378,7 +377,7 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         )
         page.add(intro_group)
 
-        grouped = tools_by_category(visible_tools())
+        grouped = tools_by_category(TOOLS)
         for cat, tools_in_cat in grouped.items():
             group = Adw.PreferencesGroup()
             group.set_title(CATEGORY_LABELS.get(cat, cat))
@@ -1524,7 +1523,7 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         self._content_stack.set_transition_type(Gtk.StackTransitionType.CROSSFADE)
         self._content_stack.set_transition_duration(180)
 
-        for tool in visible_tools():
+        for tool in TOOLS:
             detail = self._build_detail_page(tool)
             self._content_stack.add_named(detail, self._detail_name(tool.id))
 
@@ -1569,7 +1568,7 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         self._sidebar_list.connect("row-selected", self._on_sidebar_selected)
 
         # Adiciona rows agrupadas por categoria, com headers separadores
-        grouped = tools_by_category(visible_tools())
+        grouped = tools_by_category(TOOLS)
         for cat, tools_in_cat in grouped.items():
             # Header row (nao selecionavel)
             header_row = Gtk.ListBoxRow()

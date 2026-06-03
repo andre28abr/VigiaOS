@@ -75,8 +75,8 @@ class TestBackupSources:
     def test_ignores_nonexistent(self, env):
         _seed_sources(env)
         sources = backup.backup_sources()
-        # vigia-deployments nao foi criado -> nao aparece
-        assert all(s.dirname != "vigia-deployments" for s in sources)
+        # vigia-installer nao foi criado (so' hub+antivirus) -> nao aparece
+        assert all(s.dirname != "vigia-installer" for s in sources)
 
 
 # ============================================================

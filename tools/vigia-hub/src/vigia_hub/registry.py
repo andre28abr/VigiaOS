@@ -19,8 +19,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable
 
-from vigia_common.platform import is_atomic
-
 
 _REPO_ROOT = Path(__file__).resolve().parents[4]
 _TOOLS_DIR = _REPO_ROOT / "tools"
@@ -67,9 +65,6 @@ class ToolEntry:
     # Pacote(s) original(is) que esta tool "wrappa" (ex: ["lynis"]).
     # Mostrado como badge no header pra dar transparencia ao user.
     wrapped_packages: list[str] = field(default_factory=list)
-    # So' faz sentido em sistema atomico (rpm-ostree). Escondida no Hub
-    # quando rodando em Fedora Workstation tradicional (ex: Deployments).
-    atomic_only: bool = False
 
     def is_available(self) -> bool:
         try:
@@ -88,17 +83,6 @@ def tools_by_category(tools: list[ToolEntry]) -> dict[str, list[ToolEntry]]:
     for t in tools:
         grouped.setdefault(t.category, []).append(t)
     return {c: grouped[c] for c in CATEGORIES_ORDER if c in grouped}
-
-
-def visible_tools() -> list[ToolEntry]:
-    """TOOLS aplicaveis a este sistema.
-
-    Esconde tools `atomic_only` (ex: Deployments Manager) quando o sistema
-    nao e' atomico (Fedora Workstation) — la' nao existe rpm-ostree nem
-    deployments, entao a tool nao faria sentido.
-    """
-    atomic = is_atomic()
-    return [t for t in TOOLS if atomic or not t.atomic_only]
 
 
 # ============================================================================
@@ -558,42 +542,6 @@ TOOLS: list[ToolEntry] = [
     # As 3 tabs (Hash, Verificar, Baseline) viraram tabs do File Integrity
     # (que ja era escala-sistema com AIDE). Hash ad-hoc + AIDE = mesma
     # categoria de integridade de arquivos.
-    ToolEntry(
-        id="deployments-manager",
-        name="Deployments Manager",
-        description="Gerenciador de deployments rpm-ostree (boot snapshots).",
-        long_description=(
-            "GUI pra gerenciar os **deployments do rpm-ostree** — os "
-            "'snapshots' que aparecem no menu do GRUB ao bootar.\n\n"
-            "Cada deployment é um estado imutável do sistema, criado "
-            "automaticamente em cada `rpm-ostree install/upgrade/rebase`. "
-            "Você pode reverter pro anterior, pinnar pra preservar de "
-            "cleanups automáticos, ou adicionar label/notas customizados "
-            "pra documentar (LGPD/audit).\n\n"
-            "**Cleanup integrado**: botão 'Limpar tudo' executa `rpm-ostree "
-            "cleanup -p -r -m` num só pkexec — libera espaço em `/boot` "
-            "(partição pequena: 600MB-1GB). Tool alerta quando `/boot` "
-            "passa de 70% (amarelo) ou 85% (vermelho)."
-        ),
-        features=[
-            "**3 tabs**: Deployments, Cleanup, Sobre",
-            "Lista deployments com badges: ATIVO/STAGED/PIN/ROLLBACK",
-            "Rollback pro deployment anterior via pkexec",
-            "Pin/Unpin pra preservar contra cleanup automático",
-            "Label customizado + notas multilinha por deployment",
-            "Cleanup all em 1 click (`-p -r -m` num pkexec)",
-            "Alerta visual de `/boot` cheio (>70% amarelo, >85% vermelho)",
-            "State local em `~/.config/vigia-deployments/state.json` (mode 0600)",
-        ],
-        icon_path=_TOOLS_DIR / "deployments-manager" / "data" / "br.com.vigia.DeploymentsManager.svg",
-        exec_cmd=["vigia-deployments"],
-        needs_terminal=False,
-        available_fn=lambda: shutil.which("vigia-deployments") is not None,
-        embedded_module="vigia_deployments.window",
-        category="sistema",
-        wrapped_packages=["rpm-ostree"],
-        atomic_only=True,
-    ),
     # NOTA: Tool Installer NAO esta mais nesta lista. Foi promovido a
     # entidade de primeiro nivel acessivel via icone 'Instalador' na
     # nav lateral fina do Hub (em vez de virar mais uma tool entre tools).
