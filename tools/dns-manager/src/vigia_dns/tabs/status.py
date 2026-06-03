@@ -179,7 +179,7 @@ class StatusTab(Adw.Bin):
             self._state_label.set_label("dnscrypt-proxy não instalado")
             self._state_label.add_css_class("error")
             self._state_sub.set_label(
-                "Instale via Vigia Tool Installer (rpm-ostree install dnscrypt-proxy)."
+                "Instale via Vigia Tool Installer (sudo dnf install dnscrypt-proxy)."
             )
             self._activate_btn.set_visible(False)
             self._restore_btn.set_sensitive(False)

@@ -24,7 +24,7 @@ ABOUT_TEXT = (
     "- <tt>/etc/passwd</tt> editado para criar conta — hash diverge, <i>alarme</i>.\n"
     "- Backdoor em <tt>/root/.ssh/authorized_keys</tt> — hash diverge, <i>alarme</i>.\n\n"
     "<b>Quando não há alarme?</b>\n"
-    "- Updates legítimos do sistema. Após <tt>rpm-ostree upgrade</tt>, você verifica "
+    "- Updates legítimos do sistema. Após uma atualização (dnf), você verifica "
     "→ vê as mudanças em <tt>/etc</tt> → valida → clica em <b>Re-baseline</b>.\n\n"
     "<b>Boa prática</b>: verificar 1x por dia (via cron/systemd) e re-baselinear "
     "após cada update intencional."

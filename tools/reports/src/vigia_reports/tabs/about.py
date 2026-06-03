@@ -43,7 +43,7 @@ SECTIONS: list[tuple[str, str]] = [
         "Conceitos importantes",
         "<b>Por que HTML e não PDF direto?</b> Gerar PDF via Python "
         "(WeasyPrint, ReportLab) requer libcairo+pango+gdk-pixbuf que são "
-        "chatos em Silverblue. Firefox/Chromium já imprimem com fidelidade "
+        "chatos de instalar e manter. Firefox/Chromium já imprimem com fidelidade "
         "visual idêntica via Ctrl+P. Stack leve, output igual.\n\n"
         "<b>Modo admin</b>: sem ele, <tt>journalctl --system</tt> não "
         "retorna dados (restrito) e <tt>lastb</tt> precisa root. Com ele, "

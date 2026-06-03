@@ -1,4 +1,4 @@
-"""Catalogo curado de security tools para Fedora Silverblue.
+"""Catalogo curado de security tools para Fedora Workstation.
 
 Cada CatalogEntry mapeia um pacote do dnf para uma descricao amigavel
 em pt-BR. A ordem dentro de cada categoria importa (mais util primeiro).
@@ -225,8 +225,8 @@ CATALOG: list[CatalogEntry] = [
     # da GUI Firmware Analyzer, ja removida pelo mesmo motivo.
     CatalogEntry(
         # NOTA: o binario chama-se `hashdeep`, mas o PACOTE no Fedora e'
-        # `md5deep` (a suite md5deep/sha256deep/hashdeep). `rpm-ostree
-        # install hashdeep` falha com "Packages not found" (2026-05-30).
+        # `md5deep` (a suite md5deep/sha256deep/hashdeep). `dnf install
+        # hashdeep` falha com "No match for argument: hashdeep".
         package="md5deep",
         name="hashdeep",
         description="Computa hashes recursivamente + compara conjuntos.",

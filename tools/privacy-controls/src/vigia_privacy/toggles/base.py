@@ -125,7 +125,7 @@ def systemd_unit_toggle(
     def _set(value: bool) -> None:
         if shutil.which("pkexec") is None:
             raise RuntimeError(
-                "pkexec não encontrado. Instale 'polkit' via rpm-ostree."
+                "pkexec não encontrado. Instale o 'polkit': sudo dnf install polkit."
             )
         action = "enable" if value else "disable"
         result = subprocess.run(

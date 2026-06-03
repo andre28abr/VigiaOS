@@ -93,8 +93,8 @@ class OverviewTab(Adw.Bin):
 
         self._row_tests_skipped = Adw.ActionRow(title="Tests pulados (skipped)")
         self._row_tests_skipped.set_subtitle(
-            "Lynis pula testes que não se aplicam ao sistema. Esperado "
-            "em Silverblue (alguns checks assumem dnf, /usr mutável)."
+            "Lynis pula testes que não se aplicam ao seu sistema (ex: um "
+            "serviço que você não tem instalado). Um número moderado é normal."
         )
         self._row_tests_skipped.add_css_class("property")
         self._tests_skipped_count = Gtk.Label(label="—")
@@ -115,7 +115,7 @@ class OverviewTab(Adw.Bin):
 
         # Banner de contexto (escondido por padrao). Aparece em casos
         # tipo "Lynis rodou mas nao gerou hardening_index" ou
-        # "% alto de tests skipped — esperado em Silverblue".
+        # "% alto de tests skipped — pode ser normal".
         self._context_banner = Adw.Banner()
         self._context_banner.set_revealed(False)
         self._context_banner.set_title("")
@@ -231,13 +231,13 @@ class OverviewTab(Adw.Bin):
             self._context_banner.set_title(
                 "Lynis não encontrou warnings nem suggestions. "
                 "Pode ser sistema bem configurado OU testes que não se "
-                "aplicam (esperado em Silverblue)."
+                "aplicam à sua máquina."
             )
             self._context_banner.add_css_class("warning")
             self._context_banner.set_revealed(True)
             return
 
-        # Caso 3: muitos tests skipped (>30%) — Silverblue tipico
+        # Caso 3: muitos tests skipped (>30%)
         total = report.tests_executed + report.tests_skipped
         if total > 0:
             skip_ratio = report.tests_skipped / total
@@ -245,8 +245,8 @@ class OverviewTab(Adw.Bin):
                 pct = int(skip_ratio * 100)
                 self._context_banner.set_title(
                     f"{report.tests_skipped} testes pulados ({pct}% do total). "
-                    "Comum em Silverblue: alguns checks assumem dnf ou "
-                    "/usr mutável — irrelevantes em sistema atômico."
+                    "O Lynis pula checagens de serviços/recursos que você não "
+                    "tem instalados — é normal."
                 )
                 self._context_banner.set_revealed(True)
                 return

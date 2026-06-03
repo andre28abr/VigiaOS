@@ -22,17 +22,16 @@ SECTIONS: list[tuple[str, str]] = [
     (
         "Como usar",
         "1. Instale via Vigia Tool Installer (chkrootkit + rkhunter)\n"
-        "2. Reinicie (rpm-ostree precisa)\n"
-        "3. Abra a aba do scanner desejado\n"
-        "4. Clique <i>Iniciar scan</i>, digite senha admin\n"
-        "5. Output streama em tempo real (warnings amarelo, INFECTED vermelho)\n"
-        "6. Resultado fica salvo no Histórico"
+        "2. Abra a aba do scanner desejado\n"
+        "3. Clique <i>Iniciar scan</i>, digite senha admin\n"
+        "4. Output streama em tempo real (warnings amarelo, INFECTED vermelho)\n"
+        "5. Resultado fica salvo no Histórico"
     ),
     (
         "Interpretando resultados",
         "<b>Limpo</b>: nenhum sinal. Sistema OK.\n\n"
         "<b>Warning</b>: possível falso positivo. Causas comuns:\n"
-        "- Arquivos modificados após <tt>rpm-ostree upgrade</tt>\n"
+        "- Arquivos modificados após uma atualização do sistema (dnf)\n"
         "- Modules proprietários (NVIDIA, VirtualBox)\n"
         "- Configs SSH OK no seu contexto\n\n"
         "<b>Infected</b>: alta probabilidade de comprometimento.\n"

@@ -316,7 +316,7 @@ class StatusTab(Adw.Bin):
             heading="Aceitar mudanças atuais?",
             body=(
                 "Re-baseline aceita o estado atual do sistema como referência. "
-                "Faça isso após uma atualização legítima (rpm-ostree upgrade, etc.).\n\n"
+                "Faça isso após uma atualização legítima do sistema (dnf, etc.).\n\n"
                 "Se você não consegue explicar as mudanças, NÃO aceite — investigue primeiro."
             ),
         )

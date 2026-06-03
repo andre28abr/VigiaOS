@@ -15,7 +15,7 @@ SECTIONS: list[tuple[str, str]] = [
         "O que faz",
         "Gerencia o DNS do sistema com <b>dois modos de operação</b>:\n\n"
         "<b>Modo simples (default)</b>: wrappa o <tt>systemd-resolved</tt> "
-        "(padrão em Fedora Silverblue). Catálogo curado de 9 provedores "
+        "(padrão no Fedora Workstation). Catálogo curado de 9 provedores "
         "DoT (Cloudflare, Quad9, AdGuard, Mullvad, Google + variantes) "
         "com 1-click para aplicar.\n\n"
         "<b>Modo avançado (v0.2, opt-in)</b>: substitui o systemd-resolved "
