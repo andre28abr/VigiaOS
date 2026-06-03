@@ -167,9 +167,8 @@ class TestParseConfWatchedPaths:
             "/var/spool/cron NORMAL\n",
             encoding="utf-8",
         )
-        # AIDE_CONF_VIGIA existente => silverblue_profile_active() True =>
-        # active_conf_path() retorna esse arquivo.
-        monkeypatch.setattr(backend, "AIDE_CONF_VIGIA", conf)
+        # active_conf_path() retorna o AIDE_CONF_SYSTEM (mockado aqui).
+        monkeypatch.setattr(backend, "AIDE_CONF_SYSTEM", conf)
         paths = backend.parse_conf_watched_paths()
         # negacao com grupo (regra "path grupo") e' captada, incl. o '!'
         assert paths == ["/etc", "/root", "!/etc/mtab", "/var/spool/cron"]
@@ -177,14 +176,13 @@ class TestParseConfWatchedPaths:
     def test_bare_negation_without_group_is_skipped(self, tmp_path, monkeypatch):
         # O regex exige "path<espaco>token"; uma linha de negacao "crua"
         # (so "!/path", sem grupo) nao casa e e' ignorada no overview.
-        conf = tmp_path / "aide-vigia.conf"
+        conf = tmp_path / "aide.conf"
         conf.write_text("/etc NORMAL\n!/etc/mtab\n/root NORMAL\n", encoding="utf-8")
-        monkeypatch.setattr(backend, "AIDE_CONF_VIGIA", conf)
+        monkeypatch.setattr(backend, "AIDE_CONF_SYSTEM", conf)
         assert backend.parse_conf_watched_paths() == ["/etc", "/root"]
 
     def test_missing_conf_returns_empty(self, tmp_path, monkeypatch):
-        monkeypatch.setattr(backend, "AIDE_CONF_VIGIA", tmp_path / "nope.conf")
-        monkeypatch.setattr(backend, "AIDE_CONF_SYSTEM", tmp_path / "nope2.conf")
+        monkeypatch.setattr(backend, "AIDE_CONF_SYSTEM", tmp_path / "nope.conf")
         assert backend.parse_conf_watched_paths() == []
 
 

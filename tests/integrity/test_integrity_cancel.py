@@ -6,8 +6,6 @@
       - run_init_blocking      -> (False, "...cancel...")
       - run_check_blocking     -> CheckResult.success False, .error "...cancel..."
       - run_update_blocking    -> (False, "...cancel...")
-      - apply_silverblue_profile  -> (False, "...cancel...")
-      - remove_silverblue_profile -> (False, "...cancel...")
 
 (2) Regressao get_last_check(): se state["last_check"] NAO for dict (string
     ou lista), deve retornar (None, None) SEM levantar AttributeError.
@@ -82,24 +80,6 @@ class TestRunUpdateCancel:
         monkeypatch.setattr(backend, "baseline_exists", lambda: True)
         monkeypatch.setattr(backend.subprocess, "run", _fake_run_rc(rc))
         ok, msg = backend.run_update_blocking()
-        assert ok is False
-        assert "cancel" in msg.lower()
-
-
-class TestApplySilverblueProfileCancel:
-    @pytest.mark.parametrize("rc", [126, 127])
-    def test_cancelled(self, monkeypatch, rc):
-        monkeypatch.setattr(backend.subprocess, "run", _fake_run_rc(rc))
-        ok, msg = backend.apply_silverblue_profile()
-        assert ok is False
-        assert "cancel" in msg.lower()
-
-
-class TestRemoveSilverblueProfileCancel:
-    @pytest.mark.parametrize("rc", [126, 127])
-    def test_cancelled(self, monkeypatch, rc):
-        monkeypatch.setattr(backend.subprocess, "run", _fake_run_rc(rc))
-        ok, msg = backend.remove_silverblue_profile()
         assert ok is False
         assert "cancel" in msg.lower()
 

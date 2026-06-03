@@ -52,7 +52,6 @@ class _IntegrityContent:
         self.about = AboutTab()
         self.status = StatusTab(
             on_check_done=self._on_check_done,
-            on_profile_changed=self._on_profile_changed,
         )
         # v0.2.0: tabs vindas do merge com Hash Tools
         self.hash_tab = HashTab()
@@ -107,12 +106,6 @@ class _IntegrityContent:
                 f"AIDE verificou {s.total_entries} entradas — sistema intacto.",
                 notif_id="vigia-integrity-check",
             )
-
-    def _on_profile_changed(self) -> None:
-        """Quando o perfil AIDE muda (aplica/remove), atualiza tabs que
-        mostram info do perfil (Sobre tem indicador read-only)."""
-        self.about.refresh()
-
 
 def build_content() -> Gtk.Widget:
     ctrl = _IntegrityContent()
