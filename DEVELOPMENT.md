@@ -2907,6 +2907,21 @@ o caminho real costuma ser o **toolbox** (que o assistente ensina). Próximo pas
 pra dispensar o debuginfo: gerar o ISF a partir do **BTF** (`/sys/kernel/btf`).
 vigia-blue 0.0.21. Suíte **1179**.
 
+### 2026-06-02 — Memory/símbolos: receita completa + plaso gracioso no blue-deps
+
+Refino do passo anterior, a partir de um run real no Silverblue do user:
+
+- **`symbols_steps()`** agora é uma **receita toolbox completa e copiável** —
+  inclui instalar `golang` + `go install dwarf2json` + `debuginfo-install
+  kernel-core` + gerar o ISF. Como o toolbox compartilha o `$HOME`, o JSON cai
+  direto em `~/teste/memory/symbols/` e o Vigia acha sozinho (`-s`). Sem mais
+  "assume que o dwarf2json já existe".
+- **`blue-deps.sh`**: o **plaso** (dep do Vigia Timeline) deixou de ser um
+  `FAILED` barulhento — vira **aviso guiado** (compila libyal/dfVFS, não compila
+  no atômico → use toolbox/container). volatility3 segue instalando normal.
+
+vigia-blue 0.0.22. Suíte **1179**.
+
 ---
 
 ## 10. Roadmap

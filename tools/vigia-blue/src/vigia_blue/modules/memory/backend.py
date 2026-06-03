@@ -384,17 +384,26 @@ def _find_vmlinux(release: str) -> str | None:
 
 
 def symbols_steps(release: str) -> str:
-    """Passos copiáveis pra gerar os símbolos (Fedora, via toolbox)."""
+    """Receita completa e copiável pra gerar os símbolos no Fedora via toolbox.
+
+    O toolbox compartilha o $HOME, então o ISF cai direto em
+    ~/teste/memory/symbols/ e o Vigia (no host) acha sozinho via `-s`.
+    """
     rel = release or "$(uname -r)"
     return (
-        "No Fedora, gere os símbolos num toolbox (não suja o sistema):\n\n"
+        "No Fedora/Silverblue, gere os símbolos num toolbox (não suja o "
+        "sistema). Cole isto no terminal:\n\n"
         "  toolbox create -y && toolbox enter\n"
-        f"  sudo dnf -y debuginfo-install kernel-core-{rel}\n"
-        "  # com o dwarf2json instalado, rode:\n"
+        "  # --- dentro do toolbox: ---\n"
+        "  sudo dnf install -y golang\n"
+        "  go install github.com/volatilityfoundation/dwarf2json@latest\n"
+        f"  sudo dnf debuginfo-install -y kernel-core-{rel}\n"
         "  mkdir -p ~/teste/memory/symbols/linux\n"
-        f"  dwarf2json linux --elf /usr/lib/debug/lib/modules/{rel}/vmlinux \\\n"
-        f"    > ~/teste/memory/symbols/linux/{rel}.json\n\n"
-        "Depois clique em Preparar símbolos de novo (ou direto em Analisar)."
+        "  ~/go/bin/dwarf2json linux --elf \\\n"
+        f"    /usr/lib/debug/lib/modules/{rel}/vmlinux \\\n"
+        f"    > ~/teste/memory/symbols/linux/{rel}.json\n"
+        "  exit\n\n"
+        "Depois, aqui no Vigia, é só clicar em Analisar de novo — agora vai."
     )
 
 

@@ -100,16 +100,26 @@ fi
 # ===========================================================================
 if [[ $DO_FORENSICS -eq 1 ]]; then
     if command -v pipx >/dev/null 2>&1; then
-        for pkg in volatility3 plaso; do
-            info "pipx install $pkg"
-            if pipx install "$pkg"; then
-                ok "$pkg instalado."
-                DONE+=("$pkg (pipx)")
-            else
-                err "falha ao instalar $pkg via pipx."
-                FAILED+=("$pkg")
-            fi
-        done
+        info "pipx install volatility3"
+        if pipx install volatility3; then
+            ok "volatility3 instalado."
+            DONE+=("volatility3 (pipx)")
+        else
+            err "falha ao instalar volatility3 via pipx."
+            FAILED+=("volatility3")
+        fi
+        # plaso compila várias libs C (libyal/dfVFS) — no sistema atômico
+        # costuma faltar build tool/headers. Falha graciosa: aviso, não erro duro.
+        info "pipx install plaso (compila libs C — pode falhar no atômico)"
+        if pipx install plaso; then
+            ok "plaso instalado."
+            DONE+=("plaso (pipx)")
+        else
+            warn "plaso não compilou — precisa de build tools + libs C (libyal)"
+            warn "que faltam no sistema atômico. No Silverblue, rode o plaso num"
+            warn "toolbox/container. (O módulo Vigia Timeline também avisa.)"
+            SKIPPED+=("plaso (build falhou — use toolbox/container)")
+        fi
     else
         warn "pipx ainda não está disponível."
         if [[ $ATOMIC -eq 1 ]]; then
