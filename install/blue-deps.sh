@@ -64,7 +64,10 @@ info "Fedora Workstation — usando dnf."
 # 1) Pacotes do sistema: yara, suricata (+ pipx p/ a forense)
 # ===========================================================================
 RPM_PKGS=(yara suricata tcpdump)
-[[ $DO_FORENSICS -eq 1 ]] && RPM_PKGS+=(pipx)
+# Forense via pipx: + build tools (o plaso compila libs C — libyal, yara-python)
+# e golang/dnf-plugins-core pros símbolos (dwarf2json + debuginfo do kernel).
+[[ $DO_FORENSICS -eq 1 ]] && RPM_PKGS+=(pipx python3-devel gcc make yara-devel \
+                                       golang dnf-plugins-core)
 
 info "Instalando pacotes do sistema: ${RPM_PKGS[*]}"
 if sudo dnf install -y "${RPM_PKGS[@]}"; then
