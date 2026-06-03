@@ -129,7 +129,7 @@ fi
 
 # ---- 3. instala as ferramentas Vigia (pip --user) + atalhos ---------------
 hr
-info "Instalando as ${#VIGIA_TOOLS[@]} ferramentas Vigia (pip --user)..."
+info "Instalando os ${#VIGIA_TOOLS[@]} pacotes Vigia (pip --user)..."
 APPS_DIR="$HOME/.local/share/applications"
 ICONS_DIR="$HOME/.local/share/icons/hicolor/scalable/apps"
 mkdir -p "$APPS_DIR" "$ICONS_DIR"
@@ -160,8 +160,15 @@ if command -v flatpak >/dev/null 2>&1; then
     info "Instalando Flatpaks de privacidade (escopo user)..."
     flatpak remote-add --user --if-not-exists flathub \
         https://flathub.org/repo/flathub.flatpakrepo || true
-    flatpak install --user --noninteractive --or-update flathub \
-        "${FLATPAKS[@]}" || warn "alguns Flatpaks falharam (segue o jogo)."
+    # Instala UM a UM: um app sem build pra esta arquitetura (ex: Signal
+    # Desktop nao tem ARM64) nao pode derrubar os outros do lote.
+    for fp in "${FLATPAKS[@]}"; do
+        if flatpak install --user --noninteractive --or-update flathub "$fp" >/dev/null 2>&1; then
+            echo "  ${GREEN}ok${NC} $fp"
+        else
+            warn "$fp indisponivel (talvez sem build pra $(uname -m)) — pulado."
+        fi
+    done
 else
     warn "flatpak nao encontrado — pulando apps Flatpak."
 fi
