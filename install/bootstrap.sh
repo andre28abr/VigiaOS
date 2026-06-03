@@ -197,10 +197,11 @@ if command -v flatpak >/dev/null 2>&1; then
     # Instala UM a UM: um app sem build pra esta arquitetura (ex: Signal
     # Desktop nao tem ARM64) nao pode derrubar os outros do lote.
     for fp in "${FLATPAKS[@]}"; do
-        if flatpak install --user --noninteractive --or-update flathub "$fp" >/dev/null 2>&1; then
+        if fp_err=$(flatpak install --user --noninteractive --or-update flathub "$fp" 2>&1); then
             echo "  ${GREEN}ok${NC} $fp"
         else
-            warn "$fp indisponivel (talvez sem build pra $(uname -m)) — pulado."
+            # Mostra o motivo REAL (última linha do erro) em vez de adivinhar.
+            warn "$fp pulado — $(printf '%s' "$fp_err" | tail -1 | cut -c1-90)"
         fi
     done
 else
