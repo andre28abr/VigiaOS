@@ -404,5 +404,14 @@ def _build_about() -> Gtk.Widget:
     sym.set_subtitle_lines(0)
     sym.add_prefix(Gtk.Image.new_from_icon_name("dialog-warning-symbolic"))
     g.add(sym)
+    arm = Adw.ActionRow()
+    arm.set_title("Em ARM64 (aarch64), a análise Linux pode vir vazia")
+    arm.set_subtitle("Com os símbolos certos o Volatility 3 roda, mas o suporte "
+                     "a dump de Linux em ARM64 ainda é novo/incompleto (upstream) "
+                     "— às vezes lista 0 processos. Em x86_64 e em dumps de "
+                     "Windows funciona normal.")
+    arm.set_subtitle_lines(0)
+    arm.add_prefix(Gtk.Image.new_from_icon_name("dialog-information-symbolic"))
+    g.add(arm)
     page.add(g)
     return page
