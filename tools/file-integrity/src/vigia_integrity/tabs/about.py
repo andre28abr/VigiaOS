@@ -1,8 +1,4 @@
-"""Tab Sobre: explica o AIDE + paths monitorados (read-only).
-
-Acoes de perfil (Aplicar/Voltar Silverblue) ficam no Status, nao aqui —
-esta aba e' didatica.
-"""
+"""Tab Sobre: explica o AIDE + paths monitorados (read-only). Aba didatica."""
 
 from __future__ import annotations
 
@@ -35,27 +31,6 @@ ABOUT_TEXT = (
 )
 
 
-SILVERBLUE_PROFILE_TEXT = (
-    "<b>Por que existe um perfil dedicado?</b>\n\n"
-    "AIDE foi pensado para sistemas tradicionais com <tt>/usr</tt> mutável. "
-    "Em Silverblue, <tt>/usr</tt> é uma <b>árvore OSTree imutável</b> — toda "
-    "atualização substitui literalmente milhares de arquivos. Se AIDE "
-    "monitorasse <tt>/usr</tt>, cada <tt>rpm-ostree upgrade</tt> dispararia "
-    "<i>milhares de alarmes</i>, escondendo o que importa.\n\n"
-    "A integridade do <tt>/usr</tt> em Silverblue já é garantida pelo <b>OSTree "
-    "criptográfico</b> (verificação do commit a cada boot).\n\n"
-    "O <b>perfil Silverblue (Vigia)</b> usa <tt>/etc/aide-vigia.conf</tt> "
-    "(separado do <tt>/etc/aide.conf</tt> do sistema) e foca em:\n"
-    "- <tt>/etc</tt> inteiro (sudoers, passwd, shadow, ssh, systemd)\n"
-    "- <tt>/root</tt> (.ssh, dotfiles)\n"
-    "- <tt>/var/spool/cron</tt>, <tt>/var/spool/at</tt> (cron jobs)\n"
-    "- <tt>/usr/local</tt> (instalações fora do OSTree)\n\n"
-    "<i>Excluindo</i> <tt>/usr</tt>, <tt>/boot</tt>, <tt>/ostree</tt>, "
-    "<tt>/sysroot</tt> — gerenciados pelo OSTree.\n\n"
-    "<b>Para aplicar/voltar</b>: vai na aba <b>Status</b>."
-)
-
-
 class AboutTab(Adw.Bin):
     def __init__(self) -> None:
         super().__init__()
@@ -65,19 +40,6 @@ class AboutTab(Adw.Bin):
         about_group = Adw.PreferencesGroup()
         about_group.set_title("Como funciona")
         about_group.add(self._wrap_markup_in_row(ABOUT_TEXT))
-
-        # Perfil Silverblue: texto explicativo + status pill (read-only)
-        self._profile_group = Adw.PreferencesGroup()
-        self._profile_group.set_title("Perfil Silverblue")
-        self._profile_group.add(self._wrap_markup_in_row(SILVERBLUE_PROFILE_TEXT))
-
-        # Status row (atualizada em refresh)
-        self._profile_status_row = Adw.ActionRow(title="Perfil ativo")
-        self._profile_status_row.add_css_class("property")
-        self._profile_badge = Gtk.Label(label="…")
-        self._profile_badge.add_css_class("monospace")
-        self._profile_status_row.add_suffix(self._profile_badge)
-        self._profile_group.add(self._profile_status_row)
 
         # System info
         sys_group = Adw.PreferencesGroup()
@@ -114,7 +76,6 @@ class AboutTab(Adw.Bin):
         # Layout
         page = Adw.PreferencesPage()
         page.add(about_group)
-        page.add(self._profile_group)
         page.add(sys_group)
         page.add(self._paths_group)
         self.set_child(page)
@@ -138,7 +99,6 @@ class AboutTab(Adw.Bin):
         return row
 
     def refresh(self) -> None:
-        is_silverblue = backend.silverblue_profile_active()
         conf_path = str(backend.active_conf_path())
         db_path = str(backend.active_db_path())
         installed = backend.aide_installed()
@@ -162,12 +122,6 @@ class AboutTab(Adw.Bin):
         for cls in ("success", "error", "warning"):
             self._db_lbl.remove_css_class(cls)
         self._db_lbl.add_css_class("success" if db_ok else "warning")
-
-        # Perfil badge
-        for cls in ("success", "dim-label"):
-            self._profile_badge.remove_css_class(cls)
-        self._profile_badge.set_label(backend.active_profile_name())
-        self._profile_badge.add_css_class("success" if is_silverblue else "dim-label")
 
         # Paths
         for r in self._path_rows:
