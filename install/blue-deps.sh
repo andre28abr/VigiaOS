@@ -151,24 +151,38 @@ if [[ $DO_FORENSICS -eq 1 ]]; then
     else
         info "Baixando o AVML (release oficial da Microsoft) → ~/.local/bin/avml…"
         mkdir -p "$HOME/.local/bin"
-        AVML_URL="https://github.com/microsoft/avml/releases/latest/download/avml"
-        if command -v curl >/dev/null 2>&1; then
-            DL=(curl -fsSL -o "$AVML_DEST" "$AVML_URL")
+        # AVML publica um binário POR ARQUITETURA — escolhe pelo uname -m
+        # (x86_64 = 'avml', ARM64 = 'avml-aarch64'). Sem isso, o binário x86
+        # não rodaria no Fedora ARM.
+        case "$(uname -m)" in
+            x86_64)        AVML_ASSET="avml" ;;
+            aarch64|arm64) AVML_ASSET="avml-aarch64" ;;
+            *)             AVML_ASSET="" ;;
+        esac
+        if [[ -z "$AVML_ASSET" ]]; then
+            warn "Sem binário AVML oficial para $(uname -m) — captura de RAM indisponível."
+            warn "Você ainda pode ANALISAR dumps existentes no Vigia Memory."
+            SKIPPED+=("avml (arquitetura $(uname -m) sem binário oficial)")
         else
-            DL=(wget -qO "$AVML_DEST" "$AVML_URL")
-        fi
-        if "${DL[@]}" && chmod 0755 "$AVML_DEST"; then
-            ok "AVML instalado em ~/.local/bin/avml."
-            DONE+=("avml (download oficial)")
-            case ":$PATH:" in
-                *":$HOME/.local/bin:"*) : ;;
-                *) warn "~/.local/bin não está no PATH — adicione p/ o 'avml' ser achado." ;;
-            esac
-        else
-            err "falha ao baixar o AVML."
-            warn "Baixe manualmente: $AVML_URL → ~/.local/bin/avml (chmod +x)"
-            FAILED+=("avml")
-            rm -f "$AVML_DEST" 2>/dev/null || true
+            AVML_URL="https://github.com/microsoft/avml/releases/latest/download/${AVML_ASSET}"
+            if command -v curl >/dev/null 2>&1; then
+                DL=(curl -fsSL -o "$AVML_DEST" "$AVML_URL")
+            else
+                DL=(wget -qO "$AVML_DEST" "$AVML_URL")
+            fi
+            if "${DL[@]}" && chmod 0755 "$AVML_DEST"; then
+                ok "AVML instalado em ~/.local/bin/avml (${AVML_ASSET})."
+                DONE+=("avml (${AVML_ASSET})")
+                case ":$PATH:" in
+                    *":$HOME/.local/bin:"*) : ;;
+                    *) warn "~/.local/bin não está no PATH — adicione p/ o 'avml' ser achado." ;;
+                esac
+            else
+                err "falha ao baixar o AVML."
+                warn "Baixe manualmente: $AVML_URL → ~/.local/bin/avml (chmod +x)"
+                FAILED+=("avml")
+                rm -f "$AVML_DEST" 2>/dev/null || true
+            fi
         fi
     fi
 else
