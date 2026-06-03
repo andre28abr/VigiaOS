@@ -157,6 +157,16 @@ for p in "${VIGIA_PRODUCTS[@]}"; do
     compgen -G "$pdir/data/*.svg" >/dev/null 2>&1 \
         && install -Dpm 0644 "$pdir"/data/*.svg "$ICONS_DIR"/ 2>/dev/null || true
 done
+
+# 3b'. Alguns backends CLI trazem um .desktop próprio que polui o menu (ex:
+#      chkrootkit abre num terminal e fecha). Esconde com um override
+#      NoDisplay no nível do usuário — o binário continua (o Vigia usa ele).
+for app in chkrootkit; do
+    [ -f "/usr/share/applications/$app.desktop" ] || continue
+    printf '[Desktop Entry]\nType=Application\nName=%s\nNoDisplay=true\n' "$app" \
+        > "$APPS_DIR/$app.desktop"
+done
+
 # gtk-update-icon-cache exige um index.theme no dir do tema; em ~/.local ele
 # costuma faltar e o cache nao reconstroi (icones novos ficam invisiveis no
 # GNOME). Copia o do sistema se faltar e forca o rebuild.
