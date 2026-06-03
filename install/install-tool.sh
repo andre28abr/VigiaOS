@@ -4,17 +4,14 @@
 #
 # Instala uma única ferramenta da VigiaOS via `pip --user` e registra o
 # atalho (.desktop) + ícone no GNOME do usuário. Não precisa do Vigia Hub
-# nem de root, e funciona igual em Fedora Silverblue (atômico) e Fedora
-# Workstation — porque instala tudo dentro de ~/.local (nada de
-# rpm-ostree/dnf aqui).
+# nem de root — instala tudo dentro de ~/.local (sem dnf aqui).
 #
 # Uso:
 #   install/install-tool.sh <modulo>     # ex: antivirus, dns-manager
 #   install/install-tool.sh --list       # lista os módulos disponíveis
 #
 # Para instalação como pacote de sistema (quando o COPR estiver ativo):
-#   rpm-ostree install vigia-antivirus   # atomic
-#   dnf install vigia-antivirus          # workstation
+#   sudo dnf install vigia-antivirus
 #
 set -euo pipefail
 

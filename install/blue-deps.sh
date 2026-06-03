@@ -3,12 +3,12 @@
 # blue-deps.sh — instala as dependências externas dos módulos do VigiaBlue.
 #
 # Os módulos do VigiaBlue embarcam ferramentas open source que NÃO fazem parte
-# do pacote Python (vigia-blue). Este script instala todas de uma vez,
-# detectando a plataforma (Fedora Atomic/Silverblue vs Workstation):
+# do pacote Python (vigia-blue). Este script instala todas de uma vez no
+# Fedora Workstation (dnf):
 #
-#   yara        → rpm-ostree (atomic) | dnf (workstation)   — módulo Vigia YARA
-#   suricata    → rpm-ostree | dnf                          — módulo Vigia IDS
-#   tcpdump     → rpm-ostree | dnf                          — captura do Vigia IDS
+#   yara        → dnf                                       — módulo Vigia YARA
+#   suricata    → dnf                                       — módulo Vigia IDS
+#   tcpdump     → dnf                                       — captura do Vigia IDS
 #   volatility3 → pipx (forense, sem root)                  — módulo Vigia Memory
 #   avml        → download oficial (Microsoft) → ~/.local/bin — captura do Memory
 #   dwarf2json  → go install → ~/.local/bin                  — símbolos do Memory
@@ -23,8 +23,6 @@
 #   ./install/blue-deps.sh --no-core       # pula a build do vigia-log
 #
 # Segurança: nomes de pacote são fixos (sem entrada do usuário nos comandos).
-# Em sistema atômico, pacotes rpm-ostree só valem após REINICIAR — o script
-# avisa; rode-o de novo após o reboot para concluir a parte de forense.
 
 set -uo pipefail
 
@@ -57,21 +55,10 @@ done
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(dirname "$SCRIPT_DIR")"
 
-NEEDS_REBOOT=0
 declare -a DONE=() SKIPPED=() FAILED=()
 
 # ---- plataforma ------------------------------------------------------------
-if [[ -f /run/ostree-booted ]]; then
-    ATOMIC=1
-    # Variante REAL (Silverblue/Kinoite/Bluefin/…) lida do /etc/os-release —
-    # não é detecção de desktop, é só o rótulo do sistema.
-    VARIANT_LABEL="$(sed -n 's/^VARIANT=//p' /etc/os-release 2>/dev/null | tr -d '"' | head -1)"
-    [[ -z "$VARIANT_LABEL" ]] && VARIANT_LABEL="Atomic"
-    info "Sistema ${BOLD}atômico${NC} detectado: ${BOLD}${VARIANT_LABEL}${NC} — usando rpm-ostree."
-else
-    ATOMIC=0
-    info "Sistema ${BOLD}tradicional${NC} detectado — usando dnf."
-fi
+info "Fedora Workstation — usando dnf."
 
 # ===========================================================================
 # 1) Pacotes do sistema: yara, suricata (+ pipx p/ a forense)
@@ -80,23 +67,12 @@ RPM_PKGS=(yara suricata tcpdump)
 [[ $DO_FORENSICS -eq 1 ]] && RPM_PKGS+=(pipx)
 
 info "Instalando pacotes do sistema: ${RPM_PKGS[*]}"
-if [[ $ATOMIC -eq 1 ]]; then
-    if rpm-ostree install --idempotent --allow-inactive "${RPM_PKGS[@]}"; then
-        ok "Pacotes adicionados à próxima imagem."
-        NEEDS_REBOOT=1
-        DONE+=("${RPM_PKGS[@]} (rpm-ostree — vale após reboot)")
-    else
-        err "rpm-ostree falhou."
-        FAILED+=("${RPM_PKGS[*]}")
-    fi
+if sudo dnf install -y "${RPM_PKGS[@]}"; then
+    ok "Instalados."
+    DONE+=("${RPM_PKGS[*]}")
 else
-    if sudo dnf install -y "${RPM_PKGS[@]}"; then
-        ok "Instalados."
-        DONE+=("${RPM_PKGS[*]}")
-    else
-        err "dnf falhou."
-        FAILED+=("${RPM_PKGS[*]}")
-    fi
+    err "dnf falhou."
+    FAILED+=("${RPM_PKGS[*]}")
 fi
 
 # ===========================================================================
@@ -112,25 +88,24 @@ if [[ $DO_FORENSICS -eq 1 ]]; then
             err "falha ao instalar volatility3 via pipx."
             FAILED+=("volatility3")
         fi
-        # plaso compila várias libs C (libyal/dfVFS) — no sistema atômico
-        # costuma faltar build tool/headers. Falha graciosa: aviso, não erro duro.
-        info "pipx install plaso (compila libs C — pode falhar no atômico)"
-        if pipx install plaso; then
-            ok "plaso instalado."
+        # plaso: o Fedora empacota plaso e as libs libyal — tenta o RPM
+        # primeiro (sem compilar); se faltar, cai pro pipx (que compila as
+        # libs C usando os build tools do sistema mutável).
+        info "Instalando plaso (dnf, sem compilar)…"
+        if sudo dnf install -y plaso 2>/dev/null; then
+            ok "plaso instalado (dnf)."
+            DONE+=("plaso (dnf)")
+        elif pipx install plaso; then
+            ok "plaso instalado (pipx)."
             DONE+=("plaso (pipx)")
         else
-            warn "plaso não compilou — precisa de build tools + libs C (libyal)"
-            warn "que faltam no sistema atômico. No Silverblue, rode o plaso num"
-            warn "toolbox/container. (O módulo Vigia Timeline também avisa.)"
-            SKIPPED+=("plaso (build falhou — use toolbox/container)")
+            warn "plaso não instalou. Instale os build tools e tente de novo:"
+            warn "  sudo dnf install -y gcc python3-devel && pipx install plaso"
+            SKIPPED+=("plaso (instale gcc/python3-devel e repita)")
         fi
     else
         warn "pipx ainda não está disponível."
-        if [[ $ATOMIC -eq 1 ]]; then
-            warn "Em sistema atômico, REINICIE e rode este script de novo para a forense."
-        else
-            warn "Instale o pipx e rode de novo: sudo dnf install -y pipx"
-        fi
+        warn "Instale o pipx e rode de novo: sudo dnf install -y pipx"
         SKIPPED+=("volatility3 + plaso (sem pipx)")
     fi
 else
@@ -158,7 +133,7 @@ if [[ $DO_CORE -eq 1 ]]; then
         fi
     else
         warn "cargo (Rust) não encontrado — necessário para o vigia-log."
-        warn "Instale o Rust e rode de novo: $([[ $ATOMIC -eq 1 ]] && echo 'rpm-ostree install cargo (+reboot)' || echo 'sudo dnf install -y cargo')"
+        warn "Instale o Rust e rode de novo: sudo dnf install -y cargo"
         SKIPPED+=("vigia-log (sem cargo)")
     fi
 else
@@ -219,9 +194,8 @@ if [[ $DO_FORENSICS -eq 1 ]]; then
         fi
     else
         warn "Go não encontrado — preciso dele p/ o dwarf2json (gera os símbolos)."
-        warn "No Silverblue, o caminho mais limpo é gerar os símbolos num toolbox"
-        warn "(o Vigia Memory mostra o passo a passo na hora). Sem isso, a análise"
-        warn "de dump Linux não roda."
+        warn "Instale com: sudo dnf install -y golang  e rode de novo. Sem isso,"
+        warn "a análise de dump Linux (experimental) não roda."
         SKIPPED+=("dwarf2json (sem go)")
     fi
 else
@@ -238,10 +212,4 @@ for s in "${SKIPPED[@]:-}"; do [[ -n "$s" ]] && warn "pulado: $s"; done
 for f in "${FAILED[@]:-}";  do [[ -n "$f" ]] && err "falhou: $f"; done
 
 echo
-if [[ $NEEDS_REBOOT -eq 1 ]]; then
-    echo "${YELLOW}${BOLD}Reinicie o sistema${NC} para ativar os pacotes do rpm-ostree:"
-    echo "  ${DIM}systemctl reboot${NC}"
-    echo "Depois, rode este script de novo para concluir a forense (pipx)."
-else
-    echo "${GREEN}Pronto.${NC} Abra o VigiaBlue → aba ${BOLD}Instalador${NC} para conferir o status."
-fi
+echo "${GREEN}Pronto.${NC} Abra o VigiaBlue → aba ${BOLD}Instalador${NC} para conferir o status."

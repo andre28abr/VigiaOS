@@ -41,7 +41,7 @@ mkdir -p "$(dirname "$PCAP")"                 # convenção: ~/teste/<modulo>/
 command -v suricata >/dev/null 2>&1 \
     || die "Suricata não instalado. Rode ./install/blue-deps.sh (ou instale o suricata)."
 command -v tcpdump  >/dev/null 2>&1 \
-    || die "tcpdump não instalado. Instale: sudo dnf install tcpdump  (ou rpm-ostree install tcpdump)."
+    || die "tcpdump não instalado. Instale: sudo dnf install tcpdump."
 command -v curl     >/dev/null 2>&1 || die "curl não encontrado."
 
 # ---- regras do Suricata (sem elas: 0 alertas) ------------------------------

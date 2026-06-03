@@ -3,11 +3,9 @@
 # VigiaOS — bootstrap único (auto-detecta a plataforma)
 #
 # Instala a suíte VigiaOS completa numa instalação Fedora limpa:
-#   - Detecta se é Fedora Atomic (Silverblue/Kinoite/…) ou Workstation
-#     tradicional e usa rpm-ostree ou dnf automaticamente.
-#   - Instala as dependências de runtime (GTK4) + os backends CLI que as
-#     ferramentas wrappam (lynis, aide, clamav, …).
-#   - Clona o repo, instala as 16 ferramentas (pip --user) e registra
+#   - Instala via dnf (Fedora Workstation) as dependências de runtime (GTK4)
+#     + os backends CLI que as ferramentas wrappam (lynis, aide, clamav, …).
+#   - Clona o repo, instala as ferramentas (pip --user) e registra
 #     atalhos + ícones no menu do GNOME.
 #   - Instala Flatpaks de privacidade (KeePassXC, Signal, Tor Browser…).
 #
@@ -40,15 +38,9 @@ warn()  { echo "${YELLOW}!! ${NC} $*"; }
 fail()  { echo "${RED}xx ${NC} $*" >&2; }
 hr()    { echo "${DIM}--------------------------------------------------${NC}"; }
 
-# ---- detecta plataforma ---------------------------------------------------
-if [ -f /run/ostree-booted ]; then
-    ATOMIC=1; PM="rpm-ostree"
-    # variante REAL (Silverblue/Kinoite/…) do /etc/os-release
-    _V="$(sed -n 's/^VARIANT=//p' /etc/os-release 2>/dev/null | tr -d '"' | head -1)"
-    PLATFORM="Fedora ${_V:-Atomic} (atômico)"
-else
-    ATOMIC=0; PLATFORM="Fedora Workstation (tradicional)"; PM="dnf"
-fi
+# ---- plataforma -----------------------------------------------------------
+_V="$(sed -n 's/^VARIANT=//p' /etc/os-release 2>/dev/null | tr -d '"' | sed 's/ Edition//' | head -1)"
+PLATFORM="Fedora ${_V:-Workstation}"; PM="dnf"
 
 cat <<BANNER
 
@@ -59,8 +51,8 @@ ${ACCENT}  VIGIA${NC}${BOLD}OS${NC}  ${DIM}|  suite de seguranca / privacidade /
 BANNER
 
 # ---- pacotes --------------------------------------------------------------
-# Runtime GUI (GTK4) + ferramentas pra instalar via pip. Em Silverblue a
-# maioria ja' vem na imagem base — rpm-ostree/dnf sao idempotentes.
+# Runtime GUI (GTK4) + ferramentas pra instalar via pip. O dnf e' idempotente
+# (re-rodar o bootstrap nao quebra).
 DEPS_CORE=(git python3-pip python3-gobject gtk4 libadwaita)
 
 # Backends CLI que as ferramentas Vigia wrappam. INSTALA, mas NAO LIGA
@@ -112,47 +104,16 @@ echo "  ${DIM}tools:${NC}    ${#VIGIA_TOOLS[@]} ferramentas Vigia (pip --user) +
 echo "  ${DIM}flatpaks:${NC} ${FLATPAKS[*]}"
 echo
 warn "Nenhum servico sera LIGADO (fail2ban/dnscrypt off — opt-in nas tools)."
-if [ "$ATOMIC" = "1" ]; then
-    warn "Sistema atomico: os pacotes ficam layered e exigem REBOOT no fim."
-fi
 hr
 read -rp "Continuar? [y/N] " ANSWER < /dev/tty || ANSWER=""
 case "$ANSWER" in y|Y|yes|YES) ;; *) echo "Cancelado."; exit 0 ;; esac
 
 # ---- 1. update + deps -----------------------------------------------------
 hr
-if [ "$ATOMIC" = "1" ]; then
-    info "Atualizando o sistema (rpm-ostree)..."
-    sudo rpm-ostree upgrade || warn "upgrade pulado (sem mudancas ou offline)."
-    info "Layerando dependencias (uma transacao)..."
-    # --allow-inactive: nao falha se um pacote ja' vem na imagem base (ex:
-    # gtk4/libadwaita/python3-gobject no Silverblue/GNOME). Sem isso o
-    # rpm-ostree aborta com "already provided ... use --allow-inactive".
-    # --idempotent: nao falha se ja' estiver layered (re-run do bootstrap).
-    sudo rpm-ostree install --idempotent --allow-inactive \
-        "${DEPS_CORE[@]}" "${DEPS_BACKENDS[@]}"
-else
-    info "Atualizando o sistema (dnf)..."
-    sudo dnf -y upgrade || warn "upgrade pulado."
-    info "Instalando dependencias..."
-    sudo dnf install -y "${DEPS_CORE[@]}" "${DEPS_BACKENDS[@]}"
-fi
-
-# ---- 1b. atomico: git/pip layered so' ativam apos reboot ------------------
-# Numa instalacao vanilla sem git/pip no base, eles foram so' STAGED acima;
-# clonar/pip agora falharia. Pede reboot + re-run (a 2a passada e' idempotente).
-if [ "$ATOMIC" = "1" ] \
-   && { ! command -v git >/dev/null 2>&1 || ! python3 -m pip --version >/dev/null 2>&1; }; then
-    hr
-    warn "git/pip entraram como camada — so' ativam apos reboot."
-    echo
-    echo "${BOLD}Reinicie e rode este bootstrap de novo${NC} pra clonar e instalar"
-    echo "as ferramentas (as dependencias ja' estao staged):"
-    echo
-    echo "    ${BOLD}systemctl reboot${NC}"
-    echo
-    exit 0
-fi
+info "Atualizando o sistema (dnf)..."
+sudo dnf -y upgrade || warn "upgrade pulado."
+info "Instalando dependencias..."
+sudo dnf install -y "${DEPS_CORE[@]}" "${DEPS_BACKENDS[@]}"
 
 # ---- 2. clona o repo (se necessario) --------------------------------------
 hr
@@ -212,12 +173,6 @@ echo
 echo "${DIM}Nenhum servico foi ligado. Ative o que quiser nas ferramentas:${NC}"
 echo "${DIM}  • fail2ban → Privacy Controls    • DNS encriptado → DNS Manager${NC}"
 echo
-if [ "$ATOMIC" = "1" ]; then
-    echo "${BOLD}Reinicie para ativar os pacotes layered:${NC}"
-    echo "    ${BOLD}systemctl reboot${NC}"
-    echo "${DIM}Apos o reboot, abra o ${BOLD}Vigia Hub${NC}${DIM} pelo menu do GNOME.${NC}"
-else
-    echo "${BOLD}Pronto — sem reboot.${NC} Abra o ${BOLD}Vigia Hub${NC} pelo menu do GNOME"
-    echo "${DIM}(ou rode ${BOLD}vigia-hub${NC}${DIM} no terminal).${NC}"
-fi
+echo "${BOLD}Pronto — sem reboot.${NC} Abra o ${BOLD}Vigia Hub${NC} pelo menu do GNOME"
+echo "${DIM}(ou rode ${BOLD}vigia-hub${NC}${DIM} no terminal).${NC}"
 echo
