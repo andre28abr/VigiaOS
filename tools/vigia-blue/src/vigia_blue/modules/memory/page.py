@@ -301,11 +301,11 @@ class _AnalyzeView(Gtk.Box):
         self._results.set_description(
             "Faltam os símbolos do kernel deste dump (a pegadinha do Linux).")
         row = Adw.ActionRow()
-        row.set_title("Faltam os símbolos do kernel")
+        row.set_title("Faltam os símbolos do kernel (experimental)")
         row.set_subtitle(
-            "Pra analisar um dump de Linux, o Volatility precisa do 'mapa' do "
-            "kernel (ISF). Clique em Preparar símbolos — eu gero se der, ou te "
-            "mostro o passo a passo do seu kernel.")
+            "A análise de dump de Linux é experimental. O Volatility precisa do "
+            "'mapa' do kernel (ISF) — clique em Preparar símbolos: eu gero se "
+            "der, ou te mostro o passo a passo do seu kernel.")
         row.set_subtitle_lines(0)
         row.add_prefix(Gtk.Image.new_from_icon_name("dialog-warning-symbolic"))
         btn = Gtk.Button(label="Preparar símbolos")
@@ -396,11 +396,12 @@ def _build_about() -> Gtk.Widget:
     cap.add_prefix(Gtk.Image.new_from_icon_name("camera-photo-symbolic"))
     g.add(cap)
     sym = Adw.ActionRow()
-    sym.set_title("Dumps de Linux precisam de símbolos do kernel")
+    sym.set_title("Análise de dump Linux é experimental (precisa de símbolos)")
     sym.set_subtitle("Para analisar um dump de Linux, o Volatility 3 precisa de "
                      "um 'mapa' do kernel (ISF). Se faltar, a análise oferece o "
                      "botão Preparar símbolos — gera o ISF (precisa de dwarf2json "
-                     "+ kernel-debuginfo) ou mostra o passo a passo.")
+                     "+ kernel-debuginfo) ou mostra o passo a passo. Recurso "
+                     "experimental; em Windows a análise é automática.")
     sym.set_subtitle_lines(0)
     sym.add_prefix(Gtk.Image.new_from_icon_name("dialog-warning-symbolic"))
     g.add(sym)

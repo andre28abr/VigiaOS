@@ -51,13 +51,16 @@ da cena** (a captura) desta máquina.
 
 Roda **100% local**. O dump e a análise ficam só na sua máquina.
 
-## Uma pegadinha (dumps de Linux)
+## Análise de dump Linux: **experimental** (a pegadinha dos símbolos)
+
+> ⚠️ A análise de dump **de Linux** ainda é **experimental**. Dump de **Windows**
+> funciona normal e automático — esse não é experimental.
 
 Pra analisar um dump **de Linux**, o Volatility também precisa de um "mapa" do
 kernel (os *símbolos*). Quando falta, a análise mostra um botão **Preparar
 símbolos**: o Vigia tenta **gerar** esse mapa sozinho — e, se não der (no
 Silverblue costuma faltar o `kernel-debuginfo`), ele te mostra o **passo a passo
-copiável** pro seu kernel exato (com toolbox). No **Windows** isso é automático.
+copiável** pro seu kernel exato (com toolbox).
 
 ## Precisa instalar
 
