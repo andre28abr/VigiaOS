@@ -1,11 +1,7 @@
-"""Testes do backend do Tool Installer.
+"""Testes do backend do Tool Installer (Fedora Workstation, dnf).
 
-Cobre o dispatch rpm-ostree (atomico) vs dnf (Workstation) introduzido no
-B3, o helper _run_pkg_cmd e reboot_system.
-
-NOTA de mock: backend.py faz `from vigia_common.platform import is_atomic`
-no topo (binding no namespace do modulo), entao monkeypatcha-se
-`backend.is_atomic` — NAO `vigia_common.platform.is_atomic`.
+Cobre install/uninstall, o helper _run_pkg_cmd, a checagem de updates
+(`dnf check-update`) e a aplicacao (`pkexec dnf upgrade -y`).
 """
 
 from __future__ import annotations
@@ -32,34 +28,15 @@ def _fake_run(returncode=0, stdout="", stderr=""):
     return runner
 
 
-class TestInstallDispatch:
-    def test_install_atomic_uses_rpm_ostree(self, monkeypatch):
-        monkeypatch.setattr(backend, "is_atomic", lambda: True)
-        run = _fake_run(stdout="done")
-        monkeypatch.setattr(backend.subprocess, "run", run)
-        ok, _ = backend.install_packages_blocking(["lynis"])
-        assert ok is True
-        assert run.calls[0] == [
-            "pkexec", "rpm-ostree", "install", "--idempotent", "lynis",
-        ]
-
-    def test_install_workstation_uses_dnf(self, monkeypatch):
-        monkeypatch.setattr(backend, "is_atomic", lambda: False)
+class TestInstall:
+    def test_install_uses_dnf(self, monkeypatch):
         run = _fake_run(stdout="done")
         monkeypatch.setattr(backend.subprocess, "run", run)
         ok, _ = backend.install_packages_blocking(["lynis", "aide"])
         assert ok is True
         assert run.calls[0] == ["pkexec", "dnf", "install", "-y", "lynis", "aide"]
 
-    def test_uninstall_atomic_no_idempotent(self, monkeypatch):
-        monkeypatch.setattr(backend, "is_atomic", lambda: True)
-        run = _fake_run()
-        monkeypatch.setattr(backend.subprocess, "run", run)
-        backend.uninstall_packages_blocking(["lynis"])
-        assert run.calls[0] == ["pkexec", "rpm-ostree", "uninstall", "lynis"]
-
-    def test_uninstall_workstation_uses_dnf_remove(self, monkeypatch):
-        monkeypatch.setattr(backend, "is_atomic", lambda: False)
+    def test_uninstall_uses_dnf_remove(self, monkeypatch):
         run = _fake_run()
         monkeypatch.setattr(backend.subprocess, "run", run)
         backend.uninstall_packages_blocking(["lynis"])
@@ -120,64 +97,17 @@ class TestRunPkgCmd:
         assert ok is False and "encontrado" in out
 
 
-class TestRebootSystem:
-    def test_success(self, monkeypatch):
-        run = _fake_run(0)
-        monkeypatch.setattr(backend.subprocess, "run", run)
-        ok, out = backend.reboot_system()
-        assert ok is True and out == ""
-        assert run.calls[0] == ["pkexec", "systemctl", "reboot"]
-
-    @pytest.mark.parametrize("rc", [126, 127])
-    def test_cancelled(self, monkeypatch, rc):
-        monkeypatch.setattr(backend.subprocess, "run", _fake_run(rc))
-        ok, out = backend.reboot_system()
-        assert ok is False and "cancelada" in out.lower()
-
-    def test_timeout(self, monkeypatch):
-        def boom(*a, **k):
-            raise subprocess.TimeoutExpired(cmd="x", timeout=10)
-
-        monkeypatch.setattr(backend.subprocess, "run", boom)
-        ok, out = backend.reboot_system()
-        assert ok is False and "demorou" in out
-
-    def test_binary_missing(self, monkeypatch):
-        def boom(*a, **k):
-            raise FileNotFoundError()
-
-        monkeypatch.setattr(backend.subprocess, "run", boom)
-        ok, out = backend.reboot_system()
-        assert ok is False and "encontrado" in out
-
-
 class TestUpdateCommands:
-    def test_check_cmd_atomic(self, monkeypatch):
-        monkeypatch.setattr(backend, "is_atomic", lambda: True)
-        assert backend.check_update_command() == ["rpm-ostree", "upgrade", "--check"]
-
-    def test_check_cmd_workstation(self, monkeypatch):
-        monkeypatch.setattr(backend, "is_atomic", lambda: False)
+    def test_check_cmd(self):
         assert backend.check_update_command() == ["dnf", "check-update"]
 
-    def test_update_cmd_atomic(self, monkeypatch):
-        monkeypatch.setattr(backend, "is_atomic", lambda: True)
-        assert backend.update_command() == ["rpm-ostree", "upgrade"]
-        assert backend.update_command(elevated=True) == [
-            "pkexec", "rpm-ostree", "upgrade",
-        ]
-
-    def test_update_cmd_workstation(self, monkeypatch):
-        monkeypatch.setattr(backend, "is_atomic", lambda: False)
+    def test_update_cmd(self):
         assert backend.update_command() == ["dnf", "upgrade", "-y"]
         assert backend.update_command(elevated=True) == [
             "pkexec", "dnf", "upgrade", "-y",
         ]
 
-    def test_display_cmd(self, monkeypatch):
-        monkeypatch.setattr(backend, "is_atomic", lambda: True)
-        assert backend.update_command_display() == "rpm-ostree upgrade"
-        monkeypatch.setattr(backend, "is_atomic", lambda: False)
+    def test_display_cmd(self):
         assert backend.update_command_display() == "sudo dnf upgrade"
 
 
@@ -209,64 +139,25 @@ class TestParseDnfCheckUpdate:
         assert backend.parse_dnf_check_update(out) == ["abc", "foo"]
 
 
-class TestParseRpmOstreeCheck:
-    def test_extracts_arrow_lines(self):
-        out = "Diff:\n  lynis 3.0.8 -> 3.0.9\n  yara 4.5 -> 4.5.1\n"
-        assert backend.parse_rpm_ostree_check(out) == ["lynis", "yara"]
-
-    def test_skips_version_header_line(self):
-        out = "Version: 40.20240101.0 -> 40.20240115.0\n  foo 1 -> 2\n"
-        assert backend.parse_rpm_ostree_check(out) == ["foo"]
-
-    def test_empty_when_no_arrows(self):
-        assert backend.parse_rpm_ostree_check("No upgrade available.") == []
-
-
 class TestCheckUpdates:
-    def test_atomic_rc77_up_to_date(self, monkeypatch):
-        monkeypatch.setattr(backend, "is_atomic", lambda: True)
-        monkeypatch.setattr(backend.subprocess, "run", _fake_run(77, ""))
-        info = backend.check_updates()
-        assert info.checked is True and info.available is False
-
-    def test_atomic_rc0_with_update(self, monkeypatch):
-        monkeypatch.setattr(backend, "is_atomic", lambda: True)
-        monkeypatch.setattr(
-            backend.subprocess, "run",
-            _fake_run(0, "AvailableUpdate:\n  foo 1 -> 2\n"))
-        info = backend.check_updates()
-        assert info.checked and info.available and info.packages == ["foo"]
-
-    def test_atomic_rc0_no_upgrade_text(self, monkeypatch):
-        monkeypatch.setattr(backend, "is_atomic", lambda: True)
-        monkeypatch.setattr(
-            backend.subprocess, "run", _fake_run(0, "No upgrade available."))
-        info = backend.check_updates()
-        assert info.checked is True and info.available is False
-
-    def test_workstation_rc100_has_updates(self, monkeypatch):
-        monkeypatch.setattr(backend, "is_atomic", lambda: False)
+    def test_rc100_has_updates(self, monkeypatch):
         monkeypatch.setattr(
             backend.subprocess, "run",
             _fake_run(100, "lynis.noarch 3.0.9 updates\n"))
         info = backend.check_updates()
         assert info.checked and info.available and info.packages == ["lynis"]
 
-    def test_workstation_rc0_up_to_date(self, monkeypatch):
-        monkeypatch.setattr(backend, "is_atomic", lambda: False)
+    def test_rc0_up_to_date(self, monkeypatch):
         monkeypatch.setattr(backend.subprocess, "run", _fake_run(0, ""))
         info = backend.check_updates()
         assert info.checked is True and info.available is False
 
     def test_error_returncode_sets_error(self, monkeypatch):
-        monkeypatch.setattr(backend, "is_atomic", lambda: False)
         monkeypatch.setattr(backend.subprocess, "run", _fake_run(1, "", "boom"))
         info = backend.check_updates()
         assert info.checked is False and "boom" in info.error
 
     def test_timeout(self, monkeypatch):
-        monkeypatch.setattr(backend, "is_atomic", lambda: False)
-
         def boom(*a, **k):
             raise subprocess.TimeoutExpired(cmd="x", timeout=180)
 
@@ -275,8 +166,6 @@ class TestCheckUpdates:
         assert info.checked is False and "tempo limite" in info.error
 
     def test_binary_missing(self, monkeypatch):
-        monkeypatch.setattr(backend, "is_atomic", lambda: False)
-
         def boom(*a, **k):
             raise FileNotFoundError()
 
@@ -286,16 +175,7 @@ class TestCheckUpdates:
 
 
 class TestRunSystemUpdate:
-    def test_atomic_uses_pkexec_rpm_ostree(self, monkeypatch):
-        monkeypatch.setattr(backend, "is_atomic", lambda: True)
-        run = _fake_run(0, "ok")
-        monkeypatch.setattr(backend.subprocess, "run", run)
-        ok, _ = backend.run_system_update_blocking()
-        assert ok is True
-        assert run.calls[0] == ["pkexec", "rpm-ostree", "upgrade"]
-
-    def test_workstation_uses_pkexec_dnf(self, monkeypatch):
-        monkeypatch.setattr(backend, "is_atomic", lambda: False)
+    def test_uses_pkexec_dnf(self, monkeypatch):
         run = _fake_run(0, "ok")
         monkeypatch.setattr(backend.subprocess, "run", run)
         ok, _ = backend.run_system_update_blocking()
@@ -351,7 +231,7 @@ class TestUpdatesToNotifications:
         titles = " ".join(n.title.lower() for n in notes)
         assert "sistema" in titles and "suíte" in titles
 
-    def test_atomico_sem_lista_vira_notif_de_sistema(self):
+    def test_sem_lista_vira_notif_de_sistema(self):
         info = backend.UpdateInfo(checked=True, available=True, packages=[])
         notes = backend.updates_to_notifications(info)
         assert len(notes) == 1
