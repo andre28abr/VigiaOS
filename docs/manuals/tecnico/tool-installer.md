@@ -3,7 +3,7 @@
 ## Em uma frase
 
 Catálogo curado de 13 ferramentas de segurança instaláveis com 1 clique
-via `rpm-ostree` + catálogo de 8 extensões FOSS para navegadores que
+via `dnf` + catálogo de 8 extensões FOSS para navegadores que
 abrem em AMO/Chrome Web Store via `xdg-open`.
 
 ## O que envolve
@@ -12,8 +12,8 @@ abrem em AMO/Chrome Web Store via `xdg-open`.
 |---|---|
 | **Pacote** | `vigia-tool-installer` (versão 0.4.0) |
 | **App ID** | `br.com.vigia.ToolInstaller` |
-| **Pacotes wrapped** | `rpm-ostree`, `xdg-open` |
-| **Privilégios** | `pkexec rpm-ostree install/uninstall/upgrade` ou `pkexec dnf install/remove/upgrade` |
+| **Pacotes wrapped** | `dnf`, `rpm`, `xdg-open` |
+| **Privilégios** | `pkexec dnf install/remove/upgrade` (checagem via `rpm -q`, sem root) |
 | **State local** | `~/.config/vigia-installer/browser-extensions.json` |
 | **Stack** | Python 3.11+ . PyGObject . GTK4 . libadwaita 1 |
 
@@ -21,13 +21,13 @@ abrem em AMO/Chrome Web Store via `xdg-open`.
 
 ```
 vigia_installer/
-|-- backend.py             # rpm-ostree/dnf install/uninstall/upgrade/status/check_updates
+|-- backend.py             # dnf install/remove/upgrade + rpm -q + check_updates
 |-- catalog.py             # CATALOG: 13 CatalogEntry em 5 categorias
 |-- browser_extensions.py  # detect_installed_browsers + CATALOG extensoes + state
 |-- window.py              # 4 tabs no Adw.ViewStack
 `-- tabs/
     |-- browse.py          # catalogo categorizado + search + install/remove
-    |-- updates.py         # checa/aplica updates do sistema + reinicio pendente
+    |-- updates.py         # checa/aplica updates do sistema (dnf)
     |-- extensions.py      # extensoes por navegador detectado
     `-- about.py
 ```
@@ -70,65 +70,55 @@ firefox, firefox-esr, librewolf, google-chrome, chromium-browser,
 brave-browser, vivaldi. Família firefox/chromium determina qual URL
 gerar (AMO vs Chrome Web Store).
 
-### Pending changes via rpm-ostree status
+### Status de instalação via `rpm -q`
 
 ```python
-def pending_changes() -> PendingChanges:
-    data = rpm_ostree_status_raw()  # rpm-ostree status --json
-    booted = next((d for d in deployments if d.get("booted")), None)
-    staged = next((d for d in deployments if d.get("staged")), None)
-    if staged:
-        staged_pkgs = set(staged.get("requested-packages", []) or [])
-        booted_pkgs = set(booted.get("requested-packages", []) or [])
-        pending_added = sorted(staged_pkgs - booted_pkgs)
-        pending_removed = sorted(booted_pkgs - staged_pkgs)
+def is_package_installed(pkg: str) -> bool:
+    # rpm -q <pkg>  -> returncode 0 = instalado (sem root)
+    result = subprocess.run(["rpm", "-q", pkg], capture_output=True,
+                            text=True, timeout=5)
+    return result.returncode == 0
 ```
+
+O `dnf install` aplica na hora; não há conceito de "mudanças staged /
+reboot pendente". O status é binário: **Disponível** ou **INSTALADO**.
 
 ### Checagem e aplicação de atualizações (aba Atualizações)
 
 ```python
 def check_updates() -> UpdateInfo:
-    # atomico:     rpm-ostree upgrade --check   (rc 0 = update, 77 = nada)
-    # workstation: dnf check-update             (rc 100 = update, 0 = nada)
-    # parse_dnf_check_update / parse_rpm_ostree_check extraem os nomes
+    # dnf check-update  (rc 100 = update, 0 = nada, outro = erro)
+    # parse_dnf_check_update extrai os nomes dos pacotes
 
 def update_command(elevated=False) -> list[str]:
-    # atomico: ["rpm-ostree","upgrade"]; dnf: ["dnf","upgrade","-y"]
-    # elevated=True prefixa "pkexec" (uso no painel do Hub)
+    # ["dnf","upgrade","-y"]; elevated=True prefixa "pkexec"
+    # (uso no painel do Hub)
 ```
 
 `check_updates()` é **read-only** (sem root) e roda em worker thread ao
 abrir a aba (notificação no próprio painel). `run_system_update_blocking()`
 aplica via `pkexec` (timeout 1800s). O comando "puro"
-(`update_command_display()` → `rpm-ostree upgrade` / `sudo dnf upgrade`) é
+(`update_command_display()` → `sudo dnf upgrade`) é
 exposto **copiável** pro usuário rodar no terminal — os dois caminhos
 coexistem (painel vs terminal, o usuário escolhe).
 
 ## Comandos disparados
 
 ```bash
-# Verificar instalacao
+# Verificar instalacao (read-only, sem root)
 rpm -q lynis                         # returncode 0 = instalado
 
-# Status do rpm-ostree (para deteccao de staged/pending)
-rpm-ostree status --json
-
-# Instalar (idempotente — nao falha se ja estiver staged)
-pkexec rpm-ostree install --idempotent lynis aide chkrootkit
+# Instalar (aplica na hora, sem reboot)
+pkexec dnf install -y lynis aide chkrootkit
 
 # Desinstalar
-pkexec rpm-ostree uninstall lynis
-
-# Aplicar mudancas
-pkexec systemctl reboot
+pkexec dnf remove -y lynis
 
 # Checar atualizacoes (read-only, sem root)
-rpm-ostree upgrade --check      # atomico  (rc 0 = update, 77 = nada)
-dnf check-update                # workstation (rc 100 = update, 0 = nada)
+dnf check-update                # rc 100 = update, 0 = nada
 
-# Aplicar atualizacao do sistema (caminho "painel")
-pkexec rpm-ostree upgrade       # atomico  (stage p/ proximo boot)
-pkexec dnf upgrade -y           # workstation (aplica na hora)
+# Aplicar atualizacao do sistema (caminho "painel", aplica na hora)
+pkexec dnf upgrade -y
 
 # Extensao: abrir URL no navegador default
 xdg-open "https://addons.mozilla.org/firefox/addon/ublock-origin/"
@@ -139,15 +129,15 @@ xdg-open "https://chromewebstore.google.com/detail/cjpalhdlnbpafiamejdnhcphjbkei
 
 | Tab | Descrição |
 |---|---|
-| **Catálogo** | Lista categorizada em `Adw.PreferencesGroup`. Cada item é `Adw.ExpanderRow` com prefix badge de status (`Disponivel` / `INSTALADO` / `PENDENTE`) + suffix botão ação (`Instalar` / `Remover` / `Pendente`). Expansão mostra `why` + nome do pacote. Status carregado em worker thread (`refresh_statuses_async`). Search filtra em nome/desc/pacote/why. |
-| **Atualizações** | Checagem automática ao abrir (worker thread → hero "N atualizações" / "Sistema atualizado"). Dois caminhos: botão `Atualizar agora` (`pkexec rpm-ostree/dnf upgrade`) e comando copiável pro terminal (`update_command_display`). Lista **separada por origem**: **Sistema** vs **Programas da suíte Vigia** (`split_updates` + `catalog.is_suite_package`). Em sistema atômico, seção "Reinício pendente" (staged + `Reiniciar agora`). Aparece nos dois (atômico **e** dnf). |
+| **Catálogo** | Lista categorizada em `Adw.PreferencesGroup`. Cada item é `Adw.ExpanderRow` com prefix badge de status (`Disponivel` / `INSTALADO`) + suffix botão ação (`Instalar` / `Remover`). Expansão mostra `why` + nome do pacote. Status carregado em worker thread (`refresh_statuses_async`). Search filtra em nome/desc/pacote/why. |
+| **Atualizações** | Checagem automática ao abrir (worker thread → hero "N atualizações" / "Sistema atualizado"). Dois caminhos: botão `Atualizar agora` (`pkexec dnf upgrade -y`, aplica na hora) e comando copiável pro terminal (`update_command_display`). Lista **separada por origem**: **Sistema** vs **Programas da suíte Vigia** (`split_updates` + `catalog.is_suite_package`). |
 | **Extensões** | Detecta navegadores instalados, lista catálogo FOSS + botão "Abrir no <browser>" (xdg-open URL da AMO/Web Store). Marcação manual de "já instalei" persistente em JSON. Lock por categoria ad-blocker (só 1 por browser). |
 | **Sobre** | 5 seções markup-formatted. |
 
 ## Quando usar
 
 - **Setup pós-instalação**: instalar lynis + aide + chkrootkit em
-  sequência, depois reiniciar 1x.
+  sequência (aplica na hora, sem reboot).
 - **Hardening incremental**: adicionar fail2ban quando começar a expor
   serviço SSH.
 - **Privacidade browser**: instalar uBlock Origin + Privacy Badger +
@@ -167,11 +157,11 @@ xdg-open "https://chromewebstore.google.com/detail/cjpalhdlnbpafiamejdnhcphjbkei
 
 ## Trecho de código relevante
 
-Install consolidado (`backend.py:122`):
+Install consolidado (`backend.py`):
 
 ```python
 def install_packages_blocking(packages: list[str]) -> tuple[bool, str]:
-    cmd = ["pkexec", "rpm-ostree", "install", "--idempotent"] + list(packages)
+    cmd = ["pkexec", "dnf", "install", "-y"] + list(packages)
     result = subprocess.run(cmd, capture_output=True, text=True, timeout=900)
     if result.returncode in (126, 127):
         return False, "Autenticacao cancelada."

@@ -87,12 +87,12 @@ abrir a GUI não consegue injetar — script bash referencia
 - **Hero box**: Hardening Index gigante (0-100) + label de severidade
   + ProgressBar
 - **Stats group**: warnings count, suggestions count, tests executed,
-  tests skipped (com explicação de Silverblue), última execução
-  (`ha X min/horas/dias`)
+  tests skipped (com explicação: o Lynis pula testes que não se aplicam
+  ao sistema), última execução (`ha X min/horas/dias`)
 - **Context banner**: aparece condicionalmente:
   - Rodou mas não gerou hardening_index → erro
   - Sem findings → talvez bem configurado OU parser falhou
-  - >30% de tests skipped → comum em Silverblue, explica
+  - >30% de tests skipped → normal (serviços/recursos não instalados), explica
 - **Action group**: botão "Executar auditoria completa" (ProgressBar
   pulsante durante run)
 
@@ -136,9 +136,9 @@ traduz para pt-BR: `KRNL` → "Kernel e sysctl", `AUTH` → "Autenticacao",
 ## Limitações conhecidas
 
 - Lynis é **read-only** — só reporta, não corrige
-- Algumas suggestions são irrelevantes em Silverblue mas Lynis ainda
-  lista (ex: "instalar antivírus" mesmo com ClamAV presente). UI mostra
-  contador de skipped pra contextualizar
+- Algumas suggestions podem ser irrelevantes no seu sistema mas Lynis
+  ainda lista (ex: "instalar antivírus" mesmo com ClamAV presente). UI
+  mostra contador de skipped pra contextualizar
 - Sem **comparação temporal** (run1 vs run2) — v0.2 vai trazer
 - Parser key=value é robusto mas formatos novos do Lynis podem
   introduzir keys que ignoramos

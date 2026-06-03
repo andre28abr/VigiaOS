@@ -103,7 +103,7 @@ risk_for_cap("CAP_SETUID")  # 'alto'
 
 ## Quando usar
 
-- **Após `rpm-ostree upgrade`**: verifica se algum binário novo ganhou
+- **Após `sudo dnf upgrade`**: verifica se algum binário novo ganhou
   capability inesperada.
 - **Após incidente suspeito**: caça por `cap_sys_admin` ou `cap_setuid`
   em paths não-canônicos (`/tmp`, `/home`, `/var/tmp`).

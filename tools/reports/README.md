@@ -12,7 +12,7 @@ Gerador de relatorios **HTML** (com layout pronto pra impressao em PDF) a partir
 
 ## Por que HTML em vez de PDF direto
 
-Gerar PDF via Python (WeasyPrint, ReportLab) requer dependencias pesadas (libcairo, pango) que sao complicadas em Fedora Silverblue (sistema imutavel). Usando HTML + "Imprimir como PDF" do Firefox/Chromium, a fidelidade visual e' identica e a stack fica leve.
+Gerar PDF via Python (WeasyPrint, ReportLab) requer dependencias pesadas (libcairo, pango) que aumentam a superficie de instalacao. Usando HTML + "Imprimir como PDF" do Firefox/Chromium, a fidelidade visual e' identica e a stack fica leve.
 
 ## Templates incluidos (v0.1)
 

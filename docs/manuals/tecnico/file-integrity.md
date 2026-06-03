@@ -15,7 +15,6 @@ usuário — duas escalas, mesma lógica de "baseline + diff".
 | **Pacotes wrapped** | `aide`, `coreutils` (hashlib do Python stdlib para hash ad-hoc) |
 | **Privilégios** | AIDE: tudo via `pkexec`. Hash ad-hoc: sem privilégios |
 | **Path config (sistema)** | `/etc/aide.conf` + `/var/lib/aide/aide.db.gz` |
-| **Path config (Silverblue)** | `/etc/aide-vigia.conf` + `/var/lib/aide/aide.db.vigia.gz` |
 | **State local** | `~/.config/vigia/file-integrity.json` (0600) + `~/.local/share/vigia-hash/` (0700) |
 | **Stack** | Python 3.11+ . PyGObject . GTK4 . libadwaita 1 |
 
@@ -23,7 +22,7 @@ usuário — duas escalas, mesma lógica de "baseline + diff".
 
 ```
 vigia_integrity/
-|-- backend.py          # AIDE: init/check/update + parse_check_output + perfis
+|-- backend.py          # AIDE: init/check/update + parse_check_output
 |-- hash_backend.py     # hashlib/hashdeep: hash, verify, create/compare baseline (detecta movido)
 |-- window.py           # build_content() — 6 tabs no Adw.ViewStack
 `-- tabs/
@@ -35,16 +34,12 @@ vigia_integrity/
     `-- about.py
 ```
 
-### Dois perfis AIDE
+### Config AIDE do sistema
 
-| Perfil | Config | DB | Quando usar |
-|---|---|---|---|
-| **Sistema padrão** | `/etc/aide.conf` | `aide.db.gz` | Distros tradicionais. Em Silverblue, monitora `/usr` que muda a cada upgrade -> ruído massivo. |
-| **Silverblue (Vigia)** | `/etc/aide-vigia.conf` | `aide.db.vigia.gz` | Exclui `/usr`, `/boot`, `/ostree`, `/sysroot` (cobertos pelo OSTree criptográfico). Foca em `/etc`, `/root`, `/var/spool/cron`, `/usr/local`. |
-
-`silverblue_profile_active()` -> True se `/etc/aide-vigia.conf` existe.
-`active_conf_path()` / `active_db_path()` / `active_db_new_path()`
-resolvem o perfil automaticamente.
+A tool usa o AIDE padrão do sistema (`/etc/aide.conf` +
+`/var/lib/aide/aide.db.gz`), que no Fedora Workstation monitora `/usr`,
+`/boot`, `/etc`, `/root` e cron jobs — cobertura completa, sem perfis
+extras.
 
 ### Cache LGPD em STATE_FILE
 
@@ -64,29 +59,19 @@ Atualizado em `run_init_blocking()` e `run_update_blocking()`.
 # Criar baseline (sistema vazio)
 pkexec bash -c '
 set -e
-rm -f /var/lib/aide/aide.db.vigia.new.gz
-aide -c /etc/aide-vigia.conf --init
-mv -f /var/lib/aide/aide.db.vigia.new.gz /var/lib/aide/aide.db.vigia.gz
+rm -f /var/lib/aide/aide.db.new.gz
+aide -c /etc/aide.conf --init
+mv -f /var/lib/aide/aide.db.new.gz /var/lib/aide/aide.db.gz
 '
 
 # Verificar
-pkexec aide -c /etc/aide-vigia.conf --check
+pkexec aide -c /etc/aide.conf --check
 # Returncode: 0 = sem mudancas; 1-7 = bitmask added/removed/changed; 8+ = erro
 
 # Atualizar baseline (apos aplicar mudancas legitimas)
 pkexec bash -c '
-aide -c /etc/aide-vigia.conf --update
-mv -f /var/lib/aide/aide.db.vigia.new.gz /var/lib/aide/aide.db.vigia.gz
-'
-
-# Aplicar perfil Silverblue (escreve /etc/aide-vigia.conf via heredoc)
-pkexec bash -c 'cat > /etc/aide-vigia.conf << EOF ... EOF; chmod 644'
-
-# Remover perfil Silverblue
-pkexec bash -c '
-rm -f /etc/aide-vigia.conf
-rm -f /var/lib/aide/aide.db.vigia.gz
-rm -f /var/lib/aide/aide.db.vigia.new.gz
+aide -c /etc/aide.conf --update
+mv -f /var/lib/aide/aide.db.new.gz /var/lib/aide/aide.db.gz
 '
 
 # Hash ad-hoc (Python stdlib, sem subprocess)
@@ -97,18 +82,18 @@ hashlib.new("sha256").update(chunk)  # 1MB por iteracao
 
 | Tab | Escala | Privilégios | Descrição |
 |---|---|---|---|
-| **Status (AIDE)** | Sistema | root | Hero card mostrando estado + ações "Criar baseline" / "Verificar agora" / "Atualizar baseline". Controle de perfil (Aplicar/Remover Silverblue). Stats do último check. |
+| **Status (AIDE)** | Sistema | root | Hero card mostrando estado + ações "Criar baseline" / "Verificar agora" / "Atualizar baseline". Stats do último check. |
 | **Mudanças (AIDE)** | Sistema | root | Lista added/removed/changed do último `aide --check`. Para changed mostra quais propriedades mudaram (perms, mtime, size, sha256...). |
 | **Hash** | Arquivo único | user | File picker + ComboRow algoritmo (sha256/sha512/sha1/md5) + botão Calcular + copy hash. |
 | **Verificar** | Arquivo único | user | Hash esperado + arquivo + algoritmo -> matches/computed. Aceita format `sha256sum` (`<hash>  <filename>`). |
 | **Baseline** | Diretório | user | Cria JSON de hashes recursivos em `~/.local/share/vigia-hash/baseline-<dir>-<ts>.json`. Comparar baseline diz added/removed/modified/unchanged. |
-| **Sobre** | — | — | Explica AIDE + perfil Silverblue + paths monitorados (extraídos via `parse_conf_watched_paths()`). |
+| **Sobre** | — | — | Explica AIDE + paths monitorados (extraídos via `parse_conf_watched_paths()`). |
 
 ## Quando usar
 
-- **Pós-instalação do sistema**: criar baseline AIDE (perfil Silverblue
-  recomendado para Fedora atômicas).
-- **Pós-rpm-ostree upgrade**: rodar `aide --check`, validar mudanças
+- **Pós-instalação do sistema**: criar baseline AIDE (config padrão do
+  sistema, cobertura completa).
+- **Pós-`sudo dnf upgrade`**: rodar `aide --check`, validar mudanças
   legítimas em `/etc`, clicar "Re-baseline" para aceitar.
 - **Forense / cadeia de custódia**: tab Hash + Verificar com sha256/sha512.
 - **Snapshot de diretório user-space**: tab Baseline para `/home/andre/casos/processo-X`.
@@ -125,22 +110,9 @@ hashlib.new("sha256").update(chunk)  # 1MB por iteracao
 
 ## Trecho de código relevante
 
-Perfil Silverblue otimizado (`backend.py:558`):
-
-```
-NORMAL = R+sha256
-/etc NORMAL                         # config, sudoers, passwd, shadow
-/root NORMAL                        # .ssh, dotfiles
-/var/spool/cron NORMAL              # cron jobs (vetor classico)
-/usr/local NORMAL                   # instalacoes fora do OSTree
-
-# Exclusoes — cobertos pelo OSTree criptografico
-!/usr/bin
-!/usr/sbin
-!/usr/lib
-!/ostree
-!/boot
-```
+A config padrão do AIDE no Fedora Workstation (`/etc/aide.conf`) já
+cobre `/usr`, `/boot`, `/etc`, `/root` e cron jobs — a tool roda em cima
+dela sem perfis extras.
 
 Hash chunked com 1MB (`hash_backend.py:113`):
 

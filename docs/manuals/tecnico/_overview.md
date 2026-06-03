@@ -2,12 +2,11 @@
 
 ## O que é
 
-VigiaOS é uma **suite de 15 ferramentas GTK4 + libadwaita** focada em
-segurança, privacidade e conformidade com LGPD para Fedora Silverblue
-(e derivadas atômicas: Kinoite, Bluefin, Bazzite, Aurora).
+VigiaOS é uma **suite de 14 ferramentas GTK4 + libadwaita** focada em
+segurança, privacidade e conformidade com LGPD para Fedora Workstation.
 
-Não é uma distribuição Linux — é um **toolkit** que roda sobre
-Silverblue vanilla, aproveitando a base atômica oficial da Red Hat.
+Não é uma distribuição Linux — é um **toolkit** que roda sobre o Fedora
+Workstation vanilla.
 
 ## Stack tecnológica
 
@@ -69,7 +68,6 @@ separação em subprocess.
 |---|---|---|
 | `~/.config/vigia-hub/settings.json` | Hub: autostart, tray, lock, theme | 0600 |
 | `~/.config/autostart/vigia-hub.desktop` | XDG autostart entry | 0644 |
-| `~/.config/vigia-deployments/state.json` | Labels + notas dos deployments | 0600 |
 | `~/.config/vigia-dns/state.json` | DNS Manager: servidor ativo | 0600 |
 | `~/.config/vigia-dashboard/alerts.json` | Dashboard: alertas configurados | 0600 |
 | `~/.local/share/vigia-reports/` | Relatórios gerados (PDF/HTML) | 0700 dir |
@@ -88,15 +86,14 @@ separação em subprocess.
 ### 🛡️ Defesa & Hardening
 - **SELinux Manager** — Booleans, denials, restorecon, audit2allow
 - **Firewall Manager** — `firewalld` zones + serviços
-- **Hardening Checks** — Wrapper `lynis` + perfil Silverblue
+- **Hardening Checks** — Wrapper `lynis`
 - **File Integrity** — AIDE (sistema) + hash ad-hoc (user)
 - **Capabilities Inspector** — `getcap` audit + 41 caps documentadas
 - **Antivirus** — Wrapper ClamAV (substitui clamtk)
 - **Rootkit Scanner** — `chkrootkit` + `rkhunter` unificados
 
 ### ⚙️ Sistema
-- **Tool Installer** — Catálogo `rpm-ostree` + extensões browser FOSS
-- **Deployments Manager** — `rpm-ostree` GUI (rollback, pin, cleanup)
+- **Tool Installer** — Catálogo `dnf` + extensões browser FOSS
 
 ### 📋 Relatórios
 - **Reports** — PDF/HTML LGPD via Activity Log JSON
@@ -132,6 +129,5 @@ Specs RPM prontas em `packaging/`:
 - 17 spec files por tool
 
 ```bash
-sudo rpm-ostree install vigia-suite
-sudo systemctl reboot
+sudo dnf install vigia-suite
 ```

@@ -27,8 +27,7 @@ v0.1.0 — alpha. Funcional para todas as métricas principais.
 ```bash
 # Nenhum pacote externo necessário — usa /proc
 # Opcional para temperaturas:
-sudo rpm-ostree install lm_sensors
-sudo systemctl reboot
+sudo dnf install lm_sensors
 sudo sensors-detect --auto
 
 pip install --user -e .

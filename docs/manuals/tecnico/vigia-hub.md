@@ -48,9 +48,9 @@ pkexec /usr/bin/true
 # mesmo processo PyGObject)
 vigia-hub-tray
 
-# Instalacao da lib do tray em Silverblue (chamada pelo dialog do switch)
-pkexec rpm-ostree install libayatana-appindicator-gtk3 \
-                          gnome-shell-extension-appindicator
+# Instalacao da lib do tray (chamada pelo dialog do switch, aplica na hora)
+pkexec dnf install -y libayatana-appindicator-gtk3 \
+                      gnome-shell-extension-appindicator
 
 # Ativa a extensao AppIndicator
 gnome-extensions enable appindicatorsupport@rgcjonas.gmail.com
@@ -103,7 +103,7 @@ do dot de status (`Label("●")` + classe `error`). O toggle `check_updates`
 
 ## Limitações conhecidas
 
-- Tray icon exige `libayatana-appindicator-gtk3` + extensão GNOME ativada. Em Silverblue vanilla **nenhum dos dois** vem instalado e a lib precisa de reboot (overlay rpm-ostree).
+- Tray icon exige `libayatana-appindicator-gtk3` + extensão GNOME ativada. No Fedora Workstation vanilla **nenhum dos dois** vem instalado; o dialog do switch instala via `dnf` (aplica na hora).
 - Idle monitor (`IdleMonitor` em `idle.py`) detecta inatividade da **janela do Hub**, não do sistema. Se o user está usando outra app, ainda conta como idle do Hub — comportamento desejado pra LGPD.
 - Em sistema sem `pkexec`, o switch de password lock é silenciosamente revertido com dialog explicativo.
 - Schema dconf de tema (`Adw.StyleManager`) só reage corretamente quando a extensão usa `Adw.ColorScheme.PREFER_DARK` / `FORCE_DARK` / `DEFAULT` — alguns DEs antigos podem ignorar.

@@ -14,8 +14,8 @@ v0.2.0: reescrito do zero usando pattern identico ao Antivirus.
 
 ## Pre-requisitos
 
-- `chkrootkit` instalado (rpm-ostree install chkrootkit)
-- `rkhunter` instalado (rpm-ostree install rkhunter)
+- `chkrootkit` instalado (sudo dnf install chkrootkit)
+- `rkhunter` instalado (sudo dnf install rkhunter)
 
 Use o **Vigia Tool Installer** pra instalacao 1-click.
 

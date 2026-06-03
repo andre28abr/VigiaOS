@@ -51,7 +51,7 @@ Manuais de todas as ferramentas, divididos em "Visão geral", "Manual técnico" 
 
 ## Termos que você vai ver
 
-- **Bandeja do sistema (tray)** — o cantinho perto do relógio do GNOME, onde aparecem ícones de apps minimizados. Em Silverblue vanilla precisa instalar uma extensão pra essa área existir.
+- **Bandeja do sistema (tray)** — o cantinho perto do relógio do GNOME, onde aparecem ícones de apps minimizados. No GNOME vanilla do Fedora Workstation precisa instalar uma extensão pra essa área existir.
 - **Autostart** — opção que faz o Hub abrir sozinho toda vez que você liga o computador.
 - **pkexec / Polkit** — o sistema do Linux que pede sua senha de admin com aquele diálogo cinza padrão do GNOME. O Hub nunca guarda sua senha; ele só pede pro Polkit perguntar.
 - **Lock** — quando o Hub está "bloqueado", ele esconde a janela e pede sua senha de admin pra reabrir.

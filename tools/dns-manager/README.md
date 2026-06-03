@@ -27,8 +27,7 @@ LibRedirect, etc.) — abre direto na AMO/Web Store do seu navegador.
 
 - `dnscrypt-proxy` instalado:
   ```bash
-  sudo rpm-ostree install dnscrypt-proxy
-  systemctl reboot
+  sudo dnf install dnscrypt-proxy
   ```
   Ou via **Vigia Tool Installer** (recomendado).
 

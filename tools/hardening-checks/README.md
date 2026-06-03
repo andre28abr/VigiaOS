@@ -18,10 +18,9 @@ Lynis e' a ferramenta mais popular de auditoria de hardening no Linux, mas o out
 
 ## Pre-requisitos
 
-- Fedora Silverblue (ou similar) com Lynis instalado:
+- Fedora Workstation (ou similar) com Lynis instalado:
   ```bash
-  rpm-ostree install lynis
-  systemctl reboot
+  sudo dnf install lynis
   ```
 - `polkit` (instalado por padrao no GNOME)
 

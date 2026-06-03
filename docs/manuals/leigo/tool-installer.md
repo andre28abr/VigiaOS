@@ -44,12 +44,9 @@ no topo pra filtrar.
 abre, ele **já verifica sozinho** se há atualizações e te avisa ali
 mesmo. Você escolhe como atualizar:
 - pelo **painel do Vigia** (botão "Atualizar agora"), ou
-- copiando o **comando pro terminal** do sistema.
+- copiando o **comando pro terminal** do sistema (`sudo dnf upgrade`).
 
-O Vigia reconhece sozinho se o seu sistema usa `rpm-ostree` (Silverblue)
-ou `dnf` (Workstation) e mostra o comando certo. Se você acabou de
-instalar algo e o sistema for atômico, aparece aqui também o aviso de
-"Reiniciar agora" pra aplicar.
+A atualização é aplicada **na hora**, sem precisar reiniciar.
 
 A lista embaixo separa o que será atualizado em duas partes: **Sistema**
 (pacotes do sistema operacional) e **Programas da suíte Vigia** (as suas
@@ -65,16 +62,11 @@ basta clicar em "Adicionar".
 
 ## O que cada parte faz
 
-### Por que precisa reiniciar?
+### A instalação é na hora
 
-O Fedora Silverblue (sistema do Vigia) é **atômico** — pacotes não são
-"instalados na hora". Eles ficam em **camadas** que só tomam efeito
-depois de reiniciar. É menos prático que o jeito tradicional, mas
-**muito mais seguro**: se algo der errado, você volta atrás com 1
-clique.
-
-A boa estratégia: **instala vários de uma vez, depois reinicia 1 vez
-só**.
+No Fedora Workstation (sistema do Vigia) os pacotes são **instalados na
+hora**, sem reiniciar. Você clica em "Instalar", digita a senha, e em
+alguns instantes a ferramenta já está pronta pra usar.
 
 ### Extensões recomendadas (resumo rápido)
 
@@ -91,8 +83,7 @@ só**.
 
 ## Posso quebrar alguma coisa?
 
-**Instalar**: nada quebra. Cada instalação vira uma camada nova. Se não
-gostar, você remove e fica como antes.
+**Instalar**: nada quebra. Se não gostar, você remove e fica como antes.
 
 **Remover**: também não quebra. Mas alguns programas, se já estiverem
 em uso, podem precisar de configuração manual pra parar de rodar
@@ -114,9 +105,8 @@ e mantidas**. Não tem nada suspeito. As extensões são todas FOSS
    **rkhunter** (auditoria de segurança completa).
 2. Catálogo -> Instalar **fail2ban** (bloqueia automaticamente IPs que
    tentam invadir).
-3. **Atualizações** -> Reiniciar agora.
-4. Depois do boot, abra a ferramenta de **Integridade de Arquivos** e
-   crie o baseline.
+3. **Atualizações** -> Atualizar agora (deixa o sistema em dia).
+4. Abra a ferramenta de **Integridade de Arquivos** e crie o baseline.
 5. Volte aqui na aba **Extensões**, abra seu navegador favorito,
    instale **uBlock Origin** + **Privacy Badger** + **ClearURLs**.
 

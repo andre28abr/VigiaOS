@@ -127,7 +127,7 @@ Para iterar a TUI no Mac sem `journalctl` disponível, gere um snapshot na VM
 e leve para o Mac:
 
 ```bash
-# Na VM Silverblue:
+# Na VM Fedora Workstation:
 sudo journalctl -o json --no-pager -n 500 > /tmp/journal-snap.json
 scp /tmp/journal-snap.json mac:~/
 

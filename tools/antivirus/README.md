@@ -22,8 +22,7 @@ e visualização de findings.
 ## Setup
 
 ```bash
-sudo rpm-ostree install clamav clamav-update clamav-server
-systemctl reboot
+sudo dnf install clamav clamav-update clamav-server
 # Primeira vez: atualizar base
 sudo freshclam
 # Ou usar a UI:

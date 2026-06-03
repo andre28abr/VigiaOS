@@ -58,9 +58,9 @@ Roda **100% local**. O dump e a análise ficam só na sua máquina.
 
 Pra analisar um dump **de Linux**, o Volatility também precisa de um "mapa" do
 kernel (os *símbolos*). Quando falta, a análise mostra um botão **Preparar
-símbolos**: o Vigia tenta **gerar** esse mapa sozinho — e, se não der (no
-Silverblue costuma faltar o `kernel-debuginfo`), ele te mostra o **passo a passo
-copiável** pro seu kernel exato (com toolbox).
+símbolos**: o Vigia tenta **gerar** esse mapa sozinho — e, se não der (costuma
+faltar o `kernel-debuginfo`), ele te mostra o **passo a passo copiável** pro seu
+kernel exato (instala direto via `dnf`).
 
 ## Precisa instalar
 
