@@ -22,7 +22,7 @@ from ..catalog import (
 )
 from ._helpers import make_clamp, show_error, show_info
 
-from vigia_common.platform import needs_reboot_to_apply, package_manager
+from vigia_common.platform import package_manager
 
 
 # Markdown leve compartilhado — duplicado do hub por enquanto.
@@ -44,9 +44,7 @@ class BrowseTab(Adw.Bin):
         super().__init__()
         self._on_changed = on_changed
         self._running = False
-        # Plataforma: atomico (rpm-ostree, precisa reboot) vs dnf (na hora).
-        self._needs_reboot = needs_reboot_to_apply()
-        self._pm = package_manager()
+        self._pm = package_manager()  # "dnf" (Fedora Workstation)
         self._initial_load_done = False
         self._pulse_id: int | None = None
         self._row_widgets: dict[str, dict] = {}  # package -> {row, btn, status_lbl}
@@ -63,12 +61,7 @@ class BrowseTab(Adw.Bin):
         header_desc = Gtk.Label(
             label=(
                 f"{len(CATALOG)} ferramentas de segurança selecionadas. "
-                + (
-                    "Cada install vira uma camada via rpm-ostree e precisa "
-                    "de reboot para aplicar."
-                    if self._needs_reboot
-                    else "Cada install usa dnf e é aplicado na hora."
-                )
+                "Cada instalação usa o dnf e é aplicada na hora."
             )
         )
         header_desc.add_css_class("dim-label")
@@ -117,9 +110,9 @@ class BrowseTab(Adw.Bin):
         self.set_child(scrolled)
 
         self._build_catalog()
-        # Init nao bloqueia UI thread: coleta de status (rpm -q x N + rpm-ostree
-        # status) roda em worker thread; widgets mostram '...' ate o resultado
-        # chegar via GLib.idle_add.
+        # Init nao bloqueia UI thread: a coleta de status (rpm -q x N) roda em
+        # worker thread; widgets mostram '...' ate o resultado chegar via
+        # GLib.idle_add.
         self._show_loading_state()
         self.refresh_statuses_async()
 
@@ -218,29 +211,20 @@ class BrowseTab(Adw.Bin):
             btn.set_sensitive(False)
 
     def _status_worker(self) -> None:
-        """Coleta installed/pending em thread. SEMPRE termina chamando
+        """Coleta os pacotes instalados em thread. SEMPRE termina chamando
         idle_add (mesmo em erro) pra UI nao ficar travada em loading state."""
         try:
             installed_set: set[str] = set()
             for pkg in self._row_widgets.keys():
                 if backend.is_package_installed(pkg):
                     installed_set.add(pkg)
-            pending = backend.pending_changes()
         except Exception:  # pylint: disable=broad-except
             installed_set = set()
-            pending = backend.PendingChanges()
         finally:
-            GLib.idle_add(self._apply_statuses, installed_set, pending)
+            GLib.idle_add(self._apply_statuses, installed_set)
 
-    def _apply_statuses(
-        self,
-        installed_set: set[str],
-        pending: "backend.PendingChanges",
-    ) -> bool:
+    def _apply_statuses(self, installed_set: set[str]) -> bool:
         """Aplica status coletado nos widgets. Roda no UI thread."""
-        pending_set = set(pending.pending_added)
-        pending_removed_set = set(pending.pending_removed)
-
         for pkg, widgets in self._row_widgets.items():
             installed = pkg in installed_set
             status: Gtk.Label = widgets["status"]
@@ -249,19 +233,7 @@ class BrowseTab(Adw.Bin):
             for cls in ("success", "warning", "dim-label", "error"):
                 status.remove_css_class(cls)
 
-            if pkg in pending_set and not installed:
-                status.set_label("PENDENTE")
-                status.add_css_class("warning")
-                btn.set_label("Pendente")
-                btn.set_sensitive(False)
-                btn.remove_css_class("suggested-action")
-                btn.remove_css_class("destructive-action")
-            elif pkg in pending_removed_set:
-                status.set_label("REMOÇÃO PENDENTE")
-                status.add_css_class("warning")
-                btn.set_label("Removendo")
-                btn.set_sensitive(False)
-            elif installed:
+            if installed:
                 status.set_label("INSTALADO")
                 status.add_css_class("success")
                 btn.set_label("Remover")
@@ -317,12 +289,7 @@ class BrowseTab(Adw.Bin):
         entry = self._row_widgets[package]["entry"]
         dlg = Adw.AlertDialog(
             heading=f"Remover {entry.name}?",
-            body=(
-                f"O pacote `{package}` será removido na próxima reinicialização "
-                "(rpm-ostree uninstall). Mudança aplicada com reboot."
-                if self._needs_reboot
-                else f"O pacote `{package}` será removido agora (dnf remove)."
-            ),
+            body=f"O pacote `{package}` será removido agora (dnf remove).",
         )
         dlg.add_response("cancel", "Cancelar")
         dlg.add_response("remove", "Remover")
@@ -354,9 +321,7 @@ class BrowseTab(Adw.Bin):
             show_info(
                 self,
                 f"{package}: pronto",
-                "Mudança staged. Para usar, reinicie o sistema (aba 'Pendentes' tem botão Reboot)."
-                if self._needs_reboot
-                else "Instalado. Já pode usar — sem reboot.",
+                "Instalado. Já pode usar — sem reboot.",
             )
             self.refresh_statuses()
             self._on_changed()
@@ -380,10 +345,8 @@ class BrowseTab(Adw.Bin):
         else:
             show_info(
                 self,
-                f"{package}: removido" + (" (pendente)" if self._needs_reboot else ""),
-                "Mudança staged. Reinicie para aplicar."
-                if self._needs_reboot
-                else "Removido (dnf). Aplicado na hora.",
+                f"{package}: removido",
+                "Removido (dnf). Aplicado na hora.",
             )
             self.refresh_statuses()
             self._on_changed()
