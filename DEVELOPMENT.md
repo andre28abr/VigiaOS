@@ -2933,6 +2933,23 @@ não a variante nem o desktop). Corrigido nos três scripts (`blue-deps.sh`,
 opções. (Vigia **não** detecta desktop environment em lugar nenhum; o Dashboard
 já mostrava a variante certa via `_parse_platform`.)
 
+### 2026-06-03 — Vigia Memory: análise de dump Linux marcada como EXPERIMENTAL
+
+Após um teste real (Silverblue **ARM64**): a cadeia capturar → símbolos
+(dwarf2json/ISF, 60 MB) → Volatility rodou **limpo** (sem erro de símbolos), mas
+o `pslist` retornou **0 processos**. É o **suporte a dump Linux ARM64 do
+Volatility 3** (upstream), não o Vigia nem os símbolos. Decisões:
+
+- **Análise de dump Linux marcada como `experimental`** na GUI (card "Faltam os
+  símbolos…", aba Sobre) e nos manuais (leigo/técnico). **Windows continua
+  estável/automático** (símbolos PDB baixados sozinhos) — esse **não** é
+  experimental.
+- Aba Sobre ganhou nota explícita do ARM64 (roda mas lista vazio — limitação
+  upstream). Em **x86_64** a geração de símbolos via toolbox funciona.
+
+Conclusão prática: o pipeline (captura + símbolos) **funciona**; o gargalo é o
+motor ARM64 do Volatility. vigia-blue 0.0.25.
+
 ---
 
 ## 10. Roadmap

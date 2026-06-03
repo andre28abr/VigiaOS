@@ -60,7 +60,7 @@ Toca o sistema:
   formato LiME e o helper devolve a posse ao usuário com **0600** (dump = dados
   sensíveis). Nunca levanta; trata pkexec cancelado (rc 126/127).
 
-### Símbolos (ISF, `generate_symbols`) — pra analisar dump Linux
+### Símbolos (ISF, `generate_symbols`) — análise de dump Linux (EXPERIMENTAL)
 
 - **`is_symbols_error(text)`** — reconhece o erro do Volatility por falta de ISF
   (`symbol_table_name` / "Unable to validate the plugin requirements").
