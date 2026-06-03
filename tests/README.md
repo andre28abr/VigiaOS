@@ -7,8 +7,7 @@ backend puro.
 ## Setup
 
 ```bash
-sudo rpm-ostree install python3-pytest
-# (ou em Fedora normal: sudo dnf install python3-pytest)
+sudo dnf install python3-pytest
 ```
 
 ## Rodando
@@ -48,8 +47,7 @@ tests/
 ├── integrity/               # vigia_integrity (AIDE report parser)
 ├── hash/                    # vigia_integrity.hash_backend (algoritmos, baseline diff)
 ├── installer/               # vigia_installer (catálogo, extensões navegador)
-├── reports/                 # vigia_reports (geração LGPD)
-└── deployments/             # vigia_deployments (rpm-ostree state parser)
+└── reports/                 # vigia_reports (geração LGPD)
 ```
 
 ## Cobertura alvo
