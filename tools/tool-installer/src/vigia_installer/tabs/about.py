@@ -13,51 +13,35 @@ from gi.repository import Adw, Gtk  # noqa: E402
 SECTIONS: list[tuple[str, str]] = [
     (
         "O que faz",
-        "Catálogo de <b>16 ferramentas de segurança</b> curadas para "
-        "Fedora Workstation. Cada item tem descrição em pt-BR e um <i>por "
-        "que você quer isso</i> que dá contexto prático.\n\n"
-        "Instala via <tt>dnf</tt> com UM clique. Sem precisar abrir terminal "
-        "ou lembrar nomes de pacote."
+        "Mantém o <b>sistema</b> e os <b>programas instalados</b> em dia. "
+        "Verifica se há atualizações e deixa você aplicar — pelo painel (um "
+        "clique) ou copiando o comando pro terminal, do seu jeito."
     ),
     (
         "Como usar",
-        "<b>Aba Catálogo</b>:\n"
-        "1. Tools agrupadas por categoria (Auditoria, Rede, Monitoramento, "
-        "Privacidade, Forense)\n"
-        "2. Cada row tem badge de status (<i>Disponível</i> / <i>Instalado</i>)\n"
-        "3. Expande a row clicando na seta — vê o <i>por que você quer "
-        "isso</i> + nome do pacote\n"
-        "4. <i>Instalar</i> dispara <tt>pkexec dnf install -y &lt;pkg&gt;</tt> "
-        "— aplica na hora, sem reboot\n\n"
         "<b>Aba Atualizações</b>:\n"
-        "- Checa atualizações do sistema (<tt>dnf check-update</tt>) ao abrir\n"
-        "- Atualiza pelo painel (<i>Atualizar agora</i>) ou copia o comando "
-        "pro terminal\n"
-        "- Separa o que é do sistema do que é da suíte Vigia"
+        "1. Ao abrir, checa automaticamente se há atualizações\n"
+        "2. <b>Atualizar agora</b> aplica tudo pelo painel "
+        "(<tt>pkexec dnf upgrade</tt> — pede a senha de admin uma vez)\n"
+        "3. Ou copie o comando e rode no <b>terminal</b>, se preferir\n"
+        "4. O que será atualizado vem separado: <i>Sistema</i> (pacotes do "
+        "Fedora) vs <i>Programas da suíte Vigia</i>"
     ),
     (
         "Conceitos importantes",
-        "<b>Instalação via dnf</b>: cada <i>Instalar</i> roda "
-        "<tt>pkexec dnf install -y &lt;pkg&gt;</tt> — pede a senha de admin "
-        "UMA vez (polkit) e aplica imediatamente, sem reiniciar.\n\n"
-        "<b>Catálogo curado</b>: não é uma lista exaustiva. São ferramentas "
-        "que o Vigia considera <i>úteis para o contexto de segurança</i>. "
-        "Para instalar outros pacotes, use <tt>sudo dnf install</tt> direto.\n\n"
-        "<b>Sem serviço ligado</b>: instalar uma ferramenta NÃO liga nenhum "
-        "serviço — você ativa o que quiser na ferramenta correspondente "
-        "(minimum surface area / LGPD)."
-    ),
-    (
-        "Limitações conhecidas",
-        "- Sem multi-select ainda (instalação é uma de cada vez)\n"
-        "- Sem busca em repos externos — só o catálogo curado\n"
-        "- Algumas instalações podem demorar (dependências grandes)"
+        "<b>Sem reboot</b>: o <tt>dnf</tt> aplica na hora. Atualizar <b>não "
+        "liga serviço</b> nem muda configuração — é seguro.\n\n"
+        "<b>Por que não tem mais catálogo?</b> A lista de ferramentas pra "
+        "instalar saiu daqui — cada produto (Hub/Blue/Red) já mostra, com a "
+        "<b>bolinha verde/vermelha</b>, se as dependências de cada módulo "
+        "estão OK. Pra instalar o que falta, rode o instalador completo no "
+        "terminal: <tt>./install/bootstrap.sh</tt>."
     ),
     (
         "Saiba mais",
-        "- <tt>dnf list --installed</tt> — ver o que está instalado\n"
-        "- <tt>sudo dnf remove &lt;pkg&gt;</tt> — remover um pacote\n"
-        "- Catálogo: <tt>tools/tool-installer/src/vigia_installer/catalog.py</tt>\n"
+        "- <tt>dnf check-update</tt> — ver o que tem atualização\n"
+        "- <tt>sudo dnf upgrade</tt> — atualizar tudo pelo terminal\n"
+        "- Instalador completo: <tt>install/bootstrap.sh</tt>\n"
         "- Fedora Workstation docs: https://docs.fedoraproject.org/en-US/workstation/"
     ),
 ]
