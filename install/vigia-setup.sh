@@ -123,7 +123,10 @@ banner
 # [1/3] Sistema
 # ============================================================
 if [[ -f /run/ostree-booted ]]; then
-    ATOMIC=1; PLAT="Fedora Atomic (Silverblue/Kinoite/...)"; PKGMGR="rpm-ostree"
+    ATOMIC=1; PKGMGR="rpm-ostree"
+    # variante REAL (Silverblue/Kinoite/…) do /etc/os-release
+    _V="$(sed -n 's/^VARIANT=//p' /etc/os-release 2>/dev/null | tr -d '"' | head -1)"
+    PLAT="Fedora ${_V:-Atomic} (atômico)"
 else
     ATOMIC=0; PLAT="Fedora Workstation (tradicional)"; PKGMGR="dnf"
 fi

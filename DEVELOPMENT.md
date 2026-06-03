@@ -2922,6 +2922,17 @@ Refino do passo anterior, a partir de um run real no Silverblue do user:
 
 vigia-blue 0.0.22. Suíte **1179**.
 
+### 2026-06-02 — Scripts de install: mostram a variante REAL (não "Kinoite/…")
+
+O user notou que o `blue-deps.sh` dizia "Sistema atômico detectado
+(Silverblue/Kinoite/…)" e achou que tinha detectado **KDE** — mas aquilo era só
+uma **lista de exemplos**, não detecção (o script só checa `/run/ostree-booted`,
+não a variante nem o desktop). Corrigido nos três scripts (`blue-deps.sh`,
+`vigia-setup.sh`, `bootstrap.sh`): agora leem o **`VARIANT`** do `/etc/os-release`
+(via `sed`, sem `source`) e mostram o real — ex.: "Silverblue" — em vez de listar
+opções. (Vigia **não** detecta desktop environment em lugar nenhum; o Dashboard
+já mostrava a variante certa via `_parse_platform`.)
+
 ---
 
 ## 10. Roadmap
