@@ -53,6 +53,12 @@ info "Removendo atalhos e ícones do GNOME..."
 run rm -f "$APPS_DIR"/br.com.vigia.*.desktop
 run rm -f "$ICONS_DIR"/br.com.vigia.*.svg
 run rm -f "$HOME"/.local/bin/vigia-*
+# overrides NoDisplay de backends (chkrootkit etc.) — restaura o padrão do pacote
+for app in chkrootkit; do
+    if [ -f "$APPS_DIR/$app.desktop" ] && grep -q "NoDisplay=true" "$APPS_DIR/$app.desktop" 2>/dev/null; then
+        run rm -f "$APPS_DIR/$app.desktop"
+    fi
+done
 ok "atalhos/ícones removidos."
 
 # 3) pasta "Vigia" do grid do GNOME
