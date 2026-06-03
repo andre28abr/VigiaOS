@@ -1,21 +1,21 @@
 # VigiaOS — ecossistema Vigia de segurança, privacidade e LGPD
 
 > **VigiaOS** é o ecossistema (este monorepo) dos produtos **Vigia**. O produto
-> disponível hoje é o **VigiaHub** — uma suíte de **15 ferramentas gráficas**
-> (GTK4 + libadwaita) + um launcher que transformam um Fedora
-> Silverblue/Workstation **vanilla** numa estação de trabalho de **segurança,
-> privacidade, auditoria e conformidade com a LGPD**, para o advogado, o
-> profissional liberal e o escritório pequeno que lida com dados sensíveis de
-> clientes. Tudo em português — **não é uma distro**, são ferramentas sobre o
-> Fedora vanilla. Em breve: **VigiaRed** (pentest) e **VigiaBlue** (SOC).
+> disponível hoje é o **VigiaHub** — uma suíte de **14 ferramentas gráficas**
+> (GTK4 + libadwaita) + um launcher que transformam um **Fedora Workstation
+> vanilla** numa estação de trabalho de **segurança, privacidade, auditoria e
+> conformidade com a LGPD**, para o advogado, o profissional liberal e o
+> escritório pequeno que lida com dados sensíveis de clientes. Tudo em
+> português — **não é uma distro**, são ferramentas sobre o Fedora vanilla.
+> Em breve: **VigiaRed** (pentest) e **VigiaBlue** (SOC).
 
 ![Status](https://img.shields.io/badge/status-v0.x%20ativo%20%C2%B7%20auditado-success)
 ![Python](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white)
 ![GTK4](https://img.shields.io/badge/GTK4-libadwaita-4A86CF?logo=gnome&logoColor=white)
 ![Rust](https://img.shields.io/badge/Rust-Activity%20Log%20core-dea584?logo=rust&logoColor=black)
-![Tests](https://img.shields.io/badge/tests-940%20passing-success)
+![Tests](https://img.shields.io/badge/tests-1101%20passing-success)
 ![License](https://img.shields.io/badge/license-Apache--2.0-orange)
-![Fedora](https://img.shields.io/badge/Fedora-Silverblue%20%2F%20Workstation-51A2DA?logo=fedora&logoColor=white)
+![Fedora](https://img.shields.io/badge/Fedora-Workstation-51A2DA?logo=fedora&logoColor=white)
 ![LGPD](https://img.shields.io/badge/LGPD-by%20design-10b981)
 
 ---
@@ -65,12 +65,11 @@ libadwaita). O **VigiaHub** é o produto atual; os demais estão no roadmap.
 ## Por que não uma distro?
 
 Manter uma distro custom é caro (segurança, updates, testes contra upstream).
-Manter ferramentas é leve. Red Hat já constrói um ótimo OS atômico —
-deixamos eles fazerem isso e construímos por cima.
+Manter ferramentas é leve. Red Hat já constrói um ótimo OS — deixamos eles
+fazerem isso e construímos por cima.
 
-Resultado: as ferramentas funcionam em qualquer Fedora Atomic (Silverblue,
-Kinoite, Bluefin, Bazzite, Aurora) **e** no Workstation, aproveitando
-atualizações automáticas do sistema-base sem complicação.
+Resultado: as ferramentas rodam sobre o **Fedora Workstation vanilla**,
+aproveitando as atualizações do sistema-base sem complicação.
 
 ---
 
@@ -110,18 +109,17 @@ depender do Hub (veja *Instalar só um módulo*).
 | 6 | **[Vigia SELinux GUI](tools/selinux-gui/)** v0.2.1 | Python + GTK4 | 🟢 6 tabs + pt-BR + audit2allow |
 | 7 | **[Vigia Firewall GUI](tools/firewall-gui/)** v0.1 | Python + GTK4 | 🟡 Status + zones CRUD |
 | 8 | **[Vigia Network Monitor](tools/netmon-gui/)** v0.1.1 | Python + GTK4 | 🟡 Conexões + modo admin opt-in |
-| 9 | **[Vigia Hardening Checks](tools/hardening-checks/)** v0.1.5 | Python + GTK4 | 🟢 Lynis wrapper + perfil Silverblue |
+| 9 | **[Vigia Hardening Checks](tools/hardening-checks/)** v0.1.5 | Python + GTK4 | 🟢 Lynis wrapper (auditoria de hardening) |
 | 10 | **[Vigia Reports](tools/reports/)** v0.2.7 | Python + Jinja2 + SVG | 🟢 6 modelos + selo SHA-256 + identidade do escritório + **agendamento mensal** (headless) |
 | 11 | **[Vigia File Integrity](tools/file-integrity/)** v0.2.6 | Python + GTK4 | 🟢 AIDE (sistema) + Hash ad-hoc (user) — 6 tabs |
-| 12 | **[Vigia Tool Installer](tools/tool-installer/)** v0.3.6 | Python + GTK4 | 🟢 rpm-ostree + **extensões navegador open source** |
+| 12 | **[Vigia Tool Installer](tools/tool-installer/)** v0.4.2 | Python + GTK4 | 🟢 dnf (1-click) + **extensões navegador open source** |
 | 13 | **[Vigia DNS Manager](tools/dns-manager/)** v0.4.3 | Python + GTK4 | 🟢 **dnscrypt-proxy** (DoH/DoT) com 11 servers curados |
 | 14 | **[Vigia Capabilities Inspector](tools/capabilities-inspector/)** v0.1.2 | Python + GTK4 | 🟢 getcap audit + 41 caps pt-BR |
 | 15 | **[Vigia Antivirus](tools/antivirus/)** v0.1.4 | Python + GTK4 | 🟢 ClamAV wrapper (substitui clamtk) |
 | 16 | **[Vigia Rootkit Scanner](tools/rootkit-scanner/)** v0.2.2 | Python + GTK4 | 🟢 **chkrootkit + rkhunter** unificados |
-| 17 | **[Vigia Deployments Manager](tools/deployments-manager/)** v0.1.2 | Python + GTK4 | 🟢 **rpm-ostree** GUI — rollback, pin, cleanup, labels LGPD |
 
-*(linhas 1–2 são o instalador e o Hub; as 15 ferramentas são as linhas 3–17 —
-o Tool Installer é acessado à parte, fora da sidebar das outras 14.)*
+*(linhas 1–2 são o instalador e o Hub; as 14 ferramentas são as linhas 3–16 —
+o Tool Installer é acessado à parte, fora da sidebar das outras 13.)*
 
 ### Removidas na limpeza 2026-05-27 (foco LGPD)
 
@@ -134,29 +132,24 @@ o Tool Installer é acessado à parte, fora da sidebar das outras 14.)*
 
 ### Tudo de uma vez (recomendado)
 
-Um comando — o instalador **detecta sozinho** se você está em Fedora
-Atomic (Silverblue, Kinoite, Bluefin, Bazzite, Aurora) ou Workstation, e
-usa `rpm-ostree` ou `dnf`:
+Um comando, no **Fedora Workstation** — instala tudo via `dnf`, na hora,
+sem reboot:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/andre28abr/VigiaOS/main/install/bootstrap.sh | bash
-# Em sistema atômico, reinicie ao final:  systemctl reboot
 ```
 
-Instala as 15 ferramentas + os backends que elas usam (`lynis`, `aide`,
+Instala as 14 ferramentas + os backends que elas usam (`lynis`, `aide`,
 `clamav`, …), registra os atalhos no menu do GNOME e instala Flatpaks de
 privacidade (KeePassXC, Signal, Tor Browser…). **Não liga nenhum serviço**
 — `fail2ban`/`dnscrypt-proxy` ficam off; você ativa cada um na
-ferramenta correspondente (*minimum surface area* / LGPD). Guias por
-plataforma: **[Silverblue / atomic](install/silverblue/)** ·
-**[Workstation](install/workstation/)**.
+ferramenta correspondente (*minimum surface area* / LGPD).
 
 ### Instalar só um módulo (isolado)
 
 Não precisa da suíte inteira. Para usar **uma ferramenta só** (ex: só o
 Antivírus), use o helper — instala a tool no seu usuário (`pip --user`,
-**sem root**) e registra o atalho + ícone no GNOME. Funciona igual em
-Silverblue e Workstation:
+**sem root**) e registra o atalho + ícone no GNOME:
 
 ```bash
 git clone https://github.com/andre28abr/VigiaOS.git ~/dev/VigiaOS
@@ -166,24 +159,17 @@ install/install-tool.sh antivirus       # instala só o Antivírus
 ```
 
 Cada módulo roda sozinho, sem depender do Vigia Hub. Quando o COPR estiver
-ativo: `rpm-ostree install vigia-antivirus` (atomic) ou `dnf install
-vigia-antivirus` (Workstation).
+ativo: `sudo dnf install vigia-antivirus`.
 
-### Compatibilidade por plataforma
+### Plataforma
 
-Quase tudo roda igual nos dois — as diferenças:
-
-| | Silverblue / Atomic | Workstation |
-|---|---|---|
-| Pacotes | `rpm-ostree` (+ reboot) | `dnf` (na hora) |
-| Deployments Manager | ✅ | ❌ (sem deployments rpm-ostree) |
-| Tool Installer → aba *Pendentes* | ✅ | ❌ (instala na hora) |
-| As outras 15 ferramentas | ✅ | ✅ |
+Alvo: **Fedora Workstation** (GNOME). Pacotes via `dnf` — aplicados na hora,
+sem reboot. (O projeto começou no Silverblue/atômico; veja *Histórico*.)
 
 ### Dev (editable)
 
 Para hackear no código, instale em editable mode (roteiro completo em
-[DEVELOPMENT.md §8](DEVELOPMENT.md#8-setup-numa-máquina-nova-silverblue-limpa)):
+[DEVELOPMENT.md §8](DEVELOPMENT.md#8-setup-numa-máquina-nova)):
 
 ```bash
 git clone https://github.com/andre28abr/VigiaOS.git ~/dev/VigiaOS
@@ -192,7 +178,7 @@ cd ~/dev/VigiaOS
 for d in vigia-hub privacy-controls selinux-gui firewall-gui netmon-gui \
          hardening-checks reports file-integrity tool-installer \
          dns-manager capabilities-inspector activity-log-gui \
-         antivirus dashboard rootkit-scanner deployments-manager; do
+         antivirus dashboard rootkit-scanner; do
   (cd tools/$d && pip install --user -e .)
 done
 vigia-hub   # abre o launcher
@@ -205,19 +191,18 @@ COPR ainda não foi ativado** (passos em [`packaging/README.md`](packaging/READM
 Quando ativo:
 
 ```bash
-sudo wget -O /etc/yum.repos.d/_copr_andre28abr-vigia.repo \
-  https://copr.fedorainfracloud.org/coprs/andre28abr/vigia/repo/fedora-$(rpm -E %fedora)/andre28abr-vigia-fedora-$(rpm -E %fedora).repo
-sudo rpm-ostree install vigia-suite && sudo systemctl reboot   # atomic
-# Workstation: sudo dnf copr enable andre28abr/vigia && sudo dnf install vigia-suite
+sudo dnf copr enable andre28abr/vigia
+sudo dnf install vigia-suite
 ```
 
 ## Histórico
 
-A v1 do projeto era uma distro Linux completa baseada em Fedora Silverblue
-buildada via BlueBuild. Foi pivotada em 2026-05-22 para suíte de ferramentas
-após avaliarmos que o trabalho de manter um image build sobrepunha pouco
-valor ao que Red Hat já entrega. A v1 está preservada em
-[`legacy/v1-distro`](https://github.com/andre28abr/VigiaOS/tree/legacy/v1-distro).
+O VigiaHub nasceu mirando o **Fedora Silverblue** (sistema atômico/imutável),
+mas **migrou de vez para o Fedora Workstation** em 2026-06. Motivo técnico: o
+ferramental de **forense** (Volatility, plaso, símbolos de kernel) e a
+**velocidade de iteração** sofrem no modelo atômico — instalar uma lib exige
+toolbox/container e reboot. No Workstation tudo instala direto com `dnf`, na
+hora; a suíte ficou mais simples e mais completa.
 
 ## Documentação
 
