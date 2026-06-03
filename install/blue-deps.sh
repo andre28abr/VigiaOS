@@ -11,6 +11,7 @@
 #   tcpdump     → rpm-ostree | dnf                          — captura do Vigia IDS
 #   volatility3 → pipx (forense, sem root)                  — módulo Vigia Memory
 #   avml        → download oficial (Microsoft) → ~/.local/bin — captura do Memory
+#   dwarf2json  → go install → ~/.local/bin                  — símbolos do Memory
 #   plaso       → pipx (forense, sem root)                  — módulo Vigia Timeline
 #   vigia-log   → cargo build + install /usr/local/bin      — módulo Vigia SIEM
 #
@@ -183,6 +184,34 @@ if [[ $DO_FORENSICS -eq 1 ]]; then
     fi
 else
     SKIPPED+=("avml (--no-forensics)")
+fi
+
+# ===========================================================================
+# 5) Símbolos do kernel: dwarf2json (gera o ISF p/ análise de dump Linux)
+# ===========================================================================
+if [[ $DO_FORENSICS -eq 1 ]]; then
+    if command -v dwarf2json >/dev/null 2>&1 || [[ -x "$HOME/.local/bin/dwarf2json" ]]; then
+        ok "dwarf2json já presente."
+        DONE+=("dwarf2json (já presente)")
+    elif command -v go >/dev/null 2>&1; then
+        info "Instalando dwarf2json (go install) → ~/.local/bin…"
+        mkdir -p "$HOME/.local/bin"
+        if GOBIN="$HOME/.local/bin" go install github.com/volatilityfoundation/dwarf2json@latest; then
+            ok "dwarf2json instalado em ~/.local/bin."
+            DONE+=("dwarf2json (go install)")
+        else
+            err "falha ao instalar dwarf2json via go."
+            FAILED+=("dwarf2json")
+        fi
+    else
+        warn "Go não encontrado — preciso dele p/ o dwarf2json (gera os símbolos)."
+        warn "No Silverblue, o caminho mais limpo é gerar os símbolos num toolbox"
+        warn "(o Vigia Memory mostra o passo a passo na hora). Sem isso, a análise"
+        warn "de dump Linux não roda."
+        SKIPPED+=("dwarf2json (sem go)")
+    fi
+else
+    SKIPPED+=("dwarf2json (--no-forensics)")
 fi
 
 # ===========================================================================

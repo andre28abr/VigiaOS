@@ -247,12 +247,16 @@ class _AnalyzeView(Gtk.Box):
         self._results.set_description(None)
 
         if result.error:
-            row = Adw.ActionRow()
-            row.set_title("Não foi possível analisar")
-            row.set_subtitle(result.error)
-            row.set_subtitle_lines(0)
-            row.add_prefix(Gtk.Image.new_from_icon_name("dialog-error-symbolic"))
-            self._add(row)
+            if backend.is_symbols_error(result.error):
+                self._show_symbols_help()
+            else:
+                row = Adw.ActionRow()
+                row.set_title("Não foi possível analisar")
+                row.set_subtitle(result.error)
+                row.set_subtitle_lines(0)
+                row.add_prefix(
+                    Gtk.Image.new_from_icon_name("dialog-error-symbolic"))
+                self._add(row)
             return False
 
         if not result.rows:
@@ -290,6 +294,84 @@ class _AnalyzeView(Gtk.Box):
             exp.add_row(r)
         return exp
 
+    # ---- símbolos do kernel (ISF) — pra dumps de Linux ----
+
+    def _show_symbols_help(self) -> None:
+        self._clear()
+        self._results.set_description(
+            "Faltam os símbolos do kernel deste dump (a pegadinha do Linux).")
+        row = Adw.ActionRow()
+        row.set_title("Faltam os símbolos do kernel")
+        row.set_subtitle(
+            "Pra analisar um dump de Linux, o Volatility precisa do 'mapa' do "
+            "kernel (ISF). Clique em Preparar símbolos — eu gero se der, ou te "
+            "mostro o passo a passo do seu kernel.")
+        row.set_subtitle_lines(0)
+        row.add_prefix(Gtk.Image.new_from_icon_name("dialog-warning-symbolic"))
+        btn = Gtk.Button(label="Preparar símbolos")
+        btn.add_css_class("suggested-action")
+        btn.set_valign(Gtk.Align.CENTER)
+        btn.connect("clicked", self._on_prepare_symbols)
+        row.add_suffix(btn)
+        self._add(row)
+
+    def _on_prepare_symbols(self, _btn: Gtk.Button) -> None:
+        if self._running or not self._dump:
+            return
+        self._running = True
+        self._spinner.start()
+        self._run_btn.set_sensitive(False)
+        self._set_empty("Preparando os símbolos do kernel (pode demorar)…")
+        threading.Thread(target=self._sym_worker, args=(self._dump,),
+                         daemon=True).start()
+
+    def _sym_worker(self, dump: str) -> None:
+        res = backend.generate_symbols(dump)
+        GLib.idle_add(self._sym_done, res)
+
+    def _sym_done(self, res: "backend.SymbolsResult") -> bool:
+        self._running = False
+        self._spinner.stop()
+        self._refresh_banner()
+        self._refresh_capture()
+        self._clear()
+        self._results.set_description(None)
+        if res.ok:
+            row = Adw.ActionRow()
+            row.set_title("Símbolos prontos ✓")
+            row.set_subtitle(res.message)
+            row.set_subtitle_lines(0)
+            row.add_prefix(Gtk.Image.new_from_icon_name("emblem-ok-symbolic"))
+            self._add(row)
+            return False
+        row = Adw.ActionRow()
+        row.set_title("Ainda faltam símbolos")
+        row.set_subtitle(res.message)
+        row.set_subtitle_lines(0)
+        row.add_prefix(Gtk.Image.new_from_icon_name("dialog-warning-symbolic"))
+        self._add(row)
+        if res.steps:
+            exp = Adw.ExpanderRow()
+            exp.set_title("Ver o passo a passo (copiável)")
+            exp.add_prefix(
+                Gtk.Image.new_from_icon_name("utilities-terminal-symbolic"))
+            lbl = Gtk.Label(label=res.steps)
+            lbl.add_css_class("monospace")
+            lbl.add_css_class("caption")
+            lbl.set_wrap(True)
+            lbl.set_xalign(0)
+            lbl.set_selectable(True)
+            lbl.set_margin_start(12)
+            lbl.set_margin_end(12)
+            lbl.set_margin_top(8)
+            lbl.set_margin_bottom(8)
+            pr = Adw.PreferencesRow()
+            pr.set_activatable(False)
+            pr.set_child(lbl)
+            exp.add_row(pr)
+            self._add(exp)
+        return False
+
 
 def _build_about() -> Gtk.Widget:
     page = Adw.PreferencesPage()
@@ -316,8 +398,9 @@ def _build_about() -> Gtk.Widget:
     sym = Adw.ActionRow()
     sym.set_title("Dumps de Linux precisam de símbolos do kernel")
     sym.set_subtitle("Para analisar um dump de Linux, o Volatility 3 precisa de "
-                     "um 'mapa' do kernel (ISF). Se faltar, a análise mostra um "
-                     "erro de símbolos — é a parte chata da forense no Linux.")
+                     "um 'mapa' do kernel (ISF). Se faltar, a análise oferece o "
+                     "botão Preparar símbolos — gera o ISF (precisa de dwarf2json "
+                     "+ kernel-debuginfo) ou mostra o passo a passo.")
     sym.set_subtitle_lines(0)
     sym.add_prefix(Gtk.Image.new_from_icon_name("dialog-warning-symbolic"))
     g.add(sym)

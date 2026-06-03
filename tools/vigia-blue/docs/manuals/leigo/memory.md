@@ -54,8 +54,10 @@ Roda **100% local**. O dump e a análise ficam só na sua máquina.
 ## Uma pegadinha (dumps de Linux)
 
 Pra analisar um dump **de Linux**, o Volatility também precisa de um "mapa" do
-kernel (os *símbolos*). Se faltar, a análise mostra um erro de símbolos — é a
-parte mais chata da forense de memória no Linux. (No Windows é automático.)
+kernel (os *símbolos*). Quando falta, a análise mostra um botão **Preparar
+símbolos**: o Vigia tenta **gerar** esse mapa sozinho — e, se não der (no
+Silverblue costuma faltar o `kernel-debuginfo`), ele te mostra o **passo a passo
+copiável** pro seu kernel exato (com toolbox). No **Windows** isso é automático.
 
 ## Precisa instalar
 
