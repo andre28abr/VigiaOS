@@ -49,15 +49,15 @@ SECTIONS: list[tuple[str, str]] = [
         "imediata (ex: senha de root não configurada)\n"
         "- <i>Suggestion</i> (melhorias): hardening incremental "
         "(ex: configurar mínimo password age)\n\n"
-        "<b>Tests skipped</b>: em Silverblue ~40% dos testes Lynis são "
-        "pulados (assumem <tt>dnf</tt> ou <tt>/usr</tt> mutável — "
-        "irrelevantes em sistema atômico). É esperado, não bug."
+        "<b>Tests skipped</b>: o Lynis pula testes que não se aplicam à sua "
+        "máquina (ex: checagem de um serviço que você não tem instalado). "
+        "Um número moderado de testes pulados é normal, não é bug."
     ),
     (
         "Limitações conhecidas",
         "- Audit do Lynis é read-only — NÃO corrige nada, só reporta\n"
-        "- Algumas suggestions são irrelevantes em Silverblue mas Lynis "
-        "ainda lista (ex: 'instalar antivirus' quando ClamAV já existe)\n"
+        "- Algumas suggestions podem não se aplicar ao seu caso, mas o Lynis "
+        "ainda lista (ex: 'instalar antivirus' quando o ClamAV já existe)\n"
         "- Sem comparação temporal (run1 vs run2) — v0.2 vai trazer"
     ),
     (

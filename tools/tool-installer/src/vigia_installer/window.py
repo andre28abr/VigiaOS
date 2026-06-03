@@ -39,8 +39,7 @@ def _make_pkg_badges_bar() -> Gtk.Widget:
 
 class _InstallerContent:
     def __init__(self) -> None:
-        # Aba "Atualizacoes" aparece nos dois (rpm-ostree e dnf): checa e
-        # aplica updates do sistema. So' a secao de reinicio e' atomica.
+        # Aba "Atualizacoes": checa e aplica updates do sistema (dnf).
         self.updates = UpdatesTab()
         self.browse = BrowseTab(on_changed=self._on_browse_changed)
         self.extensions = ExtensionsTab()
@@ -66,8 +65,7 @@ class _InstallerContent:
         self.toolbar.set_content(stack)
 
     def _on_browse_changed(self) -> None:
-        """Apos install/uninstall, re-checa a aba Atualizacoes (uma instalacao
-        em sistema atomico vira mudanca staged pendente de reboot)."""
+        """Apos install/uninstall, re-checa a aba Atualizacoes."""
         self.updates.recheck()
 
 

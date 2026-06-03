@@ -399,7 +399,7 @@ def is_selinux_available() -> bool:
 
 def _require_pkexec() -> None:
     if shutil.which("pkexec") is None:
-        raise RuntimeError("pkexec não encontrado. Instale 'polkit' via rpm-ostree.")
+        raise RuntimeError("pkexec não encontrado. Instale o 'polkit': sudo dnf install polkit.")
 
 
 def _run_pkexec(args: list[str], *, op: str) -> None:

@@ -1,4 +1,4 @@
-"""Vigia Privacy Controls — painel de controles de privacidade para GNOME/Silverblue."""
+"""Vigia Privacy Controls — painel de controles de privacidade para GNOME (Fedora Workstation)."""
 
 __version__ = "0.3.2"
 __app_id__ = "br.com.vigia.PrivacyControls"
