@@ -53,7 +53,7 @@ BANNER
 # ---- pacotes --------------------------------------------------------------
 # Runtime GUI (GTK4) + ferramentas pra instalar via pip. O dnf e' idempotente
 # (re-rodar o bootstrap nao quebra).
-DEPS_CORE=(git python3-pip python3-gobject gtk4 libadwaita)
+DEPS_CORE=(git python3-pip python3-gobject gtk4 libadwaita rust cargo)
 
 # Backends CLI que as ferramentas Vigia wrappam. INSTALA, mas NAO LIGA
 # servico nenhum (fail2ban/dnscrypt ficam off — opt-in nas tools).
@@ -186,6 +186,26 @@ if command -v gsettings >/dev/null 2>&1; then
     VF="$AF.folder:/org/gnome/desktop/app-folders/folders/Vigia/"
     gsettings set "$VF" name 'Vigia' 2>/dev/null || true
     gsettings set "$VF" apps "['br.com.vigia.Hub.desktop', 'br.com.vigia.Blue.desktop', 'br.com.vigia.Red.desktop']" 2>/dev/null || true
+fi
+
+# ---- 3d. core do Activity Log (vigia-log, Rust) ---------------------------
+# O Activity Log (GUI) é um frontend do parser Rust `vigia-log`. Sem esse
+# binário, a ferramenta fica indisponível no Hub (ponto vermelho).
+hr
+if command -v vigia-log >/dev/null 2>&1; then
+    echo "  ${GREEN}ok${NC} vigia-log (já instalado)"
+elif command -v cargo >/dev/null 2>&1 && [ -d "$REPO_DIR/tools/activity-log" ]; then
+    info "Compilando o core do Activity Log (vigia-log, Rust) — pode levar minutos..."
+    if (cd "$REPO_DIR/tools/activity-log" && cargo build --release) \
+       && sudo install -m 0755 \
+            "$REPO_DIR/tools/activity-log/target/release/vigia-log" \
+            /usr/local/bin/vigia-log; then
+        echo "  ${GREEN}ok${NC} vigia-log → /usr/local/bin"
+    else
+        warn "falha ao compilar/instalar o vigia-log — Activity Log fica indisponível."
+    fi
+else
+    warn "cargo (Rust) ausente — Activity Log (core vigia-log) fica indisponível."
 fi
 
 # ---- 4. Flatpaks ----------------------------------------------------------
