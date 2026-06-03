@@ -6,29 +6,9 @@ from vigia_common import platform as plat
 
 
 class TestIsAtomic:
-    def test_atomic_when_marker_present(self, monkeypatch):
-        monkeypatch.setattr(
-            plat.os.path, "exists", lambda p: p == plat._OSTREE_MARKER
-        )
-        assert plat.is_atomic() is True
-
-    def test_not_atomic_when_marker_absent_and_no_rpm_ostree(self, monkeypatch):
-        monkeypatch.setattr(plat.os.path, "exists", lambda p: False)
-        monkeypatch.setattr(plat.shutil, "which", lambda cmd: None)
-        assert plat.is_atomic() is False
-
-    def test_fallback_atomic_when_rpm_ostree_and_ostree_dir(self, monkeypatch):
-        # Marcador ausente, mas rpm-ostree presente E /ostree existe.
-        monkeypatch.setattr(plat.os.path, "exists", lambda p: False)
-        monkeypatch.setattr(plat.shutil, "which", lambda cmd: "/usr/bin/rpm-ostree")
-        monkeypatch.setattr(plat.os.path, "isdir", lambda p: p == "/ostree")
-        assert plat.is_atomic() is True
-
-    def test_not_atomic_when_rpm_ostree_but_no_ostree_dir(self, monkeypatch):
-        # rpm-ostree instalado num sistema dnf, mas sem /ostree → não é atômico.
-        monkeypatch.setattr(plat.os.path, "exists", lambda p: False)
-        monkeypatch.setattr(plat.shutil, "which", lambda cmd: "/usr/bin/rpm-ostree")
-        monkeypatch.setattr(plat.os.path, "isdir", lambda p: False)
+    def test_always_false_on_workstation(self):
+        # O VigiaOS roda em Fedora Workstation — is_atomic() é sempre False.
+        # (O projeto migrou do Silverblue/atômico de vez; ver platform.py.)
         assert plat.is_atomic() is False
 
 

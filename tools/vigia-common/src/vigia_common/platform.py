@@ -1,57 +1,45 @@
-"""Detecção de plataforma: sistema atômico (ostree) vs tradicional (dnf).
+"""Plataforma: Fedora Workstation (dnf).
 
-O VigiaOS roda tanto em **Fedora Atomic** (Silverblue, Kinoite, Bluefin,
-Bazzite, Aurora) quanto em **Fedora Workstation** tradicional. A diferença
-que importa para a suíte é o gerenciador de pacotes:
+O VigiaOS roda em **Fedora Workstation** (tradicional, com ``dnf``) — instala
+pacotes na hora, sem reboot.
 
-- Atômico  → ``rpm-ostree`` (instala em camada, precisa reboot).
-- Tradicional → ``dnf`` (instala na hora, sem reboot).
-
-Algumas tools (ex: Deployments Manager) só fazem sentido em sistema
-atômico — o Hub usa ``is_atomic()`` para escondê-las no Workstation.
+> Histórico: o projeto começou em Fedora Atomic/Silverblue, mas **migrou de vez
+> para o Workstation** (toolchain de forense + velocidade de iteração) — ver
+> README/DEVELOPMENT. ``is_atomic()`` permanece por compatibilidade durante a
+> transição, **sempre retornando ``False``**; os poucos ramos "atômicos"
+> remanescentes nos chamadores são código morto a ser removido nas próximas
+> fases. Estas funções continuam como **ponto único** do gerenciador de pacotes
+> e das dicas de instalação.
 """
 
 from __future__ import annotations
 
-import os
-import shutil
-
-# Marcador criado pelo ostree no boot — presente em Silverblue/Kinoite/etc.,
-# ausente no Workstation tradicional. É o sinal canônico de "sistema atômico".
-_OSTREE_MARKER = "/run/ostree-booted"
-
 
 def is_atomic() -> bool:
-    """True se o sistema é Fedora Atomic (ostree-based).
+    """Sempre ``False`` — o VigiaOS roda em Fedora Workstation (dnf).
 
-    Checa primeiro o marcador ``/run/ostree-booted``. Como fallback
-    defensivo (marcador ausente por algum motivo), considera atômico se
-    ``rpm-ostree`` existe **e** o diretório ``/ostree`` está presente.
+    Mantida durante a migração do Silverblue → Workstation para não quebrar
+    os chamadores que ainda a importam; será removida quando todos deixarem
+    de depender dela.
     """
-    if os.path.exists(_OSTREE_MARKER):
-        return True
-    return shutil.which("rpm-ostree") is not None and os.path.isdir("/ostree")
+    return False
 
 
 def package_manager() -> str:
-    """Nome do gerenciador de pacotes do sistema: ``rpm-ostree`` ou ``dnf``."""
+    """Gerenciador de pacotes do sistema: ``dnf`` (Fedora Workstation)."""
     return "rpm-ostree" if is_atomic() else "dnf"
 
 
 def needs_reboot_to_apply() -> bool:
-    """True se instalar/remover pacotes exige reboot (só em atômico)."""
+    """True se instalar/remover pacotes exige reboot — ``False`` no Workstation."""
     return is_atomic()
 
 
 def install_hint(*packages: str, reboot: bool = True) -> str:
-    """Sugestão de comando pra instalar pacotes, conforme a plataforma.
+    """Sugestão de comando pra instalar pacotes no Fedora Workstation.
 
-    - Atômico:     ``rpm-ostree install <pkgs>`` (+ ``&& systemctl reboot``
-      quando ``reboot=True``).
-    - Workstation: ``sudo dnf install <pkgs>`` (aplica na hora, sem reboot).
-
-    Use em mensagens "instale o backend X" pra não mostrar o comando
-    errado pro usuário da outra plataforma.
+    ``sudo dnf install <pkgs>`` (aplica na hora, sem reboot). Use em mensagens
+    "instale o backend X" pra mostrar o comando certo pro usuário.
     """
     pkgs = " ".join(packages)
     if is_atomic():
