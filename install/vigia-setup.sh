@@ -5,10 +5,9 @@
 # Conduz a instalação em 3 etapas, cada uma com confirmação, mostrando o que vai
 # acontecer em tabelas:
 #
-#   [1/3] Identifica o sistema (Silverblue atômico vs Workstation) e oferece
-#         ATUALIZAR o sistema primeiro.
+#   [1/3] Mostra o sistema (Fedora Workstation) e oferece ATUALIZAR primeiro.
 #   [2/3] Mostra os PACOTES principais (e para qual módulo cada um serve) e
-#         oferece instalá-los (rpm-ostree/dnf + pipx + build do vigia-log).
+#         oferece instalá-los (dnf + pipx + build do vigia-log).
 #   [3/3] Instala as INTERFACES GRÁFICAS dos três produtos (Hub + ferramentas,
 #         VigiaBlue, VigiaRed) via pip --user, registrando ícones no GNOME.
 #
@@ -112,7 +111,6 @@ is_module() {  # pyproject + .desktop em data/ => GUI instalável (igual install
     [ -f "$d/pyproject.toml" ] && compgen -G "$d/data/*.desktop" >/dev/null 2>&1
 }
 
-NEEDS_REBOOT=0
 declare -a DONE_PKGS=() SKIP_PKGS=() FAIL_PKGS=() DONE_GUI=() FAIL_GUI=()
 
 # ============================================================
@@ -122,14 +120,9 @@ banner
 # ============================================================
 # [1/3] Sistema
 # ============================================================
-if [[ -f /run/ostree-booted ]]; then
-    ATOMIC=1; PKGMGR="rpm-ostree"
-    # variante REAL (Silverblue/Kinoite/…) do /etc/os-release
-    _V="$(sed -n 's/^VARIANT=//p' /etc/os-release 2>/dev/null | tr -d '"' | head -1)"
-    PLAT="Fedora ${_V:-Atomic} (atômico)"
-else
-    ATOMIC=0; PLAT="Fedora Workstation (tradicional)"; PKGMGR="dnf"
-fi
+# variante REAL (Workstation/Server/…) do /etc/os-release
+_V="$(sed -n 's/^VARIANT=//p' /etc/os-release 2>/dev/null | tr -d '"' | sed 's/ Edition//' | head -1)"
+PLAT="Fedora ${_V:-Workstation}"; PKGMGR="dnf"
 
 step "1/3" "Sistema detectado"
 ktop
@@ -139,19 +132,10 @@ krow "Repositorio" "$REPO_ROOT"
 kbot
 echo
 echo "  ${DIM}Atualizar o sistema antes evita conflito de pacotes.${NC}"
-if [[ $ATOMIC -eq 1 ]]; then
-    echo "  ${DIM}Em sistema atômico, a atualização vale após reiniciar.${NC}"
-fi
 
 if confirm "Atualizar o sistema agora?"; then
-    if [[ $ATOMIC -eq 1 ]]; then
-        info "rpm-ostree upgrade"
-        if run rpm-ostree upgrade; then NEEDS_REBOOT=1; ok "Atualização preparada (vale após reboot)."
-        else warn "falha ao atualizar (seguindo mesmo assim)."; fi
-    else
-        info "sudo dnf upgrade -y"
-        run sudo dnf upgrade -y && ok "Sistema atualizado." || warn "falha ao atualizar."
-    fi
+    info "sudo dnf upgrade -y"
+    run sudo dnf upgrade -y && ok "Sistema atualizado." || warn "falha ao atualizar."
 else
     warn "pulando atualização do sistema."
 fi
@@ -209,16 +193,9 @@ PIPX_PKGS=("${DYN_PIP[@]}")
 echo
 if confirm "Instalar esses pacotes do sistema?"; then
     info "Pacotes do sistema (${PKGMGR}): ${RPM_PKGS[*]}"
-    if [[ $ATOMIC -eq 1 ]]; then
-        if run rpm-ostree install --idempotent --allow-inactive "${RPM_PKGS[@]}"; then
-            NEEDS_REBOOT=1; DONE_PKGS+=("${RPM_PKGS[@]}")
-            ok "Adicionados à próxima imagem (valem após reboot)."
-        else err "rpm-ostree falhou."; FAIL_PKGS+=("${RPM_PKGS[*]}"); fi
-    else
-        if run sudo dnf install -y "${RPM_PKGS[@]}"; then
-            DONE_PKGS+=("${RPM_PKGS[@]}"); ok "Instalados."
-        else err "dnf falhou."; FAIL_PKGS+=("${RPM_PKGS[*]}"); fi
-    fi
+    if run sudo dnf install -y "${RPM_PKGS[@]}"; then
+        DONE_PKGS+=("${RPM_PKGS[@]}"); ok "Instalados."
+    else err "dnf falhou."; FAIL_PKGS+=("${RPM_PKGS[*]}"); fi
 
     # forense via pipx (sem root) — pacotes kind=pip lidos da registry
     if [[ ${#PIPX_PKGS[@]} -gt 0 ]]; then
@@ -229,15 +206,9 @@ if confirm "Instalar esses pacotes do sistema?"; then
                 else err "falha em $p."; FAIL_PKGS+=("$p"); fi
             done
         else
-            warn "pipx ausente — ${PIPX_PKGS[*]} ficam de fora."
-            if [[ $ATOMIC -eq 1 ]]; then
-                warn "Em atômico: reinicie (pipx vem nos pacotes) e rode de novo."
-                run rpm-ostree install --idempotent --allow-inactive pipx >/dev/null 2>&1 || true
-                NEEDS_REBOOT=1
-            else
-                run sudo dnf install -y pipx \
-                    && for p in "${PIPX_PKGS[@]}"; do run pipx install "$p"; done || true
-            fi
+            warn "pipx ausente — instalando via dnf e seguindo."
+            run sudo dnf install -y pipx \
+                && for p in "${PIPX_PKGS[@]}"; do run pipx install "$p"; done || true
             SKIP_PKGS+=("${PIPX_PKGS[*]}")
         fi
     fi
@@ -313,11 +284,5 @@ for f in "${FAIL_PKGS[@]:-}"; do [[ -n "$f" ]] && err "falhou: $f"; done
 for f in "${FAIL_GUI[@]:-}";  do [[ -n "$f" ]] && err "GUI falhou: $f"; done
 
 echo
-if [[ $NEEDS_REBOOT -eq 1 ]]; then
-    echo "${YELLOW}${BOLD}Reinicie o sistema${NC} para ativar os pacotes do rpm-ostree:"
-    echo "  ${DIM}systemctl reboot${NC}"
-    echo "Depois, rode este instalador de novo para concluir a forense (pipx)."
-else
-    echo "${GREEN}${BOLD}Pronto!${NC} Abra o ${BOLD}Vigia Hub${NC} (ou VigiaBlue/VigiaRed) no menu de aplicativos."
-    echo "${DIM}Cada produto tem uma aba ${BOLD}Instalador${NC}${DIM} mostrando o status das dependências.${NC}"
-fi
+echo "${GREEN}${BOLD}Pronto!${NC} Abra o ${BOLD}Vigia Hub${NC} (ou VigiaBlue/VigiaRed) no menu de aplicativos."
+echo "${DIM}Cada produto tem uma aba ${BOLD}Instalador${NC}${DIM} mostrando o status das dependências.${NC}"
