@@ -83,7 +83,7 @@ def main() -> int:
     except (ValueError, ImportError) as e:
         print(
             f"[vigia-hub-tray] Falha ao carregar dependencias: {e}\n"
-            "Instale: rpm-ostree install libayatana-appindicator-gtk3",
+            "Instale: sudo dnf install libayatana-appindicator-gtk3",
             file=sys.stderr,
         )
         return 1

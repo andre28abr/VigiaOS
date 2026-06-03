@@ -4,13 +4,10 @@ Dependencias:
 - libayatana-appindicator-gtk3 (lib C + binding GI)
 - gnome-shell-extension-appindicator (extensao GNOME que renderiza)
 
-Em Silverblue vanilla, NENHUM dos dois vem instalado. Em Bluefin/Aurora
-ja' vem por default. Pra Silverblue precisa:
+No Fedora Workstation (GNOME), nenhum dos dois vem por padrao. Instale:
 
-    pkexec rpm-ostree install libayatana-appindicator-gtk3 \\
-                              gnome-shell-extension-appindicator
-
-E reboot (overlay rpm-ostree).
+    pkexec dnf install -y libayatana-appindicator-gtk3 \\
+                          gnome-shell-extension-appindicator
 
 Apos instalado, a extensao precisa ser ATIVADA:
     gnome-extensions enable appindicatorsupport@rgcjonas.gmail.com
@@ -23,7 +20,7 @@ import subprocess
 from dataclasses import dataclass
 
 
-# Pacotes necessarios em Fedora Silverblue/Atomic
+# Pacotes necessarios pro tray no GNOME (Fedora Workstation)
 INSTALL_PACKAGES = [
     "libayatana-appindicator-gtk3",
     "gnome-shell-extension-appindicator",
@@ -140,12 +137,7 @@ def tray_can_work() -> TrayCheck:
 
 
 def install_command() -> list[str]:
-    """Comando pra instalar os pacotes do tray. Atomico: rpm-ostree;
-    Workstation tradicional: dnf."""
-    from vigia_common.platform import is_atomic
-
-    if is_atomic():
-        return ["pkexec", "rpm-ostree", "install"] + INSTALL_PACKAGES
+    """Comando pra instalar os pacotes do tray (dnf, Fedora Workstation)."""
     return ["pkexec", "dnf", "install", "-y"] + INSTALL_PACKAGES
 
 

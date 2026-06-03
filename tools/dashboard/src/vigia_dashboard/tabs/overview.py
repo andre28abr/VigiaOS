@@ -81,20 +81,17 @@ class OverviewTab(Adw.Bin):
         self._hostname_lbl.set_halign(Gtk.Align.CENTER)
         hero.append(self._hostname_lbl)
 
-        # Selo da plataforma (Silverblue vs Workstation). Identidade da
-        # maquina fica no hostname acima; aqui a cor (verde=atomico /
-        # azul=Workstation) deixa obvio qual sistema esta rodando. Estatico:
-        # setado uma vez (a plataforma nao muda em runtime).
+        # Selo da plataforma (ex.: 'Fedora Workstation'). Identidade da
+        # maquina fica no hostname acima; aqui o selo deixa claro qual
+        # sistema esta rodando. Estatico: setado uma vez (a plataforma
+        # nao muda em runtime).
         _ensure_platform_css()
         self._platform_lbl = Gtk.Label(label="")
         self._platform_lbl.add_css_class("vigia-platform-badge")
         self._platform_lbl.set_halign(Gtk.Align.CENTER)
         self._platform_lbl.set_margin_top(2)
-        plat_label, plat_atomic = backend.get_platform_label()
-        self._platform_lbl.set_label(plat_label)
-        self._platform_lbl.add_css_class(
-            "vigia-platform-atomic" if plat_atomic else "vigia-platform-workstation"
-        )
+        self._platform_lbl.set_label(backend.get_platform_label())
+        self._platform_lbl.add_css_class("vigia-platform-workstation")
         hero.append(self._platform_lbl)
 
         self._sub_lbl = Gtk.Label(label="")
@@ -266,7 +263,7 @@ class OverviewTab(Adw.Bin):
         # Hero / system info
         info = backend.get_system_info()
         self._hostname_lbl.set_label(info.hostname)
-        # Tira o '(Silverblue)' do PRETTY_NAME — a variante ja' esta no selo.
+        # Tira o sufixo entre parênteses do PRETTY_NAME — a variante ja' esta no selo.
         distro_short = info.distro.split(" (")[0].strip()
         self._sub_lbl.set_label(
             f"{distro_short} · kernel {info.kernel} · "
