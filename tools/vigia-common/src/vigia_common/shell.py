@@ -280,187 +280,9 @@ def run_product(meta: ProductMeta, modules: list[Module],
         return sp
 
     def _installer_page() -> Gtk.Widget:
-        """Mesmo padrão do instalador do Hub: abas no topo (ViewSwitcher) —
-        **Módulos · Atualizações · Sobre** — uma sub-barra com as ferramentas
-        que os módulos embarcam, e cada módulo como ExpanderRow (badge de
-        status + descrição + dependência e o nome do Pacote no corpo)."""
-        from .markdown import md_to_pango
-
-        grouped = modules_by_category(modules, order)
-
-        def _dep_block(mod: Module) -> Gtk.Widget:
-            box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
-            hdr = Gtk.Label(label="Dependência")
-            hdr.add_css_class("caption-heading")
-            hdr.set_xalign(0)
-            hdr.set_margin_top(6)
-            box.append(hdr)
-            if not mod.requires:
-                row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-                ic = Gtk.Image.new_from_icon_name("emblem-ok-symbolic")
-                ic.add_css_class("success")
-                row.append(ic)
-                t = Gtk.Label(
-                    label="Não precisa de ferramenta externa — roda direto.")
-                t.set_wrap(True)
-                t.set_xalign(0)
-                t.set_hexpand(True)
-                row.append(t)
-                box.append(row)
-                return box
-            for dep in mod.requires:
-                ok = dep_installed(dep)
-                line = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-                ic = Gtk.Image.new_from_icon_name(
-                    "emblem-ok-symbolic" if ok else "dialog-warning-symbolic")
-                ic.add_css_class("success" if ok else "warning")
-                ic.set_valign(Gtk.Align.START)
-                line.append(ic)
-                lbl = Gtk.Label(
-                    label=f"{dep.label} — "
-                    + ("instalado" if ok else "não encontrado"))
-                lbl.set_wrap(True)
-                lbl.set_xalign(0)
-                lbl.set_hexpand(True)
-                line.append(lbl)
-                box.append(line)
-                # Nome do pacote (igual o "Pacote" do Catálogo do Hub).
-                pkg = dep.package or dep.label
-                if pkg:
-                    pk = Gtk.Label(label=f"pacote: {pkg}")
-                    pk.add_css_class("caption")
-                    pk.add_css_class("dim-label")
-                    pk.add_css_class("monospace")
-                    pk.set_xalign(0)
-                    pk.set_margin_start(28)
-                    box.append(pk)
-                # Só-leitura: a nota fica como contexto (instalação é pelo script).
-                if dep.note:
-                    nl = Gtk.Label(label=dep.note)
-                    nl.add_css_class("caption")
-                    nl.add_css_class("dim-label")
-                    nl.set_wrap(True)
-                    nl.set_xalign(0)
-                    nl.set_margin_start(28)
-                    box.append(nl)
-            return box
-
-        def _module_expander(mod: Module) -> Adw.ExpanderRow:
-            exp = Adw.ExpanderRow()
-            # set_title/set_subtitle do Adw interpretam markup Pango — escapa
-            # pra um '&' no texto não quebrar a renderização.
-            exp.set_title(GLib.markup_escape_text(mod.name))
-            exp.set_subtitle(GLib.markup_escape_text(mod.summary))
-            exp.set_subtitle_lines(0)
-            # Mesmo padrão do Catálogo do Hub: badge de status como PREFIXO
-            # (caption-heading verde/âmbar), sem o ícone colorido do módulo.
-            ok_all = (not mod.requires) or all(
-                dep_installed(d) for d in mod.requires)
-            badge = Gtk.Label(label="PRONTO" if ok_all else "FALTA")
-            badge.add_css_class("caption-heading")
-            badge.add_css_class("success" if ok_all else "warning")
-            badge.set_valign(Gtk.Align.CENTER)
-            exp.add_prefix(badge)
-
-            body = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
-            body.set_margin_top(12)
-            body.set_margin_bottom(12)
-            body.set_margin_start(16)
-            body.set_margin_end(16)
-            if mod.description:
-                d = Gtk.Label()
-                d.set_markup(md_to_pango(mod.description))
-                d.set_wrap(True)
-                d.set_xalign(0)
-                d.set_selectable(True)
-                body.append(d)
-            body.append(_dep_block(mod))
-
-            wrapper = Adw.PreferencesRow()
-            wrapper.set_activatable(False)
-            wrapper.set_child(body)
-            exp.add_row(wrapper)
-            return exp
-
-        # ---------- aba Módulos (verificação) ----------
-        # Mesmo cabeçalho do Catálogo do Hub: título .title-2 + descrição
-        # .dim-label (com o nº de ferramentas) + barra de busca. Mesmas classes
-        # de fonte que o Hub → tamanhos/tipos idênticos nos três produtos.
-        def _modules_tab() -> Gtk.Widget:
-            n = len(modules)
-            plural = "s" if n != 1 else ""
-
-            title = Gtk.Label(label="Catálogo curado")
-            title.add_css_class("title-2")
-            title.set_halign(Gtk.Align.START)
-            title.set_margin_bottom(8)
-
-            desc = Gtk.Label(label=(
-                f"{n} ferramenta{plural} de segurança selecionada{plural}. "
-                "Veja o que cada módulo embarca e confira o que já está "
-                "instalado (✓) ou falta (✗)."
-            ))
-            desc.add_css_class("dim-label")
-            desc.set_halign(Gtk.Align.START)
-            desc.set_wrap(True)
-            desc.set_xalign(0)
-            desc.set_margin_bottom(20)
-
-            search = Gtk.SearchEntry()
-            search.set_placeholder_text("Buscar por nome, descrição ou pacote...")
-            search.set_hexpand(True)
-            search.set_margin_bottom(16)
-
-            categories_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL,
-                                     spacing=20)
-            row_text: dict = {}     # ExpanderRow -> texto pesquisável
-            group_rows: dict = {}   # PreferencesGroup -> [ExpanderRow]
-            for cat, mods in grouped.items():
-                grp = Adw.PreferencesGroup()
-                # categoria pode ter '&' (markup) — escapa.
-                grp.set_title(GLib.markup_escape_text(categories.get(cat, cat)))
-                rows = []
-                for mod in mods:
-                    exp = _module_expander(mod)
-                    grp.add(exp)
-                    pk = " ".join(
-                        f"{d.package} {d.label}" for d in mod.requires)
-                    row_text[exp] = f"{mod.name} {mod.summary} {pk}".lower()
-                    rows.append(exp)
-                categories_box.append(grp)
-                group_rows[grp] = rows
-
-            def _apply_filter(*_a):
-                q = search.get_text().strip().lower()
-                for grp, rows in group_rows.items():
-                    visible_any = False
-                    for exp in rows:
-                        vis = (not q) or (q in row_text.get(exp, ""))
-                        exp.set_visible(vis)
-                        visible_any = visible_any or vis
-                    grp.set_visible(visible_any)
-
-            search.connect("search-changed", _apply_filter)
-
-            outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-            outer.set_margin_top(24)
-            outer.set_margin_bottom(32)
-            outer.set_margin_start(28)
-            outer.set_margin_end(28)
-            outer.append(title)
-            outer.append(desc)
-            outer.append(search)
-            outer.append(categories_box)
-
-            clamp = Adw.Clamp()
-            clamp.set_maximum_size(CONTENT_MAX_WIDTH)
-            clamp.set_tightening_threshold(CONTENT_TIGHTENING)
-            clamp.set_child(outer)
-            scrolled = Gtk.ScrolledWindow()
-            scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
-            scrolled.set_vexpand(True)
-            scrolled.set_child(clamp)
-            return scrolled
+        """Área "Atualizações": abas no topo (ViewSwitcher) — **Atualizações · Sobre**.
+        Verifica e aplica updates do sistema e dos programas instalados
+        (pelo painel ou pelo terminal)."""
 
         # ---------- aba Atualizações (reusa a UpdatesTab do Hub) ----------
         def _updates_tab() -> Gtk.Widget:
@@ -479,41 +301,37 @@ def run_product(meta: ProductMeta, modules: list[Module],
         def _about_installer_tab() -> Gtk.Widget:
             pm = GLib.markup_escape_text(package_manager())
             _name = GLib.markup_escape_text(meta.name)
-            _tag = GLib.markup_escape_text(meta.tagline)
             sections = [
                 ("O que faz",
-                 f"Esta área <b>verifica</b> as ferramentas open source que os "
-                 f"módulos do {_name} embarcam (YARA, Suricata, Volatility, …): "
-                 "mostra o que já está instalado (✓) e o que falta (✗).\n\n"
-                 "Ela <b>não instala nada</b> por conta própria — é só "
-                 "conferência. A instalação fica a cargo do script guiado do "
-                 "ecossistema."),
+                 "Esta área mantém o sistema e os programas instalados <b>em "
+                 "dia</b>. Ela <b>verifica</b> se há atualizações e deixa você "
+                 "<b>aplicar</b> — pelo painel (um clique) ou copiando o comando "
+                 "pro terminal, do seu jeito."),
                 ("Como usar",
-                 "<b>Aba Módulos</b>:\n"
-                 "1. Os módulos vêm agrupados por categoria, com um badge de "
-                 "status (<i>PRONTO</i> / <i>FALTA</i>)\n"
-                 "2. Expanda um módulo (seta) pra ver a descrição, a dependência "
-                 "e o <tt>pacote</tt> que ela usa\n"
-                 "3. A busca filtra por nome, descrição ou pacote\n\n"
                  "<b>Aba Atualizações</b>:\n"
-                 "- Verifica e aplica atualizações do sistema e dos programas\n"
-                 "- Atualize pelo painel (botão) ou copie o comando pro terminal"),
-                ("Como instalar o que falta",
-                 "A instalação é feita pelo <b>instalador guiado do "
-                 "ecossistema</b>, no terminal:\n\n"
-                 "<tt>./install/vigia-setup.sh</tt>\n\n"
-                 "Ele cuida das dependências dos três produtos (Hub, Blue e Red) "
-                 f"de uma vez, já na plataforma certa (detectada: <tt>{pm}</tt>)."),
+                 "1. Ao abrir, checa automaticamente se há atualizações "
+                 "(sistema e programas da suíte)\n"
+                 "2. <b>Atualizar agora</b> aplica tudo pelo painel "
+                 "(pede a senha de admin uma vez)\n"
+                 "3. Ou copie o comando e rode no <b>terminal</b>, se preferir\n"
+                 "4. O que será atualizado aparece separado: <i>Sistema</i> vs "
+                 "<i>Programas da suíte Vigia</i>"),
+                ("Sistema e programas",
+                 "A atualização cobre <b>os dois</b>:\n"
+                 "- <b>Sistema</b>: pacotes do Fedora (kernel, libs, apps)\n"
+                 "- <b>Programas da suíte</b>: as ferramentas que o Vigia usa "
+                 "(lynis, clamav, suricata, …)\n\n"
+                 f"Tudo via <tt>{pm}</tt> — o gerenciador de pacotes do "
+                 "Fedora Workstation."),
                 ("Conceitos importantes",
-                 "<b>Ferramentas embarcadas</b>: cada módulo é uma interface "
-                 "gráfica que <i>embrulha</i> uma ferramenta de linha de comando "
-                 "consagrada (ex.: o Vigia IDS embrulha o <tt>Suricata</tt>). Sem "
-                 "a ferramenta instalada, o módulo aparece como <i>FALTA</i>.\n\n"
-                 f"<b>{pm}</b>: é o gerenciador de pacotes que a aba Atualizações "
-                 "usa pra manter o sistema e as ferramentas em dia."),
+                 "<b>Sem reboot</b>: o <tt>dnf</tt> aplica na hora. Atualizar "
+                 "<b>não liga serviço</b> nem muda configuração — é seguro.\n\n"
+                 "Pra <i>instalar</i> uma dependência que falta num módulo (a "
+                 "bolinha vermelha na lista de Módulos), rode o instalador "
+                 "completo no terminal: <tt>./install/bootstrap.sh</tt>."),
                 ("Saiba mais",
-                 f"- Produto: <b>{_name}</b> — {_tag}\n"
-                 "- Instalador do ecossistema: <tt>install/vigia-setup.sh</tt>\n"
+                 f"- Produto: <b>{_name}</b>\n"
+                 "- Instalador completo: <tt>install/bootstrap.sh</tt>\n"
                  "- Repositório: https://github.com/andre28abr/VigiaOS"),
             ]
             page = Adw.PreferencesPage()
@@ -559,8 +377,6 @@ def run_product(meta: ProductMeta, modules: list[Module],
 
         # ---------- monta ViewStack + ViewSwitcher (igual o Hub) ----------
         stack = Adw.ViewStack()
-        stack.add_titled_with_icon(
-            _modules_tab(), "modulos", "Módulos", "view-grid-symbolic")
         stack.add_titled_with_icon(
             _updates_tab(), "atualizacoes", "Atualizações",
             "software-update-available-symbolic")
@@ -727,7 +543,7 @@ def run_product(meta: ProductMeta, modules: list[Module],
             nav.add_css_class("navigation-sidebar")
             entries = [
                 ("modulos", "Módulos", "view-grid-symbolic"),
-                ("instalador", "Instalador", "package-x-generic-symbolic"),
+                ("instalador", "Atualizações", "software-update-available-symbolic"),
                 ("config", "Config.", "preferences-system-symbolic"),
                 ("ajuda", "Ajuda", "help-browser-symbolic"),
                 ("sobre", "Sobre", "help-about-symbolic"),
@@ -809,10 +625,18 @@ def run_product(meta: ProductMeta, modules: list[Module],
                     row.set_title(mod.name)
                     row.set_subtitle(mod.summary)
                     row.add_prefix(_img(mod.icon, 28))
-                    pill = Gtk.Label(label=STATUS_LABEL.get(mod.status, ""))
-                    pill.add_css_class("caption")
-                    pill.add_css_class("dim-label")
-                    row.add_suffix(pill)
+                    # Bolinha de disponibilidade (igual o Hub): verde = todas as
+                    # dependências instaladas (módulo pronto); vermelho = falta.
+                    ok_all = (not mod.requires) or all(
+                        dep_installed(d) for d in mod.requires)
+                    dot = Gtk.Label(label="●")
+                    dot.add_css_class("caption")
+                    dot.add_css_class("success" if ok_all else "error")
+                    dot.set_valign(Gtk.Align.CENTER)
+                    dot.set_tooltip_text(
+                        "Pronto — dependências instaladas" if ok_all
+                        else "Falta instalar dependência(s)")
+                    row.add_suffix(dot)
                     row.set_activatable(True)
                     row._vigia_module = mod  # type: ignore[attr-defined]
                     sidebar.append(row)
