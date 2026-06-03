@@ -13,4 +13,4 @@ abre AMO/Web Store, mantem state local de marcacao, lock por categoria
 __version__ = "0.4.2"
 __app_id__ = "br.com.vigia.ToolInstaller"
 
-WRAPPED_PACKAGES = ["dnf", "xdg-open"]
+WRAPPED_PACKAGES = ["dnf"]

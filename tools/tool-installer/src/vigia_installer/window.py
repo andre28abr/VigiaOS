@@ -1,6 +1,6 @@
-"""Janela principal do Tool Installer (abas no Adw.ViewStack).
+"""Janela principal de Atualizações (abas no Adw.ViewStack).
 
-Abas: Catalogo / Atualizacoes / Extensoes / Sobre.
+Abas: Atualizacoes / Sobre.
 Suporta modo standalone (VigiaInstallerWindow) e embedded (build_content()).
 """
 
@@ -14,7 +14,7 @@ gi.require_version("Adw", "1")
 from gi.repository import Adw, Gtk  # noqa: E402
 
 from . import WRAPPED_PACKAGES
-from .tabs import AboutTab, BrowseTab, ExtensionsTab, UpdatesTab
+from .tabs import AboutTab, UpdatesTab
 
 
 def _make_pkg_badges_bar() -> Gtk.Widget:
@@ -39,16 +39,12 @@ def _make_pkg_badges_bar() -> Gtk.Widget:
 
 class _InstallerContent:
     def __init__(self) -> None:
-        # Aba "Atualizacoes": checa e aplica updates do sistema (dnf).
+        # Área "Atualizações": checa e aplica updates do sistema (dnf) + Sobre.
         self.updates = UpdatesTab()
-        self.browse = BrowseTab(on_changed=self._on_browse_changed)
-        self.extensions = ExtensionsTab()
         self.about = AboutTab()
 
         stack = Adw.ViewStack()
-        stack.add_titled_with_icon(self.browse, "browse", "Catálogo", "package-x-generic-symbolic")
         stack.add_titled_with_icon(self.updates, "updates", "Atualizações", "software-update-available-symbolic")
-        stack.add_titled_with_icon(self.extensions, "extensions", "Extensões", "web-browser-symbolic")
         stack.add_titled_with_icon(self.about, "about", "Sobre", "help-about-symbolic")
 
         switcher = Adw.ViewSwitcher()
@@ -63,10 +59,6 @@ class _InstallerContent:
         if WRAPPED_PACKAGES:
             self.toolbar.add_top_bar(_make_pkg_badges_bar())
         self.toolbar.set_content(stack)
-
-    def _on_browse_changed(self) -> None:
-        """Apos install/uninstall, re-checa a aba Atualizacoes."""
-        self.updates.recheck()
 
 
 def build_content() -> Gtk.Widget:
