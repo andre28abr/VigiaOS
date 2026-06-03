@@ -106,6 +106,7 @@ echo "  ${DIM}runtime:${NC}  ${DEPS_CORE[*]}"
 echo "  ${DIM}backends:${NC} ${DEPS_BACKENDS[*]}"
 echo "  ${DIM}produtos:${NC} ${VIGIA_PRODUCTS[*]} (ícones no menu, pasta Vigia)"
 echo "  ${DIM}módulos:${NC}  ${#VIGIA_MODULES[@]} ferramentas embarcadas (pip --user, sem ícone solto)"
+echo "  ${DIM}blue:${NC}     forense/SOC do VigiaBlue (yara, suricata, volatility3, plaso, AVML…)"
 echo "  ${DIM}flatpaks:${NC} ${FLATPAKS[*]}"
 echo
 warn "Nenhum servico sera LIGADO (fail2ban/dnscrypt off — opt-in nas tools)."
@@ -206,6 +207,16 @@ elif command -v cargo >/dev/null 2>&1 && [ -d "$REPO_DIR/tools/activity-log" ]; 
     fi
 else
     warn "cargo (Rust) ausente — Activity Log (core vigia-log) fica indisponível."
+fi
+
+# ---- 3e. dependências externas do VigiaBlue (forense / SOC) ---------------
+# Deixa o VigiaBlue 100% funcional: yara, suricata, tcpdump, volatility3,
+# plaso, AVML (aarch64), dwarf2json. Reaproveita o blue-deps.sh.
+hr
+if [ -f "$REPO_DIR/install/blue-deps.sh" ]; then
+    info "Instalando as dependências do VigiaBlue (forense/SOC)..."
+    bash "$REPO_DIR/install/blue-deps.sh" \
+        || warn "blue-deps teve falhas — VigiaBlue pode ficar parcial (veja acima)."
 fi
 
 # ---- 4. Flatpaks ----------------------------------------------------------
