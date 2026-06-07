@@ -28,7 +28,9 @@ dependencies = ["vigia-common"]
 manuals = ["markdown>=3.4"]
 
 [project.scripts]
+vigia-os = "vigia_hub.__main__:main"
 vigia-hub = "vigia_hub.__main__:main"
+vigia-os-tray = "vigia_hub.tray.indicator:main"
 vigia-hub-tray = "vigia_hub.tray.indicator:main"
 vigia = "vigia_hub.cli:main"
 

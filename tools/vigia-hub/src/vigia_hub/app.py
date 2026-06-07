@@ -54,12 +54,15 @@ _log = get_logger("vigia_hub.app")
 
 
 class VigiaHubApp(Adw.Application):
-    def __init__(self, start_minimized: bool = False) -> None:
+    def __init__(self, start_minimized: bool = False,
+                 start_section: str | None = None) -> None:
         super().__init__(
             application_id=__app_id__,
             flags=Gio.ApplicationFlags.DEFAULT_FLAGS,
         )
         self._start_minimized = start_minimized
+        # Seção inicial do rail (--section: inicio/hub/red/blue). None = Início.
+        self._start_section = start_section
         self._tray = TrayManager()
         self._hold_active = False
         self._authed = False  # True apos passar o check_auth da sessao
@@ -210,7 +213,7 @@ class VigiaHubApp(Adw.Application):
         """Retorna a janela existente ou cria uma nova."""
         win = self.get_active_window()
         if win is None:
-            win = VigiaHubWindow(self)
+            win = VigiaHubWindow(self, start_section=self._start_section)
             win.connect("close-request", self._on_window_close_request)
         return win  # type: ignore[return-value]
 

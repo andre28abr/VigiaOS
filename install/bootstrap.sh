@@ -67,8 +67,9 @@ DEPS_BACKENDS=(
     md5deep                               # forense (binarios hashdeep/sha256deep)
 )
 
-# PRODUTOS: os ÚNICOS que ganham ícone no menu do GNOME (numa pasta "Vigia").
-# Tudo roda DENTRO deles — as ferramentas são embarcadas, não apps soltos.
+# PACOTES "produto": instalados via pip pra o VigiaOS importar — vigia-hub é o
+# app unificado; vigia-blue/vigia-red viram SEÇÕES dentro dele. Nenhum ganha
+# ícone próprio: só o VigiaOS aparece no menu (1 ícone, sem pasta).
 VIGIA_PRODUCTS=(vigia-hub vigia-blue vigia-red)
 # MÓDULOS: instalados via pip pra rodar EMBARCADOS no Hub — SEM ícone próprio.
 # vigia-common primeiro (dep de todos os outros).
@@ -104,8 +105,8 @@ hr
 info "Vai instalar (${PM}):"
 echo "  ${DIM}runtime:${NC}  ${DEPS_CORE[*]}"
 echo "  ${DIM}backends:${NC} ${DEPS_BACKENDS[*]}"
-echo "  ${DIM}produtos:${NC} ${VIGIA_PRODUCTS[*]} (ícones no menu, pasta Vigia)"
-echo "  ${DIM}módulos:${NC}  ${#VIGIA_MODULES[@]} ferramentas embarcadas (pip --user, sem ícone solto)"
+echo "  ${DIM}app:${NC}      VigiaOS — 1 ícone no menu (Hub/Red/Blue são seções)"
+echo "  ${DIM}pacotes:${NC}  ${#VIGIA_MODULES[@]} módulos + Hub/Red/Blue (pip --user, embarcados)"
 echo "  ${DIM}blue:${NC}     forense/SOC do VigiaBlue (yara, suricata, volatility3, plaso, AVML…)"
 echo "  ${DIM}flatpaks:${NC} ${FLATPAKS[*]}"
 echo
@@ -141,7 +142,7 @@ ICONS_DIR="$HOME/.local/share/icons/hicolor/scalable/apps"
 mkdir -p "$APPS_DIR" "$ICONS_DIR"
 
 # 3a. pip install de TUDO (módulos primeiro — common é dep — depois produtos).
-#     NENHUM registra ícone aqui: as ferramentas rodam embarcadas no Hub.
+#     NENHUM registra ícone aqui: tudo roda embarcado dentro do VigiaOS.
 for t in "${VIGIA_MODULES[@]}" "${VIGIA_PRODUCTS[@]}"; do
     tdir="$REPO_DIR/tools/$t"
     [ -d "$tdir" ] || { warn "tools/$t nao encontrada — pulando."; continue; }
@@ -149,15 +150,17 @@ for t in "${VIGIA_MODULES[@]}" "${VIGIA_PRODUCTS[@]}"; do
         && echo "  ${GREEN}ok${NC} $t" || warn "falha no pip de $t"
 done
 
-# 3b. ÍCONE no menu SÓ pros 3 produtos (Hub/Blue/Red). As ferramentas não
-#     viram apps soltos — abrem dentro do Hub.
-for p in "${VIGIA_PRODUCTS[@]}"; do
-    pdir="$REPO_DIR/tools/$p"
-    compgen -G "$pdir/data/*.desktop" >/dev/null 2>&1 \
-        && install -Dpm 0644 "$pdir"/data/*.desktop "$APPS_DIR"/ 2>/dev/null || true
-    compgen -G "$pdir/data/*.svg" >/dev/null 2>&1 \
-        && install -Dpm 0644 "$pdir"/data/*.svg "$ICONS_DIR"/ 2>/dev/null || true
-done
+# 3b. ÍCONE no menu: SÓ o VigiaOS (app unificado). As ferramentas e os antigos
+#     "produtos" (Hub/Red/Blue) rodam DENTRO dele — não viram apps soltos.
+OS_DATA="$REPO_DIR/tools/vigia-hub/data"
+install -Dpm 0644 "$OS_DATA/br.com.vigia.OS.desktop" "$APPS_DIR/" 2>/dev/null \
+    && echo "  ${GREEN}ok${NC} ícone VigiaOS no menu" \
+    || warn "falha ao instalar o .desktop do VigiaOS"
+install -Dpm 0644 "$OS_DATA/br.com.vigia.OS.svg" "$ICONS_DIR/" 2>/dev/null || true
+# Limpa ícones soltos de instalações antigas (Hub/Blue/Red como apps separados).
+rm -f "$APPS_DIR"/br.com.vigia.Hub.desktop \
+      "$APPS_DIR"/br.com.vigia.Blue.desktop \
+      "$APPS_DIR"/br.com.vigia.Red.desktop 2>/dev/null || true
 
 # 3b'. Alguns backends CLI trazem um .desktop próprio que polui o menu (ex:
 #      chkrootkit abre num terminal e fecha). Esconde com um override
@@ -176,17 +179,17 @@ HICOLOR_DIR="$HOME/.local/share/icons/hicolor"
 update-desktop-database "$APPS_DIR" >/dev/null 2>&1 || true
 gtk-update-icon-cache -f "$HICOLOR_DIR" >/dev/null 2>&1 || true
 
-# 3c. Agrupa os 3 produtos numa pasta "Vigia" no grid de apps do GNOME.
+# 3c. Instalações antigas agrupavam 3 ícones numa pasta "Vigia". Agora é 1 ícone
+#     só (VigiaOS) — remove a pasta se sobrou de uma instalação anterior.
 if command -v gsettings >/dev/null 2>&1; then
     AF="org.gnome.desktop.app-folders"
+    gsettings reset-recursively \
+        "$AF.folder:/org/gnome/desktop/app-folders/folders/Vigia/" 2>/dev/null || true
     kids=$(gsettings get "$AF" folder-children 2>/dev/null || echo "[]")
-    if [[ "$kids" != *"'Vigia'"* ]]; then
-        kids=$(python3 -c "import sys,ast; l=ast.literal_eval(sys.argv[1]) if sys.argv[1].startswith('[') else []; l.append('Vigia'); print(repr(l))" "$kids" 2>/dev/null)
+    if [[ "$kids" == *"'Vigia'"* ]]; then
+        kids=$(python3 -c "import sys,ast; print(repr([x for x in ast.literal_eval(sys.argv[1]) if x!='Vigia']))" "$kids" 2>/dev/null)
         [ -n "$kids" ] && gsettings set "$AF" folder-children "$kids" 2>/dev/null || true
     fi
-    VF="$AF.folder:/org/gnome/desktop/app-folders/folders/Vigia/"
-    gsettings set "$VF" name 'Vigia' 2>/dev/null || true
-    gsettings set "$VF" apps "['br.com.vigia.Hub.desktop', 'br.com.vigia.Blue.desktop', 'br.com.vigia.Red.desktop']" 2>/dev/null || true
 fi
 
 # ---- 3d. core do Activity Log (vigia-log, Rust) ---------------------------
@@ -246,7 +249,7 @@ echo
 echo "${DIM}Nenhum servico foi ligado. Ative o que quiser nas ferramentas:${NC}"
 echo "${DIM}  • fail2ban → Privacy Controls    • DNS encriptado → DNS Manager${NC}"
 echo
-echo "${BOLD}Pronto — sem reboot.${NC} No menu de aplicativos do GNOME, abra a pasta"
-echo "${BOLD}Vigia${NC} — lá estão os 3 produtos: ${BOLD}Vigia Hub${NC}, ${BOLD}VigiaBlue${NC} e ${BOLD}VigiaRed${NC}."
-echo "${DIM}(as ferramentas rodam embarcadas dentro deles; no terminal: vigia-hub)${NC}"
+echo "${BOLD}Pronto — sem reboot.${NC} No menu de aplicativos do GNOME, abra o"
+echo "${BOLD}VigiaOS${NC} — Início, Hub, Red e Blue são seções dentro de uma janela só."
+echo "${DIM}(no terminal: vigia-os; vigia-blue/vigia-red abrem já na seção)${NC}"
 echo
