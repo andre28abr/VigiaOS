@@ -94,20 +94,24 @@ def find_terminal() -> tuple[str, list[str]] | None:
     return None
 
 
-# Modos da nav lateral
-NAV_MODES = [
-    ("tools", "Módulos", "view-grid-symbolic"),
-    ("installer", "Atualizações", "software-update-available-symbolic"),
-    ("settings", "Configurações", "preferences-system-symbolic"),
-    ("help", "Ajuda", "help-browser-symbolic"),
-    ("about", "Sobre", "help-about-symbolic"),
+# Seções do rail (esquerda). Início = landing (Monitor do Sistema); Hub/Red/Blue
+# = master-detail dos módulos de cada produto. Configurações fica à parte, no
+# rodapé do rail (junto do sininho de notificações).
+SECTIONS = [
+    ("inicio", "Início", "go-home-symbolic"),
+    ("hub", "Hub", "view-grid-symbolic"),
+    ("red", "Red", "system-search-symbolic"),
+    ("blue", "Blue", "security-high-symbolic"),
 ]
+
+# A tool "dashboard" é promovida à seção Início — não aparece no catálogo do Hub.
+_DASHBOARD_ID = "dashboard"
 
 
 class VigiaHubWindow(Adw.ApplicationWindow):
     def __init__(self, app: Adw.Application):
         super().__init__(application=app)
-        self.set_title("Vigia Hub")
+        self.set_title("VigiaOS")
         self.set_default_size(1340, 820)
 
         # Estado por-seção do master-detail. Cada seção (Hub/Red/Blue) tem o
@@ -117,8 +121,8 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         self._section_sidebar_lists: dict[str, Gtk.ListBox] = {}
         self._section_embedded: dict[str, dict[str, Gtk.Widget]] = {}
         self._section_entries: dict[str, list[ToolEntry]] = {}
-        # Caches de paginas de modo (installer, settings, help)
-        self._mode_pages: dict[str, Gtk.Widget] = {}
+        # Quais seções já foram construídas e adicionadas ao _main_stack (lazy).
+        self._section_built: set[str] = set()
         # Idle monitor (auto-lock) — None ate ser configurado
         self._idle_monitor = None
         # Handler ID do switch de lock (pra block/unblock anti-recursao)
@@ -130,17 +134,13 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         # ============= Nav fina (esquerda) ============= #
         nav_box = self._build_nav_bar()
 
-        # ============= Seção Hub (master-detail) ============= #
-        self._tools_view = self._build_section_view(
-            "hub", list(TOOLS), CATEGORY_LABELS, CATEGORIES_ORDER)
-
-        # ============= Main stack (alterna entre modos) ============= #
+        # ============= Main stack (alterna entre seções) ============= #
         self._main_stack = Gtk.Stack()
         self._main_stack.set_transition_type(Gtk.StackTransitionType.CROSSFADE)
         self._main_stack.set_transition_duration(150)
         self._main_stack.set_hexpand(True)
-        self._main_stack.add_named(self._tools_view, "tools")
-        # installer/settings/help: lazy — criados na primeira selecao
+        # As seções (inicio/hub/red/blue/config) são construídas sob demanda em
+        # _ensure_section(), na primeira vez que o item do rail é selecionado.
 
         # ============= Layout final ============= #
         outer = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
@@ -150,7 +150,7 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         outer.append(self._main_stack)
         self.set_content(outer)
 
-        # Seleciona "tools" por default
+        # Abre na seção Início (landing = Monitor do Sistema)
         first_row = self._nav_list.get_row_at_index(0)
         if first_row is not None:
             self._nav_list.select_row(first_row)
@@ -166,25 +166,48 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         except Exception as e:  # pylint: disable=broad-except
             _log.debug("nao conseguiu conectar listener de tema: %s", e)
 
-        # Seleciona a primeira tool da seção Hub (dispara _on_sidebar_selected)
-        self._select_first_tool("hub")
-
         # Checagem de atualizacoes em segundo plano (badge no Instalador).
         # Read-only, sem root; respeita o toggle em Config > Aplicacao.
         if self._settings.check_updates:
             self._start_update_check()
 
     # ========================================================================
-    # Nav bar (4 icones)
+    # Rail (seções: Início / Hub / Red / Blue  +  Configurações no rodapé)
     # ========================================================================
 
+    def _make_nav_row(self, section_id: str, label: str,
+                      icon_name: str) -> Gtk.ListBoxRow:
+        """Uma linha do rail (ícone em cima, rótulo embaixo)."""
+        row = Gtk.ListBoxRow()
+        row._section_id = section_id  # type: ignore[attr-defined]
+        inner = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        inner.set_margin_top(10)
+        inner.set_margin_bottom(10)
+        inner.set_margin_start(6)
+        inner.set_margin_end(6)
+
+        icon = Gtk.Image.new_from_icon_name(icon_name)
+        icon.set_pixel_size(22)
+        icon.set_halign(Gtk.Align.CENTER)
+        inner.append(icon)
+
+        lbl = Gtk.Label(label=label)
+        lbl.add_css_class("caption")
+        lbl.set_halign(Gtk.Align.CENTER)
+        lbl.set_wrap(True)
+        lbl.set_justify(Gtk.Justification.CENTER)
+        inner.append(lbl)
+
+        row.set_child(inner)
+        return row
+
     def _build_nav_bar(self) -> Gtk.Widget:
-        """Barra fina vertical com 4 botoes-icone."""
+        """Rail fino vertical: seções no topo, Configurações + sino no rodapé."""
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
         box.set_size_request(74, -1)
 
-        # Header do hub (logo discreto)
-        header_lbl = Gtk.Label(label="Vigia Hub")
+        # Marca do app
+        header_lbl = Gtk.Label(label="VigiaOS")
         header_lbl.add_css_class("caption-heading")
         header_lbl.add_css_class("dim-label")
         header_lbl.set_wrap(True)
@@ -193,42 +216,30 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         header_lbl.set_margin_bottom(20)
         box.append(header_lbl)
 
-        # ListBox dos modos
+        # ListBox das seções (Início / Hub / Red / Blue)
         self._nav_list = Gtk.ListBox()
         self._nav_list.set_selection_mode(Gtk.SelectionMode.SINGLE)
         self._nav_list.add_css_class("navigation-sidebar")
-        self._nav_list.connect("row-selected", self._on_nav_selected)
-
-        for mode_id, label, icon_name in NAV_MODES:
-            row = Gtk.ListBoxRow()
-            row._mode_id = mode_id  # type: ignore[attr-defined]
-            inner = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
-            inner.set_margin_top(10)
-            inner.set_margin_bottom(10)
-            inner.set_margin_start(6)
-            inner.set_margin_end(6)
-
-            icon = Gtk.Image.new_from_icon_name(icon_name)
-            icon.set_pixel_size(22)
-            icon.set_halign(Gtk.Align.CENTER)
-            inner.append(icon)
-
-            lbl = Gtk.Label(label=label)
-            lbl.add_css_class("caption")
-            lbl.set_halign(Gtk.Align.CENTER)
-            lbl.set_wrap(True)
-            lbl.set_justify(Gtk.Justification.CENTER)
-            inner.append(lbl)
-
-            row.set_child(inner)
-            self._nav_list.append(row)
-
+        self._nav_list.connect("row-selected", self._on_section_selected)
+        for section_id, label, icon_name in SECTIONS:
+            self._nav_list.append(self._make_nav_row(section_id, label, icon_name))
         box.append(self._nav_list)
 
-        # Spacer empurra o sininho pro rodapé
+        # Spacer empurra Configurações + sino pro rodapé
         spacer = Gtk.Box()
         spacer.set_vexpand(True)
         box.append(spacer)
+
+        # Configurações: listbox próprio no rodapé (seleção independente das
+        # seções de cima; o handler faz unselect cruzado).
+        self._nav_config_list = Gtk.ListBox()
+        self._nav_config_list.set_selection_mode(Gtk.SelectionMode.SINGLE)
+        self._nav_config_list.add_css_class("navigation-sidebar")
+        self._nav_config_list.connect("row-selected", self._on_section_selected)
+        self._nav_config_list.append(
+            self._make_nav_row("config", "Configurações",
+                               "preferences-system-symbolic"))
+        box.append(self._nav_config_list)
 
         # Sininho de notificações no rodapé do rail (updates do sistema/suíte)
         self._bell = NotificationsBell()
@@ -261,77 +272,152 @@ class VigiaHubWindow(Adw.ApplicationWindow):
             self._bell.set_notifications(notifs)
         return False
 
-    def _on_nav_selected(
-        self, _listbox: Gtk.ListBox, row: Gtk.ListBoxRow | None
+    def _on_section_selected(
+        self, listbox: Gtk.ListBox, row: Gtk.ListBoxRow | None
     ) -> None:
         if row is None:
             return
-        mode_id = getattr(row, "_mode_id", None)
-        if not mode_id:
+        section_id = getattr(row, "_section_id", None)
+        if not section_id:
             return
+        # Seleção cruzada: limpa a outra listbox (seções vs. Configurações) pra
+        # não ficar duas linhas destacadas. unselect_all dispara row-selected
+        # com None, que o handler ignora (sem recursão).
+        other = (self._nav_config_list if listbox is self._nav_list
+                 else self._nav_list)
+        other.unselect_all()
 
-        if mode_id == "tools":
-            self._main_stack.set_visible_child_name("tools")
+        self._ensure_section(section_id)
+        self._main_stack.set_visible_child_name(section_id)
+
+    def _ensure_section(self, section_id: str) -> None:
+        """Constrói a seção (lazy) e adiciona ao _main_stack na 1ª seleção."""
+        if section_id in self._section_built:
             return
+        try:
+            page = self._build_section_page(section_id)
+        except Exception as e:  # pylint: disable=broad-except
+            err = "".join(traceback.format_exception_only(type(e), e)).strip()
+            page = Adw.StatusPage(
+                title=f"Falha ao carregar '{section_id}'",
+                description=err,
+                icon_name="dialog-error-symbolic",
+            )
+        self._main_stack.add_named(page, section_id)
+        self._section_built.add(section_id)
+        # Seções master-detail abrem já no primeiro item.
+        if section_id in ("hub", "red", "blue"):
+            self._select_first_tool(section_id)
 
-        # Lazy build pages
-        if mode_id not in self._mode_pages:
-            try:
-                page = self._build_mode_page(mode_id)
-            except Exception as e:  # pylint: disable=broad-except
-                err = "".join(traceback.format_exception_only(type(e), e)).strip()
-                page = Adw.StatusPage(
-                    title=f"Falha ao carregar '{mode_id}'",
-                    description=err,
-                    icon_name="dialog-error-symbolic",
-                )
-            self._mode_pages[mode_id] = page
-            self._main_stack.add_named(page, mode_id)
+    def _build_section_page(self, section_id: str) -> Gtk.Widget:
+        """Conteúdo de uma seção do rail."""
+        if section_id == "inicio":
+            return self._build_inicio_view()
+        if section_id == "hub":
+            # Dashboard é promovido à seção Início — fora do catálogo do Hub.
+            hub_entries = [t for t in TOOLS if t.id != _DASHBOARD_ID]
+            return self._build_section_view(
+                "hub", hub_entries, CATEGORY_LABELS, CATEGORIES_ORDER)
+        if section_id in ("red", "blue"):
+            return self._build_blue_red_section(section_id)
+        if section_id == "config":
+            return self._build_config_view()
+        raise ValueError(f"Seção desconhecida: {section_id}")
 
-        self._main_stack.set_visible_child_name(mode_id)
-
-    def _build_mode_page(self, mode_id: str) -> Gtk.Widget:
-        """Constroi a pagina de um modo (installer/settings/help)."""
-        if mode_id == "installer":
-            # Importa o Tool Installer e usa build_content() fullscreen
-            module = importlib.import_module("vigia_installer.window")
+    def _build_inicio_view(self) -> Gtk.Widget:
+        """Seção Início: a tela do Monitor do Sistema (Dashboard) como landing.
+        Construída lazy (o dashboard é pesado); falha de import não derruba."""
+        holder = Adw.Bin()
+        try:
+            module = importlib.import_module("vigia_dashboard.window")
             builder = getattr(module, "build_content", None)
             if not callable(builder):
-                raise RuntimeError("vigia_installer.window.build_content() faltando")
-            return builder()
-        if mode_id == "settings":
-            return self._build_settings_page()
-        if mode_id == "help":
-            return self._build_help_page()
-        if mode_id == "about":
-            return self._build_about_page()
-        raise ValueError(f"Modo desconhecido: {mode_id}")
+                raise RuntimeError(
+                    "vigia_dashboard.window.build_content() faltando")
+            holder.set_child(builder())
+        except Exception as e:  # pylint: disable=broad-except
+            err = "".join(traceback.format_exception_only(type(e), e)).strip()
+            holder.set_child(Adw.StatusPage(
+                title="Monitor do Sistema indisponível",
+                description=err,
+                icon_name="dialog-error-symbolic",
+            ))
+        return holder
 
-    def _build_about_page(self) -> Gtk.Widget:
-        """Página 'Sobre' (item do rail) — reaproveita o conteúdo da antiga aba
-        Sobre do Config, promovida a item de topo (padrão Blue/Red)."""
+    def _build_blue_red_section(self, section_key: str) -> Gtk.Widget:
+        """STUB (Fase 3): seções Red/Blue ligadas de verdade na Fase 5."""
+        name = {"red": "VigiaRed", "blue": "VigiaBlue"}.get(
+            section_key, section_key)
+        return Adw.StatusPage(
+            title=f"{name} — em breve",
+            description="Os módulos desta seção entram já já.",
+            icon_name="emblem-synchronizing-symbolic",
+        )
+
+    # ---- Configurações (ViewStack: Sobre/Atualizações/Aplicação/Segurança/Ajuda) ----
+
+    def _build_config_view(self) -> Gtk.Widget:
+        """Seção Configurações — abas na ordem pedida: Sobre, Atualizações,
+        Aplicação, Segurança, Ajuda. Compõe os builders que já existem."""
+        # Re-carrega settings + sincroniza autostart (como fazia _build_settings_page)
+        self._settings = load_settings()
+        disk_autostart = autostart_is_enabled()
+        if disk_autostart != self._settings.autostart:
+            self._settings.autostart = disk_autostart
+            save_settings(self._settings)
+
+        stack = Adw.ViewStack()
+        stack.add_titled_with_icon(
+            self._build_settings_about_tab(), "sobre", "Sobre",
+            "help-about-symbolic")
+        stack.add_titled_with_icon(
+            self._build_installer_tab(), "updates", "Atualizações",
+            "software-update-available-symbolic")
+        stack.add_titled_with_icon(
+            self._build_settings_app_tab(), "app", "Aplicação",
+            "system-run-symbolic")
+        stack.add_titled_with_icon(
+            self._build_settings_security_tab(), "security", "Segurança",
+            "channel-secure-symbolic")
+        stack.add_titled_with_icon(
+            self._build_help_inner(), "help", "Ajuda",
+            "help-browser-symbolic")
+
+        switcher = Adw.ViewSwitcher()
+        switcher.set_stack(stack)
+        switcher.set_policy(Adw.ViewSwitcherPolicy.WIDE)
+
         header = Adw.HeaderBar()
-        header.set_title_widget(
-            Adw.WindowTitle(title="Sobre", subtitle="Vigia Hub"))
+        header.set_title_widget(switcher)
+
         toolbar = Adw.ToolbarView()
         toolbar.add_top_bar(header)
-        toolbar.set_content(self._build_settings_about_tab())
+        toolbar.set_content(stack)
         return toolbar
 
-    def _build_help_page(self) -> Gtk.Widget:
-        """Aba Ajuda: 3 sub-abas (ViewSwitcher) com manuais.
+    def _build_installer_tab(self) -> Gtk.Widget:
+        """Aba Atualizações — usa o UpdatesTab do Tool Installer direto (sem
+        header próprio, pra não duplicar a barra de Configurações)."""
+        try:
+            from vigia_installer.tabs.updates import UpdatesTab
+            return UpdatesTab()
+        except Exception as e:  # pylint: disable=broad-except
+            err = "".join(traceback.format_exception_only(type(e), e)).strip()
+            return Adw.StatusPage(
+                title="Atualizações indisponível",
+                description=err,
+                icon_name="dialog-error-symbolic",
+            )
+
+    def _build_help_inner(self) -> Gtk.Widget:
+        """Conteúdo da Ajuda (3 sub-abas: Visão geral / Manual técnico / Manual
+        para leigos). Renderizado DENTRO da aba Ajuda de Configurações — por
+        isso o header NÃO mostra os controles da janela (X), que já vêm do
+        header de Configurações.
 
         - Visao geral: ExpanderRows com descricao curta (do registry)
         - Manual tecnico: WebKit renderiza docs/manuals/tecnico/<tool>.md
         - Manual simples: WebKit renderiza docs/manuals/leigo/<tool>.md
-
-        Estrutura:
-          ToolbarView
-            HeaderBar (com X) + ViewSwitcher
-            ViewStack
-              ├── overview -> PreferencesPage com ExpanderRows
-              ├── tecnico  -> SplitView (sidebar tools + WebKit content)
-              └── leigo    -> SplitView (sidebar tools + WebKit content)
         """
         stack = Adw.ViewStack()
         stack.add_titled_with_icon(
@@ -359,6 +445,8 @@ class VigiaHubWindow(Adw.ApplicationWindow):
 
         header = Adw.HeaderBar()
         header.set_title_widget(switcher)
+        header.set_show_start_title_buttons(False)
+        header.set_show_end_title_buttons(False)
 
         toolbar = Adw.ToolbarView()
         toolbar.add_top_bar(header)
@@ -694,59 +782,6 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         toolbar = Adw.ToolbarView()
         toolbar.add_top_bar(header)
         toolbar.set_content(content)
-        return toolbar
-
-    # ========================================================================
-    # Settings page (Configuracoes)
-    # ========================================================================
-
-    def _build_settings_page(self) -> Gtk.Widget:
-        """Pagina Configuracoes com abas (ViewSwitcher).
-
-        Estrutura:
-          ToolbarView
-            HeaderBar (com X de fechar) + ViewSwitcher no titulo
-            ViewStack
-              [Aplicacao] [Seguranca]   (Sobre virou item do rail)
-
-        Cada aba e um Adw.PreferencesPage isolado, pra facilitar
-        adicionar futuras abas (ex: Tema, Notificacoes).
-        """
-        # Re-carrega state atual (caso user tenha editado entre aberturas)
-        # e sincroniza com .desktop file
-        self._settings = load_settings()
-        disk_autostart = autostart_is_enabled()
-        if disk_autostart != self._settings.autostart:
-            self._settings.autostart = disk_autostart
-            save_settings(self._settings)
-
-        # ============= ViewStack (uma page por aba) ============= #
-        stack = Adw.ViewStack()
-        stack.add_titled_with_icon(
-            self._build_settings_app_tab(),
-            "app",
-            "Aplicação",
-            "system-run-symbolic",
-        )
-        stack.add_titled_with_icon(
-            self._build_settings_security_tab(),
-            "security",
-            "Segurança",
-            "channel-secure-symbolic",
-        )
-        # (A aba "Sobre" virou item próprio do rail — padronização Hub/Blue/Red.)
-
-        # ============= HeaderBar com ViewSwitcher ============= #
-        switcher = Adw.ViewSwitcher()
-        switcher.set_stack(stack)
-        switcher.set_policy(Adw.ViewSwitcherPolicy.WIDE)
-
-        header = Adw.HeaderBar()
-        header.set_title_widget(switcher)
-
-        toolbar = Adw.ToolbarView()
-        toolbar.add_top_bar(header)
-        toolbar.set_content(stack)
         return toolbar
 
     def _build_settings_app_tab(self) -> Gtk.Widget:
@@ -1456,38 +1491,35 @@ class VigiaHubWindow(Adw.ApplicationWindow):
 
     # ------------- Navigation API (chamada pelo tray via app actions) -------------
 
-    def show_settings_view(self) -> None:
-        """Navega pro modo 'settings' (chamado por app.show-settings action)."""
-        # Itera as rows do nav e seleciona a que tem mode_id='settings'
+    def _select_section(self, section_id: str) -> None:
+        """Seleciona a linha do rail da seção dada (dispara a navegação)."""
         idx = 0
         while True:
             row = self._nav_list.get_row_at_index(idx)
             if row is None:
                 break
-            if getattr(row, "_mode_id", None) == "settings":
+            if getattr(row, "_section_id", None) == section_id:
                 self._nav_list.select_row(row)
                 return
             idx += 1
 
+    def show_settings_view(self) -> None:
+        """Abre a seção Configurações (chamado por app.show-settings action)."""
+        row = self._nav_config_list.get_row_at_index(0)
+        if row is not None:
+            self._nav_config_list.select_row(row)
+
     def show_tool(self, tool_id: str) -> None:
-        """Navega pro modo 'tools' e seleciona a tool dada.
+        """Abre a tool dada (chamado por app.show-tool — ações rápidas do tray).
 
-        Chamado por app.show-tool (acoes rapidas do tray). Selecionar a
-        row da sidebar dispara _on_sidebar_selected -> _show_tool.
+        O Dashboard foi promovido à seção Início; as demais tools vivem na
+        seção Hub. Selecionar a row da sidebar dispara _on_sidebar_selected.
         """
-        # 1. Garante modo 'tools' na nav fina (esquerda)
-        idx = 0
-        while True:
-            row = self._nav_list.get_row_at_index(idx)
-            if row is None:
-                break
-            if getattr(row, "_mode_id", None) == "tools":
-                self._nav_list.select_row(row)
-                break
-            idx += 1
-        self._main_stack.set_visible_child_name("tools")
+        if tool_id == _DASHBOARD_ID:
+            self._select_section("inicio")
+            return
 
-        # 2. Seleciona a row da tool na sidebar da seção Hub
+        self._select_section("hub")  # constrói a seção Hub (lazy) e mostra
         sidebar = self._section_sidebar_lists.get("hub")
         if sidebar is None:
             return
