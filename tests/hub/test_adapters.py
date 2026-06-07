@@ -179,3 +179,28 @@ def test_plain_toolentry_lacks_extra_attrs():
     assert getattr(te, "theme_icon_name", "FALLBACK") == "FALLBACK"
     assert getattr(te, "widen_embedded", False) is False
     assert getattr(te, "is_planned", False) is False
+
+
+# --------------------------------------------------------------------------- #
+# Integração: os registries REAIS do Blue/Red adaptam sem erro (o que a seção
+# do VigiaOS faz em _build_blue_red_section).
+# --------------------------------------------------------------------------- #
+
+def test_adapts_real_blue_registry():
+    from vigia_blue.registry import MODULES
+    tools = [module_to_tool(m, "blue") for m in MODULES]
+    assert len(tools) == len(MODULES)
+    assert all(t.id.startswith("blue:") for t in tools)
+    # VigiaBlue está completo: todos "pronto" → embarcáveis.
+    assert all(t.embedded_module for t in tools)
+    assert not any(t.is_planned for t in tools)
+
+
+def test_adapts_real_red_registry():
+    from vigia_red.registry import MODULES
+    tools = [module_to_tool(m, "red") for m in MODULES]
+    assert len(tools) == len(MODULES)
+    assert all(t.id.startswith("red:") for t in tools)
+    # VigiaRed é esqueleto: todos "planejado" → placeholder, sem embed.
+    assert all(t.is_planned for t in tools)
+    assert not any(t.embedded_module for t in tools)
