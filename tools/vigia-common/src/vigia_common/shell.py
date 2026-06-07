@@ -148,6 +148,42 @@ def product_dependencies(
 # ============================================================
 
 
+# ============================================================
+# Helper GTK compartilhado (alarga clamps) — usado pelo shell E pelo Hub
+# ============================================================
+
+
+def widen_clamps(widget, max_width: int = 1100, tightening: int = 900):
+    """Percorre a árvore e alarga todo Adw.Clamp/ClampScrollable (inclui o
+    interno do PreferencesPage) para max_width/tightening. Retorna o widget
+    (encadeável). O import de gi é lazy — mantém o módulo importável headless.
+
+    Reusado pelo VigiaOS (janela do Hub) para dar aos módulos embarcados do
+    Blue/Red a mesma largura de conteúdo que eles tinham rodando sob o shell.
+    """
+    import gi
+
+    gi.require_version("Adw", "1")
+    from gi.repository import Adw
+
+    clamp_types = tuple(
+        t for t in (getattr(Adw, "Clamp", None),
+                    getattr(Adw, "ClampScrollable", None))
+        if t is not None
+    )
+    stack = [widget]
+    while stack:
+        w = stack.pop()
+        if clamp_types and isinstance(w, clamp_types):
+            w.set_maximum_size(max_width)
+            w.set_tightening_threshold(tightening)
+        child = w.get_first_child()
+        while child is not None:
+            stack.append(child)
+            child = child.get_next_sibling()
+    return widget
+
+
 def run_product(meta: ProductMeta, modules: list[Module],
                 categories: dict[str, str], order: list[str]) -> int:
     """Sobe o app GTK do produto. Retorna o exit code."""
@@ -160,32 +196,10 @@ def run_product(meta: ProductMeta, modules: list[Module],
     from .notices import module_dep_notifications
 
     # Largura do conteúdo — padrão único do ecossistema (Adw.Clamp 1100 / aperto
-    # 900), igual em todas as tools e nos três produtos. O Adw.PreferencesPage
-    # usa um clamp interno mais estreito (~600); pra o conteúdo não ficar
-    # espremido no centro (rolagem maior, sobra grande nas laterais), alargamos
-    # todos os clamps da árvore — vale pros módulos e pra aba Instalador.
-    CONTENT_MAX_WIDTH = 1100
-    CONTENT_TIGHTENING = 900
-    _CLAMP_TYPES = tuple(
-        t for t in (getattr(Adw, "Clamp", None),
-                    getattr(Adw, "ClampScrollable", None))
-        if t is not None
-    )
-
+    # 900), igual em todas as tools e nos três produtos. O trabalho mora em
+    # widen_clamps() (escopo de módulo); o alias local mantém os call sites curtos.
     def _widen_clamps(widget: Gtk.Widget) -> Gtk.Widget:
-        """Percorre a árvore e alarga todo Adw.Clamp/ClampScrollable (inclui o
-        interno do PreferencesPage). Retorna o widget (encadeável)."""
-        stack = [widget]
-        while stack:
-            w = stack.pop()
-            if _CLAMP_TYPES and isinstance(w, _CLAMP_TYPES):
-                w.set_maximum_size(CONTENT_MAX_WIDTH)
-                w.set_tightening_threshold(CONTENT_TIGHTENING)
-            child = w.get_first_child()
-            while child is not None:
-                stack.append(child)
-                child = child.get_next_sibling()
-        return widget
+        return widen_clamps(widget)
 
     # ---------- helpers de UI ----------
 
