@@ -1,4 +1,4 @@
-"""Vigia Hub — launcher mestre do VigiaOS."""
+"""VigiaOS — app unificado (Início + Hub + Red + Blue numa janela só)."""
 
-__version__ = "0.8.2"
-__app_id__ = "br.com.vigia.Hub"
+__version__ = "0.9.0"
+__app_id__ = "br.com.vigia.OS"
