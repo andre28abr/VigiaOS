@@ -2971,6 +2971,61 @@ Suíte: 1069 testes verdes.
 
 ---
 
+### 2026-06-07 — Unificação: os 3 apps viram 1 (VigiaOS)
+
+Mudança estrutural: **VigiaHub, VigiaRed e VigiaBlue deixam de ser 3 apps
+separados e viram seções de UMA janela só — o VigiaOS** (app_id
+`br.com.vigia.OS`, comando `vigia-os`, v0.9.0). Motivação: pra um toolkit
+pessoal + portfólio, 1 produto coeso > 3 janelas soltas; e some a pasta "Vigia"
+do GNOME (1 ícone só). A casca do Hub (a mais robusta) virou a base.
+
+**Arquitetura.** Os 3 sempre usaram o mesmo contrato de embed
+(`build_content() -> Gtk.Widget`); o Hub usava `ToolEntry`, o shell usava
+`Module`. Um **adaptador** (`vigia_hub/adapters.py`: `ModuleToolEntry` +
+`module_to_tool(mod, section_key)`) traduz `Module` → `ToolEntry` (impl→
+embedded_module, requires→available_fn, icon→icon_path+theme_icon_name, id
+namespaced `blue:siem`, status→is_planned), então **Red/Blue renderizam pelo
+mesmo master-detail do Hub**. `is_embeddable()` é sobrescrito p/ embarcar mesmo
+com dependência faltando (a GUI do módulo avisa; a bolinha vermelha sinaliza à
+parte).
+
+**Janela (`vigia_hub/window.py`).** O master-detail virou per-seção:
+`_build_tools_view` → `_build_section_view(section_key, entries,
+category_labels, order)`; `_content_stack`/`_sidebar_list`/`_embedded_widgets`
+viram dicts `_section_*`. O rail agora seleciona **seções** (`SECTIONS`):
+**Início** (landing = Dashboard/Monitor do Sistema, lazy), **Hub** (14 tools —
+Dashboard promovido pra Início, filtrado do catálogo), **Red** (7 placeholders),
+**Blue** (7 módulos embarcados). No rodapé, **Configurações** (listbox próprio,
+seleção cruzada com `unselect_all`) + o sino. Seções são lazy (`_ensure_section`).
+
+**Configurações** virou ViewStack `[Sobre, Atualizações, Aplicação, Segurança,
+Ajuda]` — as antigas entradas de rail (Atualizações/Ajuda/Sobre) viraram abas.
+Atualizações usa `UpdatesTab` direto; Ajuda é `_build_help_inner` (sem controles
+de janela, pra não duplicar o X). `widen_clamps` foi promovida a função de
+módulo em `vigia_common.shell` (o Hub aplica nos embeds do Blue/Red, que foram
+feitos sob o shell). Removidos: `NAV_MODES`, `_on_nav_selected`,
+`_build_mode_page`, `_build_about_page`, `_build_settings_page`;
+`_build_help_page`→`_build_help_inner`.
+
+**Launch/packaging.** `vigia-hub.__main__.main(argv)` aceita `--section`; threado
+por app→window (`start_section`). `vigia-blue`/`vigia-red` viram atalhos finos que
+abrem o VigiaOS na seção (fallback p/ standalone via shell se `vigia_hub` faltar).
+Comando `vigia-os` (+ `vigia-hub` alias). Novo `.desktop`+ícone
+`br.com.vigia.OS` (SVG = cópia do Hub, provisório). `bootstrap.sh`/`vigia-setup.sh`
+registram **só o ícone VigiaOS**, **removem a pasta "Vigia"** e os `.desktop`
+soltos de Hub/Blue/Red (os 3 pacotes seguem instalados via pip — o VigiaOS os
+importa). `uninstall.sh` já cobria `br.com.vigia.OS.*` pelos globs.
+
+**Fases** (cada uma commitada e testada): 0 `_widen_clamps` p/ módulo · 1 adapter
++ testes · 2 generalizar section builder (no-op visual) · 3+4 rail novo + Início
++ identidade + Configurações ViewStack · 5 ligar Red/Blue · 6 packaging + docs.
+
+Suíte: **1087 testes verdes** (+18 do adapter). Pacote `vigia_hub` mantém o nome
+interno (renomear → `vigia_os` fica como limpeza opcional). Cor de destaque por
+seção (Blue/Red) e ícone dedicado do VigiaOS: adiados.
+
+---
+
 ## 10. Roadmap
 
 ### 10.1 Próximas iterações por ferramenta

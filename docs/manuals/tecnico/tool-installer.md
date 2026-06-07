@@ -4,7 +4,8 @@
 
 Verifica e aplica atualizações do **sistema** e dos **programas da suíte
 Vigia** via `dnf` — pelo painel (`pkexec dnf upgrade`) ou por um comando
-copiável pro terminal.
+copiável pro terminal. No VigiaOS aparece como a aba **Atualizações**
+dentro de Configurações.
 
 ## O que envolve
 
@@ -29,8 +30,9 @@ vigia_installer/
 ```
 
 > Histórico: esta área já foi um "Tool Installer" com catálogo de pacotes +
-> extensões de navegador. Foi simplificada para **só Atualizações + Sobre** —
-> o catálogo virou redundante (cada produto mostra a bolinha verde/vermelha
+> extensões de navegador, num item próprio do rail. Foi simplificada para
+> **só Atualizações + Sobre** e hoje é uma **aba dentro de Configurações** —
+> o catálogo virou redundante (cada seção mostra a bolinha verde/vermelha
 > de disponibilidade por módulo) e a instalação completa fica a cargo do
 > `install/bootstrap.sh`.
 

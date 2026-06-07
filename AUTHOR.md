@@ -20,13 +20,13 @@ Atualmente em transição de carreira, com **disponibilidade imediata**, busca p
 
 ## Por que esse projeto existe
 
-O **VigiaHub** nasceu como exercício pessoal de portfólio com três objetivos:
+O **VigiaOS** nasceu como exercício pessoal de portfólio com três objetivos:
 
-1. **Levar segurança e LGPD para o profissional final, não só pro servidor.** Enquanto o [SentinelBR](https://github.com/andre28abr/SentinelBR-platform) cuida da infraestrutura (SIEM multi-host), o VigiaHub cuida da **estação de trabalho** do advogado, do profissional liberal, do escritório pequeno — onde dados sensíveis de clientes vivem no dia a dia. Hardening, antivírus, integridade de arquivos, controles de privacidade e relatórios de conformidade, tudo em português e com interface gráfica moderna.
+1. **Levar segurança e LGPD para o profissional final, não só pro servidor.** Enquanto o [SentinelBR](https://github.com/andre28abr/SentinelBR-platform) cuida da infraestrutura (SIEM multi-host), o VigiaOS cuida da **estação de trabalho** do advogado, do profissional liberal, do escritório pequeno — onde dados sensíveis de clientes vivem no dia a dia. Hardening, antivírus, integridade de arquivos, controles de privacidade e relatórios de conformidade, tudo em português e com interface gráfica moderna.
 
 2. **Traduzir exigências regulatórias em decisões de produto concretas.** *Minimum surface area* (nada de serviço ligado por padrão), `chmod 0600` em todo relatório sensível, escalonamento de privilégio via Polkit (nunca `sudo` com input do usuário), selo de integridade SHA-256 nos relatórios — cada escolha técnica reflete um princípio de LGPD/auditabilidade, não um detalhe de implementação.
 
-3. **Exercitar orquestração de projeto técnico complexo com auxílio de IA generativa.** A skill emergente do mercado pós-2024 não é "decorar sintaxe" — é saber **definir requisitos, validar arquitetura, traduzir necessidades de negócio em especificações técnicas** e usar IA pra acelerar a entrega. O VigiaHub cobre 14 ferramentas GTK4 + um Hub launcher, com mais de 1.100 testes verdes, gerenciado nesse modelo.
+3. **Exercitar orquestração de projeto técnico complexo com auxílio de IA generativa.** A skill emergente do mercado pós-2024 não é "decorar sintaxe" — é saber **definir requisitos, validar arquitetura, traduzir necessidades de negócio em especificações técnicas** e usar IA pra acelerar a entrega. O VigiaOS reúne 14 ferramentas GTK4 na seção **Hub**, mais as seções Início/Red/Blue numa janela só, com mais de 1.100 testes verdes, gerenciado nesse modelo.
 
 ---
 
@@ -35,8 +35,8 @@ O **VigiaHub** nasceu como exercício pessoal de portfólio com três objetivos:
 **Papel:** Product Owner técnico, com auxílio de assistentes de IA generativa para a etapa de codificação.
 
 **Entregas pessoais (sem auxílio de IA):**
-- Definição de **requisitos, escopo e roadmap** das 14 ferramentas + do ecossistema Vigia: VigiaHub (atual) / VigiaOps / VigiaRed / VigiaBlue
-- **Validação da arquitetura**: launcher Hub com modo *embedded*, biblioteca compartilhada `vigia-common`, modelo de privilégio via `pkexec` (argv-list, sem shell), core do Activity Log em Rust + frontends GTK4
+- Definição de **requisitos, escopo e roadmap** das 14 ferramentas + do ecossistema Vigia: **VigiaOS** (app unificado: seções Início/Hub/Red/Blue) + **VigiaOps** (multi-host via SSH, produto separado no roadmap)
+- **Validação da arquitetura**: app único com rail de seções e ferramentas em modo *embedded* (master-detail), Red/Blue entrando pelo mesmo master-detail via adaptador `Module → ToolEntry`, biblioteca compartilhada `vigia-common`, modelo de privilégio via `pkexec` (argv-list, sem shell), core do Activity Log em Rust + frontends GTK4
 - **Tradução de exigências LGPD** para requisitos funcionais: *minimum surface area*, permissões `0600`/`0700`, selo de integridade nos relatórios, pacote de auditoria assinado
 - **Decisão de plataforma**: entregar uma suíte de ferramentas sobre o **Fedora Workstation** vanilla (não uma distro), priorizando baixo custo de manutenção e cobertura completa de forense
 - **Curadoria de conteúdo em PT-BR**: manuais leigos e técnicos renderizados in-app, descrições do catálogo, glossário de capabilities do kernel

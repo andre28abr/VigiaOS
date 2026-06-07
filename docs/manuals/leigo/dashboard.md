@@ -98,7 +98,7 @@ Tudo mais é **somente leitura**: o Monitor do Sistema apenas **olha** o que o k
 
 ## Dica do dia
 
-> Deixe o Monitor do Sistema na aba **Visão Geral** com o Hub minimizado na bandeja. Quando perceber **lentidão**, expanda o Hub e olha pros sparklines: a cor do pico já te diz onde investigar (verde = CPU, amarelo = RAM, ciano = disco, roxo = rede). Em 5 segundos você sabe pra onde ir.
+> Deixe o Monitor do Sistema na aba **Visão Geral** (a seção **Início**) com o VigiaOS minimizado na bandeja. Quando perceber **lentidão**, expanda o VigiaOS e olha pros sparklines: a cor do pico já te diz onde investigar (verde = CPU, amarelo = RAM, ciano = disco, roxo = rede). Em 5 segundos você sabe pra onde ir.
 
 ## Onde encontrar mais
 

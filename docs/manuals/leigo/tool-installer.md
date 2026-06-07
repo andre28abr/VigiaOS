@@ -2,7 +2,8 @@
 
 ## Pra que serve
 
-É onde você **mantém o sistema e os programas em dia**. Quando você abre,
+É onde você **mantém o sistema e os programas em dia**. Fica em
+**Configurações → Atualizações** (uma das abas). Quando você abre,
 ele já verifica sozinho se há atualizações de segurança — e deixa você
 aplicar com 1 clique (ou pelo terminal, se preferir).
 
@@ -33,7 +34,7 @@ segurança, tipo lynis e ClamAV). Assim você sabe exatamente o que muda.
 
 Você não precisa instalar as ferramentas uma a uma. O **instalador completo**
 (`./install/bootstrap.sh`, no terminal) já deixa tudo pronto: as ferramentas
-do Hub + o VigiaBlue (forense). E cada produto (Hub, Blue, Red) mostra, com
+do Hub + as do Blue (forense). E cada seção (Hub, Blue, Red) mostra, com
 uma **bolinha verde ou vermelha** ao lado de cada ferramenta, se as
 dependências dela estão OK — então você vê num relance o que falta.
 

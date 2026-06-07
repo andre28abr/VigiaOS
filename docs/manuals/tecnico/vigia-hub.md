@@ -1,20 +1,20 @@
-# Vigia Hub
+# Casca do VigiaOS (rail + seção Hub)
 
 ## Em uma frase
 
-Launcher mestre do VigiaOS que embarca as 14 ferramentas da barra lateral (+ o Tool Installer) num único processo GTK4, com tray icon, autostart XDG, password lock via Polkit e auto-lock por inatividade.
+Casca (shell) do **VigiaOS** que num único processo GTK4 oferece um **rail de seções** (Início/Hub/Red/Blue), embarca as 14 ferramentas da seção Hub via master-detail (+ Red/Blue pelo mesmo master-detail, via adaptador `Module → ToolEntry`), com tray icon, autostart XDG, password lock via Polkit e auto-lock por inatividade.
 
 ## O que envolve
 
 | Item | Valor |
 |---|---|
 | **Pacotes Linux** | `polkit` (pkexec), `libayatana-appindicator-gtk3` + `gnome-shell-extension-appindicator` (tray opcional) |
-| **Comando principal** | `vigia-hub` (script gerado pelo `pyproject.toml`) |
+| **Comando principal** | `vigia-os` (aliases `vigia-hub`/`vigia-blue`/`vigia-red` abrem o app já na seção) |
 | **Permissões** | user para tudo; pkexec apenas para password lock |
 | **Stack** | Python 3.11+, PyGObject, GTK4, libadwaita |
 | **Path config** | `~/.config/vigia-hub/settings.json` (mode `0600`) |
 | **Path autostart** | `~/.config/autostart/vigia-hub.desktop` (XDG) |
-| **App ID D-Bus** | `br.com.vigia.Hub` |
+| **App ID D-Bus** | `br.com.vigia.OS` |
 | **Versão** | 0.6.1 |
 
 ## Arquitetura interna
@@ -22,19 +22,20 @@ Launcher mestre do VigiaOS que embarca as 14 ferramentas da barra lateral (+ o T
 Layout em **3 painéis**:
 
 ```
-[nav fina 74px] | [sidebar 280px] | [content flex]
+[rail 74px] | [sidebar 280px] | [content flex]
 ```
 
-A **nav fina** alterna entre 4 modos:
+O **rail** alterna entre as **seções** (no topo) + atalhos no rodapé:
 
-- `tools` — vista master-detail das tools registradas
-- `installer` — embute o Tool Installer fullscreen
-- `settings` — Configurações globais do Hub
-- `help` — Manuais com `WebKit 6.0` renderizando os `.md` desta pasta
+- `inicio` — landing: monitor do sistema (a tool Dashboard) em tela cheia
+- `hub` — vista master-detail das 14 ferramentas registradas
+- `red` — módulos de pentest (esqueleto), mesmo master-detail
+- `blue` — módulos de SOC, mesmo master-detail
+- (rodapé) `settings` — Configurações (view com abas) + sino de Notificações
 
-Em modo `tools`, a sidebar lista as ferramentas agrupadas pelas categorias `monitoramento`, `privacidade`, `defesa`, `sistema`, `relatorios` (ordem definida em `registry.CATEGORIES_ORDER`).
+Em Hub/Red/Blue a sidebar lista os módulos agrupados por categoria — no Hub: `monitoramento`, `privacidade`, `defesa`, `sistema`, `relatorios` (ordem em `registry.CATEGORIES_ORDER`). Red/Blue entram pelo mesmo master-detail via adaptador `Module → ToolEntry`.
 
-Cada `ToolEntry` no `registry.py` declara `embedded_module` (ex: `vigia_dashboard.window`). Quando o user seleciona a tool, o Hub faz `importlib.import_module(...)` lazy, chama `build_content()` e embute o widget direto no `Gtk.Stack` da direita. Widgets já construídos são cacheados em `self._embedded_widgets` para preservar estado entre trocas.
+Cada `ToolEntry` no `registry.py` declara `embedded_module` (ex: `vigia_dashboard.window`). Quando o user seleciona a tool, a casca faz `importlib.import_module(...)` lazy, chama `build_content()` e embute o widget direto no `Gtk.Stack` da direita. Widgets já construídos são cacheados em `self._embedded_widgets` para preservar estado entre trocas.
 
 Após cada construção de tool, dispara `gc.collect()` para reduzir fragmentação do heap Python (closures temporárias e tooltips de dataclasses).
 
@@ -58,22 +59,25 @@ gnome-extensions enable appindicatorsupport@rgcjonas.gmail.com
 
 A auth usa `pkexec /usr/bin/true` (action default `org.freedesktop.policykit.exec`) — **nenhum** `.policy` custom precisa ser instalado. Em startup chama `subprocess.run` (sync); após o GMainLoop ativo, usa `Gio.Subprocess.communicate_utf8_async` para não bloquear UI nem dar deadlock com a lib Polkit do PyGObject.
 
-## Tabs / Funcionalidades
+## Seções / Funcionalidades
 
-### Modo Tools
+### Seção Hub (e Red/Blue)
 
-Master-detail. Cada `ToolEntry` aparece com ícone, nome, descrição curta, badge de pacotes wrappados (`wrapped_packages`) e dot de status (`success` se `shutil.which` encontra o binário, `error` caso contrário).
+Master-detail. Cada `ToolEntry` aparece com ícone, nome, descrição curta, badge de pacotes wrappados (`wrapped_packages`) e dot de status (`success` se `shutil.which` encontra o binário, `error` caso contrário). Red/Blue usam o mesmo widget de lista, com os módulos adaptados de `Module` para `ToolEntry`; o dot de disponibilidade é **por dependência**.
 
-### Modo Configurações
+### Configurações (view com abas)
 
-Duas sub-abas via `Adw.ViewSwitcher` (o **Sobre** virou item próprio do rail):
+`Adw.ViewSwitcher` com 5 abas, na ordem **Sobre · Atualizações · Aplicação · Segurança · Ajuda**:
 
+- **Sobre** — versão, autor, licença do VigiaOS
+- **Atualizações** — embute `vigia_installer.window.build_content()` (ver "Atualizações" abaixo)
 - **Aplicação** — autostart, tray, iniciar minimizado, **checar atualizações ao iniciar** (`check_updates`, default ligado)
 - **Segurança** — password lock (pkexec), auto-lock por inatividade (5/10/15/30/60 min)
+- **Ajuda** — os manuais (ver abaixo)
 
 O switch de tray faz `tray_can_work()` (`checks.py`) que verifica via subprocess se `AyatanaAppIndicator3` importa e se a extensão GNOME `appindicatorsupport@rgcjonas.gmail.com` está `enabled` em `gnome-extensions list --enabled`.
 
-### Modo Ajuda
+### Aba Ajuda
 
 `Adw.ViewStack` com 3 sub-tabs:
 
@@ -83,28 +87,28 @@ O switch de tray faz `tray_can_work()` (`checks.py`) que verifica via subprocess
 
 Sem WebKit, cai pra `TextView` monospace com markdown raw.
 
-### Modo Instalador
+### Aba Atualizações
 
-Importa `vigia_installer.window.build_content()` e embute fullscreen.
+Importa `vigia_installer.window.build_content()` e embute na aba.
 
-Ao iniciar, o Hub roda `vigia_installer.backend.check_updates()` +
+Ao iniciar, o app roda `vigia_installer.backend.check_updates()` +
 `updates_to_notifications()` numa thread (read-only, sem root) e alimenta o
 **sininho de notificações** (`NotificationsBell`, de `vigia_common`) no rodapé
 do rail — `_apply_update_notifications`. A bolinha vermelha usa o mesmo padrão
 do dot de status (`Label("●")` + classe `error`). O toggle `check_updates`
-(Config → Aplicação) liga/desliga a checagem.
+(Configurações → Aplicação) liga/desliga a checagem.
 
 ## Quando usar
 
-- Você quer **uma janela só** ao invés de 14 atalhos no menu de apps
+- Você quer **uma janela só** (um ícone só no menu) ao invés de apps soltos
 - Você vai usar a suite diariamente e quer ela na bandeja (tray icon)
-- Você precisa de **password lock LGPD** no próprio launcher
+- Você precisa de **password lock LGPD** no próprio app
 - Você vai dar treinamento e quer acesso aos manuais sem sair da app
 
 ## Limitações conhecidas
 
 - Tray icon exige `libayatana-appindicator-gtk3` + extensão GNOME ativada. No Fedora Workstation vanilla **nenhum dos dois** vem instalado; o dialog do switch instala via `dnf` (aplica na hora).
-- Idle monitor (`IdleMonitor` em `idle.py`) detecta inatividade da **janela do Hub**, não do sistema. Se o user está usando outra app, ainda conta como idle do Hub — comportamento desejado pra LGPD.
+- Idle monitor (`IdleMonitor` em `idle.py`) detecta inatividade da **janela do VigiaOS**, não do sistema. Se o user está usando outra app, ainda conta como idle do VigiaOS — comportamento desejado pra LGPD.
 - Em sistema sem `pkexec`, o switch de password lock é silenciosamente revertido com dialog explicativo.
 - Schema dconf de tema (`Adw.StyleManager`) só reage corretamente quando a extensão usa `Adw.ColorScheme.PREFER_DARK` / `FORCE_DARK` / `DEFAULT` — alguns DEs antigos podem ignorar.
 
