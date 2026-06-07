@@ -109,7 +109,7 @@ _DASHBOARD_ID = "dashboard"
 
 
 class VigiaHubWindow(Adw.ApplicationWindow):
-    def __init__(self, app: Adw.Application):
+    def __init__(self, app: Adw.Application, start_section: str | None = None):
         super().__init__(application=app)
         self.set_title("VigiaOS")
         self.set_default_size(1340, 820)
@@ -150,10 +150,14 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         outer.append(self._main_stack)
         self.set_content(outer)
 
-        # Abre na seção Início (landing = Monitor do Sistema)
-        first_row = self._nav_list.get_row_at_index(0)
-        if first_row is not None:
-            self._nav_list.select_row(first_row)
+        # Abre na seção pedida (--section) ou em Início (landing padrão)
+        section_ids = {s[0] for s in SECTIONS}
+        if start_section in section_ids:
+            self._select_section(start_section)
+        else:
+            first_row = self._nav_list.get_row_at_index(0)
+            if first_row is not None:
+                self._nav_list.select_row(first_row)
 
         # Inicializa idle monitor se config diz pra ativar (lock + minutes>0)
         self._reconfigure_idle_monitor()

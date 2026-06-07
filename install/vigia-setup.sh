@@ -255,39 +255,46 @@ prow "Hub (launcher + tools)" "${#HUB_MODS[@]}"  "14 tools embarcadas + launcher
 prow "VigiaBlue"              "${#BLUE_MODS[@]}" "7 modulos prontos"
 prow "VigiaRed"              "${#RED_MODS[@]}"  "esqueleto (em breve)"
 pbot
-echo "  ${DIM}pip --user (editável). Só os 3 PRODUTOS viram ícone (pasta Vigia);${NC}"
-echo "  ${DIM}as ferramentas rodam embarcadas no Hub.${NC}"
+echo "  ${DIM}pip --user (editável). Tudo roda embarcado no VigiaOS — só ele${NC}"
+echo "  ${DIM}vira ícone no menu (Hub/Red/Blue são seções dentro dele).${NC}"
 
 echo
-if confirm "Instalar as interfaces gráficas dos três produtos?" y; then
-    # Produtos (Hub/Blue/Red) → COM ícone; ferramentas → --no-icon (embarcadas).
+if confirm "Instalar a interface gráfica (VigiaOS unificado)?" y; then
+    # Tudo via pip SEM ícone próprio — o VigiaOS é o único atalho do menu.
     for name in "${HUB_MODS[@]}" "${BLUE_MODS[@]}" "${RED_MODS[@]}"; do
-        case "$name" in
-            vigia-hub|vigia-blue|vigia-red) ICON_FLAG="" ;;
-            *)                              ICON_FLAG="--no-icon" ;;
-        esac
         printf "  %-24s " "$name"
         if [[ $DRY_RUN -eq 1 ]]; then echo "${DIM}(dry-run)${NC}"; continue; fi
-        if "$SCRIPT_DIR/install-tool.sh" $ICON_FLAG "$name" >"/tmp/vigia-setup-$name.log" 2>&1; then
+        if "$SCRIPT_DIR/install-tool.sh" --no-icon "$name" >"/tmp/vigia-setup-$name.log" 2>&1; then
             echo "${GREEN}✓${NC}"; DONE_GUI+=("$name")
         else
             echo "${RED}✗${NC} ${DIM}(log: /tmp/vigia-setup-$name.log)${NC}"; FAIL_GUI+=("$name")
         fi
     done
-    # Agrupa os 3 produtos numa pasta "Vigia" no grid de apps do GNOME.
-    if [[ $DRY_RUN -eq 0 ]] && command -v gsettings >/dev/null 2>&1; then
-        AF="org.gnome.desktop.app-folders"
-        kids=$(gsettings get "$AF" folder-children 2>/dev/null || echo "[]")
-        if [[ "$kids" != *"'Vigia'"* ]]; then
-            kids=$(python3 -c "import sys,ast; l=ast.literal_eval(sys.argv[1]) if sys.argv[1].startswith('[') else []; l.append('Vigia'); print(repr(l))" "$kids" 2>/dev/null)
-            [ -n "$kids" ] && gsettings set "$AF" folder-children "$kids" 2>/dev/null || true
+    # Registra o ÚNICO ícone (VigiaOS) e limpa ícones/pasta de instalações antigas.
+    if [[ $DRY_RUN -eq 0 ]]; then
+        APPS_DIR="$HOME/.local/share/applications"
+        ICONS_DIR="$HOME/.local/share/icons/hicolor/scalable/apps"
+        mkdir -p "$APPS_DIR" "$ICONS_DIR"
+        OS_DATA="$REPO_ROOT/tools/vigia-hub/data"
+        install -Dpm 0644 "$OS_DATA/br.com.vigia.OS.desktop" "$APPS_DIR/" 2>/dev/null || true
+        install -Dpm 0644 "$OS_DATA/br.com.vigia.OS.svg" "$ICONS_DIR/" 2>/dev/null || true
+        rm -f "$APPS_DIR"/br.com.vigia.Hub.desktop \
+              "$APPS_DIR"/br.com.vigia.Blue.desktop \
+              "$APPS_DIR"/br.com.vigia.Red.desktop 2>/dev/null || true
+        update-desktop-database "$APPS_DIR" >/dev/null 2>&1 || true
+        if command -v gsettings >/dev/null 2>&1; then
+            AF="org.gnome.desktop.app-folders"
+            gsettings reset-recursively \
+                "$AF.folder:/org/gnome/desktop/app-folders/folders/Vigia/" 2>/dev/null || true
+            kids=$(gsettings get "$AF" folder-children 2>/dev/null || echo "[]")
+            if [[ "$kids" == *"'Vigia'"* ]]; then
+                kids=$(python3 -c "import sys,ast; print(repr([x for x in ast.literal_eval(sys.argv[1]) if x!='Vigia']))" "$kids" 2>/dev/null)
+                [ -n "$kids" ] && gsettings set "$AF" folder-children "$kids" 2>/dev/null || true
+            fi
         fi
-        VF="$AF.folder:/org/gnome/desktop/app-folders/folders/Vigia/"
-        gsettings set "$VF" name 'Vigia' 2>/dev/null || true
-        gsettings set "$VF" apps "['br.com.vigia.Hub.desktop', 'br.com.vigia.Blue.desktop', 'br.com.vigia.Red.desktop']" 2>/dev/null || true
     fi
 else
-    warn "pulando instalação das interfaces."
+    warn "pulando instalação da interface."
 fi
 
 # ============================================================
@@ -302,5 +309,5 @@ for f in "${FAIL_PKGS[@]:-}"; do [[ -n "$f" ]] && err "falhou: $f"; done
 for f in "${FAIL_GUI[@]:-}";  do [[ -n "$f" ]] && err "GUI falhou: $f"; done
 
 echo
-echo "${GREEN}${BOLD}Pronto!${NC} Abra o ${BOLD}Vigia Hub${NC} (ou VigiaBlue/VigiaRed) no menu de aplicativos."
-echo "${DIM}Cada produto tem uma aba ${BOLD}Instalador${NC}${DIM} mostrando o status das dependências.${NC}"
+echo "${GREEN}${BOLD}Pronto!${NC} Abra o ${BOLD}VigiaOS${NC} no menu — Início, Hub, Red e Blue são seções."
+echo "${DIM}A seção ${BOLD}Configurações${NC}${DIM} > Atualizações mostra o status das dependências.${NC}"

@@ -1,9 +1,10 @@
-"""Entry point: `python -m vigia_hub` ou `vigia-hub` apos pip install.
+"""Entry point do VigiaOS: `vigia-os` (ou `vigia-hub`, `python -m vigia_hub`).
 
 CLI:
-    vigia-hub               # abre janela normalmente
-    vigia-hub --minimized   # inicia sem mostrar janela (so tray, requer
-                            # settings.show_tray=True; senao ignora a flag)
+    vigia-os                  # abre o VigiaOS (seção Início)
+    vigia-os --section blue   # abre já numa seção (inicio/hub/red/blue)
+    vigia-os --minimized      # inicia sem janela visível (só tray; requer
+                              # settings.show_tray=True; senão ignora a flag)
 """
 
 from __future__ import annotations
@@ -14,15 +15,25 @@ from .app import VigiaHubApp
 from .logging_setup import setup_logging
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     setup_logging()  # ANTES de qualquer log no app
-    minimized = "--minimized" in sys.argv
-    if minimized:
-        # Remove a flag pra nao confundir Gio.Application.run
-        argv = [a for a in sys.argv if a != "--minimized"]
-    else:
-        argv = sys.argv
-    app = VigiaHubApp(start_minimized=minimized)
+    argv = list(sys.argv if argv is None else argv)
+
+    minimized = "--minimized" in argv
+    argv = [a for a in argv if a != "--minimized"]
+
+    # --section <inicio|hub|red|blue>: abre direto numa seção (usado pelos
+    # atalhos vigia-blue/vigia-red). Removido de argv antes do Gio.run.
+    start_section = None
+    if "--section" in argv:
+        i = argv.index("--section")
+        if i + 1 < len(argv):
+            start_section = argv[i + 1]
+            del argv[i:i + 2]
+        else:
+            del argv[i]
+
+    app = VigiaHubApp(start_minimized=minimized, start_section=start_section)
     return app.run(argv)
 
 

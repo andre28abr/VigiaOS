@@ -1,0 +1,16 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=VigiaOS
+Name[pt_BR]=VigiaOS
+GenericName=Security & Privacy Suite
+GenericName[pt_BR]=Suite de Seguranca e Privacidade
+Comment=Suite de seguranca, privacidade e LGPD — Inicio, Hub, Red e Blue numa janela so
+Comment[pt_BR]=Suite de seguranca, privacidade e LGPD — Inicio, Hub, Red e Blue numa janela so
+Icon=br.com.vigia.OS
+Exec=vigia-os
+Terminal=false
+Categories=Settings;System;Security;
+Keywords=vigia;security;privacy;audit;launcher;suite;blue;red;hub;lgpd;
+StartupNotify=true
+StartupWMClass=br.com.vigia.OS
