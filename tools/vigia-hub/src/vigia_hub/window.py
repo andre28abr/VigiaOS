@@ -345,14 +345,19 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         return holder
 
     def _build_blue_red_section(self, section_key: str) -> Gtk.Widget:
-        """STUB (Fase 3): seções Red/Blue ligadas de verdade na Fase 5."""
-        name = {"red": "VigiaRed", "blue": "VigiaBlue"}.get(
-            section_key, section_key)
-        return Adw.StatusPage(
-            title=f"{name} — em breve",
-            description="Os módulos desta seção entram já já.",
-            icon_name="emblem-synchronizing-symbolic",
-        )
+        """Seção Red/Blue: importa o registry do produto, adapta os Module →
+        ToolEntry (vigia_hub.adapters) e renderiza pelo MESMO master-detail do
+        Hub. Import lazy — um produto ausente/quebrado vira StatusPage no
+        _ensure_section (não derruba o VigiaOS)."""
+        from .adapters import module_to_tool
+        if section_key == "red":
+            from vigia_red.registry import CATEGORIES, MODULES, ORDER
+        elif section_key == "blue":
+            from vigia_blue.registry import CATEGORIES, MODULES, ORDER
+        else:
+            raise ValueError(f"Seção de produto desconhecida: {section_key}")
+        entries = [module_to_tool(m, section_key) for m in MODULES]
+        return self._build_section_view(section_key, entries, CATEGORIES, ORDER)
 
     # ---- Configurações (ViewStack: Sobre/Atualizações/Aplicação/Segurança/Ajuda) ----
 
