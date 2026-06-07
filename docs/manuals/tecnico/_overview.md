@@ -2,11 +2,16 @@
 
 ## O que é
 
-VigiaOS é uma **suite de 14 ferramentas GTK4 + libadwaita** focada em
-segurança, privacidade e conformidade com LGPD para Fedora Workstation.
+VigiaOS é **um app desktop** (GTK4 + libadwaita, `application_id`
+`br.com.vigia.OS`) com um **rail de seções** — **Início** (monitor do
+sistema), **Hub** (14 ferramentas de segurança/privacidade), **Red**
+(pentest, esqueleto) e **Blue** (SOC) — focado em segurança, privacidade
+e conformidade com LGPD para Fedora Workstation. Lançado por `vigia-os`
+(aliases `vigia-hub`/`vigia-blue`/`vigia-red` abrem o app já na seção).
 
 Não é uma distribuição Linux — é um **toolkit** que roda sobre o Fedora
-Workstation vanilla.
+Workstation vanilla. As ferramentas das seções Hub/Red/Blue compartilham
+o mesmo master-detail; Red/Blue entram via adaptador `Module → ToolEntry`.
 
 ## Stack tecnológica
 
@@ -20,34 +25,39 @@ Workstation vanilla.
 | Autenticação | pkexec + Polkit (via `Gio.Subprocess` async) |
 | State local | JSON em `~/.config/vigia-*/` (chmod 0600) |
 
-## Arquitetura embedded mode (Hub)
+## Arquitetura embedded mode (rail de seções)
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│ Vigia Hub (Adw.Application, application_id=br.com...)   │
+│ VigiaOS (Adw.Application, application_id=br.com.vigia.OS)│
 │                                                         │
 │ ┌────────────┐ ┌──────────────┐ ┌────────────────────┐ │
-│ │ Nav fina   │ │ Sidebar      │ │ Content Stack      │ │
-│ │ - Tools    │ │ Categorias:  │ │ Embedded tools via │ │
-│ │ - Inst.    │ │ - Monitor.   │ │ build_content():   │ │
-│ │ - Config.  │ │ - Privac.    │ │   Gtk.Widget       │ │
-│ │ - Ajuda    │ │ - Defesa     │ │                    │ │
-│ └────────────┘ │ - Sistema    │ └────────────────────┘ │
-│                │ - Reports    │                        │
-│                └──────────────┘                        │
+│ │ Rail       │ │ Sidebar      │ │ Content Stack      │ │
+│ │ - Início   │ │ (no Hub)     │ │ Embedded tools via │ │
+│ │ - Hub      │ │ Categorias:  │ │ build_content():   │ │
+│ │ - Red      │ │ - Monitor.   │ │   Gtk.Widget       │ │
+│ │ - Blue     │ │ - Privac.    │ │                    │ │
+│ │ ────────── │ │ - Defesa     │ └────────────────────┘ │
+│ │ - Config.  │ │ - Sistema    │                        │
+│ │ - 🔔       │ │ - Reports    │                        │
+│ └────────────┘ └──────────────┘                        │
 └─────────────────────────────────────────────────────────┘
 ```
 
-Cada tool exporta `build_content() -> Gtk.Widget` que é embedded
-diretamente no `Gtk.Stack` do Hub. Permite navegação sem spawnar
-processos separados.
+O rail troca de **seção**; **Início** é a landing (monitor do sistema).
+Em Hub/Red/Blue, a sidebar lista os módulos por categoria e cada tool
+exporta `build_content() -> Gtk.Widget`, embedded diretamente no
+`Gtk.Stack` — navegação sem spawnar processos separados. Red/Blue
+reaproveitam o mesmo master-detail via adaptador `Module → ToolEntry`.
+No rodapé do rail: **Configurações** (abas Sobre · Atualizações ·
+Aplicação · Segurança · Ajuda) e o sino de **Notificações**.
 
-## Comunicação tray ↔ Hub
+## Comunicação tray ↔ app
 
 ```
-[Hub GTK4]  ←─── D-Bus session bus ───→  [vigia-hub-tray GTK3]
+[VigiaOS GTK4] ←── D-Bus session bus ───→  [vigia-hub-tray GTK3]
    │                                              │
-   │ application_id = "br.com.vigia.Hub"          │
+   │ application_id = "br.com.vigia.OS"           │
    │ Gio.SimpleAction:                            │
    │   - show-window                              │
    │   - show-settings                            │
@@ -66,7 +76,7 @@ separação em subprocess.
 
 | Path | Conteúdo | Permissão |
 |---|---|---|
-| `~/.config/vigia-hub/settings.json` | Hub: autostart, tray, lock, theme | 0600 |
+| `~/.config/vigia-hub/settings.json` | App (casca): autostart, tray, lock, theme | 0600 |
 | `~/.config/autostart/vigia-hub.desktop` | XDG autostart entry | 0644 |
 | `~/.config/vigia-dns/state.json` | DNS Manager: servidor ativo | 0600 |
 | `~/.config/vigia-dashboard/alerts.json` | Dashboard: alertas configurados | 0600 |
@@ -93,7 +103,8 @@ separação em subprocess.
 - **Rootkit Scanner** — `chkrootkit` + `rkhunter` unificados
 
 ### ⚙️ Sistema
-- **Tool Installer** — Catálogo `dnf` + extensões browser FOSS
+- **Atualizações** — Checa/aplica updates do sistema + suíte via `dnf`
+  (aba em Configurações; antigo "Tool Installer")
 
 ### 📋 Relatórios
 - **Reports** — PDF/HTML LGPD via Activity Log JSON
@@ -118,7 +129,7 @@ cd ~/dev/VigiaOS
 for d in vigia-hub privacy-controls selinux-gui firewall-gui ...; do
   (cd tools/$d && pip install --user -e .)
 done
-vigia-hub  # abre o launcher
+vigia-os  # abre o app (aliases: vigia-hub / vigia-blue / vigia-red)
 ```
 
 ## Distribuição futura (COPR)

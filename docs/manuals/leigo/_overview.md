@@ -1,8 +1,8 @@
-# Bem-vindo ao Vigia
+# Bem-vindo ao VigiaOS
 
 ## O que é isso?
 
-O **Vigia** é um conjunto de ferramentas que ajuda você a cuidar da
+O **VigiaOS** é **um programa só** que ajuda você a cuidar da
 segurança do seu computador e dos dados dos seus clientes.
 
 Foi pensado especialmente para **escritórios de advocacia** e outros
@@ -16,21 +16,29 @@ Imagine que você guarda informações sensíveis dos seus clientes
 **cuidar** desses dados — usar antivírus, ter senhas fortes, registrar
 o que acontece no computador, fazer cópias de segurança.
 
-O Vigia reúne **14 ferramentas** que cuidam disso pra você, **num
-único lugar fácil de usar**.
+O VigiaOS reúne **14 ferramentas** que cuidam disso pra você, **num
+único lugar fácil de usar** — a seção **Hub**.
 
 ## Como funciona?
 
-Você abre o **Vigia Hub** (o programa principal) e clica nas
-ferramentas que quer usar. Tudo aparece dentro da mesma janela —
-sem precisar abrir vários programas.
+Você abre o **VigiaOS** (um ícone só no menu de aplicativos) e ele já
+abre numa janela única. Do lado esquerdo tem uma barrinha que troca de
+**seção**; em cada uma, você clica na ferramenta que quer e ela aparece
+**dentro da mesma janela** — sem precisar abrir vários programas.
 
-### Sua barra lateral tem 4 ícones:
+### A barra lateral troca de seção:
 
-🔲 **Ferramentas** — todas as 14 ferramentas do Vigia
-📦 **Instalador** — pra adicionar programas extras seguros
-⚙️ **Configurações** — pra ajustar o Vigia (tema, senha, etc)
-❓ **Ajuda** — este manual que você está lendo agora
+🏠 **Início** — o painel que mostra o computador funcionando agora
+   (memória, processador, internet) em tempo real
+🔲 **Hub** — todas as 14 ferramentas de segurança e privacidade
+🔴 **Red** — ferramentas de teste de invasão (em construção)
+🔵 **Blue** — detecção e resposta a ameaças (para quem é da área)
+
+Lá no rodapé dessa barra ficam:
+
+⚙️ **Configurações** — ajustes do VigiaOS (tema, senha, atualizações,
+   e a **Ajuda** com este manual)
+🔔 **Notificações** — o sininho que avisa quando há atualizações
 
 ## O que cada ferramenta faz?
 
@@ -75,10 +83,8 @@ Vou agrupar por categoria pra ficar mais fácil:
 
 **Cuida da manutenção do computador.**
 
-- **Instalador de Ferramentas** — Lista de programas extras curados
-  (seguros e auditáveis)
-- **Gerenciador de Snapshots** — Permite "voltar no tempo" se uma
-  atualização der problema
+- **Atualizações** — Mantém o sistema e as ferramentas de segurança em
+  dia (fica em Configurações → Atualizações)
 
 ### 📄 Relatórios
 
@@ -89,9 +95,9 @@ Vou agrupar por categoria pra ficar mais fácil:
 
 ## Como começar?
 
-1. **Clique em "Ferramentas"** no canto esquerdo
-2. **Escolha uma ferramenta** na lista (recomendo começar pelo
-   **Dashboard** — é só ver, não muda nada)
+1. **Clique em "Hub"** no canto esquerdo (a seção com as ferramentas)
+2. **Escolha uma ferramenta** na lista (recomendo começar pela seção
+   **Início** — é só ver o computador funcionando, não muda nada)
 3. **Explore** os botões e as abas dentro de cada ferramenta
 4. Cada ferramenta tem uma aba **"Sobre"** explicando ela em detalhes
 
@@ -100,30 +106,26 @@ Vou agrupar por categoria pra ficar mais fácil:
 ⚠️ **Sim, com algumas ferramentas.** Por isso elas pedem **senha de
 administrador** quando você vai fazer mudanças importantes.
 
-✅ **Mas você pode "ver" tudo sem mexer.** O Dashboard, Activity Log,
-Network Monitor, Antivírus e a maioria das outras ferramentas têm
+✅ **Mas você pode "ver" tudo sem mexer.** A seção **Início**, o Activity
+Log, o Network Monitor, o Antivírus e a maioria das outras ferramentas têm
 modo "só leitura" — você só observa.
-
-⚠️ **Faça snapshot antes de grandes mudanças.** O **Gerenciador de
-Snapshots** permite voltar atrás. Bom de usar antes de uma atualização
-grande.
 
 ## Quer começar com calma?
 
 Se você é novo aqui, sugiro essa ordem:
 
-1. **Dashboard** — Ver o computador funcionando
+1. **Início** — Ver o computador funcionando
 2. **Registro de Atividades** — Ver o que acontece no sistema
 3. **Controles de Privacidade** — Desligar coisas que você não quer
 4. **Antivírus** — Rodar um scan de teste
 
 Depois explore as outras conforme tiver interesse. Cada uma tem uma
-explicação detalhada nessa aba **Ajuda** (Manual técnico ou Manual
-simples como você está vendo agora).
+explicação detalhada na aba **Ajuda** (dentro de Configurações): Manual
+técnico ou Manual simples, como você está vendo agora.
 
 ## Onde guardo dúvidas?
 
-- Clica em **Ajuda** (ícone do salva-vidas) na barra esquerda
+- Vá em **Configurações → Ajuda** (no rodapé da barra esquerda)
 - Cada ferramenta tem sua aba **Sobre** com explicação interna
 - Acesse o repositório: **https://github.com/andre28abr/VigiaOS**
 

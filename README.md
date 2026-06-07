@@ -1,19 +1,19 @@
-# VigiaOS — ecossistema Vigia de segurança, privacidade e LGPD
+# VigiaOS — suíte de segurança, privacidade e LGPD (Fedora Workstation)
 
-> **VigiaOS** é o ecossistema (este monorepo) dos produtos **Vigia**. O produto
-> disponível hoje é o **VigiaHub** — uma suíte de **14 ferramentas gráficas**
-> (GTK4 + libadwaita) + um launcher que transformam um **Fedora Workstation
-> vanilla** numa estação de trabalho de **segurança, privacidade, auditoria e
-> conformidade com a LGPD**, para o advogado, o profissional liberal e o
-> escritório pequeno que lida com dados sensíveis de clientes. Tudo em
-> português — **não é uma distro**, são ferramentas sobre o Fedora vanilla.
-> Em breve: **VigiaRed** (pentest) e **VigiaBlue** (SOC).
+> **VigiaOS** é **um aplicativo** (GTK4 + libadwaita) que transforma um **Fedora
+> Workstation vanilla** numa estação de trabalho de **segurança, privacidade,
+> auditoria e conformidade com a LGPD** — para o advogado, o profissional
+> liberal e o escritório pequeno que lida com dados sensíveis de clientes. Numa
+> janela só, o rail abre quatro seções: **Início** (monitor do sistema em tempo
+> real), **Hub** (14 ferramentas gráficas de segurança/privacidade), **Red**
+> (pentest) e **Blue** (SOC — detecção e resposta). Tudo em português — **não é
+> uma distro**, são ferramentas sobre o Fedora vanilla.
 
 ![Status](https://img.shields.io/badge/status-v0.x%20ativo%20%C2%B7%20auditado-success)
 ![Python](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white)
 ![GTK4](https://img.shields.io/badge/GTK4-libadwaita-4A86CF?logo=gnome&logoColor=white)
 ![Rust](https://img.shields.io/badge/Rust-Activity%20Log%20core-dea584?logo=rust&logoColor=black)
-![Tests](https://img.shields.io/badge/tests-1101%20passing-success)
+![Tests](https://img.shields.io/badge/tests-1087%20passing-success)
 ![License](https://img.shields.io/badge/license-Apache--2.0-orange)
 ![Fedora](https://img.shields.io/badge/Fedora-Workstation-51A2DA?logo=fedora&logoColor=white)
 ![LGPD](https://img.shields.io/badge/LGPD-by%20design-10b981)
@@ -38,27 +38,28 @@ Atualmente em **transição de carreira, com disponibilidade imediata**, conduzi
 
 ---
 
-## 🛡️ Ecossistema Vigia
+## 🛡️ O que tem dentro
 
-**VigiaOS** é o ecossistema (este monorepo) que reúne os produtos **Vigia**. Em
-vez de inflar uma única ferramenta com tudo (single-host + multi-host + pentest
-+ SOC), cada produto é separado por audiência, compartilhando a biblioteca
-`vigia-common`, a identidade visual (zinc + emerald) e os padrões de UI (GTK4 +
-libadwaita). O **VigiaHub** é o produto atual; os demais estão no roadmap.
+**VigiaOS** é um app só, com um rail de **seções** — em vez de três janelas
+soltas, uma experiência única. Tudo compartilha a biblioteca `vigia-common`, a
+identidade visual (zinc + emerald) e os padrões de UI (GTK4 + libadwaita).
 
-| Produto | Audiência | Escopo | Status |
+| Seção | Audiência | Escopo | Status |
 |---|---|---|---|
-| **VigiaHub** *(produto atual)* | Advogado, profissional liberal, escritório LGPD | Segurança + privacidade + hardening + auditoria **single-host** | 🟢 **Ativo** (v0.x, 15 ferramentas) |
-| **VigiaOps** | Sysadmin, MSP, gestor de TI | Orquestração **multi-host** via SSH (inventário, fan-out, audit log de comandos remotos) | 🔜 Planejado |
-| **VigiaRed** | Pentester, red team | Ferramentas **ofensivas** com GUI (scanner, vuln, OSINT, web app) + termo de uso (Lei 12.737/12) | 🟡 Esqueleto (GUI) — 7 módulos |
-| **VigiaBlue** | Blue team, analista de SOC | **Detecção e resposta** (SIEM-lite, IDS, YARA hunting, forense de memória, threat intel) | 🟡 Esqueleto (GUI) — 7 módulos |
+| **Início** | Todos | Monitor do sistema em tempo real (CPU/RAM/disco/rede/processos) | 🟢 Ativo |
+| **Hub** | Advogado, profissional liberal, escritório LGPD | Segurança + privacidade + hardening + auditoria **single-host** (14 ferramentas) | 🟢 Ativo |
+| **Red** | Pentester, red team | Ferramentas **ofensivas** com GUI (scanner, vuln, OSINT) + termo de uso (Lei 12.737/12) | 🟡 Esqueleto — 7 módulos |
+| **Blue** | Blue team, analista de SOC | **Detecção e resposta** (SIEM-lite, IDS, YARA hunting, forense de memória, threat intel) | 🟢 7 módulos prontos |
 
-- **VigiaOps** *(o próximo da fila)* leva as ferramentas do VigiaHub para **vários servidores ao mesmo tempo** — rodar um Hardening Check em 30 hosts via SSH, com pool de conexões persistente e trilha de auditoria assinada dos comandos remotos.
-- **VigiaRed** trará o que foi deliberadamente *removido* do VigiaHub (scanner de rede, etc.) — mas no produto certo, com aviso ético/legal na primeira execução.
-- **VigiaBlue** aproveita o **core do Activity Log (Rust)**, que já tem potencial de SIEM-lite: agregação de logs, correlação, threat hunting e playbooks de resposta a incidentes.
-
-> Os quatro são **produtos distintos** (distribuição separada), não um monólito.
-> O roadmap completo está em [DEVELOPMENT.md §10](DEVELOPMENT.md#10-roadmap).
+> Antes eram **3 apps separados** (VigiaHub / VigiaRed / VigiaBlue); foram
+> unificados num só — **VigiaOS** — pra uma experiência coesa e **um ícone só**
+> no menu. A casca (rail, Configurações, Ajuda, Notificações) é compartilhada;
+> Red e Blue entram pelo **mesmo master-detail do Hub** via um adaptador
+> (`Module` → `ToolEntry`).
+>
+> **VigiaOps** (orquestração **multi-host** via SSH) segue no roadmap como
+> produto *separado* — esse sim faz sentido distribuir à parte. Detalhes em
+> [DEVELOPMENT.md §10](DEVELOPMENT.md#10-roadmap).
 
 ---
 
@@ -73,36 +74,37 @@ aproveitando as atualizações do sistema-base sem complicação.
 
 ---
 
-## 🚀 O Vigia Hub
+## 🚀 O app VigiaOS
 
-O **Vigia Hub** é o coração do VigiaHub: um *launcher* central que reúne as 15
-ferramentas numa única janela, em layout **master-detail-content** (3 painéis:
-categorias → lista de ferramentas → conteúdo). As ferramentas rodam
-**embarcadas dentro do Hub** (modo *embedded*), então é tudo uma experiência só
-— sem 15 janelas espalhadas.
+O **VigiaOS** é uma janela só em layout **master-detail-content**: um rail fino à
+esquerda troca de **seção** (Início / Hub / Red / Blue) e, dentro de cada uma, as
+ferramentas/módulos aparecem numa lista agrupada por categoria e abrem
+**embarcados** no painel de conteúdo — sem janelas espalhadas. No rodapé do rail
+ficam **Configurações** e o sino de **Notificações**.
 
-Recursos do Hub:
+Recursos (nível do app):
 
 - **Autostart XDG** — inicia junto com o sistema (`~/.config/autostart`).
-- **Ícone na bandeja** — subprocess GTK3 com ações rápidas ("Abrir módulo" →
-  Monitor, Antivírus, …); fechar a janela esconde em vez de matar o processo.
-- **Bloqueio por senha (Polkit)** — exige autenticação pra abrir o Hub, **sem
+- **Ícone na bandeja** — subprocess GTK3 com ações rápidas; fechar a janela
+  esconde em vez de matar o processo.
+- **Bloqueio por senha (Polkit)** — exige autenticação pra abrir, **sem
   armazenar credencial** (LGPD-friendly), com *lazy auth* quando inicia minimizado.
 - **Backup/restauração** da configuração em `.zip` (`0600`).
-- **Aba Ajuda** — manuais leigos e técnicos em Markdown renderizados in-app.
-- **Configurações** — centro de preferências com 3 sub-abas (Aplicação / Segurança / Sobre).
+- **Configurações** — abas **Sobre · Atualizações · Aplicação · Segurança ·
+  Ajuda** (a Ajuda traz os manuais leigos e técnicos em Markdown, in-app).
 
-Stack: Python + GTK4 + libadwaita. Cada ferramenta também **roda sozinha**, sem
-depender do Hub (veja *Instalar só um módulo*).
+Stack: Python + GTK4 + libadwaita. No terminal: `vigia-os` (ou `vigia-blue` /
+`vigia-red`, que abrem o app já na seção). Cada ferramenta do Hub também **roda
+sozinha**, sem depender do app (veja *Instalar só um módulo*).
 
 ---
 
-## O que está incluído (15 ferramentas focadas em LGPD/escritório)
+## O que está incluído (14 ferramentas do Hub, focadas em LGPD/escritório)
 
 | # | Componente | Stack | Status |
 |---|---|---|---|
 | 1 | `bootstrap.sh` | bash | 🟡 Em desenvolvimento |
-| 2 | **[Vigia Hub](tools/vigia-hub/)** v0.7.6 | Python + GTK4 | 🟢 3 painéis + autostart XDG + tray (quick actions) + lock Polkit + backup/restore + Ajuda (manuais MD) |
+| 2 | **[Casca VigiaOS](tools/vigia-hub/)** v0.9.0 | Python + GTK4 | 🟢 rail de seções (Início/Hub/Red/Blue) + autostart XDG + tray (quick actions) + lock Polkit + backup/restore + Configurações (Sobre · Atualizações · Aplicação · Segurança · Ajuda com manuais MD) |
 | 3 | **[Vigia Monitor do Sistema](tools/dashboard/)** v0.4.2 | Python + GTK4 + Cairo | 🟢 Sistema em tempo real + per-process I/O + alertas + inspetor syscalls + banda por processo + selo de plataforma |
 | 4 | **[Vigia Activity Log](tools/activity-log/)** v0.7.1 (core) + [GUI](tools/activity-log-gui/) v0.1.2 | Rust + Python | 🟢 audit + journald + fail2ban + correlations |
 | 5 | **[Vigia Privacy Controls](tools/privacy-controls/)** v0.3.2 | Python + GTK4 | 🟢 12 toggles user+system scope |
@@ -112,14 +114,15 @@ depender do Hub (veja *Instalar só um módulo*).
 | 9 | **[Vigia Hardening Checks](tools/hardening-checks/)** v0.1.5 | Python + GTK4 | 🟢 Lynis wrapper (auditoria de hardening) |
 | 10 | **[Vigia Reports](tools/reports/)** v0.2.7 | Python + Jinja2 + SVG | 🟢 6 modelos + selo SHA-256 + identidade do escritório + **agendamento mensal** (headless) |
 | 11 | **[Vigia File Integrity](tools/file-integrity/)** v0.2.6 | Python + GTK4 | 🟢 AIDE (sistema) + Hash ad-hoc (user) — 6 tabs |
-| 12 | **[Vigia Tool Installer](tools/tool-installer/)** v0.4.2 | Python + GTK4 | 🟢 dnf (1-click) + **extensões navegador open source** |
+| 12 | **[Atualizações](tools/tool-installer/)** v0.4.2 | Python + GTK4 | 🟢 checa/aplica updates do sistema + suíte via `dnf` (aba em Configurações) |
 | 13 | **[Vigia DNS Manager](tools/dns-manager/)** v0.4.3 | Python + GTK4 | 🟢 **dnscrypt-proxy** (DoH/DoT) com 11 servers curados |
 | 14 | **[Vigia Capabilities Inspector](tools/capabilities-inspector/)** v0.1.2 | Python + GTK4 | 🟢 getcap audit + 41 caps pt-BR |
 | 15 | **[Vigia Antivirus](tools/antivirus/)** v0.1.4 | Python + GTK4 | 🟢 ClamAV wrapper (substitui clamtk) |
 | 16 | **[Vigia Rootkit Scanner](tools/rootkit-scanner/)** v0.2.2 | Python + GTK4 | 🟢 **chkrootkit + rkhunter** unificados |
 
-*(linhas 1–2 são o instalador e o Hub; as 14 ferramentas são as linhas 3–16 —
-o Tool Installer é acessado à parte, fora da sidebar das outras 13.)*
+*(linhas 1–2 são o instalador e a casca do VigiaOS; as 14 ferramentas da seção
+**Hub** são as linhas 3–16. As **Atualizações** — antigo "Tool Installer" da
+linha 12 — viraram uma aba dentro de Configurações.)*
 
 ### Removidas na limpeza 2026-05-27 (foco LGPD)
 
@@ -158,7 +161,7 @@ install/install-tool.sh --list          # ver módulos disponíveis
 install/install-tool.sh antivirus       # instala só o Antivírus
 ```
 
-Cada módulo roda sozinho, sem depender do Vigia Hub. Quando o COPR estiver
+Cada módulo roda sozinho, sem depender do VigiaOS. Quando o COPR estiver
 ativo: `sudo dnf install vigia-antivirus`.
 
 ### Plataforma
@@ -181,7 +184,7 @@ for d in vigia-hub privacy-controls selinux-gui firewall-gui netmon-gui \
          antivirus dashboard rootkit-scanner; do
   (cd tools/$d && pip install --user -e .)
 done
-vigia-hub   # abre o launcher
+vigia-os   # abre o app (aliases: vigia-hub / vigia-blue / vigia-red)
 ```
 
 ### Futuro: via COPR (em preparação)
@@ -197,7 +200,7 @@ sudo dnf install vigia-suite
 
 ## Histórico
 
-O VigiaHub nasceu mirando o **Fedora Silverblue** (sistema atômico/imutável),
+O VigiaOS nasceu mirando o **Fedora Silverblue** (sistema atômico/imutável),
 mas **migrou de vez para o Fedora Workstation** em 2026-06. Motivo técnico: o
 ferramental de **forense** (Volatility, plaso, símbolos de kernel) e a
 **velocidade de iteração** sofrem no modelo atômico — instalar uma lib exige

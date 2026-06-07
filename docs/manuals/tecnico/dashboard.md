@@ -112,7 +112,7 @@ Versão + info do sistema + paths lidos + lista de dependências (vazia — usa 
 - Você precisa diagnosticar lentidão: "quem está puxando CPU?", "swap está cheio?", "disco está saturado?"
 - Você quer matar um processo travado sem abrir terminal
 - Você quer **alarmar** quando RAM passar de 90% (LGPD: detectar leak antes de OOM kill)
-- Você quer monitor leve rodando full-time embarcado no Hub
+- Você quer monitor leve rodando full-time (é a seção **Início** do VigiaOS)
 
 ## Limitações conhecidas
 
