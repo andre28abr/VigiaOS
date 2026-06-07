@@ -10,9 +10,11 @@
 #
 # Uso:
 #   install/uninstall.sh             # remove o Vigia (pip + ícones + estado)
-#   install/uninstall.sh --backends  # também: dnf remove os backends CLI
+#   install/uninstall.sh --backends  # também: dnf remove os backends CLI +
+#                                     # stack do Blue (yara/suricata/volatility3/
+#                                     # plaso/avml/dwarf2json/vigia-log)
 #   install/uninstall.sh --flatpaks  # também: remove os Flatpaks de privacidade
-#   install/uninstall.sh --all       # backends + flatpaks
+#   install/uninstall.sh --all       # backends + Blue + flatpaks (wipe total)
 #   install/uninstall.sh --dry-run   # só mostra o que faria
 #
 set -uo pipefail
@@ -88,12 +90,21 @@ if [ $DRY -eq 0 ]; then
     gtk-update-icon-cache -f "$HOME/.local/share/icons/hicolor" >/dev/null 2>&1 || true
 fi
 
-# 6) OPCIONAL: backends de sistema (dnf)
+# 6) OPCIONAL: backends de sistema (dnf) + stack forense/SOC do VigiaBlue
 if [ $DO_BACKENDS -eq 1 ]; then
     info "Removendo backends de sistema (dnf)..."
     BACKENDS=(lynis aide chkrootkit rkhunter clamav clamav-update nethogs
-              fail2ban dnscrypt-proxy md5deep)
+              fail2ban dnscrypt-proxy md5deep
+              yara suricata tcpdump)            # + stack do VigiaBlue
     run sudo dnf remove -y "${BACKENDS[@]}" || warn "alguns backends não removidos."
+    # forense via pipx + binários soltos + core Rust do Activity Log/SIEM
+    if command -v pipx >/dev/null 2>&1; then
+        run pipx uninstall volatility3 2>/dev/null || true
+        run pipx uninstall plaso 2>/dev/null || true
+    fi
+    run rm -f "$HOME"/.local/bin/avml "$HOME"/.local/bin/dwarf2json
+    [ -x /usr/local/bin/vigia-log ] && run sudo rm -f /usr/local/bin/vigia-log
+    ok "backends + stack do Blue removidos."
 fi
 
 # 7) OPCIONAL: Flatpaks de privacidade
