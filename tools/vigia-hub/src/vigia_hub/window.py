@@ -36,9 +36,11 @@ from gi.repository import Adw, Gio, GLib, Gtk  # noqa: E402
 
 from vigia_common.helpers import show_error, show_info
 from vigia_common.notifications_bell import NotificationsBell
+from vigia_common.shell import widen_clamps
 
 from .markdown import md_to_pango
 from .registry import (
+    CATEGORIES_ORDER,
     CATEGORY_LABELS,
     TOOLS,
     ToolEntry,
@@ -108,8 +110,13 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         self.set_title("Vigia Hub")
         self.set_default_size(1340, 820)
 
-        # Cache de widgets embarcados (tools): tool.id -> Gtk.Widget
-        self._embedded_widgets: dict[str, Gtk.Widget] = {}
+        # Estado por-seção do master-detail. Cada seção (Hub/Red/Blue) tem o
+        # seu próprio content stack, sidebar, cache de embeds e lista de itens
+        # — assim várias seções coexistem no _main_stack sem se atrapalhar.
+        self._section_content_stacks: dict[str, Gtk.Stack] = {}
+        self._section_sidebar_lists: dict[str, Gtk.ListBox] = {}
+        self._section_embedded: dict[str, dict[str, Gtk.Widget]] = {}
+        self._section_entries: dict[str, list[ToolEntry]] = {}
         # Caches de paginas de modo (installer, settings, help)
         self._mode_pages: dict[str, Gtk.Widget] = {}
         # Idle monitor (auto-lock) — None ate ser configurado
@@ -123,8 +130,9 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         # ============= Nav fina (esquerda) ============= #
         nav_box = self._build_nav_bar()
 
-        # ============= Modo Tools (master-detail) ============= #
-        self._tools_view = self._build_tools_view()
+        # ============= Seção Hub (master-detail) ============= #
+        self._tools_view = self._build_section_view(
+            "hub", list(TOOLS), CATEGORY_LABELS, CATEGORIES_ORDER)
 
         # ============= Main stack (alterna entre modos) ============= #
         self._main_stack = Gtk.Stack()
@@ -158,18 +166,8 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         except Exception as e:  # pylint: disable=broad-except
             _log.debug("nao conseguiu conectar listener de tema: %s", e)
 
-        # Seleciona primeira tool dentro do modo tools
-        if TOOLS:
-            first_tool_row = self._sidebar_list.get_row_at_index(0)
-            # Pula headers (rows nao-tools)
-            while first_tool_row is not None and not getattr(first_tool_row, "_tool_id", None):
-                idx = first_tool_row.get_index()
-                first_tool_row = self._sidebar_list.get_row_at_index(idx + 1)
-            if first_tool_row is not None:
-                self._sidebar_list.select_row(first_tool_row)
-                tool = self._tool_by_id(getattr(first_tool_row, "_tool_id"))
-                if tool is not None:
-                    self._show_tool(tool)
+        # Seleciona a primeira tool da seção Hub (dispara _on_sidebar_selected)
+        self._select_first_tool("hub")
 
         # Checagem de atualizacoes em segundo plano (badge no Instalador).
         # Read-only, sem root; respeita o toggle em Config > Aplicacao.
@@ -1489,14 +1487,17 @@ class VigiaHubWindow(Adw.ApplicationWindow):
             idx += 1
         self._main_stack.set_visible_child_name("tools")
 
-        # 2. Seleciona a row da tool na sidebar central
+        # 2. Seleciona a row da tool na sidebar da seção Hub
+        sidebar = self._section_sidebar_lists.get("hub")
+        if sidebar is None:
+            return
         idx = 0
         while True:
-            row = self._sidebar_list.get_row_at_index(idx)
+            row = sidebar.get_row_at_index(idx)
             if row is None:
                 break
             if getattr(row, "_tool_id", None) == tool_id:
-                self._sidebar_list.select_row(row)
+                sidebar.select_row(row)
                 return
             idx += 1
 
@@ -1504,36 +1505,81 @@ class VigiaHubWindow(Adw.ApplicationWindow):
     # Tools view (master-detail com categorias)
     # ========================================================================
 
-    def _build_tools_view(self) -> Gtk.Widget:
-        """Adw.NavigationSplitView: sidebar com categorias + content stack."""
-        sidebar_page = self._build_sidebar()
+    def _select_first_tool(self, section_key: str) -> None:
+        """Seleciona a primeira row real (pulando os headers de categoria) da
+        sidebar da seção — o sinal row-selected dispara _on_sidebar_selected."""
+        sidebar = self._section_sidebar_lists.get(section_key)
+        if sidebar is None:
+            return
+        row = sidebar.get_row_at_index(0)
+        while row is not None and not getattr(row, "_tool_id", None):
+            row = sidebar.get_row_at_index(row.get_index() + 1)
+        if row is not None:
+            sidebar.select_row(row)
 
-        # Content stack
-        self._content_stack = Gtk.Stack()
-        self._content_stack.set_transition_type(Gtk.StackTransitionType.CROSSFADE)
-        self._content_stack.set_transition_duration(180)
+    @staticmethod
+    def _tool_icon_image(tool: ToolEntry, size: int) -> Gtk.Image:
+        """Ícone de uma entrada: nome-de-tema (módulos Blue/Red sem SVG),
+        senão arquivo SVG (tools do Hub), senão fallback genérico."""
+        name = getattr(tool, "theme_icon_name", "")
+        if name:
+            img = Gtk.Image.new_from_icon_name(name)
+        elif tool.icon_path.is_file():
+            img = Gtk.Image.new_from_file(str(tool.icon_path))
+        else:
+            img = Gtk.Image.new_from_icon_name("application-x-executable-symbolic")
+        img.set_pixel_size(size)
+        return img
 
-        for tool in TOOLS:
+    @staticmethod
+    def _group_by_category(
+        entries: list[ToolEntry], order: list[str]
+    ) -> dict[str, list[ToolEntry]]:
+        """Agrupa entradas por categoria respeitando `order`; categorias fora
+        da ordem informada vão ao fim (genérico — serve Hub, Blue e Red)."""
+        grouped: dict[str, list[ToolEntry]] = {}
+        for t in entries:
+            grouped.setdefault(t.category, []).append(t)
+        ordered = [c for c in order if c in grouped]
+        ordered += [c for c in grouped if c not in ordered]
+        return {c: grouped[c] for c in ordered}
+
+    def _build_section_view(
+        self, section_key: str, entries: list[ToolEntry],
+        category_labels: dict[str, str], order: list[str],
+    ) -> Gtk.Widget:
+        """Adw.NavigationSplitView de UMA seção (Hub/Red/Blue): sidebar com
+        categorias + content stack. O estado fica em self._section_*[section_key],
+        então várias seções coexistem no _main_stack sem colidir."""
+        self._section_entries[section_key] = entries
+
+        sidebar_page = self._build_sidebar(section_key, entries,
+                                           category_labels, order)
+
+        content_stack = Gtk.Stack()
+        content_stack.set_transition_type(Gtk.StackTransitionType.CROSSFADE)
+        content_stack.set_transition_duration(180)
+        self._section_content_stacks[section_key] = content_stack
+        self._section_embedded[section_key] = {}
+
+        for tool in entries:
             detail = self._build_detail_page(tool)
-            self._content_stack.add_named(detail, self._detail_name(tool.id))
+            content_stack.add_named(detail, self._detail_name(tool.id))
 
-        if not TOOLS:
-            self._content_stack.add_named(
+        if not entries:
+            content_stack.add_named(
                 Adw.StatusPage(
-                    title="Sem ferramentas registradas",
-                    description="Adicione entradas em registry.py.",
+                    title="Nada por aqui ainda",
+                    description="Nenhum item registrado nesta seção.",
                     icon_name="dialog-information-symbolic",
                 ),
                 "_empty_",
             )
 
         content_toolbar = Adw.ToolbarView()
-        content_toolbar.set_content(self._content_stack)
-        content_page = Adw.NavigationPage(
-            title="Vigia Hub",
-            child=content_toolbar,
-        )
-        content_page.set_tag("content")
+        content_toolbar.set_content(content_stack)
+        content_page = Adw.NavigationPage(title="VigiaOS", child=content_toolbar)
+        content_page.set_tag(f"content-{section_key}")
 
         split = Adw.NavigationSplitView()
         split.set_sidebar(sidebar_page)
@@ -1543,23 +1589,23 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         split.set_max_sidebar_width(360)
         return split
 
-    def _build_sidebar(self) -> Adw.NavigationPage:
-        """Sidebar com tools agrupadas por categoria."""
+    def _build_sidebar(
+        self, section_key: str, entries: list[ToolEntry],
+        category_labels: dict[str, str], order: list[str],
+    ) -> Adw.NavigationPage:
+        """Sidebar de uma seção: itens agrupados por categoria."""
         header = Adw.HeaderBar()
-        # Branding "Vigia Hub" fica no rail (esquerda); aqui a sidebar so'
-        # rotula o que ela e' (lista de ferramentas). Antes dizia
-        # "Vigia Suite / Toolkit" (nome legado + redundante com o rail).
         title = Adw.WindowTitle(title="Ferramentas", subtitle="")
         header.set_title_widget(title)
 
-        self._sidebar_list = Gtk.ListBox()
-        self._sidebar_list.set_selection_mode(Gtk.SelectionMode.SINGLE)
-        self._sidebar_list.add_css_class("navigation-sidebar")
-        self._sidebar_list.connect("row-selected", self._on_sidebar_selected)
+        sidebar_list = Gtk.ListBox()
+        sidebar_list.set_selection_mode(Gtk.SelectionMode.SINGLE)
+        sidebar_list.add_css_class("navigation-sidebar")
+        sidebar_list.connect("row-selected", self._on_sidebar_selected)
+        self._section_sidebar_lists[section_key] = sidebar_list
 
-        # Adiciona rows agrupadas por categoria, com headers separadores
-        grouped = tools_by_category(TOOLS)
-        for cat, tools_in_cat in grouped.items():
+        grouped = self._group_by_category(entries, order)
+        for cat, items in grouped.items():
             # Header row (nao selecionavel)
             header_row = Gtk.ListBoxRow()
             header_row.set_selectable(False)
@@ -1570,43 +1616,39 @@ class VigiaHubWindow(Adw.ApplicationWindow):
             hbox.set_margin_bottom(4)
             hbox.set_margin_start(12)
             hbox.set_margin_end(12)
-            hlbl = Gtk.Label(label=CATEGORY_LABELS.get(cat, cat).upper())
+            hlbl = Gtk.Label(label=category_labels.get(cat, cat).upper())
             hlbl.add_css_class("caption-heading")
             hlbl.set_xalign(0)
             hlbl.set_hexpand(True)
             hbox.append(hlbl)
             header_row.set_child(hbox)
-            self._sidebar_list.append(header_row)
+            sidebar_list.append(header_row)
 
-            for tool in tools_in_cat:
-                row = self._build_sidebar_row(tool)
-                self._sidebar_list.append(row)
+            for tool in items:
+                row = self._build_sidebar_row(tool, section_key)
+                sidebar_list.append(row)
 
         scrolled = Gtk.ScrolledWindow()
         scrolled.set_vexpand(True)
-        scrolled.set_child(self._sidebar_list)
+        scrolled.set_child(sidebar_list)
 
         toolbar = Adw.ToolbarView()
         toolbar.add_top_bar(header)
         toolbar.set_content(scrolled)
 
         page = Adw.NavigationPage(title="Ferramentas", child=toolbar)
-        page.set_tag("sidebar")
+        page.set_tag(f"sidebar-{section_key}")
         return page
 
-    def _build_sidebar_row(self, tool: ToolEntry) -> Gtk.ListBoxRow:
+    def _build_sidebar_row(self, tool: ToolEntry,
+                           section_key: str) -> Gtk.ListBoxRow:
         row = Adw.ActionRow()
         row.set_title(tool.name)
         row.set_subtitle(tool.description)
         row.set_use_markup(False)
         row.set_subtitle_lines(2)
 
-        if tool.icon_path.is_file():
-            icon = Gtk.Image.new_from_file(str(tool.icon_path))
-        else:
-            icon = Gtk.Image.new_from_icon_name("application-x-executable-symbolic")
-        icon.set_pixel_size(36)
-        row.add_prefix(icon)
+        row.add_prefix(self._tool_icon_image(tool, 36))
 
         available = tool.is_available()
         dot = Gtk.Label(label="●")
@@ -1616,6 +1658,7 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         row.add_suffix(dot)
 
         row._tool_id = tool.id  # type: ignore[attr-defined]
+        row._section_key = section_key  # type: ignore[attr-defined]
         return row
 
     def _on_sidebar_selected(
@@ -1626,12 +1669,13 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         tool_id = getattr(row, "_tool_id", None)
         if not tool_id:
             return
-        tool = self._tool_by_id(tool_id)
+        section_key = getattr(row, "_section_key", "hub")
+        tool = self._tool_by_id(tool_id, section_key)
         if tool is not None:
-            self._show_tool(tool)
+            self._show_tool(tool, section_key)
 
-    def _tool_by_id(self, tool_id: str) -> ToolEntry | None:
-        for t in TOOLS:
+    def _tool_by_id(self, tool_id: str, section_key: str) -> ToolEntry | None:
+        for t in self._section_entries.get(section_key, []):
             if t.id == tool_id:
                 return t
         return None
@@ -1640,30 +1684,33 @@ class VigiaHubWindow(Adw.ApplicationWindow):
     # Show tool (embed lazy ou fallback detail)
     # ========================================================================
 
-    def _show_tool(self, tool: ToolEntry) -> None:
+    def _show_tool(self, tool: ToolEntry, section_key: str) -> None:
+        content_stack = self._section_content_stacks[section_key]
         if tool.is_embeddable():
             try:
-                widget = self._get_or_build_embedded(tool)
-                self._content_stack.set_visible_child(widget)
+                widget = self._get_or_build_embedded(tool, section_key)
+                content_stack.set_visible_child(widget)
                 return
             except Exception as e:  # pylint: disable=broad-except
                 err = "".join(traceback.format_exception_only(type(e), e)).strip()
                 err_name = self._error_name(tool.id)
-                existing = self._content_stack.get_child_by_name(err_name)
+                existing = content_stack.get_child_by_name(err_name)
                 if existing is not None:
-                    self._content_stack.remove(existing)
-                self._content_stack.add_named(
+                    content_stack.remove(existing)
+                content_stack.add_named(
                     self._build_error_page(tool, err),
                     err_name,
                 )
-                self._content_stack.set_visible_child_name(err_name)
+                content_stack.set_visible_child_name(err_name)
                 return
 
-        self._content_stack.set_visible_child_name(self._detail_name(tool.id))
+        content_stack.set_visible_child_name(self._detail_name(tool.id))
 
-    def _get_or_build_embedded(self, tool: ToolEntry) -> Gtk.Widget:
-        if tool.id in self._embedded_widgets:
-            return self._embedded_widgets[tool.id]
+    def _get_or_build_embedded(self, tool: ToolEntry,
+                               section_key: str) -> Gtk.Widget:
+        embedded = self._section_embedded[section_key]
+        if tool.id in embedded:
+            return embedded[tool.id]
 
         if tool.embedded_module is None:
             raise RuntimeError("tool nao tem embedded_module")
@@ -1676,8 +1723,13 @@ class VigiaHubWindow(Adw.ApplicationWindow):
             )
 
         widget = builder()
-        self._content_stack.add_named(widget, self._embedded_name(tool.id))
-        self._embedded_widgets[tool.id] = widget
+        # Módulos do Blue/Red foram feitos sob o shell, que alarga os clamps
+        # (Adw.Clamp 1100/900). Sem isso o conteúdo renderiza espremido no Hub.
+        if getattr(tool, "widen_embedded", False):
+            widget = widen_clamps(widget)
+        self._section_content_stacks[section_key].add_named(
+            widget, self._embedded_name(tool.id))
+        embedded[tool.id] = widget
 
         # PERF: forca garbage collection apos construir tool (tooltips de
         # dataclasses + closures temporarias do builder podem liberar
@@ -1716,11 +1768,7 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         box.set_margin_start(32)
         box.set_margin_end(32)
 
-        if tool.icon_path.is_file():
-            icon = Gtk.Image.new_from_file(str(tool.icon_path))
-        else:
-            icon = Gtk.Image.new_from_icon_name("application-x-executable-symbolic")
-        icon.set_pixel_size(128)
+        icon = self._tool_icon_image(tool, 128)
         icon.set_halign(Gtk.Align.CENTER)
         box.append(icon)
 
@@ -1753,30 +1801,42 @@ class VigiaHubWindow(Adw.ApplicationWindow):
                 pkg_box.append(pill)
             box.append(pkg_box)
 
-        available = tool.is_available()
-        status_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-        status_box.set_halign(Gtk.Align.CENTER)
-        dot = Gtk.Label(label="●")
-        dot.add_css_class("success" if available else "error")
-        status_box.append(dot)
-        status_lbl = Gtk.Label(
-            label="Disponível" if available else "Não instalada"
-        )
-        status_lbl.add_css_class("dim-label")
-        status_box.append(status_lbl)
-        box.append(status_box)
+        is_planned = getattr(tool, "is_planned", False)
+        if is_planned:
+            # Módulo do esqueleto (ex: VigiaRed) — mostra o status "Planejado",
+            # sem botão de abrir (não há backend nem exec_cmd ainda).
+            status_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+            status_box.set_halign(Gtk.Align.CENTER)
+            pill = Gtk.Label(
+                label=getattr(tool, "status_label", "Planejado") + " — em breve")
+            pill.add_css_class("dim-label")
+            status_box.append(pill)
+            box.append(status_box)
+        else:
+            available = tool.is_available()
+            status_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+            status_box.set_halign(Gtk.Align.CENTER)
+            dot = Gtk.Label(label="●")
+            dot.add_css_class("success" if available else "error")
+            status_box.append(dot)
+            status_lbl = Gtk.Label(
+                label="Disponível" if available else "Não instalada"
+            )
+            status_lbl.add_css_class("dim-label")
+            status_box.append(status_lbl)
+            box.append(status_box)
 
-        if not tool.is_embeddable():
-            btn = Gtk.Button(label="Abrir externamente")
-            btn.add_css_class("suggested-action" if available else "flat")
-            btn.set_halign(Gtk.Align.CENTER)
-            btn.set_margin_top(8)
-            btn.set_margin_bottom(16)
-            btn.set_sensitive(available)
-            if not available:
-                btn.set_label("Não instalada")
-            btn.connect("clicked", lambda _b, t=tool: self._on_launch(t))
-            box.append(btn)
+            if not tool.is_embeddable():
+                btn = Gtk.Button(label="Abrir externamente")
+                btn.add_css_class("suggested-action" if available else "flat")
+                btn.set_halign(Gtk.Align.CENTER)
+                btn.set_margin_top(8)
+                btn.set_margin_bottom(16)
+                btn.set_sensitive(available)
+                if not available:
+                    btn.set_label("Não instalada")
+                btn.connect("clicked", lambda _b, t=tool: self._on_launch(t))
+                box.append(btn)
 
         if tool.long_description:
             desc_group = Adw.PreferencesGroup()
