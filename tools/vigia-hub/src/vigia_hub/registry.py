@@ -85,6 +85,25 @@ def tools_by_category(tools: list[ToolEntry]) -> dict[str, list[ToolEntry]]:
     return {c: grouped[c] for c in CATEGORIES_ORDER if c in grouped}
 
 
+# Tools "avançadas": escondidas no modo simples (default), reveladas pelo Modo
+# Avançado em Configurações. São as de público profissional/sysadmin — o
+# usuário comum não precisa mexer nelas pra monitorar e proteger o próprio PC.
+ADVANCED_TOOLS = frozenset({
+    "activity-log",            # análise de logs (audit/journald/fail2ban)
+    "selinux-gui",             # SELinux interno
+    "file-integrity",          # baseline AIDE (sysadmin)
+    "capabilities-inspector",  # capabilities de binários (nicho)
+    "reports",                 # relatórios LGPD/compliance (advogado)
+})
+
+
+def visible_tools(tools: list[ToolEntry], advanced: bool) -> list[ToolEntry]:
+    """Catálogo do Hub conforme o modo: simples esconde as ADVANCED_TOOLS."""
+    if advanced:
+        return list(tools)
+    return [t for t in tools if t.id not in ADVANCED_TOOLS]
+
+
 # ============================================================================
 # Tools registry
 # ============================================================================
