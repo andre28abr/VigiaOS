@@ -41,6 +41,10 @@ class Settings:
     auto_lock_minutes: int = 0
     # v0.8.0: checa atualizacoes ao iniciar (badge no icone do Instalador)
     check_updates: bool = True
+    # v0.9.x: Modo Avançado — revela as seções Red/Blue + as 5 tools avançadas
+    # (Activity Log, SELinux, File Integrity, Capabilities, Reports). Default
+    # OFF = experiência simples pro usuário comum (Início + 7 tools essenciais).
+    advanced_mode: bool = False
 
 
 # ============================================================
@@ -74,6 +78,7 @@ def load_settings() -> Settings:
             theme=theme_raw,
             auto_lock_minutes=auto_lock,
             check_updates=bool(data.get("check_updates", True)),
+            advanced_mode=bool(data.get("advanced_mode", False)),
         )
     except (OSError, json.JSONDecodeError) as e:
         import logging
