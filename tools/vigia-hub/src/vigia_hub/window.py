@@ -45,7 +45,6 @@ from .registry import (
     TOOLS,
     ToolEntry,
     tools_by_category,
-    visible_tools,
 )
 from .auth import (
     check_auth_async,
@@ -107,10 +106,6 @@ SECTIONS = [
 
 # A tool "dashboard" é promovida à seção Início — não aparece no catálogo do Hub.
 _DASHBOARD_ID = "dashboard"
-
-# Seções só visíveis no Modo Avançado (Configurações). No simples, o rail mostra
-# só Início + Hub (com o catálogo enxuto).
-ADVANCED_SECTIONS = frozenset({"red", "blue"})
 
 
 class VigiaHubWindow(Adw.ApplicationWindow):
@@ -210,21 +205,6 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         row.set_child(inner)
         return row
 
-    def _visible_sections(self) -> list:
-        """Seções do rail conforme o modo: o simples esconde Red/Blue."""
-        adv = self._settings.advanced_mode
-        return [s for s in SECTIONS if adv or s[0] not in ADVANCED_SECTIONS]
-
-    def _populate_nav_list(self) -> None:
-        """(Re)preenche o ListBox das seções conforme o modo atual."""
-        row = self._nav_list.get_row_at_index(0)
-        while row is not None:
-            self._nav_list.remove(row)
-            row = self._nav_list.get_row_at_index(0)
-        for section_id, label, icon_name in self._visible_sections():
-            self._nav_list.append(
-                self._make_nav_row(section_id, label, icon_name))
-
     def _build_nav_bar(self) -> Gtk.Widget:
         """Rail fino vertical: seções no topo, Configurações + sino no rodapé."""
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
@@ -245,7 +225,8 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         self._nav_list.set_selection_mode(Gtk.SelectionMode.SINGLE)
         self._nav_list.add_css_class("navigation-sidebar")
         self._nav_list.connect("row-selected", self._on_section_selected)
-        self._populate_nav_list()
+        for section_id, label, icon_name in SECTIONS:
+            self._nav_list.append(self._make_nav_row(section_id, label, icon_name))
         box.append(self._nav_list)
 
         # Spacer empurra Configurações + sino pro rodapé
@@ -339,8 +320,6 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         if section_id == "hub":
             # Dashboard é promovido à seção Início — fora do catálogo do Hub.
             hub_entries = [t for t in TOOLS if t.id != _DASHBOARD_ID]
-            # Modo simples esconde as tools avançadas (pro/sysadmin).
-            hub_entries = visible_tools(hub_entries, self._settings.advanced_mode)
             return self._build_section_view(
                 "hub", hub_entries, CATEGORY_LABELS, CATEGORIES_ORDER)
         if section_id in ("red", "blue"):
@@ -348,36 +327,6 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         if section_id == "config":
             return self._build_config_view()
         raise ValueError(f"Seção desconhecida: {section_id}")
-
-    def _drop_section(self, section_key: str) -> None:
-        """Descarta uma seção já construída (remove do _main_stack + caches) pra
-        ela ser reconstruída na próxima seleção — usado ao trocar de modo."""
-        if section_key not in self._section_built:
-            return
-        child = self._main_stack.get_child_by_name(section_key)
-        if child is not None:
-            self._main_stack.remove(child)
-        self._section_built.discard(section_key)
-        self._section_content_stacks.pop(section_key, None)
-        self._section_sidebar_lists.pop(section_key, None)
-        self._section_embedded.pop(section_key, None)
-        self._section_entries.pop(section_key, None)
-
-    def _apply_advanced_mode(self) -> None:
-        """Aplica o Modo Avançado ao vivo: refaz o rail (mostra/esconde Red/Blue)
-        e descarta o Hub (o catálogo muda) — e Red/Blue se saiu do avançado. As
-        seções reconstroem na próxima seleção; o usuário continua em Configurações
-        (que não é descartada), então não há navegação forçada."""
-        self._populate_nav_list()
-        self._drop_section("hub")
-        if not self._settings.advanced_mode:
-            self._drop_section("red")
-            self._drop_section("blue")
-
-    def _on_advanced_toggled(self, switch: Adw.SwitchRow, *_args) -> None:
-        self._settings.advanced_mode = switch.get_active()
-        save_settings(self._settings)
-        self._apply_advanced_mode()
 
     def _build_inicio_view(self) -> Gtk.Widget:
         """Seção Início: a tela do Monitor do Sistema (Dashboard) como landing.
@@ -934,25 +883,6 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         backup_group.add(restore_row)
 
         page.add(backup_group)
-
-        # Grupo: Modo Avançado (revela Red/Blue + as tools de profissional)
-        adv_group = Adw.PreferencesGroup()
-        adv_group.set_title("Experiência")
-        adv_group.set_description(
-            "Por padrão o VigiaOS mostra só o essencial pra monitorar e "
-            "proteger o seu PC. O modo avançado libera o resto."
-        )
-        self._sw_advanced = Adw.SwitchRow()
-        self._sw_advanced.set_title("Modo avançado")
-        self._sw_advanced.set_subtitle(
-            "Mostra as seções Red (pentest) e Blue (SOC/forense) e as "
-            "ferramentas de profissional no Hub (Activity Log, SELinux, File "
-            "Integrity, Capabilities, Reports). Desligado = experiência simples."
-        )
-        self._sw_advanced.set_active(self._settings.advanced_mode)
-        self._sw_advanced.connect("notify::active", self._on_advanced_toggled)
-        adv_group.add(self._sw_advanced)
-        page.add(adv_group)
 
         # NOTA v0.6.4: removido grupo "Aparencia" (tema light/dark
         # customizado). Hub agora sempre segue o tema do GNOME — se
