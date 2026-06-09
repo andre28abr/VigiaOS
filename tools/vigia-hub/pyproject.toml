@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "vigia-hub"
-version = "0.11.2"
+version = "0.11.3"
 description = "VigiaOS — app unificado (Início + Hub + Red + Blue numa janela só)"
 license = { text = "Apache-2.0" }
 readme = "README.md"
@@ -20,12 +20,10 @@ classifiers = [
     "Operating System :: POSIX :: Linux",
     "Programming Language :: Python :: 3 :: Only",
 ]
-dependencies = ["vigia-common"]
-
-[project.optional-dependencies]
-# Markdown rendering pra aba Ajuda (manuais tecnicos/leigos)
-# Se nao instalado, cai pra fallback de texto raw
-manuals = ["markdown>=3.4"]
+# markdown: render rico (colorido) dos manuais na aba Ajuda via WebKit.
+# Puro-Python e pequeno; se faltar, o app cai num fallback Pango FORMATADO
+# (titulos/negrito/listas), nunca mais markdown cru.
+dependencies = ["vigia-common", "markdown>=3.4"]
 
 [project.scripts]
 vigia-os = "vigia_hub.__main__:main"

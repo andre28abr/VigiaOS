@@ -3150,6 +3150,25 @@ vigia-common **v0.2.22**, vigia-hub **v0.11.2**. Suíte: **1146 verdes**.
 
 ---
 
+### 2026-06-09 — Ajuda: gate do WebKit + python-markdown vira dep fixa
+
+Print do user: os manuais voltaram a aparecer CRUS, mas agora numa **página
+branca** (não no fallback monospace). Causa real (não era o WebKit, que estava
+OK): `build_html` usa **python-markdown** pra gerar HTML; sem ele, despeja um
+`<pre>` com o markdown cru. O `markdown` era dep **opcional** (`[manuals]`) e o
+instalador roda `pip install -e .` SEM o extra → nunca foi instalado no rebuild
+pós-migração. "Antes colorido" = uma instalação anterior tinha o extra.
+
+- **Gate**: `_render_manual_into` só usa o caminho WebKit se
+  `markdown_lib_available()` também for True — senão usa o **fallback Pango
+  formatado** (`md_to_pango_block`), não o `<pre>` cru. Resultado: manual nunca
+  mais aparece cru, com ou sem python-markdown.
+- **Dep fixa**: `markdown>=3.4` saiu de opcional e virou dependência normal do
+  vigia-hub (puro-Python, pequeno) → `pip install -e .` já traz o render
+  colorido de volta. vigia-hub **v0.11.3**.
+
+---
+
 ## 10. Roadmap
 
 ### 10.1 Próximas iterações por ferramenta
