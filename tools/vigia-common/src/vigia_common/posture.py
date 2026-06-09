@@ -67,12 +67,12 @@ def eval_antivirus(installed: bool, db_age_days: float | None) -> Check:
     if db_age_days is None:
         return Check("antivirus", "Antivírus", WARN,
                      "Base de vírus não encontrada — atualize.",
-                     "antivirus", "Atualizar base")
+                     "antivirus:database", "Atualizar base")
     if db_age_days <= 7:
         return Check("antivirus", "Antivírus", OK, "Base de vírus atualizada.")
     return Check("antivirus", "Antivírus", WARN,
                  f"Base de vírus com {int(db_age_days)} dias — atualize.",
-                 "antivirus", "Atualizar base")
+                 "antivirus:database", "Atualizar base")
 
 
 def eval_privacy(hardened: int, total: int) -> Check:
@@ -115,7 +115,13 @@ def gather_firewall() -> bool | None:
         return None
 
 
-_CLAMAV_DIR = "/var/lib/clamav"
+# Mesmos dirs que o tool de antivírus (backend.DB_DIRS) — pra não reportar
+# "base não encontrada" quando ela está num dir alternativo.
+_CLAMAV_DIRS = (
+    "/var/lib/clamav",
+    "/usr/local/share/clamav",
+    "/var/lib/clamav-unofficial-sigs",
+)
 
 
 def gather_antivirus() -> tuple[bool, float | None]:
@@ -123,13 +129,14 @@ def gather_antivirus() -> tuple[bool, float | None]:
     installed = (shutil.which("clamscan") is not None
                  or shutil.which("freshclam") is not None)
     newest: float | None = None
-    try:
-        for name in os.listdir(_CLAMAV_DIR):
-            if name.endswith((".cvd", ".cld")):
-                m = os.path.getmtime(os.path.join(_CLAMAV_DIR, name))
-                newest = m if newest is None else max(newest, m)
-    except OSError:
-        pass
+    for d in _CLAMAV_DIRS:
+        try:
+            for name in os.listdir(d):
+                if name.endswith((".cvd", ".cld")):
+                    m = os.path.getmtime(os.path.join(d, name))
+                    newest = m if newest is None else max(newest, m)
+        except OSError:
+            continue
     age = None if newest is None else max(0.0, (time.time() - newest) / 86400.0)
     return (installed, age)
 

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#18181b"/>
+      <stop offset="100%" stop-color="#09090b"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="42%" r="40%">
+      <stop offset="0%" stop-color="#34d399" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#34d399" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="256" height="256" rx="48" fill="url(#bg)"/>
+  <rect width="256" height="256" rx="48" fill="url(#glow)"/>
+
+  <!-- Shield with check -->
+  <g transform="translate(128 124)">
+    <!-- Shield outline -->
+    <path d="M 0 -64 L 52 -42 L 52 8 Q 52 44, 0 64 Q -52 44, -52 8 L -52 -42 Z"
+          fill="#09090b"
+          stroke="#34d399"
+          stroke-width="4"
+          stroke-linejoin="round"/>
+    <!-- Inner shield fill subtle -->
+    <path d="M 0 -56 L 44 -36 L 44 6 Q 44 38, 0 56 Q -44 38, -44 6 L -44 -36 Z"
+          fill="#34d399"
+          fill-opacity="0.08"/>
+    <!-- Checkmark -->
+    <path d="M -23 0 L -6 20 L 26 -20"
+          fill="none"
+          stroke="#34d399"
+          stroke-width="10"
+          stroke-linecap="round"
+          stroke-linejoin="round"/>
+  </g>
+
+  <!-- Wordmark -->
+  <g transform="translate(128 230)" text-anchor="middle"
+     font-family="JetBrains Mono, ui-monospace, monospace"
+     font-weight="700" font-size="13" letter-spacing="3"
+     fill="#fafafa" opacity="0.9">
+    <text>VIGIA<tspan fill="#34d399">·</tspan>OK</text>
+  </g>
+</svg>

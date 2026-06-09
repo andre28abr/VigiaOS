@@ -61,6 +61,9 @@ def build_content() -> Gtk.Widget:
     if WRAPPED_PACKAGES:
         toolbar.add_top_bar(_make_pkg_badges_bar())
     toolbar.set_content(stack)
+    # Deep-link: o VigiaOS pode abrir esta tool já numa aba (ex: 'database')
+    # via window.show_tool_tab — basta expor o ViewStack.
+    toolbar._vigia_tab_stack = stack  # type: ignore[attr-defined]
     return toolbar
 
 
