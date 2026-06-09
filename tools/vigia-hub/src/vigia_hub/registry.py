@@ -27,6 +27,7 @@ _TOOLS_DIR = _REPO_ROOT / "tools"
 # Categorias para agrupamento visual na sidebar.
 # Ordem aqui define ordem de exibicao.
 CATEGORIES_ORDER = [
+    "visao-geral",
     "monitoramento",
     "privacidade",
     "defesa",
@@ -35,6 +36,7 @@ CATEGORIES_ORDER = [
 ]
 
 CATEGORY_LABELS = {
+    "visao-geral": "Visão geral",
     "monitoramento": "Monitoramento",
     "privacidade": "Privacidade",
     "defesa": "Defesa & Hardening",
@@ -65,6 +67,9 @@ class ToolEntry:
     # Pacote(s) original(is) que esta tool "wrappa" (ex: ["lynis"]).
     # Mostrado como badge no header pra dar transparencia ao user.
     wrapped_packages: list[str] = field(default_factory=list)
+    # Ícone do tema (symbolic) — usado por built-ins sem SVG próprio. Quando
+    # preenchido, tem prioridade sobre icon_path (ver _tool_icon_image).
+    theme_icon_name: str = ""
 
     def is_available(self) -> bool:
         try:
@@ -90,6 +95,33 @@ def tools_by_category(tools: list[ToolEntry]) -> dict[str, list[ToolEntry]]:
 # ============================================================================
 
 TOOLS: list[ToolEntry] = [
+    ToolEntry(
+        id="checkup",
+        name="Tudo Certo?",
+        description="Checagem rápida de segurança do seu PC — num olhar.",
+        long_description=(
+            "Um painel que junta as proteções básicas do seu computador num "
+            "lugar só: **atualizações** pendentes, **firewall** ligado, "
+            "**antivírus** com a base em dia e **privacidade** ajustada.\n\n"
+            "Mostra um **semáforo** (🟢 tudo certo / 🟡 atenção / 🔴 problema) "
+            "e, pra cada item fora do lugar, um botão **Resolver** que leva "
+            "direto pra ferramenta certa. Sem jargão e sem configurar nada — é "
+            "pra responder de relance: *meu PC está seguro?*"
+        ),
+        features=[
+            "Semáforo geral do estado de segurança (🟢🟡🔴)",
+            "Checa atualizações, firewall, antivírus e privacidade",
+            "Botão **Resolver** leva pra ferramenta certa",
+            "Roda em segundo plano — não trava a interface",
+        ],
+        icon_path=Path("/nonexistent"),     # built-in: usa theme_icon_name
+        theme_icon_name="security-high-symbolic",
+        exec_cmd=[],
+        available_fn=lambda: True,           # sempre disponível (built-in)
+        embedded_module="vigia_hub.checkup",
+        category="visao-geral",
+        wrapped_packages=[],
+    ),
     ToolEntry(
         id="dashboard",
         name="Monitor do Sistema",

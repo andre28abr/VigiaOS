@@ -57,7 +57,7 @@ def eval_updates(count: int | None) -> Check:
         return Check("updates", "Atualizações", OK, "Sistema em dia.")
     plural = "atualização disponível" if count == 1 else "atualizações disponíveis"
     return Check("updates", "Atualizações", WARN, f"{count} {plural}.",
-                 "", "Ver Atualizações")
+                 "config", "Ver Atualizações")
 
 
 def eval_antivirus(installed: bool, db_age_days: float | None) -> Check:
@@ -163,12 +163,33 @@ def gather_privacy() -> tuple[int, int]:
     return (hardened, total)
 
 
+def gather_updates() -> int | None:
+    """Nº de atualizações pendentes via `dnf --cacheonly check-update` (rápido,
+    sem rede; pode estar levemente desatualizado). None se não der pra checar."""
+    if not shutil.which("dnf"):
+        return None
+    try:
+        r = subprocess.run(["dnf", "-q", "--cacheonly", "check-update"],
+                           capture_output=True, text=True, timeout=20)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if r.returncode == 0:
+        return 0
+    if r.returncode == 100:  # 100 = há atualizações
+        count = 0
+        for line in r.stdout.splitlines():
+            if line and not line[0].isspace() and len(line.split()) >= 3:
+                count += 1
+        return count
+    return None
+
+
 def run_all() -> list[Check]:
-    """Roda as checagens rápidas e independentes (firewall, antivírus,
-    privacidade). 'updates' fica a cargo de quem chama (reusa o instalador)."""
+    """Checagens rápidas: atualizações, firewall, antivírus, privacidade."""
     inst, age = gather_antivirus()
     h, t = gather_privacy()
     return [
+        eval_updates(gather_updates()),
         eval_firewall(gather_firewall()),
         eval_antivirus(inst, age),
         eval_privacy(h, t),
