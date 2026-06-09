@@ -41,6 +41,9 @@ class Settings:
     auto_lock_minutes: int = 0
     # v0.8.0: checa atualizacoes ao iniciar (badge no icone do Instalador)
     check_updates: bool = True
+    # v0.10.0: tema visual — "padrao" (adwaita, segue o GNOME) ou "terminal"
+    # (hacker: fundo escuro + verde-neon + monospace). Default = padrao.
+    ui_theme: str = "padrao"
 
 
 # ============================================================
@@ -66,6 +69,9 @@ def load_settings() -> Settings:
         except (TypeError, ValueError):
             auto_lock = 0
         auto_lock = max(0, min(120, auto_lock))  # clamp [0, 120]
+        ui_theme_raw = str(data.get("ui_theme", "padrao"))
+        if ui_theme_raw not in ("padrao", "terminal"):
+            ui_theme_raw = "padrao"
         return Settings(
             autostart=bool(data.get("autostart", False)),
             show_tray=bool(data.get("show_tray", False)),
@@ -74,6 +80,7 @@ def load_settings() -> Settings:
             theme=theme_raw,
             auto_lock_minutes=auto_lock,
             check_updates=bool(data.get("check_updates", True)),
+            ui_theme=ui_theme_raw,
         )
     except (OSError, json.JSONDecodeError) as e:
         import logging

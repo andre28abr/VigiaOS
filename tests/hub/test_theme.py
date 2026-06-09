@@ -35,3 +35,24 @@ class TestBackwardsCompat:
 
     def test_valid_modes_is_system_only(self):
         assert theme.VALID_MODES == ("system",)
+
+
+class TestTerminalTheme:
+    def test_default_ui_theme_is_padrao(self):
+        from vigia_hub.settings import Settings
+        assert Settings().ui_theme == "padrao"
+
+    def test_ui_themes_constant(self):
+        assert theme.UI_THEMES == ("padrao", "terminal")
+
+    def test_terminal_css_has_palette_and_mono(self):
+        css = theme.TERMINAL_CSS
+        assert "#39E75F" in css           # verde-neon (accent)
+        assert "monospace" in css         # fonte do terminal
+        assert "window_bg_color" in css   # recolore o fundo
+
+    def test_apply_ui_theme_headless_no_crash(self):
+        # sem GTK no Mac, apply_ui_theme deve só retornar (não levantar)
+        theme.apply_ui_theme("terminal")
+        theme.apply_ui_theme("padrao")
+        theme.apply_ui_theme("valor-invalido")  # cai pra padrao, sem erro

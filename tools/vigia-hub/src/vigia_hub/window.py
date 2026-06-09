@@ -884,13 +884,34 @@ class VigiaHubWindow(Adw.ApplicationWindow):
 
         page.add(backup_group)
 
-        # NOTA v0.6.4: removido grupo "Aparencia" (tema light/dark
-        # customizado). Hub agora sempre segue o tema do GNOME — se
-        # o usuario quer escuro, configura em Configuracoes > Aparencia
-        # do proprio GNOME. Reduz superficie de configuracao e mantem
-        # consistencia visual com o resto do desktop.
+        # Grupo: Aparência — seletor de TEMA (padrão x terminal/hacker). O
+        # claro/escuro segue o GNOME (sem override aqui); o "Terminal" é um
+        # visual à parte (dark forçado + verde-neon + monospace).
+        appear_group = Adw.PreferencesGroup()
+        appear_group.set_title("Aparência")
+        self._theme_row = Adw.ComboRow()
+        self._theme_row.set_title("Tema")
+        self._theme_row.set_subtitle(
+            "Padrão segue o tema do GNOME. Terminal = visual hacker "
+            "(fundo escuro, verde-neon, monospace)."
+        )
+        self._theme_row.set_model(
+            Gtk.StringList.new(["Padrão", "Terminal (hacker)"]))
+        self._theme_row.set_selected(
+            1 if self._settings.ui_theme == "terminal" else 0)
+        self._theme_row.connect("notify::selected", self._on_theme_changed)
+        appear_group.add(self._theme_row)
+        page.add(appear_group)
 
         return page
+
+    def _on_theme_changed(self, combo: Adw.ComboRow, *_args) -> None:
+        """Troca o tema visual ao vivo + persiste."""
+        name = "terminal" if combo.get_selected() == 1 else "padrao"
+        self._settings.ui_theme = name
+        save_settings(self._settings)
+        from .theme import apply_ui_theme
+        apply_ui_theme(name)
 
     def _build_settings_security_tab(self) -> Gtk.Widget:
         """Aba 'Seguranca' — protecao do Hub e tools."""
