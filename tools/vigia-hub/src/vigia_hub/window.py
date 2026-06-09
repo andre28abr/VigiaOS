@@ -282,6 +282,16 @@ class VigiaHubWindow(Adw.ApplicationWindow):
     def _apply_update_notifications(self, notifs) -> bool:
         if getattr(self, "_bell", None) is not None:
             self._bell.set_notifications(notifs)
+        # Notificação de desktop (uma vez, no check de startup) se ligado.
+        if notifs and self._settings.notify_security:
+            from vigia_common import notify
+            n = len(notifs)
+            plural = "atualização" if n == 1 else "atualizações"
+            notify.send(
+                self.get_application(), "vigia-updates",
+                "Atualizações disponíveis",
+                f"{n} {plural} pra instalar. Abra Configurações → Atualizações.",
+                default_action="app.show-settings")
         return False
 
     def _on_section_selected(
@@ -857,6 +867,17 @@ class VigiaHubWindow(Adw.ApplicationWindow):
             "notify::active", self._on_check_updates_toggled)
         init_group.add(self._sw_check_updates)
 
+        # Switch: notificações de desktop pra eventos de segurança
+        self._sw_notify = Adw.SwitchRow()
+        self._sw_notify.set_title("Notificações de segurança")
+        self._sw_notify.set_subtitle(
+            "Avisa na área de notificações do sistema quando há atualização de "
+            "segurança, bloqueio de IP ou varredura que encontrou algo."
+        )
+        self._sw_notify.set_active(self._settings.notify_security)
+        self._sw_notify.connect("notify::active", self._on_notify_toggled)
+        init_group.add(self._sw_notify)
+
         page.add(init_group)
 
         # Grupo: backup e restauracao (Etapa D)
@@ -920,6 +941,10 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         save_settings(self._settings)
         from .theme import apply_ui_theme
         apply_ui_theme(name)
+
+    def _on_notify_toggled(self, switch: Adw.SwitchRow, *_args) -> None:
+        self._settings.notify_security = switch.get_active()
+        save_settings(self._settings)
 
     def _build_settings_security_tab(self) -> Gtk.Widget:
         """Aba 'Seguranca' — protecao do Hub e tools."""

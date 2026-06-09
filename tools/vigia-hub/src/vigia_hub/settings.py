@@ -44,6 +44,9 @@ class Settings:
     # v0.10.0: tema visual — "padrao" (adwaita, segue o GNOME) ou "terminal"
     # (hacker: fundo escuro + verde-neon + monospace). Default = padrao.
     ui_theme: str = "padrao"
+    # v0.10.x: notificações de desktop pra eventos de segurança (atualizações,
+    # bloqueios, varreduras que acharam algo). Default ON.
+    notify_security: bool = True
 
 
 # ============================================================
@@ -81,6 +84,7 @@ def load_settings() -> Settings:
             auto_lock_minutes=auto_lock,
             check_updates=bool(data.get("check_updates", True)),
             ui_theme=ui_theme_raw,
+            notify_security=bool(data.get("notify_security", True)),
         )
     except (OSError, json.JSONDecodeError) as e:
         import logging
