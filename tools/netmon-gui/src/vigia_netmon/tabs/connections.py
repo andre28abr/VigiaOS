@@ -1,9 +1,12 @@
-"""Tab Connections: lista TCP/UDP ativas com auto-refresh."""
+"""Tab Conexões: "quem está usando a minha internet" — agrupado por app, com
+nomes (DNS reverso), estados em PT-BR e conexões locais escondidas por padrão.
+
+É também a BASE da aba Escutando (que sobrescreve os hooks de render/summary).
+"""
 
 from __future__ import annotations
 
 import threading
-from typing import Callable
 
 import gi
 
@@ -12,24 +15,26 @@ gi.require_version("Adw", "1")
 
 from gi.repository import Adw, GLib, Gtk  # noqa: E402
 
-from .. import backend
+from .. import backend, humanize
 from ._helpers import make_clamp
 
-
-# Cores para estados (paleta zinc + emerald + amber)
-STATE_COLORS_CSS = {
-    "ESTAB": "success",      # verde — conexao ativa
-    "LISTEN": "accent",      # accent — servidor escutando
+# Estado → classe de cor do selo
+STATE_CSS = {
+    "ESTAB": "success",
+    "LISTEN": "accent",
     "TIME-WAIT": "dim-label",
     "CLOSE-WAIT": "warning",
-    "UNCONN": "dim-label",   # UDP "conexao" basica
+    "UNCONN": "dim-label",
     "SYN-SENT": "warning",
     "SYN-RECV": "warning",
 }
 
 
 class ConnectionsTab(Gtk.Box):
-    """Lista todas as conexoes (TCP+UDP, qualquer estado)."""
+    """Conexões com a internet, agrupadas por aplicativo."""
+
+    # Subclasses ajustam estes:
+    _show_hide_local = True   # mostra o toggle "conexões internas"
 
     def __init__(self) -> None:
         super().__init__(orientation=Gtk.Orientation.VERTICAL)
@@ -40,19 +45,31 @@ class ConnectionsTab(Gtk.Box):
         )
         self.append(make_clamp(inner))
 
-        # ============= Toolbar ============= #
+        # ---- toolbar ----
         toolbar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-
-        # Search
         self._search = Gtk.SearchEntry()
         self._search.set_placeholder_text(
-            "Filtrar por processo, IP, porta (ex: firefox, 443, 192.168)"
-        )
+            "Filtrar por app, site ou porta (ex: firefox, google, 443)")
         self._search.set_hexpand(True)
-        self._search.connect("search-changed", lambda _e: self._list.invalidate_filter())
+        self._search.connect("search-changed",
+                             lambda _e: self._list.invalidate_filter())
         toolbar.append(self._search)
 
-        # Auto-refresh toggle
+        if self._show_hide_local:
+            local_lbl = Gtk.Label(label="Internas:")
+            local_lbl.set_valign(Gtk.Align.CENTER)
+            local_lbl.set_tooltip_text(
+                "Mostrar também conexões locais (127.0.0.1) — geralmente ruído.")
+            toolbar.append(local_lbl)
+            self._hide_local_switch = Gtk.Switch()
+            self._hide_local_switch.set_valign(Gtk.Align.CENTER)
+            self._hide_local_switch.set_active(False)  # off = esconde internas
+            self._hide_local_switch.connect(
+                "state-set", lambda _s, _v: (self._refresh(), False)[1])
+            toolbar.append(self._hide_local_switch)
+        else:
+            self._hide_local_switch = None
+
         auto_lbl = Gtk.Label(label="Auto:")
         auto_lbl.set_valign(Gtk.Align.CENTER)
         toolbar.append(auto_lbl)
@@ -62,28 +79,20 @@ class ConnectionsTab(Gtk.Box):
         self._auto_switch.connect("state-set", self._on_auto_toggle)
         toolbar.append(self._auto_switch)
 
-        # Refresh now button
         self._refresh_btn = Gtk.Button(label="Atualizar")
         self._refresh_btn.connect("clicked", lambda _b: self._refresh())
         toolbar.append(self._refresh_btn)
-
         inner.append(toolbar)
 
-        # ============= Modo admin (card explicativo) ============= #
+        # ---- modo admin ----
         elevated_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
         elevated_box.add_css_class("card")
         elevated_box.set_margin_top(4)
         elevated_box.set_margin_bottom(4)
-        # Padding interno
-        elevated_box.set_margin_start(0)
-        elevated_box.set_margin_end(0)
-
         info_lbl = Gtk.Label()
         info_lbl.set_markup(
-            "<b>Modo admin</b> — exibe nome de processos do sistema (root, "
-            "systemd-resolve, etc.). Pede senha admin a cada Atualizar. "
-            "Auto-refresh fica desabilitado neste modo."
-        )
+            "<b>Modo admin</b> — mostra o nome dos apps do sistema (root, "
+            "systemd, etc.). Pede senha a cada Atualizar; desliga o auto.")
         info_lbl.set_wrap(True)
         info_lbl.set_xalign(0)
         info_lbl.set_hexpand(True)
@@ -91,26 +100,22 @@ class ConnectionsTab(Gtk.Box):
         info_lbl.set_margin_top(12)
         info_lbl.set_margin_bottom(12)
         elevated_box.append(info_lbl)
-
         self._elevated_switch = Gtk.Switch()
         self._elevated_switch.set_valign(Gtk.Align.CENTER)
         self._elevated_switch.set_margin_end(12)
         self._elevated_switch.set_active(False)
         self._elevated_switch.connect("state-set", self._on_elevated_toggle)
         elevated_box.append(self._elevated_switch)
-
         inner.append(elevated_box)
-
-        # Estado inicial do modo
         self._elevated_mode = False
 
-        # Count label
-        self._count_label = Gtk.Label()
-        self._count_label.set_xalign(0)
-        self._count_label.add_css_class("dim-label")
-        inner.append(self._count_label)
+        # ---- resumo ----
+        self._summary_label = Gtk.Label()
+        self._summary_label.set_xalign(0)
+        self._summary_label.add_css_class("dim-label")
+        inner.append(self._summary_label)
 
-        # Lista
+        # ---- lista ----
         scrolled = Gtk.ScrolledWindow()
         scrolled.set_vexpand(True)
         self._list = Gtk.ListBox()
@@ -120,42 +125,80 @@ class ConnectionsTab(Gtk.Box):
         scrolled.set_child(self._list)
         inner.append(scrolled)
 
-        self._row_search_text: dict[Adw.ActionRow, str] = {}
+        self._row_search_text: dict[Gtk.Widget, str] = {}
+        self._resolve_rows: list[tuple[Adw.ActionRow, str, str]] = []
         self._refresh_source_id: int | None = None
         self._refresh_interval_s = 3
-        self._initial_load_done = False
-        self._fetch_running = False  # evita acumular refreshes concorrentes
+        self._fetch_running = False
 
-        # Empty placeholder ate o primeiro fetch terminar
-        loading_row = Adw.ActionRow()
-        loading_row.set_title("Carregando…")
-        loading_row.set_subtitle("Coletando conexões via `ss -tunap`")
-        loading_row.add_css_class("dim-label")
-        self._list.append(loading_row)
-        self._count_label.set_text("Carregando…")
+        loading = Adw.ActionRow()
+        loading.set_title("Carregando…")
+        loading.set_subtitle("Coletando conexões via `ss`")
+        loading.add_css_class("dim-label")
+        self._list.append(loading)
+        self._summary_label.set_text("Carregando…")
 
-        # Auto-refresh so liga quando o widget esta mapped (visivel).
-        # Pausa quando o usuario sai pra outra tool no Hub.
         self.connect("map", self._on_widget_map)
         self.connect("unmap", self._on_widget_unmap)
-
-        # Dispara primeiro fetch em thread — nao bloqueia UI
         self._refresh()
 
-    # ========================================================================
-    # Subclass hook — Listening tab override para usar backend.list_listening()
-    # ========================================================================
+    # ============================================================
+    # Hooks (subclasses sobrescrevem)
+    # ============================================================
 
     def _fetch(self) -> list[backend.NetConnection]:
         return backend.list_connections(elevated=self._elevated_mode)
 
-    # ========================================================================
-    # Refresh logic (async — subprocess vai pra worker thread)
-    # ========================================================================
+    def _summary_text(self, conns: list[backend.NetConnection]) -> str:
+        apps = {c.process for c in conns if c.process != "?"}
+        n_app = len(apps)
+        return (f"{n_app} app{'s' if n_app != 1 else ''} na internet · "
+                f"{len(conns)} conexõ{'es' if len(conns) != 1 else 'es'}")
+
+    def _render_into(self, conns: list[backend.NetConnection]) -> None:
+        """View padrão: agrupada por app, com DNS reverso async."""
+        groups: dict[str, list[backend.NetConnection]] = {}
+        for c in conns:
+            key = c.process if c.process != "?" else "(apps do sistema)"
+            groups.setdefault(key, []).append(c)
+
+        for proc in sorted(groups, key=lambda p: (p.startswith("("), p.lower())):
+            items = groups[proc]
+            exp = Adw.ExpanderRow()
+            exp.set_title(proc)
+            n = len(items)
+            exp.set_subtitle(f"{n} conexã{'o' if n == 1 else 'es'}")
+            exp.add_prefix(Gtk.Image.new_from_icon_name(
+                "network-transmit-receive-symbolic"))
+            exp.set_expanded(n <= 4)
+
+            hay = [proc]
+            for c in items:
+                host, port = humanize.split_host_port(c.peer_addr)
+                base_sub = f"{humanize.state_label(c.state)} · porta {port}"
+                sub = Adw.ActionRow()
+                sub.set_title(host or c.peer_addr)
+                sub.set_subtitle(base_sub)
+                badge = Gtk.Label(label=humanize.state_label(c.state))
+                badge.add_css_class(STATE_CSS.get(c.state, "dim-label"))
+                badge.add_css_class("caption")
+                badge.set_valign(Gtk.Align.CENTER)
+                sub.add_suffix(badge)
+                exp.add_row(sub)
+                hay.append(f"{host} {port} {humanize.state_label(c.state)}")
+                if humanize.is_internet_peer(c.peer_addr):
+                    self._resolve_rows.append((sub, host, base_sub))
+
+            self._list.append(exp)
+            self._row_search_text[exp] = " ".join(hay).lower()
+
+        self._kick_resolve()
+
+    # ============================================================
+    # Refresh (async)
+    # ============================================================
 
     def _refresh(self) -> None:
-        """Dispara fetch em thread. Idempotente: se ja ha fetch em andamento,
-        no-op (evita acumular pkexec dialogs sob spam de clique)."""
         if self._fetch_running:
             return
         self._fetch_running = True
@@ -169,78 +212,69 @@ class ConnectionsTab(Gtk.Box):
         GLib.idle_add(self._apply_conns, conns)
 
     def _apply_conns(self, conns: list[backend.NetConnection]) -> bool:
-        """Atualiza widgets com lista coletada. Roda no UI thread."""
         try:
-            query = self._search.get_text()
+            if (self._hide_local_switch is not None
+                    and not self._hide_local_switch.get_active()):
+                conns = [c for c in conns
+                         if humanize.is_internet_peer(c.peer_addr)]
 
-            # Limpa lista
             while child := self._list.get_first_child():
                 self._list.remove(child)
             self._row_search_text.clear()
+            self._resolve_rows = []
 
-            # Ordena: ESTABLISHED primeiro, depois LISTEN, depois resto
-            order_key: Callable[[backend.NetConnection], tuple] = lambda c: (
-                0 if c.state == "ESTAB" else (1 if c.state == "LISTEN" else 2),
-                c.process,
-                c.local_addr,
-            )
-            conns = sorted(conns, key=order_key)
+            self._summary_label.set_text(self._summary_text(conns))
 
             if not conns:
                 empty = Adw.ActionRow()
-                empty.set_title("Sem conexões")
-                empty.set_subtitle("`ss -tunap` não retornou nada (raro) ou não está disponível.")
+                empty.set_title("Nenhuma conexão")
+                empty.set_subtitle(
+                    "Nada com a internet agora. (Ligue 'Internas' pra ver as "
+                    "locais, ou o Modo admin pros apps do sistema.)")
+                empty.add_css_class("dim-label")
                 self._list.append(empty)
-                self._count_label.set_text("0 conexões")
                 return False
 
-            for c in conns:
-                row = self._build_row(c)
-                self._list.append(row)
-                self._row_search_text[row] = (
-                    f"{c.process} {c.pid} {c.local_addr} {c.peer_addr} "
-                    f"{c.proto} {c.state}"
-                ).lower()
-
-            self._count_label.set_text(f"{len(conns)} conexões")
-            if query:
+            self._render_into(conns)
+            if self._search.get_text():
                 self._list.invalidate_filter()
         finally:
             self._fetch_running = False
-            self._initial_load_done = True
         return False
 
-    def _build_row(self, c: backend.NetConnection) -> Adw.ActionRow:
-        row = Adw.ActionRow()
-        process_label = f"{c.process}" if c.process != "?" else "(processo restrito)"
-        if c.pid != "?":
-            process_label += f" [{c.pid}]"
-        title = f"{c.proto.upper()} {c.local_addr} → {c.peer_addr}"
-        row.set_title(title)
-        row.set_subtitle(process_label)
+    # ============================================================
+    # DNS reverso (async, em cima da lista já mostrada)
+    # ============================================================
 
-        # State badge (suffix)
-        state_label = Gtk.Label(label=c.state)
-        state_label.set_valign(Gtk.Align.CENTER)
-        css = STATE_COLORS_CSS.get(c.state, "dim-label")
-        state_label.add_css_class(css)
-        state_label.add_css_class("caption")
-        row.add_suffix(state_label)
+    def _kick_resolve(self) -> None:
+        ips = list({ip for _row, ip, _sub in self._resolve_rows if ip})
+        if not ips:
+            return
+        threading.Thread(target=self._resolve_worker, args=(ips,),
+                         daemon=True).start()
 
-        return row
+    def _resolve_worker(self, ips: list[str]) -> None:
+        names = {ip: humanize.resolve_host(ip) for ip in ips}
+        GLib.idle_add(self._apply_names, names)
+
+    def _apply_names(self, names: dict) -> bool:
+        for row, ip, base_sub in self._resolve_rows:
+            name = names.get(ip)
+            if name:
+                row.set_title(name)
+                row.set_subtitle(f"{ip} · {base_sub}")
+        return False
+
+    # ============================================================
+    # Filtro / auto-refresh / visibilidade / admin (machinery)
+    # ============================================================
 
     def _filter(self, row: Gtk.ListBoxRow) -> bool:
         query = self._search.get_text().lower().strip()
         if not query:
             return True
-        haystack = self._row_search_text.get(row)
-        if haystack is None:
-            return True
-        return query in haystack
-
-    # ========================================================================
-    # Auto-refresh control
-    # ========================================================================
+        hay = self._row_search_text.get(row)
+        return hay is None or query in hay
 
     def _on_auto_toggle(self, switch: Gtk.Switch, value: bool) -> bool:
         if value:
@@ -251,13 +285,9 @@ class ConnectionsTab(Gtk.Box):
         return True
 
     def _start_auto_refresh(self) -> None:
-        # So liga se o widget esta visivel. Quando o user troca de tool no
-        # Hub, _on_widget_unmap chama _stop_auto_refresh; quando volta,
-        # _on_widget_map chama _start_auto_refresh.
         if self._refresh_source_id is None and self.get_mapped():
             self._refresh_source_id = GLib.timeout_add_seconds(
-                self._refresh_interval_s, self._on_auto_tick
-            )
+                self._refresh_interval_s, self._on_auto_tick)
 
     def _stop_auto_refresh(self) -> None:
         if self._refresh_source_id is not None:
@@ -266,33 +296,18 @@ class ConnectionsTab(Gtk.Box):
 
     def _on_auto_tick(self) -> bool:
         self._refresh()
-        return True  # GLib.SOURCE_CONTINUE
-
-    # ========================================================================
-    # Visibility tracking (Hub embedded mode)
-    # ========================================================================
+        return True
 
     def _on_widget_map(self, _widget) -> None:
-        """Widget acabou de ficar visivel (tool selecionada no Hub)."""
         if self._auto_switch.get_active() and not self._elevated_mode:
             self._start_auto_refresh()
 
     def _on_widget_unmap(self, _widget) -> None:
-        """Widget ficou invisivel (user trocou de tool). Para o auto-refresh
-        pra nao gastar CPU/subprocess em background."""
         self._stop_auto_refresh()
 
     def _on_elevated_toggle(self, switch: Gtk.Switch, value: bool) -> bool:
-        """Toggle modo admin (pkexec).
-
-        Importante: NAO forca refresh imediato. Se um misclick liga/desliga
-        o switch varias vezes, sem o force-refresh nao acumula dialogs de
-        polkit. O usuario clica 'Atualizar' quando quiser ver o resultado
-        com privilegios elevados.
-        """
         self._elevated_mode = value
         if value:
-            # Desliga auto-refresh para nao spammar polkit em background
             if self._auto_switch.get_active():
                 self._auto_switch.set_active(False)
             self._auto_switch.set_sensitive(False)
