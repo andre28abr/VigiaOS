@@ -878,6 +878,18 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         self._sw_notify.connect("notify::active", self._on_notify_toggled)
         init_group.add(self._sw_notify)
 
+        # Switch: varredura de vírus semanal automática (systemd user timer)
+        self._sw_scan = Adw.SwitchRow()
+        self._sw_scan.set_title("Varredura de vírus semanal")
+        self._sw_scan.set_subtitle(
+            "Roda o antivírus (ClamAV) nas suas pastas (Downloads, Documentos…) "
+            "uma vez por semana, em segundo plano, e avisa se encontrar algo. "
+            "Requer o ClamAV instalado."
+        )
+        self._sw_scan.set_active(self._settings.scheduled_scan)
+        self._sw_scan.connect("notify::active", self._on_scan_toggled)
+        init_group.add(self._sw_scan)
+
         page.add(init_group)
 
         # Grupo: backup e restauracao (Etapa D)
@@ -945,6 +957,23 @@ class VigiaHubWindow(Adw.ApplicationWindow):
     def _on_notify_toggled(self, switch: Adw.SwitchRow, *_args) -> None:
         self._settings.notify_security = switch.get_active()
         save_settings(self._settings)
+
+    def _on_scan_toggled(self, switch: Adw.SwitchRow, *_args) -> None:
+        active = switch.get_active()
+        self._settings.scheduled_scan = active
+        save_settings(self._settings)
+        from vigia_common import scheduler
+        if active:
+            ok = scheduler.install_timer(
+                "vigia-scan", "VigiaOS — varredura de vírus semanal",
+                "%h/.local/bin/vigia-scan", "weekly")
+            if not ok:
+                self._show_settings_error(
+                    "Não consegui agendar",
+                    "Falha ao criar o timer do systemd (usuário). A varredura "
+                    "manual no Antivírus continua funcionando.")
+        else:
+            scheduler.remove_timer("vigia-scan")
 
     def _build_settings_security_tab(self) -> Gtk.Widget:
         """Aba 'Seguranca' — protecao do Hub e tools."""

@@ -33,6 +33,7 @@ vigia-hub = "vigia_hub.__main__:main"
 vigia-os-tray = "vigia_hub.tray.indicator:main"
 vigia-hub-tray = "vigia_hub.tray.indicator:main"
 vigia = "vigia_hub.cli:main"
+vigia-scan = "vigia_hub.scan:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
