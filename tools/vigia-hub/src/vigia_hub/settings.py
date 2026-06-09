@@ -47,6 +47,9 @@ class Settings:
     # v0.10.x: notificações de desktop pra eventos de segurança (atualizações,
     # bloqueios, varreduras que acharam algo). Default ON.
     notify_security: bool = True
+    # v0.10.x: varredura de vírus semanal automática (systemd user timer).
+    # Default OFF (é pesado; opt-in).
+    scheduled_scan: bool = False
 
 
 # ============================================================
@@ -85,6 +88,7 @@ def load_settings() -> Settings:
             check_updates=bool(data.get("check_updates", True)),
             ui_theme=ui_theme_raw,
             notify_security=bool(data.get("notify_security", True)),
+            scheduled_scan=bool(data.get("scheduled_scan", False)),
         )
     except (OSError, json.JSONDecodeError) as e:
         import logging
