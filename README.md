@@ -13,7 +13,7 @@
 ![Python](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white)
 ![GTK4](https://img.shields.io/badge/GTK4-libadwaita-4A86CF?logo=gnome&logoColor=white)
 ![Rust](https://img.shields.io/badge/Rust-Activity%20Log%20core-dea584?logo=rust&logoColor=black)
-![Tests](https://img.shields.io/badge/tests-1132%20passing-success)
+![Tests](https://img.shields.io/badge/tests-1146%20passing-success)
 ![License](https://img.shields.io/badge/license-Apache--2.0-orange)
 ![Fedora](https://img.shields.io/badge/Fedora-Workstation-51A2DA?logo=fedora&logoColor=white)
 ![LGPD](https://img.shields.io/badge/LGPD-by%20design-10b981)
@@ -108,7 +108,7 @@ sozinha**, sem depender do app (veja *Instalar só um módulo*).
 
 ---
 
-## O que está incluído (as ferramentas do Hub, focadas em LGPD/escritório)
+## O que está incluído (14 ferramentas do Hub, focadas em LGPD/escritório)
 
 | # | Componente | Stack | Status |
 |---|---|---|---|

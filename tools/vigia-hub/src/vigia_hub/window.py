@@ -38,7 +38,7 @@ from vigia_common.helpers import show_error, show_info
 from vigia_common.notifications_bell import NotificationsBell
 from vigia_common.shell import widen_clamps
 
-from .markdown import md_to_pango
+from .markdown import md_to_pango, md_to_pango_block
 from .registry import (
     CATEGORIES_ORDER,
     CATEGORY_LABELS,
@@ -715,15 +715,16 @@ class VigiaHubWindow(Adw.ApplicationWindow):
                 container.set_visible_child(view)
                 return
 
-        # Fallback: TextView reusado
+        # Fallback (sem WebKit): Label com Pango markup, reusado por aba
         scrolled = self._manual_fallbacks.get(kind)
         if scrolled is None:
-            scrolled, buf = self._create_text_fallback()
+            scrolled, label = self._create_text_fallback()
             self._manual_fallbacks[kind] = scrolled
-            scrolled._buffer = buf  # type: ignore[attr-defined]
+            scrolled._label = label  # type: ignore[attr-defined]
             container.add_named(scrolled, f"{kind}::fallback")
 
-        scrolled._buffer.set_text(markdown_text)  # type: ignore[attr-defined]
+        self._set_fallback_markup(
+            scrolled._label, markdown_text)  # type: ignore[attr-defined]
         container.set_visible_child(scrolled)
 
     def _on_system_theme_changed(self, *_args) -> None:
@@ -774,25 +775,42 @@ class VigiaHubWindow(Adw.ApplicationWindow):
 
     @staticmethod
     def _create_text_fallback():
-        """Cria TextView dentro de ScrolledWindow. Retorna (scrolled, buffer)."""
-        buf = Gtk.TextBuffer()
-        text_view = Gtk.TextView(buffer=buf)
-        text_view.set_editable(False)
-        text_view.set_wrap_mode(Gtk.WrapMode.WORD_CHAR)
-        text_view.set_left_margin(24)
-        text_view.set_right_margin(24)
-        text_view.set_top_margin(24)
-        text_view.set_bottom_margin(24)
-        text_view.set_monospace(True)
+        """Render do manual SEM WebKit: Gtk.Label com Pango markup, dentro de
+        um Adw.Clamp (largura de leitura) + ScrolledWindow. Retorna
+        (scrolled, label). Bem mais legivel que o TextView-cru anterior."""
+        label = Gtk.Label()
+        label.set_use_markup(True)
+        label.set_wrap(True)
+        label.set_xalign(0.0)
+        label.set_yalign(0.0)
+        label.set_selectable(True)
+        label.set_margin_top(24)
+        label.set_margin_bottom(24)
+        label.set_margin_start(4)
+        label.set_margin_end(4)
+
+        clamp = Adw.Clamp()
+        clamp.set_maximum_size(860)
+        clamp.set_tightening_threshold(720)
+        clamp.set_margin_start(12)
+        clamp.set_margin_end(12)
+        clamp.set_child(label)
 
         scrolled = Gtk.ScrolledWindow()
-        scrolled.set_policy(
-            Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC
-        )
-        scrolled.set_child(text_view)
+        scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        scrolled.set_child(clamp)
         scrolled.set_vexpand(True)
         scrolled.set_hexpand(True)
-        return scrolled, buf
+        return scrolled, label
+
+    @staticmethod
+    def _set_fallback_markup(label, markdown_text: str) -> None:
+        """Converte o markdown pra Pango e seta no label. Se o markup sair
+        invalido por algum motivo, cai pra texto simples (nunca quebra)."""
+        try:
+            label.set_markup(md_to_pango_block(markdown_text))
+        except Exception:  # pylint: disable=broad-except
+            label.set_text(markdown_text)
 
     def _wrap_with_header(
         self,

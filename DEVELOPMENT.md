@@ -3129,6 +3129,27 @@ Sem mudança de código além do registro do manual. Suíte: **1132 verdes**.
 
 ---
 
+### 2026-06-09 — Ajuda: manuais legíveis SEM WebKit (fallback Pango)
+
+Sintoma (print do user): os manuais apareciam como **markdown cru** (`##`,
+`**`, `-` literais) num TextView monospace. Causa: o render rico usa
+**WebKit 6.0 + python-markdown**, que NÃO está instalado na VM (e nem é dep —
+contraria "mínima superfície"). Sem WebKit, o fallback só fazia
+`set_text(markdown_cru)`.
+
+Correção (sem dep nova): `vigia_common.markdown.md_to_pango_block(md)` —
+conversor PURO de um documento Markdown inteiro → Pango markup: títulos
+(#/##/###), listas (-, *, +, 1.), citações (>), régua (---), blocos ```` ``` ````,
+tabelas (| → linhas) e inline (**/*/`` ` ``/links). Junta linhas *soft-wrapped*
+no mesmo parágrafo/item e sempre devolve markup VÁLIDO (XML escapado, tags
+balanceadas). O fallback da Ajuda trocou o TextView-cru por um `Gtk.Label`
+(`use_markup`) dentro de um `Adw.Clamp` — agora legível **mesmo sem WebKit**
+(com WebKit, segue o render HTML rico). 14 testes novos.
+
+vigia-common **v0.2.22**, vigia-hub **v0.11.2**. Suíte: **1146 verdes**.
+
+---
+
 ## 10. Roadmap
 
 ### 10.1 Próximas iterações por ferramenta
