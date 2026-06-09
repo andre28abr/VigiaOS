@@ -19,7 +19,7 @@ from gi.repository import Adw, Gio, GLib, Gtk  # noqa: E402
 from vigia_common import posture
 
 _STATUS_ICON = {
-    posture.OK: "emblem-ok-symbolic",
+    posture.OK: "object-select-symbolic",
     posture.WARN: "dialog-warning-symbolic",
     posture.BAD: "dialog-error-symbolic",
     posture.UNKNOWN: "dialog-question-symbolic",
@@ -31,7 +31,7 @@ _STATUS_CSS = {
     posture.UNKNOWN: "dim-label",
 }
 _OVERALL = {
-    posture.OK: ("emblem-ok-symbolic", "Tudo certo!",
+    posture.OK: ("object-select-symbolic", "Tudo certo!",
                  "Seu PC está com as proteções básicas em dia."),
     posture.WARN: ("dialog-warning-symbolic", "Alguns pontos de atenção",
                    "Nada grave, mas vale resolver os itens abaixo."),
