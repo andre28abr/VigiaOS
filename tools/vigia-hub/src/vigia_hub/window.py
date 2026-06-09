@@ -1649,6 +1649,9 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         split.set_sidebar_width_fraction(0.28)
         split.set_min_sidebar_width(280)
         split.set_max_sidebar_width(360)
+
+        # Preenche os status curtos dos cards em segundo plano (não bloqueia).
+        self._load_section_statuses(section_key)
         return split
 
     def _build_sidebar(
@@ -1712,6 +1715,16 @@ class VigiaHubWindow(Adw.ApplicationWindow):
 
         row.add_prefix(self._tool_icon_image(tool, 36))
 
+        # Status curto no card (ex: "ligado", "base em dia") — preenchido async
+        # via _load_section_statuses. Só pra tools que expõem status_fn.
+        if getattr(tool, "status_fn", None) is not None:
+            status_lbl = Gtk.Label(label="")
+            status_lbl.add_css_class("caption")
+            status_lbl.add_css_class("dim-label")
+            status_lbl.set_valign(Gtk.Align.CENTER)
+            row.add_suffix(status_lbl)
+            row._status_lbl = status_lbl  # type: ignore[attr-defined]
+
         available = tool.is_available()
         dot = Gtk.Label(label="●")
         dot.add_css_class("success" if available else "error")
@@ -1722,6 +1735,42 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         row._tool_id = tool.id  # type: ignore[attr-defined]
         row._section_key = section_key  # type: ignore[attr-defined]
         return row
+
+    def _load_section_statuses(self, section_key: str) -> None:
+        """Preenche, em thread, o status curto dos cards (firewall/antivírus/
+        privacidade). Não bloqueia a UI; cada resultado entra via idle_add."""
+        entries = self._section_entries.get(section_key, [])
+        fns = {t.id: t.status_fn for t in entries
+               if getattr(t, "status_fn", None) is not None}
+        if not fns:
+            return
+
+        def worker() -> None:
+            results: dict[str, str] = {}
+            for tid, fn in fns.items():
+                try:
+                    results[tid] = fn() or ""
+                except Exception:  # pylint: disable=broad-except
+                    results[tid] = ""
+            GLib.idle_add(self._apply_statuses, section_key, results)
+
+        threading.Thread(target=worker, daemon=True).start()
+
+    def _apply_statuses(self, section_key: str, results: dict) -> bool:
+        sidebar = self._section_sidebar_lists.get(section_key)
+        if sidebar is None:
+            return False
+        idx = 0
+        while True:
+            row = sidebar.get_row_at_index(idx)
+            if row is None:
+                break
+            tid = getattr(row, "_tool_id", None)
+            lbl = getattr(row, "_status_lbl", None)
+            if tid in results and lbl is not None:
+                lbl.set_label(results[tid])
+            idx += 1
+        return False
 
     def _on_sidebar_selected(
         self, _listbox: Gtk.ListBox, row: Gtk.ListBoxRow | None

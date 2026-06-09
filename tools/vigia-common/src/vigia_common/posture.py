@@ -184,6 +184,34 @@ def gather_updates() -> int | None:
     return None
 
 
+# ============================================================
+# Status curtos (1-2 palavras) — pro card de cada ferramenta no Hub
+# ============================================================
+
+
+def status_firewall() -> str:
+    a = gather_firewall()
+    if a is None:
+        return ""
+    return "ligado" if a else "desligado"
+
+
+def status_antivirus() -> str:
+    inst, age = gather_antivirus()
+    if not inst:
+        return "não instalado"
+    if age is None:
+        return "sem base"
+    return "base em dia" if age <= 7 else f"base de {int(age)}d"
+
+
+def status_privacy() -> str:
+    h, t = gather_privacy()
+    if t <= 0:
+        return ""
+    return "ok" if h >= t else f"{t - h} a ajustar"
+
+
 def run_all() -> list[Check]:
     """Checagens rápidas: atualizações, firewall, antivírus, privacidade."""
     inst, age = gather_antivirus()

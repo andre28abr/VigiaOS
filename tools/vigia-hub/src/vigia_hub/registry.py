@@ -19,6 +19,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable
 
+from vigia_common import posture
+
 
 _REPO_ROOT = Path(__file__).resolve().parents[4]
 _TOOLS_DIR = _REPO_ROOT / "tools"
@@ -70,6 +72,9 @@ class ToolEntry:
     # Ícone do tema (symbolic) — usado por built-ins sem SVG próprio. Quando
     # preenchido, tem prioridade sobre icon_path (ver _tool_icon_image).
     theme_icon_name: str = ""
+    # Função opcional → status curto (1-2 palavras) mostrado no card do Hub
+    # (ex: "ligado", "base em dia"). None = sem status extra. Chamada em thread.
+    status_fn: Callable[[], str] | None = None
 
     def is_available(self) -> bool:
         try:
@@ -228,6 +233,7 @@ TOOLS: list[ToolEntry] = [
         available_fn=lambda: shutil.which("vigia-privacy") is not None,
         embedded_module="vigia_privacy.window",
         category="privacidade",
+        status_fn=posture.status_privacy,
         wrapped_packages=["dconf", "systemctl"],
     ),
     # VPN Manager removida na limpeza 2026-05-27: NetworkManager nativo
@@ -327,6 +333,7 @@ TOOLS: list[ToolEntry] = [
         available_fn=lambda: shutil.which("vigia-firewall") is not None,
         embedded_module="vigia_firewall.window",
         category="defesa",
+        status_fn=posture.status_firewall,
         wrapped_packages=["firewall-cmd"],
     ),
     ToolEntry(
@@ -564,6 +571,7 @@ TOOLS: list[ToolEntry] = [
         available_fn=lambda: shutil.which("vigia-antivirus") is not None,
         embedded_module="vigia_antivirus.window",
         category="defesa",
+        status_fn=posture.status_antivirus,
         wrapped_packages=["clamav", "clamav-update"],
     ),
     # Network Scanner (nmap GUI) removida na limpeza 2026-05-27: fora do
