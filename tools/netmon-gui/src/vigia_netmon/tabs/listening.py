@@ -26,6 +26,10 @@ class ListeningTab(ConnectionsTab):
     def _fetch(self) -> list[backend.NetConnection]:
         return backend.list_listening(elevated=self._elevated_mode)
 
+    def _prefilter(self, conns: list[backend.NetConnection]
+                   ) -> list[backend.NetConnection]:
+        return conns  # aqui o conteúdo SÃO os sockets escutando
+
     def _summary_text(self, conns: list[backend.NetConnection]) -> str:
         n = len(conns)
         return (f"{n} porta{'s' if n != 1 else ''} escutando "
