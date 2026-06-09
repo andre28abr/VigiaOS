@@ -56,6 +56,7 @@ from .manuals import (
     MANUAL_ENTRIES,
     build_html,
     load_manual,
+    markdown_lib_available,
     webkit_available,
 )
 from .theme import is_dark_mode as _theme_is_dark
@@ -698,8 +699,9 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         self._manual_current[kind] = tool_id
         markdown_text = load_manual(tool_id, kind)  # type: ignore[arg-type]
 
-        # Tenta WebKit primeiro (reusa instancia por aba)
-        if webkit_available():
+        # Tenta WebKit, mas SO' se houver python-markdown — senao o build_html
+        # cai num <pre> com markdown CRU (pior que o fallback Pango formatado).
+        if webkit_available() and markdown_lib_available():
             view = self._manual_webviews.get(kind)
             if view is None:
                 view = self._create_webview()
