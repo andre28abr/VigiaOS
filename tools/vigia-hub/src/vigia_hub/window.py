@@ -150,6 +150,14 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         outer.append(self._main_stack)
         self.set_content(outer)
 
+        # Atalho global Ctrl+K → busca rápida (seções, ferramentas, ajustes)
+        sc = Gtk.ShortcutController()
+        sc.set_scope(Gtk.ShortcutScope.GLOBAL)
+        sc.add_shortcut(Gtk.Shortcut.new(
+            Gtk.ShortcutTrigger.parse_string("<Control>k"),
+            Gtk.CallbackAction.new(self._on_search_shortcut)))
+        self.add_controller(sc)
+
         # Abre na seção pedida (--section) ou em Início (landing padrão)
         section_ids = {s[0] for s in SECTIONS}
         if start_section in section_ids:
@@ -1562,6 +1570,106 @@ class VigiaHubWindow(Adw.ApplicationWindow):
                 sidebar.select_row(row)
                 return
             idx += 1
+
+    # ========================================================================
+    # Busca rápida (Ctrl+K)
+    # ========================================================================
+
+    def _on_search_shortcut(self, *_args) -> bool:
+        self._open_search()
+        return True
+
+    def _search_index(self) -> list:
+        """(label, sublabel, kind, target) de tudo navegável no VigiaOS."""
+        items = [(label, "Seção", "section", sid)
+                 for sid, label, _icon in SECTIONS]
+        items.append(("Configurações", "Ajustes", "config", "config"))
+        for t in TOOLS:
+            if t.id == _DASHBOARD_ID:
+                continue  # Dashboard é a seção Início
+            items.append((t.name, "Ferramenta (Hub)", "tool", t.id))
+        return items
+
+    def _search_navigate(self, kind: str, target: str) -> None:
+        if kind == "section":
+            self._select_section(target)
+        elif kind == "config":
+            self.show_settings_view()
+        elif kind == "tool":
+            self.show_tool(target)
+
+    def _open_search(self) -> None:
+        dialog = Adw.Dialog()
+        dialog.set_title("Buscar")
+        dialog.set_content_width(480)
+        dialog.set_content_height(440)
+
+        entry = Gtk.SearchEntry()
+        entry.set_placeholder_text("Buscar ferramenta, seção ou ajuste…")
+
+        listbox = Gtk.ListBox()
+        listbox.set_selection_mode(Gtk.SelectionMode.SINGLE)
+        listbox.add_css_class("boxed-list")
+
+        index = self._search_index()
+
+        def rebuild() -> None:
+            q = entry.get_text().strip().lower()
+            child = listbox.get_first_child()
+            while child is not None:
+                listbox.remove(child)
+                child = listbox.get_first_child()
+            for label, sub, kind, target in index:
+                if q and q not in label.lower():
+                    continue
+                row = Adw.ActionRow()
+                row.set_title(label)
+                row.set_subtitle(sub)
+                row._nav = (kind, target)  # type: ignore[attr-defined]
+                listbox.append(row)
+            first = listbox.get_row_at_index(0)
+            if first is not None:
+                listbox.select_row(first)
+
+        def navigate(row) -> None:
+            if row is None:
+                return
+            nav = getattr(row, "_nav", None)
+            dialog.close()
+            if nav is not None:
+                self._search_navigate(*nav)
+
+        def on_enter(_e) -> None:
+            navigate(listbox.get_selected_row()
+                     or listbox.get_row_at_index(0))
+
+        entry.connect("search-changed", lambda _e: rebuild())
+        entry.connect("activate", on_enter)
+        listbox.connect("row-activated", lambda _lb, row: navigate(row))
+
+        rebuild()
+
+        scrolled = Gtk.ScrolledWindow()
+        scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        scrolled.set_vexpand(True)
+        scrolled.set_child(listbox)
+
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        box.set_margin_top(12)
+        box.set_margin_bottom(12)
+        box.set_margin_start(12)
+        box.set_margin_end(12)
+        box.append(entry)
+        box.append(scrolled)
+
+        tv = Adw.ToolbarView()
+        header = Adw.HeaderBar()
+        header.set_title_widget(Adw.WindowTitle(title="Buscar", subtitle=""))
+        tv.add_top_bar(header)
+        tv.set_content(box)
+        dialog.set_child(tv)
+        dialog.present(self)
+        entry.grab_focus()
 
     # ========================================================================
     # Tools view (master-detail com categorias)
