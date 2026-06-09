@@ -173,10 +173,13 @@ def test_empty_icon_is_safe():
 # VigiaOS precisa funcionar (documenta o contrato usado no master-detail).
 # --------------------------------------------------------------------------- #
 
-def test_plain_toolentry_lacks_extra_attrs():
+def test_plain_toolentry_lacks_moduleonly_attrs():
     te = ToolEntry(id="dash", name="Dash", description="d",
                    icon_path=Path("/x"), exec_cmd=["vigia-dashboard"])
-    assert getattr(te, "theme_icon_name", "FALLBACK") == "FALLBACK"
+    # theme_icon_name virou campo legítimo de ToolEntry (default "") — usado
+    # por built-ins (ex: checkup) e pelo fallback de ícone do adapter.
+    assert te.theme_icon_name == ""
+    # widen_embedded/is_planned seguem exclusivos da ModuleToolEntry (Blue/Red).
     assert getattr(te, "widen_embedded", False) is False
     assert getattr(te, "is_planned", False) is False
 
