@@ -97,7 +97,9 @@ class _Checkup:
         self.toolbar.set_content(scrolled)
 
         self._running = False
-        self._run()
+        # Re-checa toda vez que a tela aparece (ex: voltou depois de atualizar a
+        # base do antivírus) — não fica preso no resultado em cache.
+        self.toolbar.connect("map", lambda *_a: self._run())
 
     # --------------------------------------------------------------
     def _run(self) -> None:
@@ -163,7 +165,10 @@ class _Checkup:
         try:
             if fix_tool == "config":
                 app.activate_action("show-settings", None)
-            else:
+            elif ":" in fix_tool:  # "toolid:aba" → abre a tool já na aba certa
+                app.activate_action(
+                    "show-tool-tab", GLib.Variant.new_string(fix_tool))
+            elif fix_tool:
                 app.activate_action(
                     "show-tool", GLib.Variant.new_string(fix_tool))
         except Exception:  # pylint: disable=broad-except

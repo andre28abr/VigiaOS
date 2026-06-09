@@ -119,8 +119,7 @@ TOOLS: list[ToolEntry] = [
             "Botão **Resolver** leva pra ferramenta certa",
             "Roda em segundo plano — não trava a interface",
         ],
-        icon_path=Path("/nonexistent"),     # built-in: usa theme_icon_name
-        theme_icon_name="security-high-symbolic",
+        icon_path=_TOOLS_DIR / "vigia-hub" / "data" / "br.com.vigia.Checkup.svg",
         exec_cmd=[],
         available_fn=lambda: True,           # sempre disponível (built-in)
         embedded_module="vigia_hub.checkup",

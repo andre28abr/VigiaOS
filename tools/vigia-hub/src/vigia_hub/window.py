@@ -1625,6 +1625,21 @@ class VigiaHubWindow(Adw.ApplicationWindow):
                 return
             idx += 1
 
+    def show_tool_tab(self, tool_id: str, tab: str) -> None:
+        """Abre uma tool e seleciona uma aba INTERNA dela (deep-link). Funciona
+        se a tool marcou o seu ViewStack com `_vigia_tab_stack` no widget que o
+        build_content() devolve (hoje: Antivírus → 'database')."""
+        self.show_tool(tool_id)
+        widget = self._section_embedded.get("hub", {}).get(tool_id)
+        if widget is None:
+            return
+        stack = getattr(widget, "_vigia_tab_stack", None)
+        if stack is not None:
+            try:
+                stack.set_visible_child_name(tab)
+            except Exception:  # pylint: disable=broad-except
+                pass
+
     # ========================================================================
     # Busca rápida (Ctrl+K)
     # ========================================================================
