@@ -149,6 +149,17 @@ class ConnectionsTab(Gtk.Box):
     def _fetch(self) -> list[backend.NetConnection]:
         return backend.list_connections(elevated=self._elevated_mode)
 
+    def _prefilter(self, conns: list[backend.NetConnection]
+                   ) -> list[backend.NetConnection]:
+        """Conexões mostra CONEXÕES — sockets só escutando vão pra aba Escutando.
+        'Internas' desligado também esconde loopback (só internet)."""
+        conns = [c for c in conns if not c.is_listening]
+        if (self._hide_local_switch is not None
+                and not self._hide_local_switch.get_active()):
+            conns = [c for c in conns
+                     if humanize.is_internet_peer(c.peer_addr)]
+        return conns
+
     def _summary_text(self, conns: list[backend.NetConnection]) -> str:
         apps = {c.process for c in conns if c.process != "?"}
         n_app = len(apps)
@@ -213,10 +224,7 @@ class ConnectionsTab(Gtk.Box):
 
     def _apply_conns(self, conns: list[backend.NetConnection]) -> bool:
         try:
-            if (self._hide_local_switch is not None
-                    and not self._hide_local_switch.get_active()):
-                conns = [c for c in conns
-                         if humanize.is_internet_peer(c.peer_addr)]
+            conns = self._prefilter(conns)
 
             while child := self._list.get_first_child():
                 self._list.remove(child)
