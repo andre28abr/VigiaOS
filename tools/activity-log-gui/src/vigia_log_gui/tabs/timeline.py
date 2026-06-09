@@ -12,19 +12,21 @@ gi.require_version("Adw", "1")
 from gi.repository import Adw, Gtk  # noqa: E402
 
 from ..backend import ActivityBundle, ActivityEvent, severity_at_least
+from ..glossary import explain
 from ._helpers import (
     escape_markup,
     make_clamp,
     severity_css,
     severity_label,
+    severity_short,
     source_label,
 )
 
 
 SEVERITY_OPTIONS = [
-    ("Todas as severidades", None),
-    ("Interesting+", "interesting"),
-    ("Suspicious", "suspicious"),
+    ("Tudo", None),
+    ("Vale olhar+", "interesting"),
+    ("Só atenção", "suspicious"),
 ]
 
 
@@ -175,7 +177,9 @@ class TimelineTab(Adw.Bin):
         info = sum(1 for e in self._events if e.severity == "interesting")
         rout = sum(1 for e in self._events if e.severity == "routine")
         self._header_desc.set_label(
-            f"{susp} suspicious · {info} interesting · {rout} routine"
+            f"{susp} {severity_short('suspicious')} · "
+            f"{info} {severity_short('interesting')} · "
+            f"{rout} {severity_short('routine')}"
         )
 
         # Limita 500 rows pra UI nao explodir
@@ -188,57 +192,87 @@ class TimelineTab(Adw.Bin):
                 break
             self._list.append(self._build_row(e))
 
+    def focus_source(self, code: str) -> None:
+        """Seleciona uma fonte específica no filtro (chamado pela aba Fontes)."""
+        codes = getattr(self, "_src_codes", [None])
+        aliases = ({"journal", "journald"}
+                   if code in ("journal", "journald") else {code})
+        for i, c in enumerate(codes):
+            if c in aliases:
+                self._src_combo.set_selected(i)
+                return
+        self._src_combo.set_selected(0)  # fonte não presente → mostra todas
+
     def _build_row(self, e: ActivityEvent) -> Adw.ExpanderRow:
         row = Adw.ExpanderRow()
         row.set_title(escape_markup(e.narrative))
         row.set_use_markup(True)
         row.set_title_lines(2)
 
-        # Source badge (prefix)
+        # Fonte (prefixo) + severidade colorida (sufixo)
         src_badge = Gtk.Label(label=source_label(e.source))
-        src_badge.add_css_class("monospace")
         src_badge.add_css_class("caption-heading")
+        src_badge.add_css_class("dim-label")
         src_badge.set_valign(Gtk.Align.CENTER)
         row.add_prefix(src_badge)
 
-        # Severity badge (suffix)
         sev_badge = Gtk.Label(label=severity_label(e.severity))
-        sev_badge.add_css_class("monospace")
         sev_badge.add_css_class("caption-heading")
         sev_badge.add_css_class(severity_css(e.severity))
         sev_badge.set_valign(Gtk.Align.CENTER)
         row.add_suffix(sev_badge)
 
-        # Timestamp como subtitle
         row.set_subtitle(e.timestamp)
 
-        # Conteudo expandido: payload em JSON pretty
+        # ---- Conteúdo expandido: EXPLICAÇÃO primeiro, técnico depois ----
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        box.set_margin_start(12)
+        box.set_margin_end(12)
+        box.set_margin_top(8)
+        box.set_margin_bottom(8)
+
+        exp = explain(e.source, e.narrative, e.payload)
+        head = Gtk.Label()
+        head.set_markup(f"<b>{escape_markup(exp.title)}</b>")
+        head.set_xalign(0)
+        head.set_wrap(True)
+        box.append(head)
+        for label, text in (("O que é", exp.what),
+                            ("É normal?", exp.normal),
+                            ("O que fazer", exp.action)):
+            lbl = Gtk.Label()
+            lbl.set_markup(f"<b>{label}:</b> {escape_markup(text)}")
+            lbl.set_xalign(0)
+            lbl.set_wrap(True)
+            box.append(lbl)
+
+        # Detalhes técnicos (JSON cru) colapsados — não assustam de cara.
         payload_buf = Gtk.TextBuffer()
         try:
-            payload_buf.set_text(json.dumps(e.payload, indent=2, ensure_ascii=False))
+            payload_buf.set_text(
+                json.dumps(e.payload, indent=2, ensure_ascii=False))
         except (TypeError, ValueError):
             payload_buf.set_text(repr(e.payload))
-
         payload_view = Gtk.TextView(buffer=payload_buf)
         payload_view.set_editable(False)
         payload_view.set_cursor_visible(False)
         payload_view.set_monospace(True)
         payload_view.set_wrap_mode(Gtk.WrapMode.WORD_CHAR)
         payload_view.add_css_class("dim-label")
-        payload_view.set_margin_start(12)
-        payload_view.set_margin_end(12)
-        payload_view.set_margin_top(8)
-        payload_view.set_margin_bottom(8)
-
         scrolled = Gtk.ScrolledWindow()
         scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
-        scrolled.set_min_content_height(120)
+        scrolled.set_min_content_height(100)
         scrolled.set_max_content_height(240)
         scrolled.set_child(payload_view)
 
-        payload_row = Adw.PreferencesRow()
-        payload_row.set_child(scrolled)
-        payload_row.set_activatable(False)
-        row.add_row(payload_row)
+        tech = Gtk.Expander(label="Ver detalhes técnicos")
+        tech.set_margin_top(6)
+        tech.set_child(scrolled)
+        box.append(tech)
+
+        content_row = Adw.PreferencesRow()
+        content_row.set_child(box)
+        content_row.set_activatable(False)
+        row.add_row(content_row)
 
         return row
