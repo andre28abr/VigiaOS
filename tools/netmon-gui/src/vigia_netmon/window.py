@@ -38,7 +38,7 @@ def _make_pkg_badges_bar() -> Gtk.Widget:
 
 TABS = [
     ("connections", "Conexões",  "network-transmit-receive-symbolic", ConnectionsTab),
-    ("listening",   "Listening", "network-server-symbolic",           ListeningTab),
+    ("listening",   "Escutando", "network-server-symbolic",           ListeningTab),
     ("about",       "Sobre",     "help-about-symbolic",               AboutTab),
 ]
 
