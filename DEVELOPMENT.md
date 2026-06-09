@@ -4,7 +4,7 @@
 > contexto completo para retomar o desenvolvimento (humano ou IA) sem
 > precisar reler histórico de PRs ou conversas anteriores.
 >
-> Última atualização: 2026-05-31 (revisão 6: Reports v0.2 overhaul — gráficos SVG/6 modelos/selo/identidade/agendamento; remoção do trilho Tor de sistema; auditoria 100% — bugs+perf+testes+DRY vigia_common)
+> Última atualização: 2026-06-09 (revisão 7: **unificação dos 3 apps em 1 VigiaOS** — rail de seções Início/Hub/Red/Blue; migração Silverblue → Fedora Workstation/dnf; VigiaBlue completo (7 módulos); batch "técnico mas fácil" — Tudo Certo?/Ctrl+K/tema Terminal/notificações/varredura semanal; Network Monitor v0.2.0 humanizado; Activity Log v0.2.0; sweep de docs/manuais)
 
 ---
 
@@ -63,7 +63,7 @@ e mergeou Hash Tools no File Integrity.
 | 4 | **Privacy Controls** | v0.3.2 | Python + GTK4 | 🟢 12 toggles user+system scope |
 | 5 | **SELinux Manager** | v0.2.1 | Python + GTK4 | 🟢 6 tabs + pt-BR + audit2allow + lazy tabs |
 | 6 | **Firewall Manager** | v0.1.0 | Python + GTK4 | 🟡 Status + zones CRUD |
-| 7 | **Network Monitor** | v0.1.1 | Python + GTK4 | 🟡 Conexões + modo admin + auto-refresh smart |
+| 7 | **Network Monitor** | v0.2.0 | Python + GTK4 | 🟢 Conexões por app + DNS reverso + Escutando (glossário de portas) |
 | 8 | **Hardening Checks** | v0.1.5 | Python + GTK4 | 🟢 Lynis wrapper (auditoria de hardening) |
 | 9 | **Reports** | v0.2.7 | Python + Jinja2 + SVG | 🟢 6 modelos + gráficos SVG + selo SHA-256 + identidade + agendamento mensal |
 | 10 | **File Integrity** | v0.2.6 | Python + GTK4 | 🟢 AIDE (sistema) + Hash ad-hoc (user) — 6 tabs |
@@ -395,13 +395,21 @@ confirmação explícita.
 
 ---
 
-### 5.7 Vigia Network Monitor (`tools/netmon-gui/`, v0.1.1)
+### 5.7 Vigia Network Monitor (`tools/netmon-gui/`, v0.2.0)
 
-**Função**: Conexões TCP/UDP em tempo real.
+**Função**: Conexões TCP/UDP em tempo real, **legíveis por leigo** (ver §9
+"Network Monitor v0.2.0").
 
 **Stack**: Python + PyGObject + GTK4 + libadwaita.
 
-**Tabs**: Conexões + Listening + Sobre.
+**Tabs**: **Conexões** (agrupadas por app, DNS reverso async, estados PT-BR,
+loopback escondido por padrão) + **Escutando** (portas abertas + glossário +
+selo "exposta") + Sobre.
+
+**`humanize.py`** (puro, testável): rótulos de estado PT-BR, glossário de portas,
+`is_loopback`/`is_internet_peer`, `split_host_port`, `resolve_host` (DNS reverso
+com cache). A `ListeningTab` é subclasse da `ConnectionsTab` (troca só os hooks
+`_fetch`/`_prefilter`/`_summary_text`/`_render_into`).
 
 **Modo admin opt-in**: Switch na UI que, quando ON, faz backend chamar
 `pkexec ss -tunap` (revela nomes de processos do sistema). Auto-refresh
@@ -3068,6 +3076,56 @@ implementado e **revertido** a pedido — Hub/Red/Blue ficam todos visíveis. Í
 
 vigia-hub **v0.11.0**. Suíte: **1124 testes verdes**. Pendente (a pedido, "vou
 conferir depois"): validação na VM; sweep de README/manuais pro novo conjunto.
+
+---
+
+### 2026-06-09 — Network Monitor v0.2.0: "quem está usando minha internet"
+
+Redesenho do `netmon-gui` pra ficar legível por leigo sem perder o poder.
+`vigia_netmon.humanize` (puro, testável): `STATE_LABELS` (PT-BR), `PORT_GLOSSARY`/
+`port_hint`, `is_loopback`/`is_internet_peer`, `split_host_port`, `resolve_host`
+(DNS reverso com cache). 8 testes.
+
+- **Conexões** — `ConnectionsTab` reescrita: agrupada por **aplicativo**
+  (`Adw.ExpanderRow`), estados em PT-BR (Conectado/Escutando/Inativo/Encerrando),
+  IP→**nome** via DNS reverso *assíncrono* (thread; não trava a UI), resumo no topo
+  ("N apps na internet · M conexões") e toggle **Internas** que esconde loopback
+  por padrão (só internet). Sockets só escutando saíram daqui (`_prefilter` exclui
+  `is_listening`) — antes vazavam pra aba errada.
+- **Escutando** (era "Listening") — `ListeningTab` (subclasse; reusa o motor de
+  refresh/admin): 1 linha por porta aberta, com **glossário** (22 = Acesso remoto
+  SSH, 631 = Impressão, 5353 = Descoberta de rede…), escopo (só local / exposta)
+  e selo **exposta** quando ouve em `0.0.0.0`/`::`.
+- Base comum por **hooks** (`_fetch`/`_prefilter`/`_summary_text`/`_render_into`/
+  `_show_hide_local`) — a aba Escutando só troca os hooks.
+
+Junto, **Tudo Certo?** ganhou 3 acertos do feedback de tela: o ícone de OK era
+`emblem-ok-symbolic` (inexistente no tema → quadrado branco) → trocado por
+`object-select-symbolic`; **Resolver** abre a **aba certa** via nova action
+`show-tool-tab` ("tool:aba"); re-checa no sinal `map`, então não fica defasado
+depois de atualizar a base do antivírus. netmon **v0.2.0**, vigia-hub **v0.11.1**.
+
+---
+
+### 2026-06-09 — Sweep de docs/manuais + GitHub (fecha o pendente do batch)
+
+Atualização de toda a documentação pro estado atual — o "sweep" que ficou
+pendente no batch de Facilidade.
+
+- **README.md** — badge **1132**; casca → **v0.11.1** com as novidades (Tudo
+  Certo?, Ctrl+K, tema Terminal, notificações, varredura semanal); netmon →
+  v0.2.0; activity-log GUI → v0.2.0; seção "O app VigiaOS" com os recursos de
+  nível de app.
+- **Manuais** (`docs/manuals/{leigo,tecnico}/`) — **novo** manual `checkup.md`
+  (Tudo Certo?), registrado em `manuals.py` (`MANUAL_ENTRIES`); netmon e
+  activity-log reescritos pro novo comportamento; `_overview`/`vigia-hub` citam
+  tema/Ctrl+K/notificações/varredura; corrigida referência morta ao "Instalador
+  de Ferramentas" em dns-manager/dashboard (agora `sudo dnf install …` ou
+  Configurações → Atualizações).
+- **GitHub** — descrição e *topics* do repositório preenchidos (estavam vazios).
+  Branches/tags já enxutas no remoto (só `main` + `v0.7.0`) — **task #102 fechada**.
+
+Sem mudança de código além do registro do manual. Suíte: **1132 verdes**.
 
 ---
 

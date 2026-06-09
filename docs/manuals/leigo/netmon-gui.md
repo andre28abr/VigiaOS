@@ -2,36 +2,34 @@
 
 ## Pra que serve
 
-Sabe quando você tá em casa e quer saber **quem está usando a
-internet** naquele momento? Tipo "será que o vídeo está pesando
-porque alguém está baixando coisa?".
+Sabe quando você quer saber **quem está usando a sua internet** naquele
+momento? Tipo "será que tem algum programa baixando coisa escondido?".
 
-O **Monitor de Rede** é isso, mas pra **dentro do computador**.
-Ele mostra, em tempo real:
+O **Monitor de Rede** responde exatamente isso, mas pra **dentro do
+computador**. Ele mostra, em tempo real e **em português**:
 
-- Quais programas estão **conectados a sites/serviços** agora
-- Quais programas estão **esperando conexões** chegarem
-- Em quais portas/endereços essas conexões estão acontecendo
+- Quais **aplicativos** estão conversando com sites/serviços na internet
+  agora
+- **Com quem** eles estão falando (pelo **nome** do site, não só números)
+- O que do **seu PC** está **aberto** pra rede (esperando conexões)
 
-É como ter uma janelinha vendo a "fofoca" da rede do seu computador.
+É como ter uma janelinha mostrando a "fofoca" da rede do seu computador —
+mas organizada por programa e fácil de entender.
 
 ## Quando você usa isso
 
-Algumas situações úteis:
+1. **"Quem está usando minha internet?"** — você abre a aba **Conexões** e
+   vê, agrupado por aplicativo, quem está conversando com a internet.
 
-1. **"Tem alguma coisa estranha acontecendo na rede"** — você abre
-   e procura conexões que não esperava. Tipo um programa conversando
-   com IP estrangeiro que você não conhece.
+2. **"Esse programa está mandando dados pra fora?"** — filtra pelo nome do
+   programa (ex: "firefox") e vê com quais sites ele está falando.
 
-2. **"Esse programa está usando internet?"** — filtra pelo nome do
-   programa (ex: "firefox") e vê com quem ele está conversando.
+3. **"O que do meu PC está exposto na rede?"** — vai pra aba **Escutando**.
+   Mostra os "atendentes" que o seu computador deixa abertos. Importante
+   antes de plugar em rede pública (café, hotel, aeroporto).
 
-3. **"O que está exposto na rede agora?"** — vai pra aba **Listening**.
-   Mostra todos os "atendentes" que o seu computador tem rodando.
-   Crítico antes de plugar em rede pública.
-
-4. **"Tem alguma coisa rodando na porta tal?"** — filtra pelo
-   número da porta (ex: "5432") e vê quem está ali.
+4. **"Tem coisa estranha?"** — procura por um nome de site que você não
+   reconhece, ou uma porta que não deveria estar aberta.
 
 ## O que você vai ver
 
@@ -39,65 +37,92 @@ Duas abas:
 
 | Aba | Pra que serve |
 |---|---|
-| **Conexões** | Lista todas conexões (saindo e entrando) |
-| **Listening** | Lista só "atendentes" (programas esperando conexão) |
+| **Conexões** | Quem está usando a internet **agora**, agrupado por aplicativo |
+| **Escutando** | O que do **seu PC** está aberto pra rede (com explicação de cada porta) |
 
 E uma barrinha em cima com:
-- **Busca**: filtra por nome, IP, porta
+- **Busca**: filtra por app, site ou porta (ex: firefox, google, 443)
+- **Internas** (só na aba Conexões): liga/desliga as conexões locais
 - **Auto**: liga/desliga atualização automática (a cada 3s)
 - **Atualizar**: força atualização agora
-- **Modo admin**: revela conexões de programas do sistema (pede senha)
+- **Modo admin**: mostra também os apps do sistema (pede senha)
 
 ## O que cada parte faz
 
 ### Conexões
 
-Lista todas as conexões. Cada linha mostra:
+Mostra **quem está usando a internet**, **agrupado por aplicativo**. Cada
+aplicativo vira uma linha que você pode **abrir** pra ver os detalhes:
 
-- **TCP/UDP** com endereço local → endereço de destino
-- **Nome do programa** + número de identificação (PID)
-- **Estado** colorido:
-  - Verde "ESTAB" = conexão ativa, rolando dados
-  - Azul "LISTEN" = está esperando alguém chegar
-  - Cinza "TIME-WAIT" = acabou de fechar
-  - Amarelo "WAIT" / "SYN" = handshake ou esperando peer
+- O **nome do app** + quantas conexões ele tem
+- Abrindo, cada destino aparece pelo **nome do site** (ex: `google.com`),
+  não só pelo número de IP — o programa faz essa tradução sozinho, em
+  segundo plano
+- O **estado** de cada conexão, em português:
+  - **Conectado** (verde) = conversando agora, trocando dados
+  - **Escutando** (azul) = esperando alguém chegar
+  - **Encerrando** (cinza) = a conexão está fechando
+  - **Inativo** / **Conectando** = no meio do caminho
 
-A lista atualiza sozinha a cada 3 segundos. Se quiser pausar, desliga
-o "Auto".
+No topo, um **resumo rápido**: *"3 apps na internet · 7 conexões"*.
 
-### Listening
+Por padrão, esta aba mostra **só as conexões com a internet** de verdade.
+As **conexões internas** (aquelas em que o computador conversa consigo
+mesmo, o tal `127.0.0.1`) ficam **escondidas**, porque normalmente são só
+ruído. Se quiser vê-las, ligue o botão **Internas**.
 
-Mostra **só os atendentes** — programas no seu computador esperando
-conexão. É a aba mais importante pra **auditoria de segurança**:
-qualquer item nessa lista é uma "porta aberta" pra alguém entrar.
+> Os programas que estão **só esperando conexão** (sem estar conversando
+> com ninguém) **não aparecem aqui** — eles ficam na aba **Escutando**.
 
-Use antes de plugar laptop em rede pública (café, hotel) — quanto
-menos coisa aqui, mais protegido você está.
+### Escutando
+
+Mostra **o que do seu PC está aberto pra rede** — os "atendentes" que
+ficam esperando conexão. É a aba mais importante pra **segurança**: cada
+item aqui é uma "porta aberta" por onde alguém poderia tentar entrar.
+
+A grande sacada: cada porta vem com uma **explicação do que ela é**, então
+você não precisa decorar números. Por exemplo:
+
+- **Porta 22 — Acesso remoto (SSH)**
+- **Porta 631 — Impressão (CUPS)**
+- **Porta 5353 — Descoberta de rede (mDNS/Bonjour)**
+- **Porta 53 — DNS (resolução de nomes)**
+
+Cada linha também mostra **até onde** aquela porta está aberta:
+
+- **só neste PC (local)** — outros computadores **não** alcançam. Tranquilo.
+- **aberta pra qualquer rede** — qualquer um na mesma rede pode tentar
+  conectar. Essas ganham um selo **"exposta"** em destaque, pra você
+  reparar.
+
+Use esta aba antes de plugar o notebook em rede pública: quanto **menos**
+coisa "exposta", mais protegido você está.
 
 ### Modo admin
 
-Normalmente o sistema **esconde** os processos de programas que
-rodam como administrador (raiz) — você vê eles como "processo
-restrito". Liga o modo admin e ele pede senha pra mostrar tudo.
+Normalmente o sistema **esconde o nome** dos programas que rodam como
+administrador (root, systemd, etc.) — eles aparecem agrupados como
+"apps do sistema". Ligue o **Modo admin** e ele pede a senha pra revelar
+esses nomes.
 
-Cuidado: cada atualização nesse modo pede a senha de novo (não há
-"lembrar"). Use pra olhar um momento específico e depois desliga.
+Cuidado: nesse modo, **cada atualização pede a senha de novo** (não tem
+"lembrar"), e o **Auto** é desligado. Use pra dar uma olhada num momento
+específico e depois desligue.
 
 ## Posso quebrar alguma coisa?
 
-**Não.** Esta ferramenta é **só de leitura** — não muda nada no
-sistema, só mostra.
+**Não.** Esta ferramenta é **só de leitura** — não muda nada no sistema,
+só mostra.
 
-O máximo que pode acontecer: ela usa um pouquinho de CPU pra
-ficar atualizando a cada 3 segundos. Se você estiver em outra
-aba do Vigia, ela **pausa sozinha** pra não desperdiçar bateria.
+O máximo que pode acontecer: ela usa um pouquinho de CPU pra ficar
+atualizando a cada 3 segundos. Se você trocar pra outra ferramenta do
+VigiaOS, ela **pausa sozinha** pra não gastar bateria à toa.
 
 ## Dica do dia
 
-> Antes de plugar o notebook numa rede pública (aeroporto, café),
-> abra a aba **Listening**. Cada item aí é um "atendente" que
-> aceita conexão de fora. Quanto **menos** itens, mais seguro.
-> Se ver algo que você não reconhece, anota o nome do processo e
-> investiga depois. Pra a maioria dos casos: idealmente só
-> `cups-browsed` (impressão), `systemd-resolve` (DNS) e talvez um
-> `sshd` ou outro programa que você sabe que precisa.
+> Antes de plugar o notebook numa rede pública (aeroporto, café), abra a
+> aba **Escutando** e procure os itens com o selo **"exposta"**. Cada um
+> deles aceita conexão de fora. Quanto **menos**, mais seguro. Se ver algo
+> que você não reconhece, anote o nome e investigue depois. Para a maioria
+> dos casos, o normal é ver pouca coisa exposta — impressão, descoberta de
+> rede e, no máximo, um acesso remoto que você mesmo ligou.

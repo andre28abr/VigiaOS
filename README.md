@@ -13,7 +13,7 @@
 ![Python](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white)
 ![GTK4](https://img.shields.io/badge/GTK4-libadwaita-4A86CF?logo=gnome&logoColor=white)
 ![Rust](https://img.shields.io/badge/Rust-Activity%20Log%20core-dea584?logo=rust&logoColor=black)
-![Tests](https://img.shields.io/badge/tests-1087%20passing-success)
+![Tests](https://img.shields.io/badge/tests-1132%20passing-success)
 ![License](https://img.shields.io/badge/license-Apache--2.0-orange)
 ![Fedora](https://img.shields.io/badge/Fedora-Workstation-51A2DA?logo=fedora&logoColor=white)
 ![LGPD](https://img.shields.io/badge/LGPD-by%20design-10b981)
@@ -84,6 +84,15 @@ ficam **Configurações** e o sino de **Notificações**.
 
 Recursos (nível do app):
 
+- **Tudo Certo?** — painel de checkup com semáforo 🟢🟡🔴: confere atualizações,
+  firewall, antivírus e privacidade; o botão **Resolver** leva direto à ferramenta
+  que arruma cada pendência. Re-checa sempre que a tela aparece.
+- **Busca rápida (`Ctrl+K`)** — abre qualquer ferramenta digitando o nome.
+- **Tema Terminal** (opcional) — visual escuro estilo terminal/hacker, em
+  *Configurações → Aplicação → Aparência* (o padrão segue o tema do sistema).
+- **Notificações de segurança** + **varredura de vírus semanal** — alertas no
+  desktop quando algo precisa de atenção e uma checagem automática agendada
+  (timer do usuário via systemd, **sem root**). Ambas em *Configurações → Aplicação*.
 - **Autostart XDG** — inicia junto com o sistema (`~/.config/autostart`).
 - **Ícone na bandeja** — subprocess GTK3 com ações rápidas; fechar a janela
   esconde em vez de matar o processo.
@@ -99,18 +108,18 @@ sozinha**, sem depender do app (veja *Instalar só um módulo*).
 
 ---
 
-## O que está incluído (14 ferramentas do Hub, focadas em LGPD/escritório)
+## O que está incluído (as ferramentas do Hub, focadas em LGPD/escritório)
 
 | # | Componente | Stack | Status |
 |---|---|---|---|
 | 1 | `bootstrap.sh` | bash | 🟡 Em desenvolvimento |
-| 2 | **[Casca VigiaOS](tools/vigia-hub/)** v0.9.0 | Python + GTK4 | 🟢 rail de seções (Início/Hub/Red/Blue) + autostart XDG + tray (quick actions) + lock Polkit + backup/restore + Configurações (Sobre · Atualizações · Aplicação · Segurança · Ajuda com manuais MD) |
+| 2 | **[Casca VigiaOS](tools/vigia-hub/)** v0.11.1 | Python + GTK4 | 🟢 rail de seções (Início/Hub/Red/Blue) + **painel Tudo Certo?** (checkup 🟢🟡🔴) + **busca Ctrl+K** + **tema Terminal** (opcional) + **notificações de segurança** + **varredura de vírus semanal** + autostart XDG + tray + lock Polkit + backup/restore + Configurações (Sobre · Atualizações · Aplicação · Segurança · Ajuda) |
 | 3 | **[Vigia Monitor do Sistema](tools/dashboard/)** v0.4.2 | Python + GTK4 + Cairo | 🟢 Sistema em tempo real + per-process I/O + alertas + inspetor syscalls + banda por processo + selo de plataforma |
-| 4 | **[Vigia Activity Log](tools/activity-log/)** v0.7.1 (core) + [GUI](tools/activity-log-gui/) v0.1.2 | Rust + Python | 🟢 audit + journald + fail2ban + correlations |
+| 4 | **[Vigia Activity Log](tools/activity-log/)** v0.7.1 (core) + [GUI](tools/activity-log-gui/) v0.2.0 | Rust + Python | 🟢 audit + journald + fail2ban + correlations + **glossário PT-BR** ("o que é isso?") + aba **Fontes** |
 | 5 | **[Vigia Privacy Controls](tools/privacy-controls/)** v0.3.2 | Python + GTK4 | 🟢 12 toggles user+system scope |
 | 6 | **[Vigia SELinux GUI](tools/selinux-gui/)** v0.2.1 | Python + GTK4 | 🟢 6 tabs + pt-BR + audit2allow |
 | 7 | **[Vigia Firewall GUI](tools/firewall-gui/)** v0.1 | Python + GTK4 | 🟡 Status + zones CRUD |
-| 8 | **[Vigia Network Monitor](tools/netmon-gui/)** v0.1.1 | Python + GTK4 | 🟡 Conexões + modo admin opt-in |
+| 8 | **[Vigia Network Monitor](tools/netmon-gui/)** v0.2.0 | Python + GTK4 | 🟢 Conexões **agrupadas por app** + IP→nome (DNS reverso) + estados PT-BR; aba **Escutando** com glossário de portas |
 | 9 | **[Vigia Hardening Checks](tools/hardening-checks/)** v0.1.5 | Python + GTK4 | 🟢 Lynis wrapper (auditoria de hardening) |
 | 10 | **[Vigia Reports](tools/reports/)** v0.2.7 | Python + Jinja2 + SVG | 🟢 6 modelos + selo SHA-256 + identidade do escritório + **agendamento mensal** (headless) |
 | 11 | **[Vigia File Integrity](tools/file-integrity/)** v0.2.6 | Python + GTK4 | 🟢 AIDE (sistema) + Hash ad-hoc (user) — 6 tabs |

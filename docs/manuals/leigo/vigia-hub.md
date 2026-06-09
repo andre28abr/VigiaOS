@@ -33,7 +33,7 @@ Em cima de cada ferramenta abrindo no painel, você vê uma faixa com pequenos *
 A barrinha da esquerda troca de **seção**:
 
 - **Início** — o painel do sistema em tempo real (CPU, RAM, disco, rede, processos). É a tela que abre primeiro.
-- **Hub** — a lista das 14 ferramentas. Clica e ela abre. As principais são **Activity Log** (logs traduzidos), **Privacy Controls** (toggles de privacidade), **Firewall**, **Antivirus**, **Reports** e outras.
+- **Hub** — a lista das 14 ferramentas. Clica e ela abre. A primeira da lista é o **Tudo Certo?** (um semáforo 🟢🟡🔴 que checa se o computador está seguro de relance). As outras principais são **Activity Log** (logs traduzidos), **Privacy Controls** (toggles de privacidade), **Firewall**, **Antivirus**, **Reports** e mais.
 - **Red** — ferramentas de teste de invasão (em construção).
 - **Blue** — detecção e resposta a ameaças (para quem é da área de segurança).
 
@@ -47,9 +47,15 @@ No rodapé da barra da esquerda. Abre uma tela com **cinco abas**:
 
 - **Sobre** — informações do VigiaOS (versão, autor, licença).
 - **Atualizações** — mantém o sistema e as ferramentas de segurança em dia (era o antigo "Instalador").
-- **Aplicação** — Liga o VigiaOS junto com o sistema, mostra ícone na bandeja, inicia minimizado e **verifica atualizações ao iniciar** (alimenta o sininho de notificações).
+- **Aplicação** — Liga o VigiaOS junto com o sistema, mostra ícone na bandeja, inicia minimizado, **verifica atualizações ao iniciar** e te **avisa por notificação** quando há atualizações. Aqui também ficam:
+  - a **Aparência**: escolhe o visual *Padrão* (segue o tema claro/escuro do GNOME) ou *Terminal* (fundo escuro com verde-neon, estilo "hacker") — só estética;
+  - a **varredura de vírus semanal**: você liga e o VigiaOS escaneia suas pastas 1x por semana sozinho, te avisando se achar algo (vem desligada).
 - **Segurança** — Pede senha de admin pra abrir o VigiaOS e auto-bloqueia se você ficar X minutos sem mexer (5, 10, 15, 30 ou 60 minutos).
 - **Ajuda** — os manuais (é onde você está agora).
+
+> **Dica:** aperte **Ctrl+K** de qualquer lugar pra abrir a **busca rápida** —
+> digite o nome de uma ferramenta, seção ou configuração, dê Enter e o
+> VigiaOS te leva direto lá.
 
 ### Ajuda
 

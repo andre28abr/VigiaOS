@@ -24,19 +24,52 @@ Em cima tem um switch **"Admin"** — se você ligar e digitar sua senha, ele ac
 
 ### Aba 1 — Status
 
-Mostra um **resumo** do que foi coletado: quantos eventos achou, quantos são **suspeitos**, quantos **interessantes**, quantos são **rotina** (chatos), quantas **correlações** detectou, e em que horário foi gerado. Tipo o resumo no topo de um relatório.
+Mostra um **resumo** do que foi coletado: quantos eventos achou, quantos pedem **Atenção**, quantos **Vale olhar**, quantos são **Rotina** (chatos), quantas **correlações** detectou, e em que horário foi gerado. Tipo o resumo no topo de um relatório.
 
-### Aba 2 — Timeline
+### Aba 2 — Linha do tempo
 
-A **linha do tempo de tudo**. Cada linha tem o horário, de qual sistema veio (audit, journal, fail2ban) e o que aconteceu, escrito em **português**. Você pode buscar texto, filtrar por gravidade ou por fonte.
+A **linha do tempo de tudo**. Cada linha tem o horário, de qual fonte veio (Diário do sistema, Auditoria de segurança, Bloqueios de IP) e o que aconteceu, escrito em **português**. Você pode buscar texto, filtrar por gravidade ou por fonte.
 
 Os textos são do tipo:
 
-> *14:32:18 [journal] Usuário joao fez login na sessão gráfica*
+> *14:32:18 [Diário do sistema] Usuário joao fez login na sessão gráfica*
 >
-> *14:33:01 [fail2ban] IP 192.0.2.42 banido por 3600s (tentou SSH 5 vezes)*
+> *14:33:01 [Bloqueios de IP] IP 192.0.2.42 banido por 3600s (tentou SSH 5 vezes)*
 
-### Aba 3 — Correlações
+**Clicou num evento, ele se abre e explica.** Em vez de te jogar um monte de
+código, ele responde três perguntas em linguagem simples:
+
+> **O que é:** Alguém (ou algum programa) tentou entrar e errou a senha.
+>
+> **É normal?** Normal se foi você errando a senha. Atenção se vier de fora
+> ou em rajada.
+>
+> **O que fazer:** Se não foi você e há muitas tentativas, bloqueie o IP
+> (Firewall) e confira o acesso SSH.
+
+Se você **quiser mesmo** ver o registro técnico cru (aquele texto bruto do
+Linux), ele está ali, escondido atrás de **"Ver detalhes técnicos"** — mas
+você raramente vai precisar.
+
+### Aba 3 — Fontes
+
+Explica **de onde vêm** os eventos. O Fedora guarda os registros em alguns
+"cadernos" diferentes, e esta aba mostra **um cartão pra cada um**,
+contando o que é e **quando vale a pena olhar ali**:
+
+- **Diário do sistema** — o caderno central: tudo que os programas e
+  serviços anotam enquanto rodam. Olhe aqui quando algo parou de funcionar.
+- **Auditoria de segurança** — logins, uso de administrador (sudo), acesso
+  a arquivos sensíveis. Pra investigar acessos com privilégio (precisa do
+  modo Admin).
+- **Bloqueios de IP** — o fail2ban anota cada endereço que barrou por
+  tentar invadir. Pra ver quem tentou entrar e foi bloqueado.
+
+Cada cartão tem um botão **"Ver só este na Timeline"** — clica e ele já te
+leva pra linha do tempo mostrando **apenas** aquela fonte. Se um caderno não
+existe no seu PC, o cartão avisa "indisponível neste PC".
+
+### Aba 4 — Correlações
 
 A parte **mais inteligente**. Em vez de te mostrar 50 linhas separadas dizendo "tentou SSH", "tentou SSH", "tentou SSH", "baniu IP", ele **agrupa tudo** numa frase só:
 
@@ -49,16 +82,16 @@ Tem 4 padrões detectados automaticamente:
 3. **SELinux bloqueando algo várias vezes** — geralmente sinal de configuração quebrada (não é ataque)
 4. **Login SSH após tentativas falhas** — login aceito de um IP que tinha tentado falhar antes (suspeito)
 
-### Aba 4 — Sobre
+### Aba 5 — Sobre
 
 Versão do programa e dos arquivos que ele lê.
 
 ## Termos que você vai ver
 
-- **Audit** — sistema de auditoria do kernel Linux. Registra coisas profundas como SELinux, syscalls, mudanças de permissão. Arquivo em `/var/log/audit/audit.log`.
-- **Journal (journald)** — o "diário" do systemd. Registra **tudo** o que o sistema e os serviços fazem (login, inicialização, erros).
-- **fail2ban** — vigia automático que bane IPs que tentam te invadir por SSH (tipo um "porteiro" que banca o suspeito).
-- **Severidade** — gravidade do evento: **routine** (chato, comum), **interesting** (vale uma olhada) ou **suspicious** (atenção, pode ser problema).
+- **Diário do sistema** (journald) — o "diário" do systemd. Registra **tudo** o que o sistema e os serviços fazem (login, inicialização, erros).
+- **Auditoria de segurança** (audit) — sistema de auditoria do kernel Linux. Registra coisas profundas como logins, uso de administrador, SELinux e acesso a arquivos sensíveis. Arquivo em `/var/log/audit/audit.log`.
+- **Bloqueios de IP** (fail2ban) — vigia automático que bane IPs que tentam te invadir por SSH (tipo um "porteiro" que barra o suspeito).
+- **Gravidade** — o quão sério é o evento, mostrado em português: **Rotina** (chato, comum), **Vale olhar** (uma olhada não faz mal) ou **Atenção** (pode ser problema).
 
 ## Posso quebrar alguma coisa?
 
