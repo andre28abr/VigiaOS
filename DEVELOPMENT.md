@@ -3026,6 +3026,51 @@ seção (Blue/Red) e ícone dedicado do VigiaOS: adiados.
 
 ---
 
+### 2026-06-09 — Facilidade & funcionalidade ("técnico, mas fácil")
+
+Batch de UX guiado pelo norte *"VigiaOS é técnico, mas extremamente fácil e
+funcional"*. Tudo no `vigia_hub` + `vigia_common` (sem novos pacotes).
+
+- **Tema "Terminal" (opcional)** — Configurações → Aplicação → Aparência: seletor
+  *Padrão* (adwaita, segue o GNOME — default) x *Terminal* (hacker: fundo escuro
+  `#0B0F10` + verde-neon `#39E75F` + monospace, via override dos named colors do
+  libadwaita + force dark). `theme.apply_ui_theme` (Gtk.CssProvider) ao vivo;
+  setting `ui_theme`. v0.10.0.
+- **Activity Log mais intuitivo (v0.2.0)** — `glossary.py` (puro): rótulos PT-BR
+  (Atenção/Vale olhar/Rotina; Diário do sistema/Auditoria/Bloqueios) + `explain()`
+  (o que é · é normal? · o que fazer) por tipo de evento. Timeline: expander
+  mostra a explicação primeiro, JSON cru atrás de "Ver detalhes técnicos". Nova
+  aba **Fontes** (1 cartão por log do Fedora + "ver só este").
+- **`vigia_common.posture`** — camada de checagens (avaliadores PUROS +
+  coletores): firewall (systemctl), antivírus (idade da base clamav), privacidade
+  (gsettings), updates (`dnf --cacheonly`) → `Check{status, detail, fix_tool}` +
+  `overall_status`. Base reusável.
+- **Painel "Tudo Certo?"** (`vigia_hub.checkup`) — 1ª tool do Hub (categoria nova
+  "Visão geral"): semáforo 🟢🟡🔴 + linha por checagem + botão **Resolver** que
+  navega via Gio `show-tool`/`show-settings`. Campo `ToolEntry.theme_icon_name`
+  (built-ins sem SVG).
+- **Status no card** — `ToolEntry.status_fn` (opcional) → status curto no card do
+  Hub (firewall "ligado", antivírus "base em dia", privacidade "2 a ajustar"),
+  preenchido em thread (`_load_section_statuses`).
+- **Busca rápida (Ctrl+K)** — `Adw.Dialog` indexando seções + Configurações +
+  tools do Hub; Enter/clique navega, Esc fecha. `Gtk.ShortcutController` global.
+- **Notificações reais** — `vigia_common.notify.send(app, …)` (Gio.Notification,
+  à prova de erro). Setting `notify_security` (ON) + toggle. O check de updates do
+  startup dispara uma notificação de desktop (clique abre Configurações).
+- **Varredura de vírus semanal** — `vigia_common.scheduler` (systemd USER timer,
+  sem root; units puros/testáveis) + CLI `vigia-scan` (`vigia_hub.scan`: ClamAV
+  nas pastas do usuário → `~/.local/share/vigia/last-scan.json` 0600 + notify-send
+  se achar algo). Setting `scheduled_scan` (OFF) + toggle liga/desliga o timer.
+
+Decisões do caminho: o **modo "Avançado"** (esconder Red/Blue + 5 tools pro) foi
+implementado e **revertido** a pedido — Hub/Red/Blue ficam todos visíveis. Ícones
+**sem cor** (visual limpo); a severidade já colore o texto do selo.
+
+vigia-hub **v0.11.0**. Suíte: **1124 testes verdes**. Pendente (a pedido, "vou
+conferir depois"): validação na VM; sweep de README/manuais pro novo conjunto.
+
+---
+
 ## 10. Roadmap
 
 ### 10.1 Próximas iterações por ferramenta
