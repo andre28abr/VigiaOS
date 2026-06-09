@@ -52,6 +52,22 @@ reaproveitam o mesmo master-detail via adaptador `Module → ToolEntry`.
 No rodapé do rail: **Configurações** (abas Sobre · Atualizações ·
 Aplicação · Segurança · Ajuda) e o sino de **Notificações**.
 
+### Funcionalidades de app (v0.10–v0.11)
+
+- **Busca rápida (Ctrl+K)** — `Adw.Dialog` global (via `Gtk.ShortcutController`)
+  indexando seções + Configurações + tools do Hub; Enter/clique navega.
+- **Tema "Terminal"** — Configurações → Aparência: setting `ui_theme`
+  (`Padrão` x `Terminal`), aplicado ao vivo por `theme.apply_ui_theme`
+  (override dos named colors do libadwaita + force dark).
+- **Notificações de segurança** — `vigia_common.notify.send` (Gio.Notification);
+  o check de updates do startup dispara uma notificação. Setting
+  `notify_security` (ON) em Configurações → Aplicação.
+- **Varredura de vírus semanal** — `vigia_common.scheduler` (systemd **user**
+  timer, sem root) + CLI `vigia-scan` (`vigia_hub.scan`); resultado em
+  `~/.local/share/vigia/last-scan.json` (0600). Setting `scheduled_scan` (OFF).
+- **Status no card** — `ToolEntry.status_fn` (via `vigia_common.posture`) mostra
+  status curto no card de algumas tools do Hub (firewall "ligado", etc.).
+
 ## Comunicação tray ↔ app
 
 ```
@@ -83,6 +99,11 @@ separação em subprocess.
 | `~/.local/share/vigia-reports/` | Relatórios gerados (PDF/HTML) | 0700 dir |
 
 ## Categorias e tools
+
+### ✅ Visão geral
+- **Tudo Certo?** (`vigia_hub.checkup`) — semáforo 🟢🟡🔴 de postura
+  (atualizações/firewall/antivírus/privacidade) via `vigia_common.posture`,
+  com botão "Resolver" que navega pra tool certa (Gio actions). 1ª tool do Hub.
 
 ### 📡 Monitoramento
 - **Dashboard** — Sistema em tempo real (CPU/RAM/disco/rede/processos)

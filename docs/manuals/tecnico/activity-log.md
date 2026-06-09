@@ -30,9 +30,26 @@ Duas camadas separadas:
    - `correlator.rs` — detecta 4 padrões cross-source
    - `main.rs` — CLI clap; modo `--output json-bundle` envelopa tudo num JSON com `version`, `generated_at`, `events[]`, `correlations[]`
 
-2. **Frontend Python (`vigia-log-gui`)** em `tools/activity-log-gui/src/vigia_log_gui/` — chama o binário via `subprocess.run`, parseia JSON em dataclasses (`ActivityBundle`, `ActivityEvent`, `ActivityCorrelation`) e renderiza nas 4 tabs.
+2. **Frontend Python (`vigia-log-gui`)** em `tools/activity-log-gui/src/vigia_log_gui/` — chama o binário via `subprocess.run`, parseia JSON em dataclasses (`ActivityBundle`, `ActivityEvent`, `ActivityCorrelation`) e renderiza nas 5 tabs.
 
-O frontend é **dumb**: não parseia logs nem classifica severidade. Toda a lógica fica no Rust, mantendo performance em logs grandes (centenas de MB de audit.log).
+O frontend é **dumb** quanto ao parsing/classificação: não parseia logs nem classifica severidade — isso fica no Rust, mantendo performance em logs grandes (centenas de MB de audit.log). A **humanização** (rótulos PT-BR + explicações amigáveis), porém, é responsabilidade do frontend, no módulo puro `glossary.py`.
+
+### Camada de humanização (`glossary.py`, v0.2.0)
+
+Módulo **puro** (sem GTK, testável) que traduz o vocabulário técnico:
+
+- **Rótulos de severidade** — `SEVERITY_LABEL`: `suspicious`→**Atenção**,
+  `interesting`→**Vale olhar**, `routine`→**Rotina** (antes eram
+  SUSP/INFO/OK). `SEVERITY_CSS` mapeia pra `error`/`warning`/`dim-label`.
+- **Rótulos de fonte** — `SOURCE_LABEL`: `audit`→**Auditoria de segurança**,
+  `journal`/`journald`→**Diário do sistema**, `fail2ban`→**Bloqueios de IP**.
+- **`explain(source, narrative, payload)`** — devolve uma `Explanation`
+  (`title`, `what`, `normal`, `action`) escolhida por **palavra-chave na
+  narrativa** (regras ordenadas: 1ª que casa vence), com fallback por fonte e,
+  por fim, um genérico. Cobre login falho, IP bloqueado, comando de admin,
+  USB, OOM kill, AVC do SELinux, serviço up/down, boot/shutdown.
+- **`SOURCES_INFO`** — `list[SourceInfo]` (code/label/icon/what/when) que
+  alimenta a aba **Fontes**.
 
 ## Comandos disparados
 
@@ -55,14 +72,35 @@ Correlations são geradas pós-merge em `correlator::correlate(&events)` e o JSO
 
 Hero card mostrando estado da última coleta + KPI rows:
 - Eventos totais
-- Suspicious (vermelho), Interesting (amarelo), Routine (dim)
+- **Atenção** (vermelho), **Vale olhar** (amarelo), **Rotina** (dim) — via `glossary.severity_label`
 - Correlations detectadas
 - Timestamp de geração
 - Lista de sources disponíveis (detectadas via `detect_available_sources()`)
 
-### Timeline
+### Linha do tempo (timeline)
 
-Lista filtrável/buscável de eventos interleavados das 3 fontes. Cada linha mostra `[hh:mm:ss] [source] narrativa`. Cores por severidade. Filtros: source (audit/journal/fail2ban), severidade mínima, search por texto.
+Lista filtrável/buscável de eventos interleavados das fontes. Cada linha é um
+`Adw.ExpanderRow` mostrando `[hh:mm:ss] [fonte] narrativa`, com fonte/severidade
+já em PT-BR (`source_label`/`severity_label`) e cor por severidade.
+
+**Ao expandir**, o frontend mostra primeiro a explicação amigável de
+`glossary.explain(source, narrative, payload)` — três campos (**O que é** /
+**É normal?** / **O que fazer**). O **JSON cru** do evento fica atrás de um
+sub-expander **"Ver detalhes técnicos"** (`Gtk.Expander`), pra quem quiser o
+registro bruto.
+
+Filtros: fonte, severidade mínima (`Vale olhar+`, etc.), search por texto. A
+aba expõe `select_source(code)`, chamado pela aba **Fontes** pra focar numa
+única fonte.
+
+### Fontes
+
+Novidade da v0.2.0 (`tabs/sources.py`). Um cartão (`Adw.ExpanderRow`) por log
+padrão do Fedora, vindo de `glossary.SOURCES_INFO` — **Diário do sistema**,
+**Auditoria de segurança**, **Bloqueios de IP** — com o que é, **quando olhar
+ali** e um botão **"Ver só este na Timeline"** (`on_focus(code)` → o controller
+troca pra aba Linha do tempo e filtra por essa fonte). Fontes ausentes
+(`detect_available_sources()`) ganham o selo "indisponível neste PC".
 
 ### Correlations
 

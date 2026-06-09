@@ -38,7 +38,7 @@ vigia_dns/
 > simples (systemd-resolved DoT)" vs "Modo avançado (dnscrypt-proxy)" —
 > texto stale da v0.2. Desde v0.3 a tool é **dnscrypt-only**. A v0.4
 > removeu blocklists e stats (ad-blocking é melhor servido por uBlock
-> Origin via Tool Installer).
+> Origin no navegador).
 
 ### Catálogo de 11 servers
 
@@ -151,8 +151,8 @@ systemctl enable --now systemd-resolved
 
 ## Quando usar
 
-- **Setup novo de privacidade**: instalar dnscrypt-proxy via Tool
-  Installer + Ativar pelo DNS Manager + escolher Cloudflare + Quad9.
+- **Setup novo de privacidade**: instalar dnscrypt-proxy (`sudo dnf install
+  dnscrypt-proxy`) + Ativar pelo DNS Manager + escolher Cloudflare + Quad9.
 - **LGPD/escritório**: AdGuard ou Mullvad AdBlock para bloquear
   tracking corporate no nível DNS.
 - **Forçar DNSSEC explícito**: garantir que respostas DNS não foram
@@ -162,8 +162,8 @@ systemctl enable --now systemd-resolved
 
 ## Limitações conhecidas
 
-- Requer `dnscrypt-proxy` instalado (via `dnf` ou Tool Installer). Hero
-  mostra "não instalado" se ausente.
+- Requer `dnscrypt-proxy` instalado (via `sudo dnf install dnscrypt-proxy`).
+  Hero mostra "não instalado" se ausente.
 - Editar `/etc/dnscrypt-proxy/dnscrypt-proxy.toml` direto durante uso
   da tool pode causar diff em key insertion (Vigia usa regex line-based,
   não re-serializa o TOML inteiro).

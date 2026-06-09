@@ -96,14 +96,15 @@ atrás, basta clicar em "Restaurar systemd-resolved" na aba Status. Em
 3 segundos você volta ao normal.
 
 **Cuidado especial**: você precisa ter o programa `dnscrypt-proxy`
-instalado antes. Se não tiver, o Status vai mostrar "não instalado" e
-você vai precisar passar pelo **Instalador de Ferramentas** primeiro.
+instalado antes. Se não tiver, o Status vai mostrar "não instalado". Pra
+instalar, abra o terminal e rode `sudo dnf install dnscrypt-proxy` (ou
+mantenha o sistema em dia pela aba **Configurações → Atualizações**).
 
 ## Dica do dia
 
 Pra um escritório de advocacia que precisa cumprir LGPD:
 
-1. **Instalador de Ferramentas** -> instale `dnscrypt-proxy`
+1. **Terminal** -> `sudo dnf install dnscrypt-proxy`
 2. **DNS Manager** -> Status -> "Ativar dnscrypt-proxy".
 3. **DNS Manager** -> Provedores -> "Mullvad AdBlock". Aplicar.
 4. Pronto. Tracking corporate bloqueado, queries DNS criptografadas e

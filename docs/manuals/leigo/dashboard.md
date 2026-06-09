@@ -59,7 +59,7 @@ Mostra **quanto de internet cada programa está usando agora** — quem está ba
 
 Pra que serve de verdade: descobrir **quem está comendo sua banda**, ou **flagrar um programa suspeito mandando dados pra fora** (exfiltração). O tráfego que o sistema não consegue ligar a um programa aparece pelo **endereço de destino** — ainda útil pra ver *pra onde* os dados estão indo.
 
-> Precisa do **nethogs** instalado (Instalador → Monitoramento → nethogs) — sem ele, a aba avisa. E precisa de **rede ativa** durante a medição: pra ver dados, deixe um download rolando e clique em Medir.
+> Precisa do **nethogs** instalado — sem ele, a aba avisa. Pra instalar, abra o terminal e rode `sudo dnf install nethogs`. E precisa de **rede ativa** durante a medição: pra ver dados, deixe um download rolando e clique em Medir.
 
 ### Aba 5 — Alertas
 

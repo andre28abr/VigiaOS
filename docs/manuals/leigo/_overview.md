@@ -40,9 +40,35 @@ Lá no rodapé dessa barra ficam:
    e a **Ajuda** com este manual)
 🔔 **Notificações** — o sininho que avisa quando há atualizações
 
+### Facilidades do app
+
+- 🔍 **Busca rápida (Ctrl+K)** — aperte **Ctrl+K** de qualquer lugar e
+  digite o que procura (uma ferramenta, uma seção, uma configuração). Dá
+  Enter e ele te leva lá. É o jeito mais rápido de navegar.
+- 🎨 **Tema "Terminal"** — em **Configurações → Aparência**, dá pra trocar o
+  visual *Padrão* (claro/escuro do GNOME) por um tema *Terminal* (fundo
+  escuro com verde-neon, estilo "hacker"). Só visual, não muda o que as
+  ferramentas fazem.
+- 🔔 **Notificações de segurança** — em **Configurações → Aplicação**, o
+  VigiaOS pode te avisar com uma **notificação do sistema** (aquele balão do
+  GNOME) quando há atualizações pendentes. Clicar no aviso abre a tela certa.
+- 🦠 **Varredura de vírus semanal** — também em **Configurações → Aplicação**,
+  você pode ligar uma **checagem automática de vírus** que roda **1x por
+  semana** nas suas pastas (sem precisar de senha de admin) e te avisa se
+  achar algo. Vem **desligada** por padrão.
+
 ## O que cada ferramenta faz?
 
 Vou agrupar por categoria pra ficar mais fácil:
+
+### ✅ Visão geral
+
+**Responde de relance: meu computador está seguro?**
+
+- **Tudo Certo?** — Um **semáforo 🟢🟡🔴** que checa de uma vez as 4 coisas
+  mais importantes (atualizações, firewall, antivírus, privacidade). Cada
+  item fora do lugar tem um botão **Resolver** que te leva direto pra
+  ferramenta certa. É a primeira parada recomendada.
 
 ### 👁️ Observação
 

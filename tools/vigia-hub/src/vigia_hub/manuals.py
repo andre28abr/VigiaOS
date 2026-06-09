@@ -397,6 +397,7 @@ class ManualEntry:
 # IDs devem corresponder aos arquivos .md em docs/manuals/<kind>/.
 MANUAL_ENTRIES: list[ManualEntry] = [
     ManualEntry("_overview", "Visão geral da Suite", "view-list-symbolic"),
+    ManualEntry("checkup", "Tudo Certo?", "security-high-symbolic"),
     ManualEntry("vigia-hub", "Vigia Hub", "view-grid-symbolic"),
     ManualEntry("activity-log", "Activity Log", "view-list-bullet-symbolic"),
     ManualEntry("dashboard", "Dashboard", "applications-utilities-symbolic"),

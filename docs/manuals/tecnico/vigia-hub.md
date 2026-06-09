@@ -15,7 +15,7 @@ Casca (shell) do **VigiaOS** que num único processo GTK4 oferece um **rail de s
 | **Path config** | `~/.config/vigia-hub/settings.json` (mode `0600`) |
 | **Path autostart** | `~/.config/autostart/vigia-hub.desktop` (XDG) |
 | **App ID D-Bus** | `br.com.vigia.OS` |
-| **Versão** | 0.6.1 |
+| **Versão** | 0.11.1 |
 
 ## Arquitetura interna
 
@@ -65,13 +65,22 @@ A auth usa `pkexec /usr/bin/true` (action default `org.freedesktop.policykit.exe
 
 Master-detail. Cada `ToolEntry` aparece com ícone, nome, descrição curta, badge de pacotes wrappados (`wrapped_packages`) e dot de status (`success` se `shutil.which` encontra o binário, `error` caso contrário). Red/Blue usam o mesmo widget de lista, com os módulos adaptados de `Module` para `ToolEntry`; o dot de disponibilidade é **por dependência**.
 
+A 1ª tool da seção Hub é o **Tudo Certo?** (`vigia_hub.checkup`, categoria *Visão geral*) — ver manual próprio. Alguns cards exibem **status curto** (`ToolEntry.status_fn` via `vigia_common.posture`, ex: firewall "ligado"), preenchido em thread (`_load_section_statuses`); ícones são built-in via `ToolEntry.theme_icon_name` quando não há SVG.
+
+### Funcionalidades de app (v0.10–v0.11)
+
+- **Busca rápida (Ctrl+K)** — `Adw.Dialog` (via `Gtk.ShortcutController` global) que indexa seções + Configurações + tools do Hub; Enter/clique navega, Esc fecha.
+- **Tema "Terminal"** — `theme.apply_ui_theme` (`Gtk.CssProvider`) faz override dos named colors do libadwaita + force dark; setting `ui_theme` em Configurações → Aplicação → Aparência.
+- **Notificações de segurança** — `vigia_common.notify.send` (Gio.Notification, à prova de erro). O check de updates do startup dispara uma notificação (clique → Configurações). Setting `notify_security`.
+- **Varredura de vírus semanal** — `vigia_common.scheduler` (systemd **user** timer, sem root; units puros/testáveis) + CLI `vigia-scan` (`vigia_hub.scan`: ClamAV nas pastas do user → `~/.local/share/vigia/last-scan.json` 0600 + `notify-send`). Setting `scheduled_scan` liga/desliga o timer.
+
 ### Configurações (view com abas)
 
 `Adw.ViewSwitcher` com 5 abas, na ordem **Sobre · Atualizações · Aplicação · Segurança · Ajuda**:
 
 - **Sobre** — versão, autor, licença do VigiaOS
 - **Atualizações** — embute `vigia_installer.window.build_content()` (ver "Atualizações" abaixo)
-- **Aplicação** — autostart, tray, iniciar minimizado, **checar atualizações ao iniciar** (`check_updates`, default ligado)
+- **Aplicação** — autostart, tray, iniciar minimizado, **checar atualizações ao iniciar** (`check_updates`, default ON), **notificações de segurança** (`notify_security`, default ON), **varredura de vírus semanal** (`scheduled_scan`, default OFF) e o grupo **Aparência** (seletor de tema, setting `ui_theme`: `padrao` x `terminal`, aplicado ao vivo por `apply_ui_theme`)
 - **Segurança** — password lock (pkexec), auto-lock por inatividade (5/10/15/30/60 min)
 - **Ajuda** — os manuais (ver abaixo)
 
