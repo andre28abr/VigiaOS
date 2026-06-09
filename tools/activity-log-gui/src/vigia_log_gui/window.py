@@ -21,7 +21,13 @@ from gi.repository import Adw, GLib, Gtk  # noqa: E402
 
 from . import WRAPPED_PACKAGES, backend
 from .backend import ActivityBundle
-from .tabs import AboutTab, CorrelationsTab, StatusTab, TimelineTab
+from .tabs import (
+    AboutTab,
+    CorrelationsTab,
+    SourcesTab,
+    StatusTab,
+    TimelineTab,
+)
 from .tabs._helpers import show_error
 
 
@@ -55,14 +61,16 @@ class _LogGuiContent:
 
         self.status = StatusTab()
         self.timeline = TimelineTab()
+        self.sources = SourcesTab(self._focus_source)
         self.correlations = CorrelationsTab()
         self.about = AboutTab()
 
         # ViewStack
-        stack = Adw.ViewStack()
+        self._stack = stack = Adw.ViewStack()
         stack.add_titled_with_icon(self.status, "status", "Status", "dialog-information-symbolic")
-        stack.add_titled_with_icon(self.timeline, "timeline", "Timeline", "view-list-symbolic")
-        stack.add_titled_with_icon(self.correlations, "correlations", "Correlations", "emblem-shared-symbolic")
+        stack.add_titled_with_icon(self.timeline, "timeline", "Linha do tempo", "view-list-symbolic")
+        stack.add_titled_with_icon(self.sources, "sources", "Fontes", "folder-symbolic")
+        stack.add_titled_with_icon(self.correlations, "correlations", "Correlações", "emblem-shared-symbolic")
         stack.add_titled_with_icon(self.about, "about", "Sobre", "help-about-symbolic")
 
         switcher = Adw.ViewSwitcher()
@@ -164,6 +172,11 @@ class _LogGuiContent:
     def _pulse_tick(self) -> bool:
         self._progress_bar.pulse()
         return self._running
+
+    def _focus_source(self, code: str) -> None:
+        """Aba Fontes pediu pra focar numa fonte: vai pra Linha do tempo e filtra."""
+        self._stack.set_visible_child_name("timeline")
+        self.timeline.focus_source(code)
 
 
 def build_content() -> Gtk.Widget:

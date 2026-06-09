@@ -30,40 +30,22 @@ def make_clamp(child: Gtk.Widget) -> Adw.Clamp:
 
 
 # ============================================================
-# Funcoes ESPECIFICAS desta tool — nao migradas para vigia_common
-# (sao usadas apenas aqui)
+# Rótulos amigáveis (PT-BR) — agora moram no glossary.py (fonte única, pura).
+# Re-exportados aqui pra manter `from ._helpers import ...` funcionando.
 # ============================================================
 
-# Mapas de rotulo/cor por severidade e fonte do evento (consumidos pelas
-# abas Timeline e Correlacoes). Restaurados apos a migracao vigia_common
-# (commit 66121a6) te-los removido por engano.
-SEVERITY_CSS = {
-    "suspicious": "error",
-    "interesting": "warning",
-    "routine": "dim-label",
-}
+from ..glossary import (  # noqa: E402
+    severity_css,
+    severity_label,
+    severity_short,
+    source_label,
+)
 
-SEVERITY_LABEL = {
-    "suspicious": "SUSP",
-    "interesting": "INFO",
-    "routine": "OK",
-}
+__all__ = [
+    "make_clamp", "show_error", "escape_markup",
+    "severity_css", "severity_label", "severity_short", "source_label",
+]
 
-SOURCE_LABEL = {
-    "audit": "AUDIT",
-    "journal": "JRNL",
-    "fail2ban": "F2B",
-}
-
-
-def severity_css(sev: str) -> str:
-    return SEVERITY_CSS.get(sev, "dim-label")
-
-def severity_label(sev: str) -> str:
-    return SEVERITY_LABEL.get(sev, sev.upper()[:5])
-
-def source_label(src: str) -> str:
-    return SOURCE_LABEL.get(src, src.upper()[:5])
 
 def escape_markup(s: str) -> str:
     return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
