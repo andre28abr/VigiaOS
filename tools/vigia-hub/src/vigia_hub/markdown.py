@@ -8,6 +8,6 @@ Tools novas devem importar direto:
     from vigia_common.markdown import md_to_pango
 """
 
-from vigia_common.markdown import md_to_pango  # noqa: F401
+from vigia_common.markdown import md_to_pango, md_to_pango_block  # noqa: F401
 
-__all__ = ["md_to_pango"]
+__all__ = ["md_to_pango", "md_to_pango_block"]
