@@ -65,10 +65,11 @@ SOURCES: list[Source] = [
     Source("bing", "Bing", "Busca por e-mails e hosts"),
 ]
 
-# Padrão: fontes confiáveis e key-free que costumam responder bem.
-DEFAULT_SOURCE_IDS = [
-    "crtsh", "hackertarget", "rapiddns", "anubis", "otx", "urlscan", "duckduckgo",
-]
+# theHarvester ABORTA a busca inteira se UMA fonte do -b for inválida na versão
+# instalada ("[!] Invalid source"). Por isso o padrão é um conjunto MÍNIMO e
+# estável — crt.sh (transparência de certificados), a melhor fonte passiva de
+# subdomínios. Expandir só com fontes validadas na versão alvo (ver registry/§9).
+DEFAULT_SOURCE_IDS = ["crtsh"]
 
 
 @dataclass

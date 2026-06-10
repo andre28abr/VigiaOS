@@ -171,9 +171,8 @@ class _ReconView(Gtk.Box):
         g_target = Adw.PreferencesGroup()
         g_target.set_title("Alvo autorizado")
         g_target.set_description(
-            "Informe só o domínio (ex.: exemplo.com.br). Consulta "
-            f"{len(backend.DEFAULT_SOURCE_IDS)} fontes públicas (certificados, "
-            "DNS, buscadores) — passivo, não toca no alvo."
+            "Informe só o domínio (ex.: exemplo.com.br). Consulta fontes "
+            "públicas (certificados, DNS, buscadores) — passivo, não toca no alvo."
         )
         self._entry = Adw.EntryRow()
         self._entry.set_title("Domínio do alvo")
