@@ -1,9 +1,8 @@
-"""GUI do Vigia Recon — termo de uso + abas Investigar / Histórico / Sobre.
+"""GUI do Vigia Network Scanner — termo de uso + Varredura / Histórico / Sobre.
 
-Exporta `build_content() -> Gtk.Widget`, embarcado pelo shell do VigiaRed via
-`Module.impl`. Na 1ª vez exibe o TERMO DE USO (Lei 12.737/2012); só depois de
-aceitar, mostra a ferramenta. A investigação roda em thread (não trava a UI) e
-atualiza por `GLib.idle_add`. GTK só é importado aqui — `backend.py` é puro.
+Exporta `build_content() -> Gtk.Widget` (embarcado pelo shell via `Module.impl`).
+Passa pelo portão do termo (gate.build_gated). A varredura roda em thread e
+atualiza por `GLib.idle_add`. GTK só aqui — `backend.py` é puro.
 """
 
 from __future__ import annotations
@@ -17,23 +16,18 @@ gi.require_version("Adw", "1")
 
 from gi.repository import Adw, Gio, GLib, Gtk  # noqa: E402
 
-from ... import consent, gate  # noqa: E402
+from ... import gate  # noqa: E402
 from . import backend  # noqa: E402
 
+
 def build_content() -> Gtk.Widget:
-    """Portão do termo de uso (gate reusável do Red) → ferramenta."""
     return gate.build_gated(_build_tool)
-
-
-# ============================================================
-# Ferramenta (3 abas)
-# ============================================================
 
 
 def _build_tool() -> Gtk.Widget:
     stack = Adw.ViewStack()
     stack.add_titled_with_icon(
-        _ReconView(), "recon", "Investigar", "system-search-symbolic")
+        _ScanView(), "scan", "Varredura", "network-wired-symbolic")
     stack.add_titled_with_icon(
         _HistoryView(), "hist", "Histórico", "document-open-recent-symbolic")
     stack.add_titled_with_icon(
@@ -56,24 +50,15 @@ def _open_path(path: str) -> None:
     try:
         Gio.AppInfo.launch_default_for_uri(f"file://{path}", None)
     except GLib.Error as e:
-        print(f"[recon] falha ao abrir {path}: {e}", flush=True)
-
-
-# Categorias de resultado: (atributo, título, ícone)
-_CATEGORIES = [
-    ("emails", "E-mails", "mail-unread-symbolic"),
-    ("hosts", "Subdomínios", "network-server-symbolic"),
-    ("ips", "Endereços IP", "network-wired-symbolic"),
-    ("urls", "URLs de interesse", "web-browser-symbolic"),
-]
+        print(f"[netscan] falha ao abrir {path}: {e}", flush=True)
 
 
 # ============================================================
-# Aba Investigar
+# Aba Varredura
 # ============================================================
 
 
-class _ReconView(Gtk.Box):
+class _ScanView(Gtk.Box):
     def __init__(self) -> None:
         super().__init__(orientation=Gtk.Orientation.VERTICAL)
         self._running = False
@@ -89,15 +74,35 @@ class _ReconView(Gtk.Box):
         g_target = Adw.PreferencesGroup()
         g_target.set_title("Alvo autorizado")
         g_target.set_description(
-            "Informe só o domínio (ex.: exemplo.com.br). Consulta fontes "
-            "públicas (certificados, DNS, buscadores) — passivo, não toca no alvo."
-        )
+            "Domínio, IP ou faixa (ex.: exemplo.com.br, 192.168.0.10, "
+            "192.168.0.0/24). Varredura ATIVA: conecta nas portas do alvo — "
+            "use só com autorização.")
         self._entry = Adw.EntryRow()
-        self._entry.set_title("Domínio do alvo")
-        self._entry.add_prefix(Gtk.Image.new_from_icon_name("system-search-symbolic"))
-        self._entry.connect("entry-activated", self._on_investigate)
+        self._entry.set_title("Domínio / IP / faixa")
+        self._entry.add_prefix(Gtk.Image.new_from_icon_name("network-wired-symbolic"))
+        self._entry.connect("entry-activated", self._on_scan)
         g_target.add(self._entry)
         page.add(g_target)
+
+        # --- Perfil ---
+        g_prof = Adw.PreferencesGroup()
+        g_prof.set_title("Perfil")
+        self._profiles = backend.PROFILES
+        self._combo = Adw.ComboRow()
+        self._combo.set_title("Profundidade")
+        self._combo.add_prefix(Gtk.Image.new_from_icon_name("preferences-system-symbolic"))
+        model = Gtk.StringList()
+        default_idx = 0
+        for i, p in enumerate(self._profiles):
+            model.append(p.label)
+            if p.id == backend.DEFAULT_PROFILE:
+                default_idx = i
+        self._combo.set_model(model)
+        self._combo.set_selected(default_idx)
+        self._combo.connect("notify::selected", self._on_profile_changed)
+        g_prof.add(self._combo)
+        page.add(g_prof)
+        self._on_profile_changed(self._combo, None)
 
         # --- Ação ---
         g_action = Adw.PreferencesGroup()
@@ -105,10 +110,10 @@ class _ReconView(Gtk.Box):
         box.set_halign(Gtk.Align.CENTER)
         self._spinner = Gtk.Spinner()
         box.append(self._spinner)
-        self._btn = Gtk.Button(label="Investigar")
+        self._btn = Gtk.Button(label="Escanear")
         self._btn.add_css_class("suggested-action")
         self._btn.add_css_class("pill")
-        self._btn.connect("clicked", self._on_investigate)
+        self._btn.connect("clicked", self._on_scan)
         box.append(self._btn)
         g_action.add(box)
         page.add(g_action)
@@ -118,18 +123,15 @@ class _ReconView(Gtk.Box):
         self._results.set_title("Resultados")
         page.add(self._results)
         self._result_rows: list[Gtk.Widget] = []
-        self._set_results_info("Nenhuma investigação ainda.",
+        self._set_results_info("Nenhuma varredura ainda.",
                                "dialog-information-symbolic")
-
         self._refresh_banner()
 
-    # -- estado / banner --
+    # -- banner / estado --
     def _refresh_banner(self) -> None:
-        if not backend.theharvester_available():
+        if not backend.nmap_available():
             self._banner.set_title(
-                "theHarvester não instalado — instale-o (veja a aba Sobre) "
-                "para liberar a busca."
-            )
+                "nmap não instalado. Instale com:  sudo dnf install nmap")
             self._banner.set_revealed(True)
             self._btn.set_sensitive(False)
         else:
@@ -154,54 +156,71 @@ class _ReconView(Gtk.Box):
         row.add_prefix(Gtk.Image.new_from_icon_name(icon))
         self._add_result(row)
 
-    def _category_expander(self, items: list[str], title: str, icon: str,
-                           cap: int = 100) -> Adw.ExpanderRow:
+    def _on_profile_changed(self, combo: Adw.ComboRow, _param) -> None:
+        idx = combo.get_selected()
+        if 0 <= idx < len(self._profiles):
+            combo.set_subtitle(self._profiles[idx].description)
+
+    @staticmethod
+    def _port_row(p: backend.Port) -> Adw.ActionRow:
+        r = Adw.ActionRow()
+        r.set_title(f"Porta {p.port}/{p.proto.upper()}")
+        parts = []
+        if p.service:
+            parts.append(p.service)
+        extra = " ".join(x for x in (p.product, p.version) if x)
+        if extra:
+            parts.append(extra)
+        r.set_subtitle(" · ".join(parts) or "aberta")
+        r.set_subtitle_lines(0)
+        r.set_title_selectable(True)
+        r.add_prefix(Gtk.Image.new_from_icon_name("network-transmit-receive-symbolic"))
+        return r
+
+    def _host_expander(self, host: backend.Host, single: bool) -> Adw.ExpanderRow:
         exp = Adw.ExpanderRow()
-        exp.set_title(title)
-        n = len(items)
-        exp.set_subtitle(f"{n} encontrado(s)")
-        img = Gtk.Image.new_from_icon_name(icon)
-        exp.add_prefix(img)
-        if not items:
+        exp.set_title(host.hostname or host.address)
+        n = len(host.ports)
+        sub = f"{n} porta(s) aberta(s)"
+        if host.hostname and host.address:
+            sub = f"{host.address} · {sub}"
+        exp.set_subtitle(sub)
+        exp.add_prefix(Gtk.Image.new_from_icon_name("computer-symbolic"))
+        if not host.ports:
             exp.set_enable_expansion(False)
-            return exp
-        for value in items[:cap]:
-            r = Adw.ActionRow()
-            r.set_title(value)
-            r.set_title_selectable(True)
-            r.set_title_lines(0)
-            exp.add_row(r)
-        if n > cap:
-            more = Adw.ActionRow()
-            more.set_title(f"+ {n - cap} mais — veja o relatório completo (Histórico).")
-            more.add_css_class("dim-label")
-            exp.add_row(more)
+        else:
+            exp.set_expanded(single or n <= 8)
+            for p in host.ports:
+                exp.add_row(self._port_row(p))
         return exp
 
-    # -- investigação --
-    def _on_investigate(self, *_args) -> None:
+    # -- scan --
+    def _on_scan(self, *_args) -> None:
         if self._running:
             return
         raw = self._entry.get_text()
-        if not backend.validate_domain(raw):
+        if not backend.validate_target(raw):
             self._set_results_info(
-                "Domínio inválido. Informe só o domínio, ex.: exemplo.com.br",
+                "Alvo inválido. Use domínio, IP ou faixa (ex.: 192.168.0.0/24).",
                 "dialog-error-symbolic")
             return
-        dom = backend.normalize_domain(raw)
+        idx = self._combo.get_selected()
+        profile_id = (self._profiles[idx].id
+                      if 0 <= idx < len(self._profiles) else backend.DEFAULT_PROFILE)
         self._running = True
         self._btn.set_sensitive(False)
         self._spinner.start()
         self._set_results_info(
-            f"Investigando {dom}… consultando fontes públicas (pode levar 1–2 min).",
-            "system-search-symbolic")
-        threading.Thread(target=self._worker, args=(dom,), daemon=True).start()
+            f"Escaneando {backend.normalize_target(raw)}… (pode levar de "
+            "segundos a minutos, conforme o perfil).", "network-wired-symbolic")
+        threading.Thread(
+            target=self._worker, args=(raw, profile_id), daemon=True).start()
 
-    def _worker(self, domain: str) -> None:
-        result = backend.run_recon(domain)
+    def _worker(self, target: str, profile_id: str) -> None:
+        result = backend.run_scan(target, profile_id)
         GLib.idle_add(self._apply, result)
 
-    def _apply(self, result: backend.ReconResult) -> bool:
+    def _apply(self, result: backend.ScanResult) -> bool:
         self._running = False
         self._spinner.stop()
         self._btn.set_sensitive(True)
@@ -210,33 +229,32 @@ class _ReconView(Gtk.Box):
 
         if result.error:
             row = Adw.ActionRow()
-            row.set_title("Não foi possível concluir a busca")
+            row.set_title("Não foi possível concluir a varredura")
             row.set_subtitle(result.error)
             row.set_subtitle_lines(0)
             row.add_prefix(Gtk.Image.new_from_icon_name("dialog-error-symbolic"))
             self._add_result(row)
             return False
 
-        if result.total == 0:
+        hosts_with_ports = [h for h in result.hosts if h.ports]
+        if not hosts_with_ports:
             self._results.set_description(f"Concluído em {result.elapsed_sec:.0f}s.")
             row = Adw.ActionRow()
-            row.set_title(f"Nenhum dado público encontrado para {result.domain}.")
+            row.set_title(f"Nenhuma porta aberta encontrada em {result.target}.")
             row.set_subtitle(
-                "As fontes não retornaram nada. Confira o domínio (use a raiz, "
-                "ex.: nmap.com) ou tente mais tarde.")
+                "O alvo pode estar protegido por firewall, ou tente o perfil "
+                "Completa (todas as portas).")
             row.set_subtitle_lines(0)
-            row.add_prefix(Gtk.Image.new_from_icon_name("dialog-information-symbolic"))
+            row.add_prefix(Gtk.Image.new_from_icon_name("security-high-symbolic"))
             self._add_result(row)
             return False
 
+        single = len(hosts_with_ports) == 1
         self._results.set_description(
-            f"{len(result.emails)} e-mail(s) · {len(result.hosts)} subdomínio(s) · "
-            f"{len(result.ips)} IP(s) · {len(result.urls)} URL(s) · "
-            f"{result.elapsed_sec:.0f}s. Clique numa categoria para abrir."
-        )
-        for attr, title, icon in _CATEGORIES:
-            items = getattr(result, attr)
-            self._add_result(self._category_expander(items, title, icon))
+            f"{len(hosts_with_ports)} host(s) · {result.open_ports} porta(s) "
+            f"aberta(s) · {result.elapsed_sec:.0f}s. Clique num host para abrir.")
+        for h in hosts_with_ports:
+            self._add_result(self._host_expander(h, single))
         saved = Adw.ActionRow()
         saved.set_title("Relatório salvo — veja na aba Histórico.")
         saved.add_prefix(Gtk.Image.new_from_icon_name("emblem-ok-symbolic"))
@@ -256,7 +274,7 @@ class _HistoryView(Gtk.Box):
         self._page.set_vexpand(True)
         self.append(self._page)
         self._group = Adw.PreferencesGroup()
-        self._group.set_title("Investigações recentes")
+        self._group.set_title("Varreduras recentes")
         refresh = Gtk.Button(label="Atualizar")
         refresh.add_css_class("flat")
         refresh.connect("clicked", lambda _b: self._reload())
@@ -273,19 +291,18 @@ class _HistoryView(Gtk.Box):
         reports = backend.list_recent_reports()
         if not reports:
             row = Adw.ActionRow()
-            row.set_title("Nenhuma investigação salva ainda.")
+            row.set_title("Nenhuma varredura salva ainda.")
             row.add_prefix(Gtk.Image.new_from_icon_name("dialog-information-symbolic"))
             self._group.add(row)
             self._rows.append(row)
             return
         for rep in reports:
-            n = (len(rep.get("emails", [])) + len(rep.get("hosts", []))
-                 + len(rep.get("ips", [])) + len(rep.get("urls", [])))
+            ports = sum(len(h.get("ports", [])) for h in rep.get("hosts", []))
             row = Adw.ActionRow()
-            row.set_title(rep.get("domain", "?"))
+            row.set_title(rep.get("target", "?"))
             row.set_subtitle(
-                f"{rep.get('started_at', '?')} · {n} achado(s)")
-            row.add_prefix(Gtk.Image.new_from_icon_name("system-search-symbolic"))
+                f"{rep.get('started_at', '?')} · {ports} porta(s) aberta(s)")
+            row.add_prefix(Gtk.Image.new_from_icon_name("network-wired-symbolic"))
             path = rep.get("_file")
             if path:
                 row.set_activatable(True)
@@ -305,22 +322,17 @@ def _build_about() -> Gtk.Widget:
     page = Adw.PreferencesPage()
 
     g = Adw.PreferencesGroup()
-    g.set_title("Vigia Recon")
+    g.set_title("Vigia Network Scanner")
     g.set_description(
-        "Reconhecimento passivo (OSINT) — mapeia a superfície externa de um "
-        "alvo autorizado a partir de fontes públicas. Não toca nos servidores "
-        "do alvo. Relatórios salvos localmente com permissão 0600."
-    )
+        "Reconhecimento ATIVO: descobre portas abertas e serviços/versões de "
+        "um alvo autorizado, via nmap. Roda sem root (TCP connect). Complementa "
+        "o Vigia Recon (passivo). Relatórios salvos com permissão 0600.")
     integra = Adw.ActionRow()
     integra.set_title("Integra")
-    integra.set_subtitle(
-        "theHarvester (CLI). Instale com:  "
-        "pipx install git+https://github.com/laramies/theHarvester.git")
+    integra.set_subtitle("nmap (CLI). Instale com:  sudo dnf install nmap")
     integra.set_subtitle_lines(0)
-    integra.add_prefix(
-        Gtk.Image.new_from_icon_name("application-x-executable-symbolic"))
+    integra.add_prefix(Gtk.Image.new_from_icon_name("application-x-executable-symbolic"))
     g.add(integra)
-
     reports = Adw.ActionRow()
     reports.set_title("Relatórios")
     reports.set_subtitle(str(backend.REPORTS_DIR) + " — clique para abrir")
@@ -337,49 +349,27 @@ def _build_about() -> Gtk.Widget:
     g.add(reports)
     page.add(g)
 
-    # Fontes consultadas
-    g_src = Adw.PreferencesGroup()
-    g_src.set_title("Fontes públicas consultadas")
-    g_src.set_description("Padrão do produto — todas passivas e sem chave de API.")
-    for s in backend.SOURCES:
-        used = s.id in backend.DEFAULT_SOURCE_IDS
+    g_prof = Adw.PreferencesGroup()
+    g_prof.set_title("Perfis de varredura")
+    for p in backend.PROFILES:
         row = Adw.ActionRow()
-        row.set_title(s.label)
-        row.set_subtitle(s.note)
-        row.add_prefix(Gtk.Image.new_from_icon_name(
-            "emblem-ok-symbolic" if used else "list-add-symbolic"))
-        if not used:
-            tag = Gtk.Label(label="opcional")
-            tag.add_css_class("caption")
-            tag.add_css_class("dim-label")
-            tag.set_valign(Gtk.Align.CENTER)
-            row.add_suffix(tag)
-        g_src.add(row)
-    page.add(g_src)
+        row.set_title(p.label)
+        row.set_subtitle(p.description)
+        row.set_subtitle_lines(0)
+        row.add_prefix(Gtk.Image.new_from_icon_name("preferences-system-symbolic"))
+        g_prof.add(row)
+    page.add(g_prof)
 
-    # Legal
     g_legal = Adw.PreferencesGroup()
     g_legal.set_title("Uso responsável")
     legal = Adw.ActionRow()
-    legal.set_title("Apenas alvos autorizados")
+    legal.set_title("Varredura ativa — só em alvos autorizados")
     legal.set_subtitle(
-        "Sistemas próprios ou com autorização formal por escrito. "
-        "Acesso não autorizado é crime (Lei 12.737/2012).")
+        "Diferente do Recon (passivo), o Scanner conecta nas portas do alvo. "
+        "Faça só em sistemas próprios ou com autorização formal por escrito "
+        "(Lei 12.737/2012).")
     legal.set_subtitle_lines(0)
     legal.add_prefix(Gtk.Image.new_from_icon_name("dialog-warning-symbolic"))
     g_legal.add(legal)
-
-    revoke = Adw.ActionRow()
-    revoke.set_title("Revogar aceite do termo")
-    revoke.set_subtitle("Exibe o termo de novo na próxima vez que abrir o módulo.")
-    revoke.add_prefix(Gtk.Image.new_from_icon_name("edit-undo-symbolic"))
-    revoke.set_activatable(True)
-
-    def _revoke(_r):
-        consent.revoke()
-        revoke.set_subtitle("Aceite revogado — reabra o Vigia Recon para ver o termo.")
-
-    revoke.connect("activated", _revoke)
-    g_legal.add(revoke)
     page.add(g_legal)
     return page

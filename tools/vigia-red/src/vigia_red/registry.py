@@ -13,7 +13,7 @@ META = ProductMeta(
     key="red",
     name="VigiaRed",
     app_id="br.com.vigia.Red",
-    version="0.1.2",
+    version="0.2.0",
     tagline=(
         "Suíte ofensiva (pentest / red team) com interface gráfica moderna — "
         "parte do ecossistema VigiaOS. Esqueleto: os módulos chegam um a um."
@@ -61,12 +61,15 @@ MODULES: list[Module] = [
         id="netscan", name="Vigia Network Scanner", category="recon",
         icon="network-wired-symbolic",
         summary="Descoberta de portas e serviços (nmap)",
-        description="Varredura de rede com nmap: hosts vivos, portas abertas, "
-                    "fingerprint de serviço e versão. (Voltou ao produto certo "
-                    "— foi tirado do VigiaHub por não ser de escritório/LGPD.)",
+        description="Varredura ATIVA com nmap: portas abertas e serviço/versão "
+                    "de um alvo autorizado. Complementa o Vigia Recon (passivo).",
         wraps=["nmap"],
-        features=["Descoberta de hosts e portas", "Detecção de serviço/versão",
-                  "Scripts NSE selecionados", "Saída salva por alvo"],
+        features=["Descoberta de portas abertas", "Detecção de serviço/versão",
+                  "Perfis Rápida/Padrão/Completa", "Relatório 0600 por alvo"],
+        status="pronto",
+        impl="vigia_red.modules.netscan.page",
+        requires=(Dependency("nmap", ("nmap",), "rpm", "nmap",
+                  note="Varredura de portas/serviços. Roda sem root (TCP connect)."),),
     ),
     Module(
         id="vuln", name="Vigia Vuln Scanner", category="scanning",

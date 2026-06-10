@@ -3216,6 +3216,29 @@ Blue (backend puro + `page.build_content()` + `status="pronto"`/`impl`/`requires
 
 ---
 
+### 2026-06-09 — VigiaRed: 2º módulo — Vigia Network Scanner (nmap) + gate reusável
+
+O par do Recon: reconhecimento **ATIVO** (toca no alvo). Mesmo padrão.
+
+- **Gate reusável** (`vigia_red.gate`, GTK) — extraído do recon: `build_gated(build_tool)`
+  envolve qualquer módulo no portão do termo (StatusPage + checkbox) e só monta a
+  ferramenta após o aceite (`consent`). recon/page.py refatorado pra usá-lo (−55
+  linhas). Todo módulo novo do Red agora é só `return gate.build_gated(_build_tool)`.
+- **Vigia Network Scanner** (`vigia_red.modules.netscan`) — varredura de portas/
+  serviços via nmap, **sem root** (`-sT -Pn --open -T4 -oX -`).
+  - `backend.py` (puro): `validate_target` (domínio/IP/CIDR via `ipaddress`),
+    `network_too_large` (trava faixa > 1024), `build_scan_cmd` (argv-lista),
+    `parse_nmap_xml` (stdlib `xml.etree` → Host/Port com serviço+versão),
+    `run_scan` (proc.run + relatório 0600). 27 testes.
+  - `page.py`: abas **Varredura** (alvo + perfil Rápida/Padrão/Completa em
+    ComboRow → thread → hosts em ExpanderRow com portas) / **Histórico** / **Sobre**.
+    Banner se faltar nmap (`sudo dnf install nmap`).
+- Registry: `netscan` → pronto + impl + `requires=(Dependency("nmap", …, "rpm"))`.
+  Testes do esqueleto atualizados (2 módulos reais; deps-helper vê nmap Red/rpm).
+  VigiaRed **v0.2.0**. Suíte: **1216 verdes**.
+
+---
+
 ## 10. Roadmap
 
 ### 10.1 Próximas iterações por ferramenta
