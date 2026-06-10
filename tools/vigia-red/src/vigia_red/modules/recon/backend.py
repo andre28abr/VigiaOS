@@ -84,6 +84,7 @@ class ReconResult:
     started_at: str = ""
     elapsed_sec: float = 0.0
     error: str = ""
+    ran: bool = False        # True se o theHarvester rodou e gravou o JSON
 
     @property
     def total(self) -> int:
@@ -126,7 +127,10 @@ def normalize_domain(domain: str) -> str:
     d = d.split("/", 1)[0]                          # remove caminho
     d = d.split("@", 1)[-1]                          # remove user@ (caso colem e-mail)
     d = d.split(":", 1)[0]                           # remove :porta
-    return d.strip(". ")
+    d = d.strip(". ")
+    if d.startswith("www.") and d.count(".") >= 2:   # www.dominio.com -> dominio.com
+        d = d[4:]
+    return d
 
 
 def validate_domain(domain: str) -> bool:
@@ -237,6 +241,19 @@ def _read_harvester_json(base: Path):
     return None
 
 
+def _short_error(out: str, err: str) -> str:
+    """Última linha ÚTIL da saída do theHarvester (ignora a arte ASCII do banner)."""
+    for stream in (err, out):
+        for line in reversed((stream or "").splitlines()):
+            s = line.strip()
+            if not s or set(s) <= set("*_|/\\ .-"):
+                continue
+            if s.startswith("*") and s.endswith("*"):
+                continue
+            return s[:200]
+    return ""
+
+
 def run_recon(
     domain: str,
     source_ids: list[str] | None = None,
@@ -266,18 +283,17 @@ def run_recon(
         data = _read_harvester_json(base)
 
     res.elapsed_sec = round(time.monotonic() - t0, 2)
+    res.ran = data is not None
 
-    if data is not None:
+    if res.ran:
         parsed = parse_harvester_json(data, dom)
         res.emails, res.hosts = parsed.emails, parsed.hosts
         res.ips, res.urls = parsed.ips, parsed.urls
-
-    if res.total == 0 and not res.error:
-        res.error = (
-            (err.strip() or out.strip()
-             or "Nenhum dado retornado. A fonte pode estar indisponível ou "
-                "o domínio não tem presença pública.")[:500]
-        )
+    else:
+        # Não gravou o JSON → falha real (≠ "rodou e não achou nada").
+        res.error = _short_error(out, err) or (
+            f"O theHarvester não retornou dados (código {rc}). "
+            "Tente de novo ou rode no terminal pra ver o erro.")
 
     save_report(res)
     return res

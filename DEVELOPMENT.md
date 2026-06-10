@@ -3197,7 +3197,13 @@ Blue (backend puro + `page.build_content()` + `status="pronto"`/`impl`/`requires
   (aba Atualizações). **recon-ng** fica pra v0.2 (framework interativo, exige
   chaves de API).
 - Testes do esqueleto atualizados (adapters do Red; o deps-helper agora vê o
-  theHarvester como dep Red/pip). VigiaRed **v0.1.0**. Suíte: **1180 verdes**.
+  theHarvester como dep Red/pip).
+- **Calibração (v0.1.1)** com o theHarvester **4.11.1** real (validado na VM):
+  tira `www.` do domínio automaticamente (ele quer a raiz); distingue "rodou e
+  não achou nada" (mensagem limpa) de "falhou de verdade" (`_short_error` pega a
+  última linha útil e ignora a arte ASCII do banner); comando de instalação
+  corrigido p/ `pipx install git+https://github.com/laramies/theHarvester.git`
+  (a forma simples do PyPI o pipx recusa). VigiaRed **v0.1.1**. Suíte: **1185 verdes**.
 
 > Convenção: módulos do Blue/Red se documentam pela própria aba **Sobre** + este
 > log §9 — `docs/manuals/` é só do Hub.

@@ -210,8 +210,8 @@ class _ReconView(Gtk.Box):
     def _refresh_banner(self) -> None:
         if not backend.theharvester_available():
             self._banner.set_title(
-                "theHarvester não instalado. Instale com:  "
-                "pipx install theHarvester"
+                "theHarvester não instalado — instale-o (veja a aba Sobre) "
+                "para liberar a busca."
             )
             self._banner.set_revealed(True)
             self._btn.set_sensitive(False)
@@ -291,11 +291,24 @@ class _ReconView(Gtk.Box):
         self._clear_results()
         self._results.set_description(None)
 
-        if result.error and result.total == 0:
+        if result.error:
             row = Adw.ActionRow()
-            row.set_title(f"Sem resultados: {result.error}")
+            row.set_title("Não foi possível concluir a busca")
+            row.set_subtitle(result.error)
             row.set_subtitle_lines(0)
-            row.add_prefix(Gtk.Image.new_from_icon_name("dialog-warning-symbolic"))
+            row.add_prefix(Gtk.Image.new_from_icon_name("dialog-error-symbolic"))
+            self._add_result(row)
+            return False
+
+        if result.total == 0:
+            self._results.set_description(f"Concluído em {result.elapsed_sec:.0f}s.")
+            row = Adw.ActionRow()
+            row.set_title(f"Nenhum dado público encontrado para {result.domain}.")
+            row.set_subtitle(
+                "As fontes não retornaram nada. Confira o domínio (use a raiz, "
+                "ex.: nmap.com) ou tente mais tarde.")
+            row.set_subtitle_lines(0)
+            row.add_prefix(Gtk.Image.new_from_icon_name("dialog-information-symbolic"))
             self._add_result(row)
             return False
 
@@ -383,7 +396,10 @@ def _build_about() -> Gtk.Widget:
     )
     integra = Adw.ActionRow()
     integra.set_title("Integra")
-    integra.set_subtitle("theHarvester (CLI)")
+    integra.set_subtitle(
+        "theHarvester (CLI). Instale com:  "
+        "pipx install git+https://github.com/laramies/theHarvester.git")
+    integra.set_subtitle_lines(0)
     integra.add_prefix(
         Gtk.Image.new_from_icon_name("application-x-executable-symbolic"))
     g.add(integra)
