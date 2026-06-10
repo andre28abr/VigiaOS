@@ -1,13 +1,15 @@
 """Backend do Vigia Network Scanner — descoberta de portas/serviços via nmap.
 
 Reconhecimento ATIVO: conecta nas portas do alvo (≠ Recon, que é passivo).
-Roda sem root por padrão (TCP connect, `-sT`), saída em XML (`-oX -`) que é
-estruturada e estável — parseada com a stdlib (xml.etree).
+Por padrão roda sem root (TCP connect, `-sT`); o "modo admin" (pkexec) libera
+SYN (`-sS`), UDP (`-sU`) e detecção de SO (`-O`/`-A`). Saída em XML (`-oX -`),
+parseada com a stdlib.
 
 Partes PURAS (testáveis sem nmap, sem GTK):
-- `normalize_target` / `validate_target` — domínio, IP ou faixa CIDR.
-- `build_scan_cmd(...)` — argv do nmap (lista, nunca shell).
-- `parse_nmap_xml(...)` — XML do nmap → hosts/portas/serviços.
+- `normalize_target` / `validate_target` / `network_too_large` — alvo.
+- `validate_ports` — lista/faixa de portas custom.
+- `build_scan_cmd(...)` — argv do nmap (lista; pkexec na frente se elevado).
+- `parse_nmap_xml(...)` — XML → hosts/portas/serviços/SO/scripts.
 
 Parte que toca o sistema:
 - `run_scan(...)` — roda via `vigia_common.proc.run` (nunca levanta) + relatório 0600.
@@ -27,7 +29,6 @@ from pathlib import Path
 from vigia_common import proc
 from vigia_common.state import load_json, save_json_0600
 
-# ~/.local/share/vigia-netscan/scan-*.json
 DATA_DIR = Path.home() / ".local" / "share" / "vigia-netscan"
 REPORTS_DIR = DATA_DIR
 
@@ -45,21 +46,63 @@ class Profile:
     id: str
     label: str
     description: str
-    args: tuple[str, ...]   # flags extras do nmap
+    port_args: tuple[str, ...] = ()    # seleção de portas (-F, --top-ports N, -p X, -p-)
+    scan_args: tuple[str, ...] = ()    # técnica/versão (-sV, -sS, -sU, -A, -sn)
+    needs_root: bool = False           # precisa do modo admin (pkexec)
 
 
 PROFILES: list[Profile] = [
+    Profile("top", "Top serviços",
+            "As 20 portas mais comuns + versão — relâmpago.",
+            ("--top-ports", "20"), ("-sV",)),
     Profile("rapida", "Rápida",
-            "As 100 portas mais comuns, sem versão — alguns segundos.",
-            ("-F",)),
+            "As 100 portas mais comuns (sem versão).",
+            ("-F",), ()),
     Profile("padrao", "Padrão",
             "1000 portas + detecção de serviço/versão. Recomendado.",
-            ("-sV",)),
+            (), ("-sV",)),
+    Profile("web", "Web",
+            "Portas de site (80/443/8080/8443…) + versão.",
+            ("-p", "80,443,8080,8443,8000,3000,5000"), ("-sV",)),
     Profile("completa", "Completa",
             "Todas as 65535 portas + versão. Lento (minutos).",
-            ("-p-", "-sV")),
+            ("-p-",), ("-sV",)),
+    Profile("pingsweep", "Descoberta de hosts",
+            "Quem está vivo numa faixa de rede (sem varrer portas).",
+            (), ("-sn",)),
+    Profile("furtiva", "Furtiva / SYN — admin",
+            "SYN scan: mais rápido e discreto. Precisa do modo admin.",
+            (), ("-sS", "-sV"), needs_root=True),
+    Profile("udp", "UDP comum — admin",
+            "50 portas UDP comuns (DNS/SNMP/NTP…). Precisa do modo admin.",
+            ("--top-ports", "50"), ("-sU",), needs_root=True),
+    Profile("agressiva", "Agressiva — admin",
+            "Versão + Sistema Operacional + scripts + traceroute. Precisa de admin.",
+            (), ("-A",), needs_root=True),
 ]
 DEFAULT_PROFILE = "padrao"
+
+
+@dataclass(frozen=True)
+class ScriptSet:
+    id: str
+    label: str
+    description: str
+    value: str       # valor do --script (vazio = nenhum)
+
+
+SCRIPTS: list[ScriptSet] = [
+    ScriptSet("none", "Nenhum", "Sem scripts NSE.", ""),
+    ScriptSet("default", "Padrão (seguros)",
+              "Banners e informações seguras (-sC).", "default"),
+    ScriptSet("vuln", "Vulnerabilidades",
+              "Procura vulnerabilidades conhecidas (mais lento e intrusivo).",
+              "vuln"),
+    ScriptSet("web", "Web",
+              "Enumeração de serviços web (títulos, cabeçalhos, diretórios).",
+              "http-enum,http-title,http-headers"),
+]
+DEFAULT_SCRIPT = "none"
 
 
 # ============================================================
@@ -75,9 +118,9 @@ class Port:
     service: str = ""
     product: str = ""
     version: str = ""
+    scripts: list[str] = field(default_factory=list)   # "id: saída"
 
     def describe(self) -> str:
-        """'OpenSSH 8.0' / 'ssh' / '' — o mais informativo disponível."""
         prod = " ".join(p for p in (self.product, self.version) if p).strip()
         return prod or self.service or ""
 
@@ -87,6 +130,7 @@ class Host:
     address: str
     hostname: str = ""
     state: str = ""
+    os: str = ""
     ports: list[Port] = field(default_factory=list)
 
 
@@ -98,7 +142,8 @@ class ScanResult:
     started_at: str = ""
     elapsed_sec: float = 0.0
     error: str = ""
-    ran: bool = False        # True se o nmap rodou e devolveu XML
+    ran: bool = False
+    raw_xml: str = ""        # XML cru do nmap (pra exportar) — não vai no JSON
 
     @property
     def open_ports(self) -> int:
@@ -119,29 +164,28 @@ def nmap_available() -> bool:
 
 
 # ============================================================
-# Validação / normalização do alvo (puro)
+# Validação do alvo / portas (puro)
 # ============================================================
 
 _DOMAIN_RE = re.compile(
     r"^(?=.{1,253}$)(?!-)[A-Za-z0-9-]{1,63}(?<!-)"
     r"(\.(?!-)[A-Za-z0-9-]{1,63}(?<!-))+$"
 )
+_PORTS_RE = re.compile(r"^\d{1,5}(-\d{1,5})?(,\d{1,5}(-\d{1,5})?)*$")
 
 
 def normalize_target(t: str) -> str:
-    """Tira esquema (http://) e espaços. Mantém '/' (faixa CIDR é válida)."""
     t = (t or "").strip()
     t = re.sub(r"^[a-zA-Z][a-zA-Z0-9+.\-]*://", "", t)
     return t.strip().rstrip(".")
 
 
 def validate_target(t: str) -> bool:
-    """True se `t` é um domínio, um IP (v4/v6) ou uma faixa CIDR."""
     t = normalize_target(t)
     if not t or any(c.isspace() for c in t):
         return False
     try:
-        ipaddress.ip_network(t, strict=False)   # IP ou rede CIDR
+        ipaddress.ip_network(t, strict=False)
         return True
     except ValueError:
         pass
@@ -149,7 +193,6 @@ def validate_target(t: str) -> bool:
 
 
 def network_too_large(t: str) -> bool:
-    """True se for uma faixa CIDR com mais de MAX_HOSTS endereços."""
     try:
         net = ipaddress.ip_network(normalize_target(t), strict=False)
     except ValueError:
@@ -157,26 +200,55 @@ def network_too_large(t: str) -> bool:
     return net.num_addresses > MAX_HOSTS
 
 
+def validate_ports(ports: str) -> bool:
+    """True se `ports` é vazio (usa o perfil) ou uma lista/faixa válida 1-65535."""
+    p = (ports or "").strip()
+    if not p:
+        return True
+    if not _PORTS_RE.match(p):
+        return False
+    for chunk in p.split(","):
+        for n in chunk.split("-"):
+            if not (1 <= int(n) <= 65535):
+                return False
+    return True
+
+
 # ============================================================
 # Command builder (puro)
 # ============================================================
 
 
-def build_scan_cmd(target: str, profile_args: tuple[str, ...] | list[str]) -> list[str]:
-    """Monta o argv do nmap (lista — nunca shell string).
+def build_scan_cmd(
+    target: str,
+    profile: Profile,
+    *,
+    elevated: bool = False,
+    ports: str = "",
+    scripts: str = "",
+) -> list[str]:
+    """Monta o argv do nmap (lista — nunca shell). `pkexec` na frente se elevado.
 
-    `-sT`  TCP connect (não precisa de root).
-    `-Pn`  não faz ping (escaneia mesmo host que bloqueia ICMP).
-    `--open` só mostra portas abertas.
-    `-T4`  timing agressivo (mais rápido).
-    `-oX -` saída XML no stdout (estruturada, parseável).
+    - `-sn` (ping sweep): descoberta de hosts, sem portas.
+    - sem admin: força `-sT` (TCP connect, sem root) e remove técnicas root-only.
+    - com admin: respeita a técnica do perfil (SYN/UDP/-A); sem ela, o nmap como
+      root usa SYN por padrão.
     """
-    return [
-        "nmap", "-sT", "-Pn", "--open", "-T4",
-        *profile_args,
-        "-oX", "-",
-        target,
-    ]
+    if "-sn" in profile.scan_args:
+        cmd = ["nmap", "-sn", "-T4", "-oX", "-", target]
+        return (["pkexec"] + cmd) if elevated else cmd
+
+    cmd = ["nmap", "-Pn", "--open", "-T4", "-oX", "-"]
+    scan = list(profile.scan_args)
+    if not elevated:
+        scan = [a for a in scan if a not in ("-sS", "-sU", "-O", "-A")]
+        cmd.append("-sT")
+    cmd += scan
+    cmd += (["-p", ports.strip()] if ports.strip() else list(profile.port_args))
+    if scripts:
+        cmd += ["--script", scripts]
+    cmd.append(target)
+    return (["pkexec"] + cmd) if elevated else cmd
 
 
 # ============================================================
@@ -185,7 +257,7 @@ def build_scan_cmd(target: str, profile_args: tuple[str, ...] | list[str]) -> li
 
 
 def parse_nmap_xml(xml_text: str) -> list[Host]:
-    """Parseia a saída `-oX` do nmap em hosts/portas. Nunca levanta."""
+    """Parseia a saída `-oX` do nmap em hosts/portas/SO/scripts. Nunca levanta."""
     hosts: list[Host] = []
     try:
         root = ET.fromstring(xml_text or "")
@@ -210,28 +282,37 @@ def parse_nmap_xml(xml_text: str) -> list[Host]:
         if hn is not None:
             hostname = hn.get("name", "")
 
+        osmatch = h.find("os/osmatch")
+        osname = osmatch.get("name", "") if osmatch is not None else ""
+
         ports: list[Port] = []
         for p in h.findall("ports/port"):
             pst = p.find("state")
-            pstate = pst.get("state", "") if pst is not None else ""
-            if pstate != "open":
+            if (pst.get("state", "") if pst is not None else "") != "open":
                 continue
             svc = p.find("service")
             try:
                 portid = int(p.get("portid", "0"))
             except (TypeError, ValueError):
                 portid = 0
+            scripts: list[str] = []
+            for s in p.findall("script"):
+                sid = s.get("id", "")
+                out = " ".join((s.get("output", "") or "").split())
+                if sid:
+                    scripts.append(f"{sid}: {out}"[:300] if out else sid)
             ports.append(Port(
                 port=portid,
                 proto=p.get("protocol", "tcp"),
-                state=pstate,
+                state="open",
                 service=svc.get("name", "") if svc is not None else "",
                 product=svc.get("product", "") if svc is not None else "",
                 version=svc.get("version", "") if svc is not None else "",
+                scripts=scripts,
             ))
         ports.sort(key=lambda x: x.port)
         if address or ports:
-            hosts.append(Host(address, hostname, state, ports))
+            hosts.append(Host(address, hostname, state, osname, ports))
     return hosts
 
 
@@ -251,9 +332,13 @@ def _last_line(text: str) -> str:
 def run_scan(
     target: str,
     profile_id: str = DEFAULT_PROFILE,
+    *,
+    elevated: bool = False,
+    ports: str = "",
+    scripts: str = "",
     timeout: int = 600,
 ) -> ScanResult:
-    """Varre `target` com o perfil. Nunca levanta; erros vão em `.error`."""
+    """Varre `target`. Nunca levanta; erros vão em `.error`."""
     tgt = normalize_target(target)
     res = ScanResult(
         target=tgt,
@@ -267,19 +352,30 @@ def run_scan(
     if network_too_large(tgt):
         res.error = f"Faixa grande demais (máx. {MAX_HOSTS} endereços)."
         return res
+    if not validate_ports(ports):
+        res.error = "Portas inválidas. Use ex.: 80,443,8000-8100."
+        return res
     if not nmap_available():
         res.error = "nmap não está instalado."
         return res
 
     prof = next((p for p in PROFILES if p.id == profile_id), None)
-    args = prof.args if prof else ("-sV",)
+    if prof is None:
+        prof = next(p for p in PROFILES if p.id == DEFAULT_PROFILE)
+    if prof.needs_root and not elevated:
+        res.error = ("Esse perfil precisa do Modo admin — ligue-o acima e "
+                     "tente de novo.")
+        return res
 
     t0 = time.monotonic()
-    rc, out, err = proc.run(build_scan_cmd(tgt, args), timeout=timeout)
+    rc, out, err = proc.run(
+        build_scan_cmd(tgt, prof, elevated=elevated, ports=ports, scripts=scripts),
+        timeout=timeout)
     res.elapsed_sec = round(time.monotonic() - t0, 2)
 
     res.ran = "<nmaprun" in (out or "")
     if res.ran:
+        res.raw_xml = out
         res.hosts = parse_nmap_xml(out)
     else:
         res.error = _last_line(err) or _last_line(out) or (
@@ -311,16 +407,40 @@ def result_to_dict(r: ScanResult) -> dict:
                 "address": h.address,
                 "hostname": h.hostname,
                 "state": h.state,
+                "os": h.os,
                 "ports": [
                     {"port": p.port, "proto": p.proto, "state": p.state,
                      "service": p.service, "product": p.product,
-                     "version": p.version}
+                     "version": p.version, "scripts": p.scripts}
                     for p in h.ports
                 ],
             }
             for h in r.hosts
         ],
     }
+
+
+def result_to_text(r: ScanResult) -> str:
+    """Relatório legível (TXT) — pra exportar/anexar."""
+    lines = [
+        f"Vigia Network Scanner — {r.target}",
+        f"Perfil: {r.profile} · {r.started_at} · {r.elapsed_sec:.0f}s",
+        "=" * 56,
+    ]
+    if r.error:
+        lines.append(f"Erro: {r.error}")
+        return "\n".join(lines) + "\n"
+    for h in r.hosts:
+        title = h.hostname or h.address
+        extra = f" ({h.address})" if h.hostname and h.address else ""
+        lines.append(f"\nHost: {title}{extra}" + (f"  [SO: {h.os}]" if h.os else ""))
+        if not h.ports:
+            lines.append("  (sem portas abertas)")
+        for p in h.ports:
+            lines.append(f"  {p.port}/{p.proto}  {p.service}  {p.describe()}".rstrip())
+            for s in p.scripts:
+                lines.append(f"      ↳ {s}")
+    return "\n".join(lines) + "\n"
 
 
 def save_report(result: ScanResult) -> Path | None:
@@ -334,7 +454,6 @@ def save_report(result: ScanResult) -> Path | None:
 
 
 def list_recent_reports(limit: int = 20) -> list[dict]:
-    """Relatórios salvos, mais novos primeiro (descarta corrompidos)."""
     if not REPORTS_DIR.is_dir():
         return []
     files = sorted(

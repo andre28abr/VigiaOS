@@ -3236,6 +3236,14 @@ O par do Recon: reconhecimento **ATIVO** (toca no alvo). Mesmo padrão.
 - Registry: `netscan` → pronto + impl + `requires=(Dependency("nmap", …, "rpm"))`.
   Testes do esqueleto atualizados (2 módulos reais; deps-helper vê nmap Red/rpm).
   VigiaRed **v0.2.0**. Suíte: **1216 verdes**.
+- **Network Scanner — leva A (v0.3.0)**: muito mais poder do nmap. Perfil
+  reestruturado (`port_args`/`scan_args`/`needs_root`); **9 perfis** (Top serviços,
+  Web, Descoberta de hosts/ping sweep, Furtiva/SYN, UDP, Agressiva…); **portas
+  customizadas** (`validate_ports`); **scripts NSE** (Padrão/Vulnerabilidades/Web);
+  **modo admin** (`Adw.SwitchRow` → `pkexec` na frente do argv → libera
+  `-sS`/`-sU`/`-O`); parser de XML agora pega **SO** (`os/osmatch`) e **saída de
+  scripts** (porta com script vira `ExpanderRow`). +14 testes (1229). Falta a
+  leva B (exportar TXT/XML + Recon→Scan).
 
 ---
 
