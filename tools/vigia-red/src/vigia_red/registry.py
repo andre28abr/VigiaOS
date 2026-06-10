@@ -13,7 +13,7 @@ META = ProductMeta(
     key="red",
     name="VigiaRed",
     app_id="br.com.vigia.Red",
-    version="0.2.0",
+    version="0.3.0",
     tagline=(
         "Suíte ofensiva (pentest / red team) com interface gráfica moderna — "
         "parte do ecossistema VigiaOS. Esqueleto: os módulos chegam um a um."
@@ -64,8 +64,10 @@ MODULES: list[Module] = [
         description="Varredura ATIVA com nmap: portas abertas e serviço/versão "
                     "de um alvo autorizado. Complementa o Vigia Recon (passivo).",
         wraps=["nmap"],
-        features=["Descoberta de portas abertas", "Detecção de serviço/versão",
-                  "Perfis Rápida/Padrão/Completa", "Relatório 0600 por alvo"],
+        features=["9 perfis (Top/Web/SYN/UDP/Agressiva/ping sweep…) + portas custom",
+                  "Scripts NSE — inclui detecção de vulnerabilidades",
+                  "Modo admin (SYN/UDP/SO via pkexec)",
+                  "Detecção de SO + relatório 0600 por alvo"],
         status="pronto",
         impl="vigia_red.modules.netscan.page",
         requires=(Dependency("nmap", ("nmap",), "rpm", "nmap",

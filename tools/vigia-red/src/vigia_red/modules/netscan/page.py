@@ -90,7 +90,7 @@ class _ScanView(Gtk.Box):
         self._profiles = backend.PROFILES
         self._combo = Adw.ComboRow()
         self._combo.set_title("Profundidade")
-        self._combo.add_prefix(Gtk.Image.new_from_icon_name("preferences-system-symbolic"))
+        self._combo.add_prefix(Gtk.Image.new_from_icon_name("view-list-symbolic"))
         model = Gtk.StringList()
         default_idx = 0
         for i, p in enumerate(self._profiles):
@@ -103,6 +103,40 @@ class _ScanView(Gtk.Box):
         g_prof.add(self._combo)
         page.add(g_prof)
         self._on_profile_changed(self._combo, None)
+
+        # --- Opções (portas + scripts) ---
+        g_opt = Adw.PreferencesGroup()
+        g_opt.set_title("Opções")
+        self._ports = Adw.EntryRow()
+        self._ports.set_title("Portas (opcional) — ex.: 80,443,8000-8100")
+        self._ports.add_prefix(Gtk.Image.new_from_icon_name("network-transmit-receive-symbolic"))
+        g_opt.add(self._ports)
+
+        self._scripts = backend.SCRIPTS
+        self._script_combo = Adw.ComboRow()
+        self._script_combo.set_title("Scripts NSE")
+        self._script_combo.add_prefix(Gtk.Image.new_from_icon_name("system-run-symbolic"))
+        smodel = Gtk.StringList()
+        for s in self._scripts:
+            smodel.append(s.label)
+        self._script_combo.set_model(smodel)
+        self._script_combo.set_selected(0)
+        self._script_combo.connect("notify::selected", self._on_script_changed)
+        g_opt.add(self._script_combo)
+        page.add(g_opt)
+        self._on_script_changed(self._script_combo, None)
+
+        # --- Modo admin ---
+        g_admin = Adw.PreferencesGroup()
+        g_admin.set_title("Modo admin")
+        self._admin_row = Adw.SwitchRow()
+        self._admin_row.set_title("Liberar SYN / UDP / detecção de SO")
+        self._admin_row.set_subtitle(
+            "Usa pkexec (pede senha a cada varredura). Sem isso, scan TCP comum "
+            "sem root. Necessário para os perfis marcados “admin”.")
+        self._admin_row.add_prefix(Gtk.Image.new_from_icon_name("security-medium-symbolic"))
+        g_admin.add(self._admin_row)
+        page.add(g_admin)
 
         # --- Ação ---
         g_action = Adw.PreferencesGroup()
@@ -161,21 +195,42 @@ class _ScanView(Gtk.Box):
         if 0 <= idx < len(self._profiles):
             combo.set_subtitle(self._profiles[idx].description)
 
+    def _on_script_changed(self, combo: Adw.ComboRow, _param) -> None:
+        idx = combo.get_selected()
+        if 0 <= idx < len(self._scripts):
+            combo.set_subtitle(self._scripts[idx].description)
+
     @staticmethod
-    def _port_row(p: backend.Port) -> Adw.ActionRow:
-        r = Adw.ActionRow()
-        r.set_title(f"Porta {p.port}/{p.proto.upper()}")
+    def _port_widget(p: backend.Port) -> Gtk.Widget:
         parts = []
         if p.service:
             parts.append(p.service)
         extra = " ".join(x for x in (p.product, p.version) if x)
         if extra:
             parts.append(extra)
-        r.set_subtitle(" · ".join(parts) or "aberta")
-        r.set_subtitle_lines(0)
-        r.set_title_selectable(True)
-        r.add_prefix(Gtk.Image.new_from_icon_name("network-transmit-receive-symbolic"))
-        return r
+        subtitle = " · ".join(parts) or "aberta"
+        icon = "network-transmit-receive-symbolic"
+        if p.scripts:
+            row = Adw.ExpanderRow()
+            row.set_title(f"Porta {p.port}/{p.proto.upper()}")
+            row.set_subtitle(subtitle)
+            row.add_prefix(Gtk.Image.new_from_icon_name(icon))
+            for s in p.scripts:
+                sr = Adw.ActionRow()
+                sr.set_title(s)
+                sr.set_title_lines(0)
+                sr.set_title_selectable(True)
+                sr.add_css_class("monospace")
+                sr.add_css_class("caption")
+                row.add_row(sr)
+            return row
+        row = Adw.ActionRow()
+        row.set_title(f"Porta {p.port}/{p.proto.upper()}")
+        row.set_subtitle(subtitle)
+        row.set_subtitle_lines(0)
+        row.set_title_selectable(True)
+        row.add_prefix(Gtk.Image.new_from_icon_name(icon))
+        return row
 
     def _host_expander(self, host: backend.Host, single: bool) -> Adw.ExpanderRow:
         exp = Adw.ExpanderRow()
@@ -184,14 +239,14 @@ class _ScanView(Gtk.Box):
         sub = f"{n} porta(s) aberta(s)"
         if host.hostname and host.address:
             sub = f"{host.address} · {sub}"
+        if host.os:
+            sub += f" · SO: {host.os}"
         exp.set_subtitle(sub)
+        exp.set_subtitle_lines(0)
         exp.add_prefix(Gtk.Image.new_from_icon_name("computer-symbolic"))
-        if not host.ports:
-            exp.set_enable_expansion(False)
-        else:
-            exp.set_expanded(single or n <= 8)
-            for p in host.ports:
-                exp.add_row(self._port_row(p))
+        exp.set_expanded(single or n <= 8)
+        for p in host.ports:
+            exp.add_row(self._port_widget(p))
         return exp
 
     # -- scan --
@@ -207,6 +262,12 @@ class _ScanView(Gtk.Box):
         idx = self._combo.get_selected()
         profile_id = (self._profiles[idx].id
                       if 0 <= idx < len(self._profiles) else backend.DEFAULT_PROFILE)
+        sidx = self._script_combo.get_selected()
+        scripts = (self._scripts[sidx].value
+                   if 0 <= sidx < len(self._scripts) else "")
+        ports = self._ports.get_text().strip()
+        elevated = self._admin_row.get_active()
+
         self._running = True
         self._btn.set_sensitive(False)
         self._spinner.start()
@@ -214,10 +275,12 @@ class _ScanView(Gtk.Box):
             f"Escaneando {backend.normalize_target(raw)}… (pode levar de "
             "segundos a minutos, conforme o perfil).", "network-wired-symbolic")
         threading.Thread(
-            target=self._worker, args=(raw, profile_id), daemon=True).start()
+            target=self._worker,
+            args=(raw, profile_id, elevated, ports, scripts), daemon=True).start()
 
-    def _worker(self, target: str, profile_id: str) -> None:
-        result = backend.run_scan(target, profile_id)
+    def _worker(self, target, profile_id, elevated, ports, scripts) -> None:
+        result = backend.run_scan(
+            target, profile_id, elevated=elevated, ports=ports, scripts=scripts)
         GLib.idle_add(self._apply, result)
 
     def _apply(self, result: backend.ScanResult) -> bool:
@@ -237,6 +300,21 @@ class _ScanView(Gtk.Box):
             return False
 
         hosts_with_ports = [h for h in result.hosts if h.ports]
+
+        # Ping sweep / descoberta: hosts vivos sem varrer portas.
+        if not hosts_with_ports and result.hosts:
+            self._results.set_description(
+                f"{len(result.hosts)} host(s) vivo(s) · {result.elapsed_sec:.0f}s.")
+            for h in result.hosts:
+                row = Adw.ActionRow()
+                row.set_title(h.hostname or h.address)
+                if h.hostname and h.address:
+                    row.set_subtitle(h.address)
+                row.set_title_selectable(True)
+                row.add_prefix(Gtk.Image.new_from_icon_name("computer-symbolic"))
+                self._add_result(row)
+            return False
+
         if not hosts_with_ports:
             self._results.set_description(f"Concluído em {result.elapsed_sec:.0f}s.")
             row = Adw.ActionRow()
@@ -324,9 +402,9 @@ def _build_about() -> Gtk.Widget:
     g = Adw.PreferencesGroup()
     g.set_title("Vigia Network Scanner")
     g.set_description(
-        "Reconhecimento ATIVO: descobre portas abertas e serviços/versões de "
-        "um alvo autorizado, via nmap. Roda sem root (TCP connect). Complementa "
-        "o Vigia Recon (passivo). Relatórios salvos com permissão 0600.")
+        "Reconhecimento ATIVO: descobre portas abertas, serviços/versões e (no "
+        "modo admin) o Sistema Operacional de um alvo autorizado, via nmap. "
+        "Complementa o Vigia Recon (passivo). Relatórios salvos com permissão 0600.")
     integra = Adw.ActionRow()
     integra.set_title("Integra")
     integra.set_subtitle("nmap (CLI). Instale com:  sudo dnf install nmap")
@@ -356,7 +434,8 @@ def _build_about() -> Gtk.Widget:
         row.set_title(p.label)
         row.set_subtitle(p.description)
         row.set_subtitle_lines(0)
-        row.add_prefix(Gtk.Image.new_from_icon_name("preferences-system-symbolic"))
+        row.add_prefix(Gtk.Image.new_from_icon_name(
+            "security-medium-symbolic" if p.needs_root else "view-list-symbolic"))
         g_prof.add(row)
     page.add(g_prof)
 
