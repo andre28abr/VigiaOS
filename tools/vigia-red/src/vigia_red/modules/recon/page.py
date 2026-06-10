@@ -17,94 +17,12 @@ gi.require_version("Adw", "1")
 
 from gi.repository import Adw, Gio, GLib, Gtk  # noqa: E402
 
-from ... import consent  # noqa: E402
+from ... import consent, gate  # noqa: E402
 from . import backend  # noqa: E402
 
-_TERM_TEXT = (
-    "O Vigia Recon faz <b>reconhecimento passivo</b> (OSINT): consulta apenas "
-    "fontes públicas e <b>não toca nos servidores do alvo</b>. Ainda assim, use "
-    "somente contra <b>domínios próprios</b> ou com <b>autorização formal por "
-    "escrito</b>.\n\n"
-    "Acesso não autorizado a dispositivos é crime no Brasil "
-    "(<b>Lei 12.737/2012</b>). Você é o único responsável pelo uso desta "
-    "ferramenta."
-)
-
-
 def build_content() -> Gtk.Widget:
-    """Portão do termo de uso → ferramenta. Aceite fica gravado (vigia_red.consent)."""
-    stack = Gtk.Stack()
-    stack.set_transition_type(Gtk.StackTransitionType.CROSSFADE)
-
-    def _mount_tool() -> None:
-        if stack.get_child_by_name("tool") is None:
-            stack.add_named(_build_tool(), "tool")
-        stack.set_visible_child_name("tool")
-
-    if consent.is_accepted():
-        _mount_tool()
-    else:
-        stack.add_named(_build_consent_gate(_mount_tool), "gate")
-        stack.set_visible_child_name("gate")
-    return stack
-
-
-# ============================================================
-# Portão: termo de uso
-# ============================================================
-
-
-def _build_consent_gate(on_accept) -> Gtk.Widget:
-    status = Adw.StatusPage()
-    status.set_icon_name("dialog-warning-symbolic")
-    status.set_title("Antes de começar — termo de uso")
-
-    box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=16)
-    box.set_halign(Gtk.Align.CENTER)
-    box.set_size_request(540, -1)
-
-    notice = Gtk.Label()
-    notice.set_markup(_TERM_TEXT)
-    notice.set_wrap(True)
-    notice.set_xalign(0)
-    notice.set_max_width_chars(60)
-    box.append(notice)
-
-    check = Gtk.CheckButton()
-    check_lbl = Gtk.Label(
-        label="Li e concordo: só vou usar contra sistemas próprios ou com "
-              "autorização formal por escrito."
-    )
-    check_lbl.set_wrap(True)
-    check_lbl.set_xalign(0)
-    check_lbl.set_max_width_chars(56)
-    check.set_child(check_lbl)
-    box.append(check)
-
-    btn = Gtk.Button(label="Aceitar e continuar")
-    btn.add_css_class("suggested-action")
-    btn.add_css_class("pill")
-    btn.set_halign(Gtk.Align.CENTER)
-    btn.set_sensitive(False)
-    check.connect("toggled", lambda c: btn.set_sensitive(c.get_active()))
-
-    def _accept(_b):
-        consent.accept()
-        on_accept()
-
-    btn.connect("clicked", _accept)
-    box.append(btn)
-
-    status.set_child(box)
-
-    header = Adw.HeaderBar()
-    header.set_title_widget(
-        Adw.WindowTitle(title="Vigia Recon", subtitle="Reconhecimento & OSINT")
-    )
-    tv = Adw.ToolbarView()
-    tv.add_top_bar(header)
-    tv.set_content(status)
-    return tv
+    """Portão do termo de uso (gate reusável do Red) → ferramenta."""
+    return gate.build_gated(_build_tool)
 
 
 # ============================================================

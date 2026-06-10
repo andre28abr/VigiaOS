@@ -204,10 +204,12 @@ def test_adapts_real_red_registry():
     tools = [module_to_tool(m, "red") for m in MODULES]
     assert len(tools) == len(MODULES)
     assert all(t.id.startswith("red:") for t in tools)
-    # Vigia Recon é o 1º módulo real (pronto + embed); o resto ainda é esqueleto.
-    recon = next(t for t in tools if t.id == "red:recon")
-    assert not recon.is_planned
-    assert recon.embedded_module == "vigia_red.modules.recon.page"
-    others = [t for t in tools if t.id != "red:recon"]
-    assert all(t.is_planned for t in others)
-    assert not any(t.embedded_module for t in others)
+    # Recon (OSINT) e Network Scanner (nmap) são os módulos reais; resto esqueleto.
+    real = {"red:recon", "red:netscan"}
+    for t in tools:
+        if t.id in real:
+            assert not t.is_planned
+            assert t.embedded_module
+        else:
+            assert t.is_planned
+            assert not t.embedded_module
