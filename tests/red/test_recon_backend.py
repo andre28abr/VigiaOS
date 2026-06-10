@@ -40,6 +40,13 @@ class TestNormalizeDomain:
     def test_lower_e_trim(self):
         assert b.normalize_domain("  Exemplo.COM.  ") == "exemplo.com"
 
+    def test_strip_www(self):
+        assert b.normalize_domain("www.nmap.com") == "nmap.com"
+        assert b.normalize_domain("https://www.exemplo.com.br/x") == "exemplo.com.br"
+
+    def test_nao_strip_www_se_ficar_invalido(self):
+        assert b.normalize_domain("www.com") == "www.com"  # 1 ponto: não vira "com"
+
 
 class TestBuildCmd:
     def test_argv_estrutura(self):
@@ -100,6 +107,19 @@ class TestClean:
 
     def test_ignora_nao_string(self):
         assert b._clean([1, None, "x"]) == ["x"]
+
+
+class TestShortError:
+    def test_ignora_banner_pega_linha_util(self):
+        out = "*****\n* theHarvester 4.11 *\n*****\nERRO: rede indisponível"
+        assert b._short_error(out, "") == "ERRO: rede indisponível"
+
+    def test_prefere_stderr(self):
+        assert b._short_error("saida", "falha X") == "falha X"
+
+    def test_vazio_ou_so_banner(self):
+        assert b._short_error("", "") == ""
+        assert b._short_error("****\n|||", "") == ""
 
 
 class TestSources:

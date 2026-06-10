@@ -13,7 +13,7 @@ META = ProductMeta(
     key="red",
     name="VigiaRed",
     app_id="br.com.vigia.Red",
-    version="0.1.0",
+    version="0.1.1",
     tagline=(
         "Suíte ofensiva (pentest / red team) com interface gráfica moderna — "
         "parte do ecossistema VigiaOS. Esqueleto: os módulos chegam um a um."
@@ -53,7 +53,8 @@ MODULES: list[Module] = [
         impl="vigia_red.modules.recon.page",
         requires=(Dependency(
             "theHarvester", ("theHarvester", "theharvester"), "pip",
-            "theHarvester", install="pipx install theHarvester",
+            "theHarvester",
+            install="pipx install git+https://github.com/laramies/theHarvester.git",
             note="OSINT passivo de fontes abertas. Requer Python 3."),),
     ),
     Module(
