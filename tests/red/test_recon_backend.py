@@ -122,6 +122,19 @@ class TestShortError:
         assert b._short_error("****\n|||", "") == ""
 
 
+class TestUnsupportedEngines:
+    def test_extrai_uma(self):
+        t = "are not supported: {'threatminer'}\n[!] Invalid source."
+        assert b._unsupported_engines(t) == {"threatminer"}
+
+    def test_multiplas(self):
+        assert b._unsupported_engines("not supported: {'a', 'b'}") == {"a", "b"}
+
+    def test_nenhuma(self):
+        assert b._unsupported_engines("tudo certo") == set()
+        assert b._unsupported_engines("") == set()
+
+
 class TestSources:
     def test_default_sao_ids_validos(self):
         ids = {s.id for s in b.SOURCES}
