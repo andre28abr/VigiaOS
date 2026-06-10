@@ -3260,6 +3260,30 @@ O par do Recon: reconhecimento **ATIVO** (toca no alvo). Mesmo padrão.
 
 ---
 
+### 2026-06-10 — VigiaRed: 3º módulo — Vigia Vuln Scanner (nuclei)
+
+Aprofunda o Network Scanner: varredura de vulnerabilidades por templates.
+
+- **Runner compartilhado** (`vigia_red.runner.ScanProcess`) — extraído do netscan
+  (execução cancelável via `subprocess.Popen`); netscan e vuln usam o mesmo.
+- **Vigia Vuln Scanner** (`vigia_red.modules.vuln`) — wrapper do `nuclei`
+  (`-target X -jsonl -silent -nc -disable-update-check`). 5 perfis por
+  tags/severidade: CVEs graves (padrão), Padrão, Exposições, Tecnologias, Completa.
+  - `backend.py` (puro): `validate_target` (URL/domínio/IP), `build_nuclei_cmd`
+    (argv-lista), `parse_nuclei_jsonl` (1 achado/linha → `Finding`, ordenado por
+    severidade crítica→info), `counts_by_severity`, `run_scan` (cancelável),
+    relatório 0600 + `result_to_text`. 17 testes.
+  - `page.py`: abas Varredura (alvo + perfil → thread cancelável → achados em
+    `ExpanderRow` com **badge de severidade colorido**: Crítico/Alto vermelho,
+    Médio amarelo) / Histórico / Sobre. Banner + Sobre explicam instalação (Go) e
+    templates. Exportar TXT/JSONL.
+- Registry: `vuln` → pronto + impl + `requires=(Dependency("nuclei", …, "source",
+  install="go install …/nuclei@latest"))`. Teste do esqueleto atualizado (3
+  módulos reais). **ZAP/Web Scanner** fica pro 4º módulo. VigiaRed **v0.5.0**.
+  Suíte: **1256 verdes**.
+
+---
+
 ## 10. Roadmap
 
 ### 10.1 Próximas iterações por ferramenta
