@@ -31,13 +31,18 @@ def build_content() -> Gtk.Widget:
 
 
 def _build_tool() -> Gtk.Widget:
+    recon_view = _ReconView()
     stack = Adw.ViewStack()
     stack.add_titled_with_icon(
-        _ReconView(), "recon", "Investigar", "system-search-symbolic")
+        recon_view, "recon", "Investigar", "system-search-symbolic")
     stack.add_titled_with_icon(
         _HistoryView(), "hist", "Histórico", "document-open-recent-symbolic")
     stack.add_titled_with_icon(
         _build_about(), "sobre", "Sobre", "help-about-symbolic")
+
+    overlay = Adw.ToastOverlay()
+    overlay.set_child(stack)
+    recon_view.set_toast_overlay(overlay)
 
     switcher = Adw.ViewSwitcher()
     switcher.set_stack(stack)
@@ -48,7 +53,7 @@ def _build_tool() -> Gtk.Widget:
 
     tv = Adw.ToolbarView()
     tv.add_top_bar(header)
-    tv.set_content(stack)
+    tv.set_content(overlay)
     return tv
 
 
@@ -77,6 +82,7 @@ class _ReconView(Gtk.Box):
     def __init__(self) -> None:
         super().__init__(orientation=Gtk.Orientation.VERTICAL)
         self._running = False
+        self._toast_overlay = None
 
         self._banner = Adw.Banner()
         self.append(self._banner)
@@ -182,11 +188,19 @@ class _ReconView(Gtk.Box):
             exp.add_row(more)
         return exp
 
+    def set_toast_overlay(self, overlay) -> None:
+        self._toast_overlay = overlay
+
+    def _toast(self, text: str) -> None:
+        if self._toast_overlay is not None:
+            self._toast_overlay.add_toast(Adw.Toast.new(text))
+
     def _send_to_scan(self, ip: str, btn: Gtk.Button) -> None:
         """Manda o IP pro Network Scanner (handoff) — abra-o no menu pra usar."""
         handoff.set_scan_target(ip)
         btn.set_label("Enviado ✓")
         btn.set_sensitive(False)
+        self._toast(f"{ip} enviado — abra o Network Scanner")
 
     # -- investigação --
     def _on_investigate(self, *_args) -> None:

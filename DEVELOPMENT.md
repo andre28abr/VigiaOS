@@ -3250,6 +3250,13 @@ O par do Recon: reconhecimento **ATIVO** (toca no alvo). Mesmo padrão.
   IP ganha um botão **Escanear** que grava o handoff; o Network Scanner consome
   no sinal `map` e pré-preenche o alvo. +4 testes. VigiaRed **v0.4.0**. Suíte:
   **1232 verdes**.
+- **Polish Recon/Scanner (v0.4.1)**: **toast** de confirmação (`Adw.ToastOverlay`
+  nos dois módulos) — Recon avisa "IP enviado", Scanner avisa "alvo recebido do
+  Recon"; **cancelar varredura** em andamento (`backend.ScanProcess`, Popen +
+  `cancel()`; o botão Escanear vira **Cancelar** destrutivo durante o scan);
+  **salvar perfil padrão** (`load_prefs`/`save_prefs` 0600 em
+  `~/.config/vigia-red/netscan.json` — perfil/script/portas/admin restaurados ao
+  abrir). +9 testes. VigiaRed **v0.4.1**. Suíte: **1237 verdes**.
 
 ---
 

@@ -325,6 +325,54 @@ def _last_line(text: str) -> str:
 
 
 # ============================================================
+# Execução cancelável (pra "Cancelar varredura")
+# ============================================================
+
+
+class ScanProcess:
+    """Roda o nmap de forma cancelável — `cancel()` encerra o processo."""
+
+    def __init__(self) -> None:
+        self._proc = None
+        self.cancelled = False
+
+    def run(self, cmd: list[str], timeout: int = 600):
+        import subprocess
+        if self.cancelled:
+            return 1, "", ""
+        try:
+            self._proc = subprocess.Popen(
+                cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        except (OSError, ValueError):
+            return 1, "", ""
+        try:
+            out, err = self._proc.communicate(timeout=timeout)
+            return (self._proc.returncode or 0), out, err
+        except subprocess.TimeoutExpired:
+            self._terminate()
+            return 1, "", "tempo esgotado"
+        except Exception:  # pylint: disable=broad-except
+            return 1, "", ""
+
+    def cancel(self) -> None:
+        self.cancelled = True
+        self._terminate()
+
+    def _terminate(self) -> None:
+        p = self._proc
+        if p is None:
+            return
+        try:
+            p.terminate()
+            try:
+                p.wait(timeout=3)
+            except Exception:  # pylint: disable=broad-except
+                p.kill()
+        except Exception:  # pylint: disable=broad-except
+            pass
+
+
+# ============================================================
 # Scan (toca o sistema via proc.run)
 # ============================================================
 
@@ -337,8 +385,10 @@ def run_scan(
     ports: str = "",
     scripts: str = "",
     timeout: int = 600,
+    handle: ScanProcess | None = None,
 ) -> ScanResult:
-    """Varre `target`. Nunca levanta; erros vão em `.error`."""
+    """Varre `target`. Nunca levanta; erros vão em `.error`. Se `handle` for
+    passado, a varredura é cancelável (`handle.cancel()`)."""
     tgt = normalize_target(target)
     res = ScanResult(
         target=tgt,
@@ -367,8 +417,9 @@ def run_scan(
                      "tente de novo.")
         return res
 
+    runner = handle.run if handle is not None else proc.run
     t0 = time.monotonic()
-    rc, out, err = proc.run(
+    rc, out, err = runner(
         build_scan_cmd(tgt, prof, elevated=elevated, ports=ports, scripts=scripts),
         timeout=timeout)
     res.elapsed_sec = round(time.monotonic() - t0, 2)
@@ -468,3 +519,25 @@ def list_recent_reports(limit: int = 20) -> list[dict]:
             data["_file"] = str(f)
             out.append(data)
     return out
+
+
+# ============================================================
+# Preferências (perfil padrão favorito)
+# ============================================================
+
+PREFS_FILE = Path.home() / ".config" / "vigia-red" / "netscan.json"
+
+
+def load_prefs() -> dict:
+    """Preferências salvas (perfil/script/portas/admin padrão). {} se não houver."""
+    data = load_json(PREFS_FILE)
+    return data if isinstance(data, dict) else {}
+
+
+def save_prefs(profile: str = "", script: str = "", ports: str = "",
+               elevated: bool = False) -> bool:
+    """Salva as opções atuais como padrão (0600)."""
+    return save_json_0600(PREFS_FILE, {
+        "profile": profile, "script": script,
+        "ports": ports, "elevated": bool(elevated),
+    })
