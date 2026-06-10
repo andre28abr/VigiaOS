@@ -149,12 +149,13 @@ def build_nuclei_cmd(target: str, profile_args: tuple[str, ...] | list[str]) -> 
     """Monta o argv do nuclei (lista — nunca shell string).
 
     `-jsonl` saída em JSON Lines; `-silent` só achados (sem banner/progresso);
-    `-nc` sem cor; `-disable-update-check` não tenta atualizar na hora.
+    `-nc` sem cor. (Sem `-disable-update-check`: deixa o nuclei baixar os
+    templates sozinho na 1ª execução.)
     """
     return [
         "nuclei",
         "-target", target,
-        "-jsonl", "-silent", "-nc", "-disable-update-check",
+        "-jsonl", "-silent", "-nc",
         *profile_args,
     ]
 
@@ -249,8 +250,12 @@ def run_scan(
     # nuclei sai 0 mesmo sem achados; rc!=0 sem achados = erro real.
     res.ran = rc == 0 or bool(res.findings)
     if not res.ran:
-        res.error = _last_line(err) or _last_line(out) or (
-            f"O nuclei não concluiu (código {rc}).")
+        if "no templates" in (out + err).lower():
+            res.error = ("Sem templates do nuclei. Rode uma vez no terminal:  "
+                         "nuclei -update-templates")
+        else:
+            res.error = _last_line(err) or _last_line(out) or (
+                f"O nuclei não concluiu (código {rc}).")
 
     save_report(res)
     return res
