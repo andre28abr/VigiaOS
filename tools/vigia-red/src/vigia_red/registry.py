@@ -13,7 +13,7 @@ META = ProductMeta(
     key="red",
     name="VigiaRed",
     app_id="br.com.vigia.Red",
-    version="0.4.1",
+    version="0.5.0",
     tagline=(
         "Suíte ofensiva (pentest / red team) com interface gráfica moderna — "
         "parte do ecossistema VigiaOS. Esqueleto: os módulos chegam um a um."
@@ -77,11 +77,20 @@ MODULES: list[Module] = [
         id="vuln", name="Vigia Vuln Scanner", category="scanning",
         icon="security-medium-symbolic",
         summary="Varredura de vulnerabilidades por templates",
-        description="Identifica vulnerabilidades conhecidas via templates "
-                    "comunitários atualizáveis.",
-        wraps=["nuclei", "nikto"],
-        features=["Templates nuclei atualizáveis", "Checagens web (nikto)",
-                  "Severidade + referência CVE"],
+        description="Aprofunda o que o Network Scanner achou: roda templates do "
+                    "nuclei (CVEs, exposições, configs) contra um alvo autorizado "
+                    "e classifica por severidade.",
+        wraps=["nuclei"],
+        features=["Templates nuclei (CVE / exposição / config)",
+                  "5 perfis por severidade e tags",
+                  "Achados ordenados por gravidade",
+                  "Cancelar + exportar laudo (0600)"],
+        status="pronto",
+        impl="vigia_red.modules.vuln.page",
+        requires=(Dependency(
+            "nuclei", ("nuclei",), "source", "nuclei",
+            install="go install github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest",
+            note="Scanner de vulns por templates. Requer Go (sudo dnf install golang)."),),
     ),
     Module(
         id="web", name="Vigia Web Scanner", category="web",

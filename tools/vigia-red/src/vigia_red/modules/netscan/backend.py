@@ -29,6 +29,8 @@ from pathlib import Path
 from vigia_common import proc
 from vigia_common.state import load_json, save_json_0600
 
+from ...runner import ScanProcess
+
 DATA_DIR = Path.home() / ".local" / "share" / "vigia-netscan"
 REPORTS_DIR = DATA_DIR
 
@@ -325,55 +327,7 @@ def _last_line(text: str) -> str:
 
 
 # ============================================================
-# Execução cancelável (pra "Cancelar varredura")
-# ============================================================
-
-
-class ScanProcess:
-    """Roda o nmap de forma cancelável — `cancel()` encerra o processo."""
-
-    def __init__(self) -> None:
-        self._proc = None
-        self.cancelled = False
-
-    def run(self, cmd: list[str], timeout: int = 600):
-        import subprocess
-        if self.cancelled:
-            return 1, "", ""
-        try:
-            self._proc = subprocess.Popen(
-                cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        except (OSError, ValueError):
-            return 1, "", ""
-        try:
-            out, err = self._proc.communicate(timeout=timeout)
-            return (self._proc.returncode or 0), out, err
-        except subprocess.TimeoutExpired:
-            self._terminate()
-            return 1, "", "tempo esgotado"
-        except Exception:  # pylint: disable=broad-except
-            return 1, "", ""
-
-    def cancel(self) -> None:
-        self.cancelled = True
-        self._terminate()
-
-    def _terminate(self) -> None:
-        p = self._proc
-        if p is None:
-            return
-        try:
-            p.terminate()
-            try:
-                p.wait(timeout=3)
-            except Exception:  # pylint: disable=broad-except
-                p.kill()
-        except Exception:  # pylint: disable=broad-except
-            pass
-
-
-# ============================================================
-# Scan (toca o sistema via proc.run)
+# Scan (ScanProcess cancelável vem de vigia_red.runner)
 # ============================================================
 
 
