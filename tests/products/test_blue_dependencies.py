@@ -149,4 +149,6 @@ def test_deps_helper_reads_registry():
 
     kinds = {r[3] for r in rows}
     assert "source" in kinds                          # vigia-log (package vazio)
-    assert all(r[0] != "Red" for r in rows)           # Red ainda sem deps
+    # Red agora tem o 1º módulo real (Vigia Recon → theHarvester, via pip).
+    assert by_pkg["theHarvester"][0] == "Red"
+    assert by_pkg["theHarvester"][3] == "pip"

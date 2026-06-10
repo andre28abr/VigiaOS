@@ -7,13 +7,13 @@ backends entram depois, módulo a módulo, com termo de uso na 1ª execução
 
 from __future__ import annotations
 
-from vigia_common.shell import Module, ProductMeta
+from vigia_common.shell import Dependency, Module, ProductMeta
 
 META = ProductMeta(
     key="red",
     name="VigiaRed",
     app_id="br.com.vigia.Red",
-    version="0.0.2",
+    version="0.1.0",
     tagline=(
         "Suíte ofensiva (pentest / red team) com interface gráfica moderna — "
         "parte do ecossistema VigiaOS. Esqueleto: os módulos chegam um a um."
@@ -45,10 +45,16 @@ MODULES: list[Module] = [
         summary="OSINT — e-mails, subdomínios, hosts",
         description="Coleta passiva de inteligência de fontes abertas (OSINT) "
                     "para mapear a superfície externa de um alvo autorizado.",
-        wraps=["theHarvester", "recon-ng"],
+        wraps=["theHarvester"],
         features=["Enumeração de subdomínios e hosts",
                   "Coleta de e-mails e credenciais expostas",
-                  "Mapa da superfície externa exportável"],
+                  "Mapa da superfície externa (relatório 0600)"],
+        status="pronto",
+        impl="vigia_red.modules.recon.page",
+        requires=(Dependency(
+            "theHarvester", ("theHarvester", "theharvester"), "pip",
+            "theHarvester", install="pipx install theHarvester",
+            note="OSINT passivo de fontes abertas. Requer Python 3."),),
     ),
     Module(
         id="netscan", name="Vigia Network Scanner", category="recon",

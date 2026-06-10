@@ -3169,6 +3169,41 @@ pós-migração. "Antes colorido" = uma instalação anterior tinha o extra.
 
 ---
 
+### 2026-06-09 — VigiaRed: 1º módulo real — Vigia Recon (OSINT) + termo de uso
+
+O VigiaRed sai do esqueleto: primeiro módulo embarcado, no mesmo padrão dos do
+Blue (backend puro + `page.build_content()` + `status="pronto"`/`impl`/`requires`).
+
+- **Termo de uso** (`vigia_red.consent`) — Lei 12.737/2012: aceite gravado 1×
+  (`~/.config/vigia-red/consent.json`, 0600) que **destrava** os módulos do Red.
+  O `page.py` mostra o termo na 1ª execução (StatusPage + checkbox + "Aceitar e
+  continuar"); sem aceite, a ferramenta nem aparece. Reusável pelos próximos
+  módulos do Red.
+- **Vigia Recon** (`vigia_red.modules.recon`) — OSINT **passivo** via
+  `theHarvester`: dado um domínio autorizado, consulta fontes públicas (crt.sh,
+  HackerTarget, RapidDNS, Anubis, OTX, urlscan, DuckDuckGo) e devolve a
+  superfície externa — e-mails, subdomínios, IPs, URLs. Não toca nos servidores
+  do alvo.
+  - `backend.py` (puro): `validate_domain`/`normalize_domain` (aceita URL colada),
+    `build_harvester_cmd` (argv em LISTA, nunca shell), `parse_harvester_json`
+    (robusto: separa "host:ip", dedup case-insensitive, ordena), `run_recon`
+    (tempdir + `proc.run` + relatório `recon-*.json` 0600). 34 testes.
+  - `page.py` (GUI): abas **Investigar** (domínio → thread → categorias em
+    ExpanderRow com cópia), **Histórico** (relatórios salvos, abríveis), **Sobre**
+    (fontes consultadas, nota legal, revogar aceite). Banner se faltar o
+    `theHarvester` (`pipx install theHarvester`).
+- Registry: `recon` → `status="pronto"`, `impl="vigia_red.modules.recon.page"`,
+  `requires=(Dependency("theHarvester", …, "pip", …))` → aparece no Instalador
+  (aba Atualizações). **recon-ng** fica pra v0.2 (framework interativo, exige
+  chaves de API).
+- Testes do esqueleto atualizados (adapters do Red; o deps-helper agora vê o
+  theHarvester como dep Red/pip). VigiaRed **v0.1.0**. Suíte: **1180 verdes**.
+
+> Convenção: módulos do Blue/Red se documentam pela própria aba **Sobre** + este
+> log §9 — `docs/manuals/` é só do Hub.
+
+---
+
 ## 10. Roadmap
 
 ### 10.1 Próximas iterações por ferramenta
