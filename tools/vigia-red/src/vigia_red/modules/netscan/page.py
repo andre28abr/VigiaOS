@@ -26,13 +26,18 @@ def build_content() -> Gtk.Widget:
 
 
 def _build_tool() -> Gtk.Widget:
+    scan_view = _ScanView()
     stack = Adw.ViewStack()
     stack.add_titled_with_icon(
-        _ScanView(), "scan", "Varredura", "network-wired-symbolic")
+        scan_view, "scan", "Varredura", "network-wired-symbolic")
     stack.add_titled_with_icon(
         _HistoryView(), "hist", "Histórico", "document-open-recent-symbolic")
     stack.add_titled_with_icon(
         _build_about(), "sobre", "Sobre", "help-about-symbolic")
+
+    overlay = Adw.ToastOverlay()
+    overlay.set_child(stack)
+    scan_view.set_toast_overlay(overlay)
 
     switcher = Adw.ViewSwitcher()
     switcher.set_stack(stack)
@@ -43,7 +48,7 @@ def _build_tool() -> Gtk.Widget:
 
     tv = Adw.ToolbarView()
     tv.add_top_bar(header)
-    tv.set_content(stack)
+    tv.set_content(overlay)
     return tv
 
 
@@ -63,7 +68,9 @@ class _ScanView(Gtk.Box):
     def __init__(self) -> None:
         super().__init__(orientation=Gtk.Orientation.VERTICAL)
         self._running = False
+        self._handle: backend.ScanProcess | None = None
         self._last_result: backend.ScanResult | None = None
+        self._toast_overlay: Adw.ToastOverlay | None = None
         self.connect("map", lambda *_a: self._consume_handoff())
 
         self._banner = Adw.Banner()
@@ -90,6 +97,11 @@ class _ScanView(Gtk.Box):
         # --- Perfil ---
         g_prof = Adw.PreferencesGroup()
         g_prof.set_title("Perfil")
+        save_btn = Gtk.Button(label="Salvar como padrão")
+        save_btn.add_css_class("flat")
+        save_btn.set_valign(Gtk.Align.CENTER)
+        save_btn.connect("clicked", self._save_prefs)
+        g_prof.set_header_suffix(save_btn)
         self._profiles = backend.PROFILES
         self._combo = Adw.ComboRow()
         self._combo.set_title("Profundidade")
@@ -168,6 +180,44 @@ class _ScanView(Gtk.Box):
         self._set_results_info("Nenhuma varredura ainda.",
                                "dialog-information-symbolic")
         self._refresh_banner()
+        self._load_prefs()
+
+    # -- toast / prefs --
+    def set_toast_overlay(self, overlay: Adw.ToastOverlay) -> None:
+        self._toast_overlay = overlay
+
+    def _toast(self, text: str) -> None:
+        if self._toast_overlay is not None:
+            self._toast_overlay.add_toast(Adw.Toast.new(text))
+
+    def _load_prefs(self) -> None:
+        prefs = backend.load_prefs()
+        pid = prefs.get("profile")
+        if pid:
+            for i, p in enumerate(self._profiles):
+                if p.id == pid:
+                    self._combo.set_selected(i)
+                    break
+        sid = prefs.get("script")
+        if sid:
+            for i, s in enumerate(self._scripts):
+                if s.id == sid:
+                    self._script_combo.set_selected(i)
+                    break
+        if prefs.get("ports"):
+            self._ports.set_text(str(prefs["ports"]))
+        if prefs.get("elevated"):
+            self._admin_row.set_active(True)
+
+    def _save_prefs(self, *_a) -> None:
+        idx = self._combo.get_selected()
+        sidx = self._script_combo.get_selected()
+        backend.save_prefs(
+            profile=self._profiles[idx].id if 0 <= idx < len(self._profiles) else "",
+            script=self._scripts[sidx].id if 0 <= sidx < len(self._scripts) else "",
+            ports=self._ports.get_text().strip(),
+            elevated=self._admin_row.get_active())
+        self._toast("Opções salvas como padrão")
 
     # -- banner / estado --
     def _refresh_banner(self) -> None:
@@ -260,6 +310,7 @@ class _ScanView(Gtk.Box):
     # -- scan --
     def _on_scan(self, *_args) -> None:
         if self._running:
+            self._cancel()
             return
         raw = self._entry.get_text()
         if not backend.validate_target(raw):
@@ -276,25 +327,46 @@ class _ScanView(Gtk.Box):
         ports = self._ports.get_text().strip()
         elevated = self._admin_row.get_active()
 
+        self._handle = backend.ScanProcess()
         self._running = True
-        self._btn.set_sensitive(False)
+        self._btn.set_label("Cancelar")
+        self._btn.remove_css_class("suggested-action")
+        self._btn.add_css_class("destructive-action")
         self._spinner.start()
         self._set_results_info(
             f"Escaneando {backend.normalize_target(raw)}… (pode levar de "
             "segundos a minutos, conforme o perfil).", "network-wired-symbolic")
         threading.Thread(
             target=self._worker,
-            args=(raw, profile_id, elevated, ports, scripts), daemon=True).start()
+            args=(raw, profile_id, elevated, ports, scripts, self._handle),
+            daemon=True).start()
 
-    def _worker(self, target, profile_id, elevated, ports, scripts) -> None:
+    def _cancel(self) -> None:
+        if self._handle is not None:
+            self._handle.cancel()
+        self._btn.set_sensitive(False)
+
+    def _worker(self, target, profile_id, elevated, ports, scripts, handle) -> None:
         result = backend.run_scan(
-            target, profile_id, elevated=elevated, ports=ports, scripts=scripts)
+            target, profile_id, elevated=elevated, ports=ports, scripts=scripts,
+            handle=handle)
         GLib.idle_add(self._apply, result)
 
     def _apply(self, result: backend.ScanResult) -> bool:
         self._running = False
         self._spinner.stop()
+        self._btn.set_label("Escanear")
+        self._btn.remove_css_class("destructive-action")
+        self._btn.add_css_class("suggested-action")
         self._btn.set_sensitive(True)
+
+        cancelled = bool(self._handle and self._handle.cancelled)
+        self._handle = None
+        if cancelled:
+            self._export_btn.set_sensitive(False)
+            self._set_results_info("Varredura cancelada.", "process-stop-symbolic")
+            return False
+
         self._clear_results()
         self._results.set_description(None)
 
@@ -355,6 +427,7 @@ class _ScanView(Gtk.Box):
         target = handoff.take_scan_target()
         if target:
             self._entry.set_text(target)
+            self._toast(f"Alvo recebido do Recon: {target}")
 
     # -- exportar (.txt legível ou .xml cru do nmap) --
     def _on_export(self, _btn: Gtk.Button) -> None:

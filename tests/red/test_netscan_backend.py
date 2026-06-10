@@ -138,6 +138,38 @@ class TestExportText:
         assert "Linux 5.X" in txt
 
 
+class TestScanProcess:
+    def test_cancel_flag(self):
+        sp = b.ScanProcess()
+        assert sp.cancelled is False
+        sp.cancel()
+        assert sp.cancelled is True
+
+    def test_run_echo(self):
+        sp = b.ScanProcess()
+        rc, out, _err = sp.run(["echo", "oi"], timeout=5)
+        assert rc == 0 and "oi" in out
+
+    def test_run_apos_cancel_nao_roda(self):
+        sp = b.ScanProcess()
+        sp.cancel()
+        rc, _out, _err = sp.run(["echo", "x"], timeout=5)
+        assert rc == 1
+
+
+class TestPrefs:
+    def test_vazio(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(b, "PREFS_FILE", tmp_path / "n.json")
+        assert b.load_prefs() == {}
+
+    def test_roundtrip(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(b, "PREFS_FILE", tmp_path / "n.json")
+        b.save_prefs(profile="web", script="vuln", ports="80", elevated=True)
+        p = b.load_prefs()
+        assert p["profile"] == "web" and p["script"] == "vuln"
+        assert p["ports"] == "80" and p["elevated"] is True
+
+
 class TestRegistry:
     def test_netscan_pronto(self):
         from vigia_red import registry
