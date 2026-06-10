@@ -3203,7 +3203,13 @@ Blue (backend puro + `page.build_content()` + `status="pronto"`/`impl`/`requires
   não achou nada" (mensagem limpa) de "falhou de verdade" (`_short_error` pega a
   última linha útil e ignora a arte ASCII do banner); comando de instalação
   corrigido p/ `pipx install git+https://github.com/laramies/theHarvester.git`
-  (a forma simples do PyPI o pipx recusa). VigiaRed **v0.1.1**. Suíte: **1185 verdes**.
+  (a forma simples do PyPI o pipx recusa).
+- **Fontes validadas + auto-cura (v0.1.2)**: o theHarvester recusa a busca
+  INTEIRA se UMA fonte do `-b` não existe na versão; na VM, `anubis` e
+  `threatminer` saíram do 4.11.1. Padrão agora = 6 fontes confirmadas key-free
+  (crt.sh, HackerTarget, RapidDNS, OTX, urlscan, DuckDuckGo) + **auto-cura**:
+  `_unsupported_engines` lê o aviso "not supported", remove a fonte ruim e
+  refaz a busca. VigiaRed **v0.1.2**. Suíte: **1188 verdes**.
 
 > Convenção: módulos do Blue/Red se documentam pela própria aba **Sobre** + este
 > log §9 — `docs/manuals/` é só do Hub.

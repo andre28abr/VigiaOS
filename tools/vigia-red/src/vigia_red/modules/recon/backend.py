@@ -52,24 +52,24 @@ class Source:
 
 # Subconjunto estável que NÃO exige chave de API. (Fontes como shodan/github
 # exigem key e ficam de fora do conjunto padrão.)
+# Fontes VALIDADAS no theHarvester 4.11.1 (key-free), confirmadas na VM. O
+# theHarvester rejeita a busca INTEIRA se UMA fonte do -b não existir na versão
+# ("not supported"), então só entram aqui as confirmadas. (anubis e threatminer
+# foram removidos do theHarvester e por isso saíram.)
 SOURCES: list[Source] = [
     Source("crtsh", "Certificados SSL (crt.sh)",
            "Subdomínios via transparência de certificados"),
     Source("hackertarget", "HackerTarget", "Hosts e DNS"),
     Source("rapiddns", "RapidDNS", "Subdomínios"),
-    Source("anubis", "Anubis", "Subdomínios"),
     Source("otx", "AlienVault OTX", "Inteligência de ameaças"),
     Source("urlscan", "urlscan.io", "Subdomínios e URLs"),
     Source("duckduckgo", "DuckDuckGo", "Busca por e-mails e hosts"),
-    Source("threatminer", "ThreatMiner", "Hosts e e-mails"),
-    Source("bing", "Bing", "Busca por e-mails e hosts"),
 ]
 
-# theHarvester ABORTA a busca inteira se UMA fonte do -b for inválida na versão
-# instalada ("[!] Invalid source"). Por isso o padrão é um conjunto MÍNIMO e
-# estável — crt.sh (transparência de certificados), a melhor fonte passiva de
-# subdomínios. Expandir só com fontes validadas na versão alvo (ver registry/§9).
-DEFAULT_SOURCE_IDS = ["crtsh"]
+# Padrão = todas as fontes validadas acima. Se mesmo assim alguma sumir numa
+# versão futura, run_recon detecta o aviso "not supported", tira a fonte ruim e
+# refaz a busca (auto-cura) — ver _unsupported_engines.
+DEFAULT_SOURCE_IDS = [s.id for s in SOURCES]
 
 
 @dataclass
@@ -255,6 +255,21 @@ def _short_error(out: str, err: str) -> str:
     return ""
 
 
+_UNSUPPORTED_RE = re.compile(r"not supported:\s*\{([^}]*)\}", re.IGNORECASE)
+
+
+def _unsupported_engines(text: str) -> set[str]:
+    """Fontes que o theHarvester recusou. Ex.: "The following engines are not
+    supported: {'threatminer'}" -> {'threatminer'}."""
+    bad: set[str] = set()
+    for m in _UNSUPPORTED_RE.finditer(text or ""):
+        for tok in m.group(1).split(","):
+            name = tok.strip().strip("'\"")
+            if name:
+                bad.add(name)
+    return bad
+
+
 def run_recon(
     domain: str,
     source_ids: list[str] | None = None,
@@ -279,9 +294,19 @@ def run_recon(
     t0 = time.monotonic()
     with tempfile.TemporaryDirectory(prefix="vigia-recon-") as td:
         base = Path(td) / "out"
-        cmd = build_harvester_cmd(dom, res.sources, base, limit)
-        rc, out, err = proc.run(cmd, timeout=timeout)
+        rc, out, err = proc.run(
+            build_harvester_cmd(dom, res.sources, base, limit), timeout=timeout)
         data = _read_harvester_json(base)
+        # Auto-cura: se o theHarvester recusou alguma fonte, tira-a e refaz.
+        if data is None:
+            bad = _unsupported_engines(out + "\n" + err)
+            good = [s for s in res.sources if s not in bad]
+            if bad and good and good != res.sources:
+                res.sources = good
+                base = Path(td) / "out-retry"
+                rc, out, err = proc.run(
+                    build_harvester_cmd(dom, good, base, limit), timeout=timeout)
+                data = _read_harvester_json(base)
 
     res.elapsed_sec = round(time.monotonic() - t0, 2)
     res.ran = data is not None
