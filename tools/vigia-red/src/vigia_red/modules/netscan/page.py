@@ -8,6 +8,7 @@ atualiza por `GLib.idle_add`. GTK só aqui — `backend.py` é puro.
 from __future__ import annotations
 
 import threading
+from pathlib import Path
 
 import gi
 
@@ -16,7 +17,7 @@ gi.require_version("Adw", "1")
 
 from gi.repository import Adw, Gio, GLib, Gtk  # noqa: E402
 
-from ... import gate  # noqa: E402
+from ... import gate, handoff  # noqa: E402
 from . import backend  # noqa: E402
 
 
@@ -62,6 +63,8 @@ class _ScanView(Gtk.Box):
     def __init__(self) -> None:
         super().__init__(orientation=Gtk.Orientation.VERTICAL)
         self._running = False
+        self._last_result: backend.ScanResult | None = None
+        self.connect("map", lambda *_a: self._consume_handoff())
 
         self._banner = Adw.Banner()
         self.append(self._banner)
@@ -149,6 +152,11 @@ class _ScanView(Gtk.Box):
         self._btn.add_css_class("pill")
         self._btn.connect("clicked", self._on_scan)
         box.append(self._btn)
+        self._export_btn = Gtk.Button(label="Exportar")
+        self._export_btn.add_css_class("pill")
+        self._export_btn.set_sensitive(False)
+        self._export_btn.connect("clicked", self._on_export)
+        box.append(self._export_btn)
         g_action.add(box)
         page.add(g_action)
 
@@ -291,6 +299,7 @@ class _ScanView(Gtk.Box):
         self._results.set_description(None)
 
         if result.error:
+            self._export_btn.set_sensitive(False)
             row = Adw.ActionRow()
             row.set_title("Não foi possível concluir a varredura")
             row.set_subtitle(result.error)
@@ -299,6 +308,8 @@ class _ScanView(Gtk.Box):
             self._add_result(row)
             return False
 
+        self._last_result = result
+        self._export_btn.set_sensitive(True)
         hosts_with_ports = [h for h in result.hosts if h.ports]
 
         # Ping sweep / descoberta: hosts vivos sem varrer portas.
@@ -338,6 +349,38 @@ class _ScanView(Gtk.Box):
         saved.add_prefix(Gtk.Image.new_from_icon_name("emblem-ok-symbolic"))
         self._add_result(saved)
         return False
+
+    # -- handoff (Recon → Scanner) --
+    def _consume_handoff(self) -> None:
+        target = handoff.take_scan_target()
+        if target:
+            self._entry.set_text(target)
+
+    # -- exportar (.txt legível ou .xml cru do nmap) --
+    def _on_export(self, _btn: Gtk.Button) -> None:
+        if not self._last_result:
+            return
+        dialog = Gtk.FileDialog()
+        safe = (self._last_result.target or "scan").replace("/", "_")
+        dialog.set_initial_name(f"vigia-scan-{safe}.txt")
+        dialog.save(self.get_root(), None, self._on_export_done)
+
+    def _on_export_done(self, dialog: Gtk.FileDialog, result) -> None:
+        try:
+            gfile = dialog.save_finish(result)
+        except GLib.Error:
+            return
+        if gfile is None or not self._last_result:
+            return
+        path = gfile.get_path()
+        try:
+            if path.endswith(".xml") and self._last_result.raw_xml:
+                content = self._last_result.raw_xml
+            else:
+                content = backend.result_to_text(self._last_result)
+            Path(path).write_text(content, encoding="utf-8")
+        except OSError as e:
+            print(f"[netscan] export falhou: {e}", flush=True)
 
 
 # ============================================================

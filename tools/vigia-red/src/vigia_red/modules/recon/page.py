@@ -17,7 +17,7 @@ gi.require_version("Adw", "1")
 
 from gi.repository import Adw, Gio, GLib, Gtk  # noqa: E402
 
-from ... import consent, gate  # noqa: E402
+from ... import consent, gate, handoff  # noqa: E402
 from . import backend  # noqa: E402
 
 def build_content() -> Gtk.Widget:
@@ -154,14 +154,12 @@ class _ReconView(Gtk.Box):
         row.add_prefix(Gtk.Image.new_from_icon_name(icon))
         self._add_result(row)
 
-    def _category_expander(self, items: list[str], title: str, icon: str,
-                           cap: int = 100) -> Adw.ExpanderRow:
+    def _category_expander(self, items, title, icon, cap=100, row_action=None):
         exp = Adw.ExpanderRow()
         exp.set_title(title)
         n = len(items)
         exp.set_subtitle(f"{n} encontrado(s)")
-        img = Gtk.Image.new_from_icon_name(icon)
-        exp.add_prefix(img)
+        exp.add_prefix(Gtk.Image.new_from_icon_name(icon))
         if not items:
             exp.set_enable_expansion(False)
             return exp
@@ -170,6 +168,12 @@ class _ReconView(Gtk.Box):
             r.set_title(value)
             r.set_title_selectable(True)
             r.set_title_lines(0)
+            if row_action is not None:
+                btn = Gtk.Button(label="Escanear")
+                btn.add_css_class("flat")
+                btn.set_valign(Gtk.Align.CENTER)
+                btn.connect("clicked", lambda _b, v=value: row_action(v, _b))
+                r.add_suffix(btn)
             exp.add_row(r)
         if n > cap:
             more = Adw.ActionRow()
@@ -177,6 +181,12 @@ class _ReconView(Gtk.Box):
             more.add_css_class("dim-label")
             exp.add_row(more)
         return exp
+
+    def _send_to_scan(self, ip: str, btn: Gtk.Button) -> None:
+        """Manda o IP pro Network Scanner (handoff) — abra-o no menu pra usar."""
+        handoff.set_scan_target(ip)
+        btn.set_label("Enviado ✓")
+        btn.set_sensitive(False)
 
     # -- investigação --
     def _on_investigate(self, *_args) -> None:
@@ -236,7 +246,9 @@ class _ReconView(Gtk.Box):
         )
         for attr, title, icon in _CATEGORIES:
             items = getattr(result, attr)
-            self._add_result(self._category_expander(items, title, icon))
+            action = self._send_to_scan if attr == "ips" else None
+            self._add_result(
+                self._category_expander(items, title, icon, row_action=action))
         saved = Adw.ActionRow()
         saved.set_title("Relatório salvo — veja na aba Histórico.")
         saved.add_prefix(Gtk.Image.new_from_icon_name("emblem-ok-symbolic"))
