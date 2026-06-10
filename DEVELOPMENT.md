@@ -3242,8 +3242,14 @@ O par do Recon: reconhecimento **ATIVO** (toca no alvo). Mesmo padrão.
   customizadas** (`validate_ports`); **scripts NSE** (Padrão/Vulnerabilidades/Web);
   **modo admin** (`Adw.SwitchRow` → `pkexec` na frente do argv → libera
   `-sS`/`-sU`/`-O`); parser de XML agora pega **SO** (`os/osmatch`) e **saída de
-  scripts** (porta com script vira `ExpanderRow`). +14 testes (1229). Falta a
-  leva B (exportar TXT/XML + Recon→Scan).
+  scripts** (porta com script vira `ExpanderRow`). +14 testes (1229).
+- **Network Scanner — leva B (v0.4.0)**: **exportar relatório** (botão na
+  Varredura → `Gtk.FileDialog.save`; `.txt` legível via `result_to_text` ou
+  `.xml` cru do nmap conforme a extensão) + **integração Recon → Scanner**:
+  `vigia_red.handoff` (alvo pendente em memória, mesmo processo); no Recon cada
+  IP ganha um botão **Escanear** que grava o handoff; o Network Scanner consome
+  no sinal `map` e pré-preenche o alvo. +4 testes. VigiaRed **v0.4.0**. Suíte:
+  **1232 verdes**.
 
 ---
 
