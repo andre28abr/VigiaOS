@@ -103,6 +103,7 @@ SECTIONS = [
     ("hub", "Hub", "view-grid-symbolic"),
     ("red", "Red", "system-search-symbolic"),
     ("blue", "Blue", "security-high-symbolic"),
+    ("relatorios", "Relatórios", "x-office-document-symbolic"),
 ]
 
 # A tool "dashboard" é promovida à seção Início — não aparece no catálogo do Hub.
@@ -343,6 +344,8 @@ class VigiaHubWindow(Adw.ApplicationWindow):
                 "hub", hub_entries, CATEGORY_LABELS, CATEGORIES_ORDER)
         if section_id in ("red", "blue"):
             return self._build_blue_red_section(section_id)
+        if section_id == "relatorios":
+            return self._build_relatorios_view()
         if section_id == "config":
             return self._build_config_view()
         raise ValueError(f"Seção desconhecida: {section_id}")
@@ -362,6 +365,22 @@ class VigiaHubWindow(Adw.ApplicationWindow):
             err = "".join(traceback.format_exception_only(type(e), e)).strip()
             holder.set_child(Adw.StatusPage(
                 title="Monitor do Sistema indisponível",
+                description=err,
+                icon_name="dialog-error-symbolic",
+            ))
+        return holder
+
+    def _build_relatorios_view(self) -> Gtk.Widget:
+        """Seção Relatórios: visão por período do banco de eventos
+        (vigia_common.events). Import lazy; falha não derruba o app."""
+        holder = Adw.Bin()
+        try:
+            from .reports_view import build_content
+            holder.set_child(build_content())
+        except Exception as e:  # pylint: disable=broad-except
+            err = "".join(traceback.format_exception_only(type(e), e)).strip()
+            holder.set_child(Adw.StatusPage(
+                title="Relatórios indisponível",
                 description=err,
                 icon_name="dialog-error-symbolic",
             ))

@@ -3303,8 +3303,16 @@ verdade** dos achados das ferramentas, pra gerar relatório **por período**.
     `PRAGMA busy_timeout` p/ concorrência; `db_path` injetável (testes).
 - **46 testes** (normalização, roundtrip, todos os filtros, agregações, retenção,
   permissões 0600/0700, robustez). vigia-common **v0.3.0**. Suíte: **1302 verdes**.
-- Próximo: **Fase 2** (instrumentar as tools pra chamar `record()`) → **Fase 3**
-  (seção Relatórios no rail + export reusando o Vigia Reports + retenção/agendamento).
+- **Fase 2** — 5 ferramentas instrumentadas (chamam `events.record()` ao terminar,
+  defensivamente com try/except): Recon, Network Scanner, Vuln Scanner (resumo + por
+  achado médio+), Antivírus e Rootkit (resumo + por ameaça). Severidade normalizada.
+- **Fase 3** — seção **Relatórios** no rail (`SECTIONS` + `_build_relatorios_view`):
+  `vigia_hub/reports_view.py` (GUI: período 7/30/90/365/Tudo → resumo por
+  severidade/fonte + lista de eventos + **exportar** + **limpar histórico** com
+  confirmação) + `vigia_hub/reports_html.py` (PURO: HTML imprimível com **selo
+  SHA-256**, rótulos PT) — +6 testes do HTML. vigia-hub **v0.12.0**. Suíte: **1308
+  verdes**. Pendente (futuro): tradução PT-BR dos textos das ferramentas; mais
+  fontes (hardening/posture/Activity Log); agendamento do relatório.
 
 ---
 
