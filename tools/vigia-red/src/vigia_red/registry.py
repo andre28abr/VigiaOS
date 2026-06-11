@@ -13,7 +13,7 @@ META = ProductMeta(
     key="red",
     name="VigiaRed",
     app_id="br.com.vigia.Red",
-    version="0.5.0",
+    version="0.6.0",
     tagline=(
         "Suíte ofensiva (pentest / red team) com interface gráfica moderna — "
         "parte do ecossistema VigiaOS. Esqueleto: os módulos chegam um a um."
@@ -95,12 +95,20 @@ MODULES: list[Module] = [
     Module(
         id="web", name="Vigia Web Scanner", category="web",
         icon="applications-internet-symbolic",
-        summary="Scanner de aplicações web (ZAP)",
-        description="Análise dinâmica de aplicações web: spider, fuzzing de "
-                    "parâmetros e detecção de falhas OWASP Top 10.",
-        wraps=["OWASP ZAP", "wapiti"],
-        features=["Spider + scan ativo/passivo", "Top 10 OWASP",
-                  "Proxy de interceptação"],
+        summary="Vulnerabilidades de aplicações web (wapiti)",
+        description="Rastreia uma aplicação web autorizada e testa falhas estilo "
+                    "OWASP (XSS, SQLi, inclusão de arquivo…). Complementa o Vuln "
+                    "Scanner no nível da aplicação.",
+        wraps=["wapiti"],
+        features=["Crawler + testes OWASP (XSS/SQLi/…)",
+                  "Perfis por escopo (página/pasta/domínio)",
+                  "Achados por severidade", "Cancelar + exportar laudo (0600)"],
+        status="pronto",
+        impl="vigia_red.modules.web.page",
+        requires=(Dependency(
+            "wapiti", ("wapiti",), "pip", "wapiti3",
+            install="pipx install wapiti3",
+            note="Scanner de vulns web (OWASP). Requer Python 3."),),
     ),
     Module(
         id="wireless", name="Vigia Wireless", category="wireless",
