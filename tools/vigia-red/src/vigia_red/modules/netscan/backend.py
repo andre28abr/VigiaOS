@@ -387,6 +387,18 @@ def run_scan(
             f"O nmap não retornou resultado (código {rc}).")
 
     save_report(res)
+    try:
+        from vigia_common import events
+        if not res.error and res.hosts:
+            events.record(
+                "netscan",
+                f"Varredura: {res.open_ports} porta(s) aberta(s) em "
+                f"{res.hosts_up} host(s)",
+                category="scan", severity="info", ref=res.target,
+                payload={"open_ports": res.open_ports, "hosts": res.hosts_up,
+                         "profile": res.profile})
+    except Exception:  # pylint: disable=broad-except
+        pass
     return res
 
 
