@@ -48,7 +48,7 @@ identidade visual (zinc + emerald) e os padrões de UI (GTK4 + libadwaita).
 |---|---|---|---|
 | **Início** | Todos | Monitor do sistema em tempo real (CPU/RAM/disco/rede/processos) | 🟢 Ativo |
 | **Hub** | Advogado, profissional liberal, escritório LGPD | Segurança + privacidade + hardening + auditoria **single-host** (14 ferramentas) | 🟢 Ativo |
-| **Red** | Pentester, red team | Ferramentas **ofensivas** com GUI (scanner, vuln, OSINT) + termo de uso (Lei 12.737/12) | 🟡 Esqueleto — 7 módulos |
+| **Red** | Pentester, red team | Ferramentas **ofensivas** com GUI (OSINT, scanner de rede, vuln, web) + termo de uso (Lei 12.737/12) | 🟠 4 de 7 módulos prontos |
 | **Blue** | Blue team, analista de SOC | **Detecção e resposta** (SIEM-lite, IDS, YARA hunting, forense de memória, threat intel) | 🟢 7 módulos prontos |
 
 > Antes eram **3 apps separados** (VigiaHub / VigiaRed / VigiaBlue); foram

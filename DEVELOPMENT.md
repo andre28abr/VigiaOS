@@ -3316,6 +3316,33 @@ verdade** dos achados das ferramentas, pra gerar relatório **por período**.
 
 ---
 
+### 2026-06-11 — VigiaRed: 4º módulo — Vigia Web Scanner (wapiti)
+
+Fecha o quarteto ofensivo do Red no nível da **aplicação web**: dada uma URL
+autorizada, o **wapiti** rastreia o site e testa falhas estilo OWASP (XSS, SQLi,
+inclusão de arquivo, etc.). Complementa o Vuln Scanner (que olha host/serviço).
+
+- **Vigia Web Scanner** (`vigia_red.modules.web`) — wrapper do `wapiti`:
+  - `backend.py` (puro): `normalize_target`/`validate_target` (exige URL; prefixa
+    `http://`), `build_scan_cmd` (argv-lista `wapiti -u … -f json -o … --flush-session`),
+    `parse_wapiti_json` (dict `vulnerabilities` → `Finding` por categoria; nível
+    wapiti 0–4 → severidade canônica; ordenado por gravidade), `counts_by_severity`,
+    `run_scan` (tempdir + runner cancelável + relatório JSON 0600 + grava evento),
+    export TXT, histórico (`list_recent_reports`).
+  - `page.py` (GTK): passa pelo **gate do termo** (`gate.build_gated`); abas
+    Varredura / Histórico / Sobre; entrada de URL; combo de **perfil por escopo**
+    (página/pasta/domínio); **cancelar** (o botão vira "Cancelar" via `ScanProcess`);
+    **exportar** laudo; achados como `ExpanderRow` com selo de severidade.
+  - 3 perfis (`--scope page/folder/domain`); padrão **Padrão** (pasta da URL).
+- **Eventos**: instrumentado — grava resumo + cada achado médio+ em
+  `vigia_common.events` (fonte `web`), entra na Central de Relatórios.
+- Registry: `web` → pronto + impl + `requires=(Dependency("wapiti", …, "pip",
+  "wapiti3", install="pipx install wapiti3"))`. Teste do adaptador atualizado (4
+  módulos reais: recon/netscan/vuln/web). **+10 testes** do backend. VigiaRed
+  **v0.6.0**. Suíte: **1326 verdes**.
+
+---
+
 ## 10. Roadmap
 
 ### 10.1 Próximas iterações por ferramenta
