@@ -3343,6 +3343,24 @@ inclusão de arquivo, etc.). Complementa o Vuln Scanner (que olha host/serviço)
 
 ---
 
+### 2026-06-11 — UX: bolinha de status honesta nos módulos planejados
+
+Na sidebar do master-detail, os módulos **esqueleto** (sem backend — Wireless,
+Exploit, Cracker do Red) apareciam com bolinha **verde**, porque `is_available()`
+retorna `True` quando o módulo não tem dependências (`requires=()`). Isso enganava:
+verde lê-se "pronto pra usar", mas eles só abrem a página "Planejado".
+
+- `_build_sidebar_row` (window.py) agora checa `is_planned` **antes** da cor:
+  planejado → bolinha **cinza** (`dim-label`) + tooltip "Planejado — em breve".
+  Verde/vermelho ficam só pros módulos reais (verde = pronto; vermelho =
+  dependência faltando, tooltip apontando a aba Sobre).
+- A página de **detalhe** já tratava `is_planned` (pílula "Planejado — em breve",
+  sem bolinha); agora a **lista** combina com ela. As bolinhas vermelhas legítimas
+  (ex.: Vuln Scanner sem `nuclei`) seguem vermelhas — refletem dependência real.
+- vigia-hub **v0.12.2**. Sem mudança de backend (fix de GUI; `py_compile` ok).
+
+---
+
 ## 10. Roadmap
 
 ### 10.1 Próximas iterações por ferramenta
