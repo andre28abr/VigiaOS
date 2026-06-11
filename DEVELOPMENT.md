@@ -3284,6 +3284,30 @@ Aprofunda o Network Scanner: varredura de vulnerabilidades por templates.
 
 ---
 
+### 2026-06-10 — Central de Relatórios — Fase 1: banco de eventos (`vigia_common.events`)
+
+Fundação da futura seção **Relatórios**: um SQLite local que vira a **fonte da
+verdade** dos achados das ferramentas, pra gerar relatório **por período**.
+
+- **`vigia_common.events`** (puro, sem GUI, sem daemon — stdlib `sqlite3`):
+  - `record(source, title, category, severity, detail, ref, payload, ts)` — grava
+    1 evento; **nunca levanta** (None em erro). Severidade **normalizada** (PT/EN →
+    canônica: critical/high/medium/low/info/ok/unknown) via `normalize_severity`.
+  - `query(start, end, sources, severities, categories, search, limit)` — filtros +
+    período (datetime/epoch/ISO); mais novo primeiro.
+  - Agregações SQL pro relatório: `summary` (total + por fonte/severidade),
+    `counts_by_day` (linha do tempo), `distinct_sources`, `count`.
+  - Retenção (LGPD): `prune(dias)` (default **180** — minimização) e `purge_all`
+    ("limpar histórico").
+  - Banco em `~/.local/share/vigia/events.db` criado **0600** (pasta 0700);
+    `PRAGMA busy_timeout` p/ concorrência; `db_path` injetável (testes).
+- **46 testes** (normalização, roundtrip, todos os filtros, agregações, retenção,
+  permissões 0600/0700, robustez). vigia-common **v0.3.0**. Suíte: **1302 verdes**.
+- Próximo: **Fase 2** (instrumentar as tools pra chamar `record()`) → **Fase 3**
+  (seção Relatórios no rail + export reusando o Vigia Reports + retenção/agendamento).
+
+---
+
 ## 10. Roadmap
 
 ### 10.1 Próximas iterações por ferramenta
