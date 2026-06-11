@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "vigia-hub"
-version = "0.12.2"
+version = "0.12.3"
 description = "VigiaOS — app unificado (Início + Hub + Red + Blue + Relatórios numa janela só)"
 license = { text = "Apache-2.0" }
 readme = "README.md"

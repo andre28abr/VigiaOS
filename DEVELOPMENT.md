@@ -3361,6 +3361,30 @@ verde lê-se "pronto pra usar", mas eles só abrem a página "Planejado".
 
 ---
 
+### 2026-06-11 — Fix: app não enxergava ferramentas em `~/go/bin` (nuclei "não instalado")
+
+**Sintoma:** o Vuln Scanner mostrava "nuclei não instalado" e o botão Escanear
+ficava inerte **mesmo com o nuclei instalado**. Causa: um app aberto pelo menu do
+GNOME herda um `PATH` enxuto que **não inclui** os diretórios onde ferramentas
+do usuário caem — em especial `~/go/bin` (do `go install`, onde o nuclei mora).
+Então `shutil.which("nuclei")` falhava e o módulo se dava por ausente.
+
+- **`vigia_hub/binpath.py`** (novo, puro/testável): `candidate_bin_dirs(home,
+  environ)` (ordem estável: `~/.local/bin` pipx, `~/go/bin` go, `~/.cargo/bin`
+  cargo, `/usr/local/bin`, `$GOPATH/bin`), `augmented_path(current, extra,
+  exists=)` (acrescenta ao **fim** os que existem e não estão lá; sistema tem
+  precedência; idempotente), `ensure_user_bins_on_path()` (aplica em
+  `os.environ['PATH']`).
+- **`app.py`**: `ensure_user_bins_on_path()` é a 1ª coisa do `do_activate`. Como
+  tudo roda no MESMO processo (módulos embarcados), augmentar o PATH no startup
+  faz o `shutil.which` e os `subprocess` de **todos** os módulos enxergarem
+  nuclei (go), theHarvester/wapiti (pipx) e ferramentas Rust (cargo).
+- **+13 testes** (`tests/hub/test_binpath.py`). vigia-hub **v0.12.3**. Suíte:
+  **1339 verdes**. Não toca o backend do nuclei (segue `["nuclei", …]` por nome,
+  agora resolvido via PATH augmentado herdado pelo Popen).
+
+---
+
 ## 10. Roadmap
 
 ### 10.1 Próximas iterações por ferramenta
