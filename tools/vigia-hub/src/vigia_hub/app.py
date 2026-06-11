@@ -45,7 +45,7 @@ from . import __app_id__
 from .auth import check_auth, check_auth_async
 from .logging_setup import get_logger
 from .settings import load_settings
-from .theme import apply_ui_theme, follow_system_theme
+from .theme import apply_base_css, apply_ui_theme, follow_system_theme
 from .tray import TrayManager
 from .window import VigiaHubWindow
 
@@ -194,6 +194,7 @@ class VigiaHubApp(Adw.Application):
         # Tema visual: "padrao" (segue o GNOME) ou "terminal" (hacker).
         # apply_ui_theme cobre os dois — padrao chama follow_system_theme dentro.
         apply_ui_theme(settings.ui_theme)
+        apply_base_css()   # cores de marca do rail (Hub/Red/Blue)
 
         # Determina se vai iniciar minimizado (sem janela visivel)
         will_start_minimized = (
