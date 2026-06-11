@@ -43,6 +43,7 @@ from gi.repository import Adw, Gio, GLib  # noqa: E402
 
 from . import __app_id__
 from .auth import check_auth, check_auth_async
+from .binpath import ensure_user_bins_on_path
 from .logging_setup import get_logger
 from .settings import load_settings
 from .theme import apply_base_css, apply_ui_theme, follow_system_theme
@@ -189,6 +190,11 @@ class VigiaHubApp(Adw.Application):
     # ============================================================
 
     def do_activate(self) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
+        # PATH: inclui ~/go/bin, ~/.local/bin, ~/.cargo/bin etc. — senão um app
+        # aberto pelo menu não enxerga ferramentas instaladas pelo usuário
+        # (ex.: nuclei via `go install` → "não instalado" mesmo instalado).
+        ensure_user_bins_on_path()
+
         settings = load_settings()
 
         # Tema visual: "padrao" (segue o GNOME) ou "terminal" (hacker).
