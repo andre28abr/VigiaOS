@@ -368,6 +368,21 @@ def scan_async(
 
         if not result.error:
             _save_report(result)
+            try:
+                from vigia_common.events import record
+                n = len(result.findings)
+                record("antivirus",
+                       f"Varredura: {n} ameaça(s) em "
+                       f"{result.scanned_files} arquivo(s)",
+                       category="scan", severity=("high" if n else "ok"),
+                       ref=result.target,
+                       payload={"infected": n, "files": result.scanned_files})
+                for f in result.findings:
+                    record("antivirus", f.signature, category="finding",
+                           severity="high", ref=f.path,
+                           payload={"signature": f.signature})
+            except Exception:  # pylint: disable=broad-except
+                pass
         on_done(result)
 
     t = threading.Thread(target=worker, daemon=True)

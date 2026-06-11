@@ -283,6 +283,23 @@ def _run_scan_streaming(
 
     if not result.cancelled and not result.error:
         _save_report(result)
+        try:
+            from vigia_common.events import record
+            worst = ("high" if result.infected_count
+                     else ("medium" if result.warnings_count else "ok"))
+            record("rootkit",
+                   f"{result.scanner}: {result.infected_count} infectado(s), "
+                   f"{result.warnings_count} aviso(s)",
+                   category="scan", severity=worst, ref=result.scanner,
+                   payload={"infected": result.infected_count,
+                            "warnings": result.warnings_count})
+            for f in result.findings:
+                sev = "high" if str(f.severity).upper() == "INFECTED" else "medium"
+                record("rootkit", f.test, category="finding", severity=sev,
+                       detail=f.detail, ref=result.scanner,
+                       payload={"severity": f.severity})
+        except Exception:  # pylint: disable=broad-except
+            pass
 
     on_done(result)
 

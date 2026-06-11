@@ -322,6 +322,17 @@ def run_recon(
             "Tente de novo ou rode no terminal pra ver o erro.")
 
     save_report(res)
+    try:
+        from vigia_common import events
+        if not res.error and res.total:
+            events.record(
+                "recon",
+                f"OSINT: {len(res.hosts)} subdomínio(s), {len(res.emails)} e-mail(s)",
+                category="recon", severity="info", ref=res.domain,
+                payload={"hosts": len(res.hosts), "emails": len(res.emails),
+                         "ips": len(res.ips), "urls": len(res.urls)})
+    except Exception:  # pylint: disable=broad-except
+        pass
     return res
 
 

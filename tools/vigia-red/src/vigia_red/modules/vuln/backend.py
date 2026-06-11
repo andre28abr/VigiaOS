@@ -258,6 +258,24 @@ def run_scan(
                 f"O nuclei não concluiu (código {rc}).")
 
     save_report(res)
+    try:
+        from vigia_common import events
+        if not res.error:
+            worst = res.findings[0].severity if res.findings else "ok"
+            events.record(
+                "vuln", f"Varredura: {res.total} achado(s)", category="scan",
+                severity=worst, ref=res.target,
+                payload={"profile": res.profile, "count": res.total})
+            for f in res.findings:
+                if events.normalize_severity(f.severity) in (
+                        "critical", "high", "medium"):
+                    events.record(
+                        "vuln", f.name or f.template_id, category="finding",
+                        severity=f.severity, detail=f.description,
+                        ref=f.matched_at or res.target,
+                        payload={"template": f.template_id})
+    except Exception:  # pylint: disable=broad-except
+        pass
     return res
 
 
