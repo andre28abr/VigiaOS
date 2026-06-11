@@ -122,6 +122,41 @@ def _get_terminal_provider():
     return _terminal_provider
 
 
+# Cores de marca dos produtos no rail (ícones simbólicos tingidos, estilo flat).
+_RAIL_CSS = """
+.vigia-rail-hub  { color: #2ec27e; }
+.vigia-rail-red  { color: #ef4444; }
+.vigia-rail-blue { color: #3b82f6; }
+"""
+
+_base_provider = None
+
+
+def apply_base_css() -> None:
+    """Aplica (1×) o CSS-base do VigiaOS: cores de marca dos ícones do rail
+    (Hub verde, Red vermelho, Blue azul). Independe do tema. Idempotente."""
+    global _base_provider
+    if _base_provider is not None:
+        return
+    try:
+        import gi
+        gi.require_version("Gtk", "4.0")
+        from gi.repository import Gdk, Gtk
+    except (ValueError, ImportError):
+        return
+    display = Gdk.Display.get_default()
+    if display is None:
+        return
+    p = Gtk.CssProvider()
+    try:
+        p.load_from_string(_RAIL_CSS)                  # GTK 4.12+
+    except AttributeError:
+        p.load_from_data(_RAIL_CSS.encode("utf-8"))    # fallback
+    Gtk.StyleContext.add_provider_for_display(
+        display, p, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+    _base_provider = p
+
+
 def apply_ui_theme(name: str) -> None:
     """Aplica o tema visual ao vivo (reversível):
 

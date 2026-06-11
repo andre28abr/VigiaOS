@@ -203,6 +203,8 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         icon = Gtk.Image.new_from_icon_name(icon_name)
         icon.set_pixel_size(22)
         icon.set_halign(Gtk.Align.CENTER)
+        if section_id in ("hub", "red", "blue"):
+            icon.add_css_class(f"vigia-rail-{section_id}")
         inner.append(icon)
 
         lbl = Gtk.Label(label=label)
