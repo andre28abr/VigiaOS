@@ -1943,11 +1943,20 @@ class VigiaHubWindow(Adw.ApplicationWindow):
             row.add_suffix(status_lbl)
             row._status_lbl = status_lbl  # type: ignore[attr-defined]
 
-        available = tool.is_available()
         dot = Gtk.Label(label="●")
-        dot.add_css_class("success" if available else "error")
         dot.add_css_class("caption")
         dot.set_valign(Gtk.Align.CENTER)
+        if getattr(tool, "is_planned", False):
+            # Esqueleto sem backend (ex.: Wireless/Exploit/Cracker do Red):
+            # cinza neutro, não verde — ele não está "pronto", só planejado.
+            dot.add_css_class("dim-label")
+            dot.set_tooltip_text("Planejado — em breve")
+        else:
+            available = tool.is_available()
+            dot.add_css_class("success" if available else "error")
+            dot.set_tooltip_text(
+                "Pronto para usar" if available
+                else "Dependência não instalada — veja a aba Sobre")
         row.add_suffix(dot)
 
         row._tool_id = tool.id  # type: ignore[attr-defined]
