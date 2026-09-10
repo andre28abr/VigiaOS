@@ -86,7 +86,13 @@ def _build_consent_gate(on_accept: Callable[[], None]) -> Gtk.Widget:
     check.connect("toggled", lambda c: btn.set_sensitive(c.get_active()))
 
     def _accept(_b):
-        consent.accept()
+        if not consent.accept():
+            # Sem o registro 0600 do aceite não há como provar autorização:
+            # não destrava e explica em vez de fingir que deu certo.
+            status.set_description(
+                "Não foi possível gravar o aceite em disco "
+                "(~/.local/share/vigia-red). Verifique permissões e tente de novo.")
+            return
         on_accept()
 
     btn.connect("clicked", _accept)

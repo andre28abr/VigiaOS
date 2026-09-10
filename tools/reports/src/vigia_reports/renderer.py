@@ -143,7 +143,11 @@ def write_report(html: str, template_id: str, output_dir: Path) -> Path:
     stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     filename = f"{template_id}-{stamp}.html"
     path = output_dir / filename
-    path.write_text(html, encoding="utf-8")
+    # Nasce 0600 (relatório tem dados do sistema/pessoais). Conteúdo gravado é
+    # exatamente html.encode("utf-8") — o SHA-256 abaixo bate com `sha256sum`.
+    fd = os.open(str(path), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w", encoding="utf-8") as fh:
+        fh.write(html)
     try:
         path.chmod(0o600)
     except OSError:
@@ -225,7 +229,9 @@ def build_audit_package(reports_dir: Path) -> tuple[Path | None, int, str]:
     )
 
     try:
-        with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
+        fd = os.open(str(zip_path), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        with os.fdopen(fd, "wb") as fh, \
+                zipfile.ZipFile(fh, "w", zipfile.ZIP_DEFLATED) as zf:
             for h, digest in entries:
                 zf.write(h, h.name)
                 sidecar = h.with_name(h.name + ".sha256")

@@ -137,7 +137,7 @@ class TestAddZonePortValidation:
         # estes mocks evitam tocar pkexec, mas o teste exige o ValueError.
         called = {"pkexec": False, "reload": False}
         monkeypatch.setattr(
-            backend, "_pkexec_fw", lambda *a, **k: called.__setitem__("pkexec", True)
+            backend, "_pkexec_fw_reload", lambda *a, **k: called.__setitem__("pkexec", True)
         )
         monkeypatch.setattr(
             backend, "_reload", lambda: called.__setitem__("reload", True)
@@ -153,7 +153,7 @@ class TestAddZonePortValidation:
     def test_non_numeric_port_raises(self, monkeypatch):
         called = {"pkexec": False}
         monkeypatch.setattr(
-            backend, "_pkexec_fw", lambda *a, **k: called.__setitem__("pkexec", True)
+            backend, "_pkexec_fw_reload", lambda *a, **k: called.__setitem__("pkexec", True)
         )
         monkeypatch.setattr(backend, "_reload", lambda: None)
 
@@ -163,7 +163,7 @@ class TestAddZonePortValidation:
 
     def test_injection_like_port_raises(self, monkeypatch):
         # Tentativa de injection no token de porta deve bater na validacao.
-        monkeypatch.setattr(backend, "_pkexec_fw", lambda *a, **k: None)
+        monkeypatch.setattr(backend, "_pkexec_fw_reload", lambda *a, **k: None)
         monkeypatch.setattr(backend, "_reload", lambda: None)
         with pytest.raises(ValueError):
             backend.add_zone_port("public", "80; rm -rf /", "tcp")
@@ -173,7 +173,7 @@ class TestAddZonePortValidation:
         # _pkexec_fw com o arg correto, depois _reload. Sem pkexec/firewalld real.
         captured = {}
         monkeypatch.setattr(
-            backend, "_pkexec_fw", lambda *a, **k: captured.__setitem__("args", a)
+            backend, "_pkexec_fw_reload", lambda *a, **k: captured.__setitem__("args", a)
         )
         monkeypatch.setattr(
             backend, "_reload", lambda: captured.__setitem__("reloaded", True)
@@ -181,7 +181,8 @@ class TestAddZonePortValidation:
 
         backend.add_zone_port("public", "8000-8010", "tcp")
 
-        assert captured.get("reloaded") is True
+        # O reload faz parte do mesmo pkexec (_pkexec_fw_reload): não há 2ª chamada.
+        assert "reloaded" not in captured
         # O arg de porta foi montado como "8000-8010/tcp".
         assert "--add-port=8000-8010/tcp" in captured["args"]
         assert "--zone=public" in captured["args"]
@@ -190,7 +191,7 @@ class TestAddZonePortValidation:
     def test_valid_single_port_is_accepted(self, monkeypatch):
         captured = {}
         monkeypatch.setattr(
-            backend, "_pkexec_fw", lambda *a, **k: captured.__setitem__("args", a)
+            backend, "_pkexec_fw_reload", lambda *a, **k: captured.__setitem__("args", a)
         )
         monkeypatch.setattr(backend, "_reload", lambda: None)
 
@@ -209,3 +210,27 @@ class TestPortRuleToArg:
 
     def test_range(self):
         assert backend.PortRule("8000-8010", "udp").to_arg() == "8000-8010/udp"
+
+
+class TestFwAndReloadArgv:
+    """Mudança permanente + reload num único pkexec (1 diálogo, não 2)."""
+
+    def test_args_vao_como_posicionais_nao_interpolados(self):
+        argv = backend.fw_and_reload_argv("--permanent", "--zone=public",
+                                          "--add-port=8080/tcp")
+        assert argv[:2] == ["bash", "-c"]
+        assert '"$@"' in argv[2] and "--reload" in argv[2]
+        assert argv[3] == "_"
+        assert argv[4:] == ["--permanent", "--zone=public", "--add-port=8080/tcp"]
+        # nada do usuário entra na string do -c
+        assert "8080" not in argv[2]
+
+    def test_add_zone_port_usa_caminho_unico(self, monkeypatch):
+        seen = {}
+        monkeypatch.setattr(backend, "_pkexec_fw_reload",
+                            lambda *a: seen.setdefault("args", a))
+        monkeypatch.setattr(backend, "_reload",
+                            lambda: (_ for _ in ()).throw(AssertionError("2º pkexec")))
+        backend.add_zone_port("public", "8080", "tcp")
+        assert seen["args"] == ("--permanent", "--zone=public", "--add-port=8080/tcp")
+

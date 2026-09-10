@@ -5,7 +5,7 @@
 %global mod_name vigia_firewall
 
 Name:           %{pkg_name}
-Version:        0.1.0
+Version:        0.1.1
 Release:        1%{?dist}
 Summary:        Gerenciador GTK4 de firewalld
 License:        Apache-2.0

@@ -28,19 +28,43 @@ def _fw_cmd(*args: str, timeout: int = 10) -> tuple[int, str, str]:
         return -1, "", ""
 
 
-def _pkexec_fw(*args: str, timeout: int = 30) -> None:
-    """Roda pkexec firewall-cmd ARGS. Raise RuntimeError em falha."""
+def _pkexec_run(cmd: list[str], *, label: str, timeout: int = 30) -> None:
+    """Roda `pkexec CMD`. Raise RuntimeError em falha/cancelamento."""
     if shutil.which("pkexec") is None:
         raise RuntimeError("pkexec não encontrado. Instale polkit.")
     result = subprocess.run(
-        ["pkexec", "firewall-cmd"] + list(args),
+        ["pkexec"] + cmd,
         capture_output=True, text=True, errors="replace", timeout=timeout,
     )
     if result.returncode != 0:
         stderr = (result.stderr or result.stdout).strip()
         if "Request dismissed" in stderr or result.returncode == 126:
             raise RuntimeError("Autenticação cancelada pelo usuário.")
-        raise RuntimeError(f"firewall-cmd {' '.join(args)} falhou: {stderr}")
+        raise RuntimeError(f"{label} falhou: {stderr}")
+
+
+def _pkexec_fw(*args: str, timeout: int = 30) -> None:
+    """Roda pkexec firewall-cmd ARGS. Raise RuntimeError em falha."""
+    _pkexec_run(["firewall-cmd", *args],
+                label=f"firewall-cmd {' '.join(args)}", timeout=timeout)
+
+
+def fw_and_reload_argv(*args: str) -> list[str]:
+    """argv (sem `pkexec`) que aplica `firewall-cmd ARGS` e faz `--reload`
+    numa só elevação. ARGS vão como parâmetros posicionais do bash (`"$@"`),
+    nunca interpolados na string — sem superfície de injeção. Puro/testável."""
+    return ["bash", "-c", 'firewall-cmd "$@" && firewall-cmd --reload', "_",
+            *args]
+
+
+def _pkexec_fw_reload(*args: str) -> None:
+    """Mudança `--permanent` + `--reload` com UM diálogo polkit.
+
+    Antes eram dois pkexec: cancelar o segundo deixava a regra salva em disco
+    mas não aplicada, e a UI dizia "cancelado" como se nada tivesse mudado.
+    """
+    _pkexec_run(fw_and_reload_argv(*args),
+                label=f"firewall-cmd {' '.join(args)} + --reload", timeout=60)
 
 
 def _reload() -> None:
@@ -158,13 +182,11 @@ def list_zone_services(zone: str) -> list[str]:
 
 
 def add_zone_service(zone: str, service: str) -> None:
-    _pkexec_fw("--permanent", f"--zone={zone}", f"--add-service={service}")
-    _reload()
+    _pkexec_fw_reload("--permanent", f"--zone={zone}", f"--add-service={service}")
 
 
 def remove_zone_service(zone: str, service: str) -> None:
-    _pkexec_fw("--permanent", f"--zone={zone}", f"--remove-service={service}")
-    _reload()
+    _pkexec_fw_reload("--permanent", f"--zone={zone}", f"--remove-service={service}")
 
 
 def list_available_services() -> list[str]:
@@ -207,10 +229,8 @@ def add_zone_port(zone: str, port: str, protocol: str) -> None:
         raise ValueError(f"Protocolo inválido: {protocol}")
     if not port.replace("-", "").isdigit():
         raise ValueError(f"Porta inválida: {port}")
-    _pkexec_fw("--permanent", f"--zone={zone}", f"--add-port={port}/{protocol}")
-    _reload()
+    _pkexec_fw_reload("--permanent", f"--zone={zone}", f"--add-port={port}/{protocol}")
 
 
 def remove_zone_port(zone: str, port: str, protocol: str) -> None:
-    _pkexec_fw("--permanent", f"--zone={zone}", f"--remove-port={port}/{protocol}")
-    _reload()
+    _pkexec_fw_reload("--permanent", f"--zone={zone}", f"--remove-port={port}/{protocol}")

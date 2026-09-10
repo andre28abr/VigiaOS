@@ -5,7 +5,7 @@
 %global mod_name vigia_hub
 
 Name:           %{pkg_name}
-Version:        0.12.5
+Version:        0.12.6
 Release:        1%{?dist}
 Summary:        VigiaOS — app unificado (Inicio + Hub + Red + Blue + Relatorios)
 License:        Apache-2.0

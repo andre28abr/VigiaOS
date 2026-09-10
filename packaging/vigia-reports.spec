@@ -5,7 +5,7 @@
 %global mod_name vigia_reports
 
 Name:           %{pkg_name}
-Version:        0.2.7
+Version:        0.2.8
 Release:        1%{?dist}
 Summary:        Relatorios PDF/HTML LGPD via Activity Log
 License:        Apache-2.0

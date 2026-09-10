@@ -203,7 +203,10 @@ def build_scan_cmd(
 # Metadados das regras (description/severity do bloco `meta:`)
 # ============================================================
 
-_RULE_RE = re.compile(r"\brule\s+(\w+)\b")
+# Declaração de regra: início de linha, modificadores opcionais. `\brule\s+`
+# solto casava a palavra "rule" dentro de strings/comentários ("this rule
+# detects…") e criava regras fantasmas / roubava o meta da regra real.
+_RULE_RE = re.compile(r"^\s*(?:(?:private|global)\s+)*rule\s+(\w+)\b", re.M)
 
 
 def _meta_str(block: str, key: str) -> str:

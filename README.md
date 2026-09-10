@@ -124,18 +124,18 @@ sozinha**, sem depender do app (veja *Instalar só um módulo*).
 | # | Componente | Stack | Status |
 |---|---|---|---|
 | 1 | **[`install/bootstrap.sh`](install/bootstrap.sh)** / **[`install/vigia-setup.sh`](install/vigia-setup.sh)** | bash | 🟢 Instalador one-shot + instalador guiado (3 etapas) |
-| 2 | **[Casca VigiaOS](tools/vigia-hub/)** v0.12.5 | Python + GTK4 | 🟢 rail de seções (Início/Hub/Red/Blue/Relatórios) + **busca Ctrl+K** + **tema Terminal** (opcional) + **notificações de segurança** + **varredura de vírus semanal** + autostart XDG + tray + lock Polkit + backup/restore + Configurações (Sobre · Atualizações · Aplicação · Segurança · Ajuda) |
-| 3 | **[Vigia Monitor do Sistema](tools/dashboard/)** v0.4.2 *(seção Início)* | Python + GTK4 + Cairo | 🟢 Sistema em tempo real + per-process I/O + alertas + inspetor syscalls + banda por processo + selo de plataforma |
+| 2 | **[Casca VigiaOS](tools/vigia-hub/)** v0.12.6 | Python + GTK4 | 🟢 rail de seções (Início/Hub/Red/Blue/Relatórios) + **busca Ctrl+K** + **tema Terminal** (opcional) + **notificações de segurança** + **varredura de vírus semanal** + autostart XDG + tray + lock Polkit + backup/restore + Configurações (Sobre · Atualizações · Aplicação · Segurança · Ajuda) |
+| 3 | **[Vigia Monitor do Sistema](tools/dashboard/)** v0.4.3 *(seção Início)* | Python + GTK4 + Cairo | 🟢 Sistema em tempo real + per-process I/O + alertas + inspetor syscalls + banda por processo + selo de plataforma |
 | 4 | **Tudo Certo?** *(built-in da casca)* | Python + GTK4 | 🟢 Painel de checkup 🟢🟡🔴 (atualizações, firewall, antivírus, privacidade) com botão **Resolver** |
 | 5 | **[Vigia Activity Log](tools/activity-log/)** v0.7.1 (core) + [GUI](tools/activity-log-gui/) v0.2.0 | Rust + Python | 🟢 audit + journald + fail2ban + correlations + **glossário PT-BR** ("o que é isso?") + aba **Fontes** |
 | 6 | **[Vigia Privacy Controls](tools/privacy-controls/)** v0.3.2 | Python + GTK4 | 🟢 12 toggles user+system scope |
 | 7 | **[Vigia SELinux GUI](tools/selinux-gui/)** v0.2.2 | Python + GTK4 | 🟢 6 tabs + pt-BR + audit2allow |
-| 8 | **[Vigia Firewall GUI](tools/firewall-gui/)** v0.1.0 | Python + GTK4 | 🟡 Status + zones CRUD |
+| 8 | **[Vigia Firewall GUI](tools/firewall-gui/)** v0.1.1 | Python + GTK4 | 🟡 Status + zones CRUD |
 | 9 | **[Vigia Network Monitor](tools/netmon-gui/)** v0.2.0 | Python + GTK4 | 🟢 Conexões **agrupadas por app** + IP→nome (DNS reverso) + estados PT-BR; aba **Escutando** com glossário de portas |
 | 10 | **[Vigia Hardening Checks](tools/hardening-checks/)** v0.1.6 | Python + GTK4 | 🟢 Lynis wrapper (auditoria de hardening) |
-| 11 | **[Vigia Reports](tools/reports/)** v0.2.7 | Python + Jinja2 + SVG | 🟢 6 modelos + selo SHA-256 + identidade do escritório + **agendamento mensal** (headless) |
-| 12 | **[Vigia File Integrity](tools/file-integrity/)** v0.2.6 | Python + GTK4 | 🟢 AIDE (sistema) + Hash ad-hoc (user) — 6 tabs |
-| 13 | **[Vigia DNS Manager](tools/dns-manager/)** v0.4.3 | Python + GTK4 | 🟢 **dnscrypt-proxy** (DoH/DoT) com 11 servers curados |
+| 11 | **[Vigia Reports](tools/reports/)** v0.2.8 | Python + Jinja2 + SVG | 🟢 6 modelos + selo SHA-256 + identidade do escritório + **agendamento mensal** (headless) |
+| 12 | **[Vigia File Integrity](tools/file-integrity/)** v0.2.7 | Python + GTK4 | 🟢 AIDE (sistema) + Hash ad-hoc (user) — 6 tabs |
+| 13 | **[Vigia DNS Manager](tools/dns-manager/)** v0.4.4 | Python + GTK4 | 🟢 **dnscrypt-proxy** (DoH/DoT) com 11 servers curados |
 | 14 | **[Vigia Capabilities Inspector](tools/capabilities-inspector/)** v0.1.2 | Python + GTK4 | 🟢 getcap audit + 41 caps pt-BR |
 | 15 | **[Vigia Antivirus](tools/antivirus/)** v0.1.5 | Python + GTK4 | 🟢 ClamAV wrapper (substitui clamtk) |
 | 16 | **[Vigia Rootkit Scanner](tools/rootkit-scanner/)** v0.2.4 | Python + GTK4 | 🟢 **chkrootkit + rkhunter** unificados |

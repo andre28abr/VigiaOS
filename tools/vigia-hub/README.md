@@ -6,7 +6,7 @@
 
 ## Estado
 
-🟢 **v0.12.5** — rail de **5 seções**:
+🟢 **v0.12.6** — rail de **5 seções**:
 
 | Seção | O que mostra |
 |---|---|

@@ -5,7 +5,7 @@
 %global mod_name vigia_integrity
 
 Name:           %{pkg_name}
-Version:        0.2.6
+Version:        0.2.7
 Release:        1%{?dist}
 Summary:        Wrapper de AIDE (integridade de arquivos)
 License:        Apache-2.0

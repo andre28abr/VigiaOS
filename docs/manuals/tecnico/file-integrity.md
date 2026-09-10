@@ -10,7 +10,7 @@ usuário — duas escalas, mesma lógica de "baseline + diff".
 
 | Item | Valor |
 |---|---|
-| **Pacote** | `vigia-integrity` (versão 0.2.6) |
+| **Pacote** | `vigia-integrity` (versão 0.2.7) |
 | **App ID** | `br.com.vigia.FileIntegrity` |
 | **Pacotes wrapped** | `aide`, `coreutils` (hashlib do Python stdlib para hash ad-hoc) |
 | **Privilégios** | AIDE: tudo via `pkexec`. Hash ad-hoc: sem privilégios |

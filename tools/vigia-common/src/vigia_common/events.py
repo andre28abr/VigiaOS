@@ -131,8 +131,12 @@ def _connect(db_path: Optional[Union[str, Path]]) -> Optional[sqlite3.Connection
             fd = os.open(str(p), os.O_CREAT | os.O_WRONLY, 0o600)
             os.close(fd)
         conn = sqlite3.connect(str(p))
-        conn.execute("PRAGMA busy_timeout=3000")
-        conn.executescript(_SCHEMA)
+        try:
+            conn.execute("PRAGMA busy_timeout=3000")
+            conn.executescript(_SCHEMA)
+        except sqlite3.Error:
+            conn.close()  # arquivo corrompido: não vaza a conexão
+            raise
         try:
             os.chmod(p, 0o600)
         except OSError:
@@ -140,6 +144,11 @@ def _connect(db_path: Optional[Union[str, Path]]) -> Optional[sqlite3.Connection
         return conn
     except (sqlite3.Error, OSError, ValueError):
         return None
+
+
+def escape_like(text: str) -> str:
+    """Escapa `\\`, `%` e `_` para uso literal num LIKE … ESCAPE '\\'."""
+    return (text.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_"))
 
 
 def _to_epoch(when: _Timeish) -> float:
@@ -264,8 +273,11 @@ def query(
             where.append(f"category IN ({','.join('?' * len(cats))})")
             params += cats
         if search:
-            where.append("(title LIKE ? OR detail LIKE ? OR ref LIKE ?)")
-            like = f"%{search}%"
+            # `%`/`_` digitados pelo usuário são literais, não curingas
+            # ("100%" não pode casar tudo).
+            where.append("(title LIKE ? ESCAPE '\\' OR detail LIKE ? ESCAPE '\\' "
+                         "OR ref LIKE ? ESCAPE '\\')")
+            like = f"%{escape_like(search)}%"
             params += [like, like, like]
 
         sql = f"SELECT {_COLS} FROM events"

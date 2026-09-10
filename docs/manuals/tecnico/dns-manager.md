@@ -11,7 +11,7 @@ preservando comentários, e migração 1-click de `systemd-resolved` para
 
 | Item | Valor |
 |---|---|
-| **Pacote** | `vigia-dns` (versão 0.4.3) |
+| **Pacote** | `vigia-dns` (versão 0.4.4) |
 | **App ID** | `br.com.vigia.DnsManager` |
 | **Pacotes wrapped** | `dnscrypt-proxy` |
 | **Privilégios** | `pkexec systemctl` + `pkexec bash -c` (escrita atômica de config) |

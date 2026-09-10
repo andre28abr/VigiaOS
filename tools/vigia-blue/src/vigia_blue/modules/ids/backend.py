@@ -358,8 +358,10 @@ def analyze_eve(path: Path | str, max_alerts: int = 2000) -> IdsResult:
 def _needs_root(err: str) -> bool:
     """A saída do suricata indica falta de permissão (config/regras de root)?"""
     low = (err or "").lower()
-    return ("permission denied" in low or "failed to open" in low
-            or "could not" in low or "errno 13" in low)
+    # Só falta de permissão. "could not"/"failed to open" genéricos também
+    # aparecem com pcap corrompido/inexistente — e disparavam um diálogo de
+    # senha root por um erro de entrada do usuário.
+    return "permission denied" in low or "errno 13" in low or "eacces" in low
 
 
 def analyze_pcap(pcap: Path | str, timeout: int = 300,

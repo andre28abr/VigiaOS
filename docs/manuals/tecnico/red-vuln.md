@@ -5,7 +5,7 @@ Módulo de **Varredura & Vulnerabilidades** do **VigiaRed**. Wrapper do CLI
 (CVEs, exposições, misconfigs) contra um alvo autorizado e classificando por
 severidade. Saída em **JSONL** (`-jsonl`), parseada com a stdlib.
 
-> **Pacote:** vigia-red 0.6.2 · **Status:** `pronto`. Padrão do ecossistema:
+> **Pacote:** vigia-red 0.6.3 · **Status:** `pronto`. Padrão do ecossistema:
 > *backend puro/testável + `page.py` via `Module.impl`*, atrás do portão de termo
 > (`gate.build_gated`). Runner cancelável `vigia_red.runner.ScanProcess`.
 

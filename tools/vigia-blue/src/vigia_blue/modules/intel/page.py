@@ -20,6 +20,7 @@ from . import backend  # noqa: E402
 
 # Escapa markup Pango em valores vindos de dados (rows usam use-markup=TRUE).
 _esc = GLib.markup_escape_text
+_IMPORT_MAX_BYTES = 20 * 1024 * 1024  # importação de IOCs: lê no máximo 20 MB
 
 _TYPE_ICON = {
     "ip": "network-workgroup-symbolic",
@@ -288,17 +289,27 @@ class _IocsView(Gtk.Box):
         if f is None or not f.get_path():
             return
         try:
-            text = open(f.get_path(), encoding="utf-8", errors="replace").read()
+            with open(f.get_path(), encoding="utf-8", errors="replace") as fh:
+                text = fh.read(_IMPORT_MAX_BYTES + 1)
         except OSError:
+            return
+        if len(text) > _IMPORT_MAX_BYTES:
+            self._group.set_description("Arquivo grande demais para importar (limite 20 MB).")
             return
         iocs: list[backend.IOC] = []
         try:
             data = json.loads(text)
-            iocs = backend.parse_otx_pulse(data) or backend.parse_misp_event(data)
         except (json.JSONDecodeError, ValueError):
-            iocs = []
-        if not iocs:
+            # Não é JSON: lista simples, um IOC por linha.
             iocs = backend.import_plain(text, source="importado")
+        else:
+            # JSON válido: só OTX/MISP. JSON de outro formato NÃO cai no modo
+            # texto (viraria IOCs lixo tipo `["1.2.3.4",`).
+            iocs = backend.parse_otx_pulse(data) or backend.parse_misp_event(data)
+            if not iocs:
+                self._group.set_description(
+                    "JSON não reconhecido (esperado OTX pulse ou MISP event).")
+                return
         backend.add_iocs(iocs)
         self.reload()
 
