@@ -11,13 +11,13 @@
 ## Sumário
 
 1. [Visão geral](#1-visão-geral)
-2. [Evolução: v1 → v2 → toolkit completo](#2-evolução-v1--v2--toolkit-completo)
+2. [Evolução do projeto](#2-evolução-do-projeto)
 3. [Decisões de arquitetura](#3-decisões-de-arquitetura)
 4. [Estrutura do repositório](#4-estrutura-do-repositório)
 5. [Catálogo de ferramentas — estado atual](#5-catálogo-de-ferramentas--estado-atual)
 6. [Padrões e convenções comuns](#6-padrões-e-convenções-comuns)
 7. [Como adicionar uma ferramenta nova](#7-como-adicionar-uma-ferramenta-nova)
-8. [Setup numa máquina nova (Silverblue limpa)](#8-setup-numa-máquina-nova-silverblue-limpa)
+8. [Setup numa máquina nova (Fedora Workstation)](#8-setup-numa-máquina-nova-fedora-workstation)
 9. [Log de implementação](#9-log-de-implementação)
 10. [Roadmap](#10-roadmap)
 11. [Lições aprendidas](#11-lições-aprendidas)
@@ -179,34 +179,50 @@ NetMon). Expandiu para 19 ferramentas; depois enxugou para **16** (limpeza
 VigiaOS/
 ├── README.md                    # Pitch público
 ├── DEVELOPMENT.md               # Este arquivo (documento vivo)
+├── CLAUDE.md                    # Natureza/escopo do projeto (contexto p/ IA)
+├── AUDIT.md                     # Resumo da última auditoria de código
 ├── LICENSE                      # Apache 2.0
 ├── .gitignore
 │
-├── bootstrap.sh                 # One-liner que prepara Silverblue vanilla
+├── install/                     # Instalação (Fedora Workstation, dnf)
+│   ├── bootstrap.sh             # One-shot: deps + pip -e de tudo + cargo + .desktop
+│   ├── vigia-setup.sh           # Instalador guiado (3 etapas com confirmação)
+│   ├── install-tool.sh          # Instala um módulo só (pip --user, sem root)
+│   ├── blue-deps.sh             # Binários externos do Blue (yara/suricata/…)
+│   ├── _deps.py                 # Lê Module.requires da registry (fonte única)
+│   ├── test-samples.sh / ids-demo.sh  # Amostras de teste em ~/teste/
+│   └── uninstall.sh
 │
-├── packaging/                   # Empacotamento RPM (preparado para COPR)
-│   ├── vigia-activity-log.spec
+├── docs/manuals/                # Manuais in-app (aba Ajuda)
+│   ├── leigo/                   # Um .md por ferramenta, linguagem simples
+│   └── tecnico/                 # Um .md por ferramenta, detalhe técnico
+│
+├── tests/                       # pytest — backends puros (sem GTK)
+│
+├── packaging/                   # Specs RPM (experimental / em manutenção)
+│   ├── *.spec
 │   ├── Makefile
-│   ├── README.md                # Instruções de COPR
-│   ├── vigia-log.desktop
-│   └── vigia-log.svg
+│   └── README.md
 │
 └── tools/                       # Uma pasta por ferramenta independente
+    ├── vigia-common/            # Python — lib compartilhada (helpers, shell, events, proc, theme)
+    ├── vigia-hub/               # Python — casca do VigiaOS (rail de 5 seções + Configurações)
+    ├── vigia-red/               # Python — módulos de pentest (recon/netscan/vuln/web + 3 planejados)
+    ├── vigia-blue/              # Python — módulos de SOC (yara/siem/ids/memory/timeline/intel/playbooks)
     ├── activity-log/            # Rust — parser core (CLI/TUI/JSON)
     ├── activity-log-gui/        # Python — frontend GTK4 do core
-    ├── vigia-hub/               # Python — launcher mestre (3 painéis)
     ├── privacy-controls/        # Python — 12 toggles
     ├── selinux-gui/             # Python — manager SELinux
     ├── firewall-gui/            # Python — manager firewalld
     ├── netmon-gui/              # Python — monitor de rede
     ├── hardening-checks/        # Python — wrapper Lynis
-    ├── reports/                 # Python — PDF LGPD via Activity Log JSON
-    ├── file-integrity/          # Python — wrapper AIDE
-    ├── tool-installer/          # Python — catálogo rpm-ostree + extensões navegador
+    ├── reports/                 # Python — relatórios HTML LGPD (Jinja2 + SVG)
+    ├── file-integrity/          # Python — wrapper AIDE + hash ad-hoc
+    ├── tool-installer/          # Python — aba Atualizações (dnf) de Configurações
     ├── dns-manager/             # Python — wrapper dnscrypt-proxy (DoH/DoT)
     ├── capabilities-inspector/  # Python — getcap audit
     ├── antivirus/               # Python — wrapper ClamAV
-    ├── dashboard/               # Python — sistema em tempo real (Cairo)
+    ├── dashboard/               # Python — sistema em tempo real (Cairo) — seção Início
     └── rootkit-scanner/         # Python — chkrootkit + rkhunter
 ```
 
@@ -3519,6 +3535,74 @@ Testes: **+18** (`tests/red/test_netscan_backend.py` faixas de octeto/IPv6;
 Timeline atualizados. Versões: common **0.3.2**, red **0.6.2**, blue
 **0.0.27**, hub **0.12.5**, rootkit **0.2.4**, selinux **0.2.2**, hardening
 **0.1.6**. Suíte: **1363 verdes**.
+
+---
+
+### 2026-09-10 — Docs públicas para o livro + Ajuda do Red/Blue + textos "Sobre" honestos
+
+Terceira rodada da auditoria (itens 5 e 6). Nada de comportamento novo nos
+backends; é o que o **leitor do livro e o usuário do app veem**.
+
+**Ajuda com manuais de TODOS os módulos (Hub + Red + Blue)**
+- Os 14 manuais do Blue estavam escritos em `tools/vigia-blue/docs/manuals/` e
+  **nenhum código os lia**. Movidos (`git mv`) para a pasta única
+  `docs/manuals/{leigo,tecnico}/blue-<módulo>.md`. **Manuais do Red escritos**
+  (8 arquivos, `red-recon/netscan/vuln/web`, leigo + técnico, com seção "Use
+  apenas com autorização" citando o termo e a Lei 12.737/2012).
+- `vigia_hub/manuals.py` `MANUAL_ENTRIES` ganhou as 11 entradas "Red · …" e
+  "Blue · …" → a aba **Ajuda do VigiaOS** mostra os 28 manuais.
+- Casca standalone (`vigia_common/shell.py`): `_help_page` deixou de ser
+  "em breve" — lista os módulos prontos e renderiza o manual Simples/Técnico
+  via `md_to_pango_block`, lendo o **mesmo arquivo** que o Hub. Helpers puros
+  `manual_dirs()` / `find_product_manual(key, id, kind)` /
+  `load_product_manual()`. `_config_page` diz a verdade (preferências ficam em
+  VigiaOS → Configurações). Sobre: "N de M módulo(s) pronto(s)" em vez de
+  "esqueleto (módulos em breve)".
+- Testes: `tests/products/test_product_manuals.py` — helper + **cobertura**:
+  todo módulo `pronto` de Red/Blue precisa ter os dois manuais, e toda entrada
+  do sumário do Hub precisa apontar para arquivos existentes (falha ao
+  adicionar módulo sem manual).
+
+**Textos do app que mentiam (feature existia e o "Sobre" dizia que não)**
+- netmon "sem DNS reverso", dashboard "sem alertas/I-O por processo",
+  reports "só 2 templates/sem agendamento", dns-manager "DoH não" (o tool é
+  dnscrypt-proxy) — reescritos com as limitações reais. `registry.py` do Hub:
+  DNS Manager descrito como dnscrypt-proxy (era systemd-resolved/DoT);
+  "13 configurações de privacidade" → 12. `window.py`: "Sobre o Vigia Hub" /
+  "senha para abrir o Hub" → VigiaOS onde é o app. `vigia-setup.sh`: Red
+  "em construção" → "4 de 7 módulos prontos". Autostart (`settings.py`):
+  `Name=VigiaOS`, `Icon=br.com.vigia.OS` (único ícone que o bootstrap instala).
+
+**Nome do produto / empacotamento**
+- `data/br.com.vigia.Hub.desktop` (2º ícone no menu) **removido**; specs
+  instalam `br.com.vigia.OS.desktop` pelo nome. `vigia-hub.spec`: 5 console
+  scripts que faltavam no `%files`, `Requires: python3-markdown`, versão
+  0.12.5. `vigia-reports.spec` sem WeasyPrint. Todos os specs: "Fedora
+  Atomic/Silverblue" → Workstation; `vigia-dns.spec` → dnscrypt-proxy. Makefile
+  (VERSION único) segue como está — `packaging/README.md` ganhou banner
+  "experimental" e o README raiz diz que o caminho suportado é `install/`.
+- Código morto removido (0 refs): `timer_enabled`, `report_exists`,
+  `is_selinux_available`, `yara_version`, `coreutils_installed`, `by_category`.
+  `vigia_common.__version__` adicionado. `uninstall.sh` remove `mtr`;
+  `ids-demo.sh --help` inteiro.
+
+**Docs públicas**
+- **LICENSE** (raiz e `tools/activity-log/`) era um stub de 29 linhas; agora o
+  Apache-2.0 completo (202 linhas). **AUDIT.md** reescrito (o antigo citava 204
+  testes, 4 tools apagadas e arquivos em /tmp). **README**: 5 seções (linha
+  Relatórios), 13 ferramentas na seção Hub (+ Tudo Certo?), badge de testes
+  real, nota "Projeto educacional", loop dev inclui red/blue + core Rust, âncora
+  do §8, packaging experimental. READMEs de vigia-hub ("v0.1 MVP"/sudo),
+  tool-installer (catálogo inexistente), reports (caminho legado
+  `~/Documents/VigiaReports`), netmon, dashboard, antivirus, common, rootkit,
+  capabilities (41) atualizados; "via Vigia Hub" → "via VigiaOS". Manuais
+  técnicos com versão/pacote certos, sem `/home/andre`, sem "WeasyPrint (PDF)".
+  `tests/README.md` lista os 19 diretórios. TOC do DEVELOPMENT com âncoras
+  válidas e árvore do §4 atual.
+
+Sem bump de versão nesta rodada: as docs acabaram de ser alinhadas às versões
+atuais (hub 0.12.5, common 0.3.2, red 0.6.2, blue 0.0.27). Suíte: **1373
+verdes** (1377 coletados; 4 skips GTK no Mac). **+10 testes**.
 
 ---
 

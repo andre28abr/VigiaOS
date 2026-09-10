@@ -4,7 +4,7 @@
 
 O **VigiaOS** é **um aplicativo só** que junta todas as ferramentas numa **janela só**. Sem ele, você teria que abrir um app diferente toda vez que quisesse ver os logs, mexer no firewall ou checar se o sistema está seguro. Pense nele como o **painel de controle** do seu computador — uma porta única de entrada pra tudo.
 
-O **Hub** é uma das **seções** do VigiaOS (junto com Início, Red e Blue): é onde ficam as 14 ferramentas de segurança e privacidade. Você clica numa seção na barra da esquerda, escolhe a ferramenta, e ela aparece **dentro da mesma janela**. Sem cinco janelas abertas no Alt+Tab.
+O **Hub** é uma das **seções** do VigiaOS (junto com Início, Red, Blue e Relatórios): é onde ficam as 13 ferramentas de segurança e privacidade. Você clica numa seção na barra da esquerda, escolhe a ferramenta, e ela aparece **dentro da mesma janela**. Sem cinco janelas abertas no Alt+Tab.
 
 ## Quando você usa isso
 
@@ -18,7 +18,7 @@ O **Hub** é uma das **seções** do VigiaOS (junto com Início, Red e Blue): é
 
 Quando você abre o VigiaOS, a janela tem **três partes**:
 
-1. **Uma barra fininha na esquerda** que troca de **seção**: Início (o painel do sistema), Hub (as ferramentas), Red e Blue. No rodapé dela ficam **Configurações** e o sino de **Notificações**.
+1. **Uma barra fininha na esquerda** que troca de **seção**: Início (o painel do sistema), Hub (as ferramentas), Red, Blue e Relatórios. No rodapé dela ficam **Configurações** e o sino de **Notificações**.
 2. **Uma lista no meio** (na seção Hub) com todas as ferramentas, agrupadas por tipo: Monitoramento, Privacidade, Defesa & Hardening, Sistema, Relatórios.
 3. **A área grande da direita** que mostra a ferramenta escolhida em tela cheia.
 
@@ -33,9 +33,10 @@ Em cima de cada ferramenta abrindo no painel, você vê uma faixa com pequenos *
 A barrinha da esquerda troca de **seção**:
 
 - **Início** — o painel do sistema em tempo real (CPU, RAM, disco, rede, processos). É a tela que abre primeiro.
-- **Hub** — a lista das 14 ferramentas. Clica e ela abre. A primeira da lista é o **Tudo Certo?** (um semáforo 🟢🟡🔴 que checa se o computador está seguro de relance). As outras principais são **Activity Log** (logs traduzidos), **Privacy Controls** (toggles de privacidade), **Firewall**, **Antivirus**, **Reports** e mais.
-- **Red** — ferramentas de teste de invasão (em construção).
+- **Hub** — a lista das 13 ferramentas. Clica e ela abre. A primeira da lista é o **Tudo Certo?** (um semáforo 🟢🟡🔴 que checa se o computador está seguro de relance). As outras principais são **Activity Log** (logs traduzidos), **Privacy Controls** (toggles de privacidade), **Firewall**, **Antivirus**, **Reports** e mais.
+- **Red** — ferramentas de teste de invasão (4 de 7 prontas). Antes de liberar, pede o aceite de um **termo de uso**: é pra testar **o seu** computador ou rede, nunca a dos outros.
 - **Blue** — detecção e resposta a ameaças (para quem é da área de segurança).
+- **Relatórios** — a central que guarda o que as ferramentas encontraram (varreduras, vírus, rootkits) por período (7, 30, 90, 365 dias) e exporta um relatório em HTML com selo de integridade.
 
 ### Notificações (o sininho)
 

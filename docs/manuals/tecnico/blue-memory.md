@@ -16,7 +16,7 @@ tools/vigia-blue/src/vigia_blue/modules/memory/
 
 install/_mem_capture.sh              # helper privilegiado (pkexec): AVML + chown
 tests/blue/test_memory_backend.py   # 17 testes
-tools/vigia-blue/docs/manuals/{leigo,tecnico}/memory.md
+docs/manuals/{leigo,tecnico}/blue-memory.md
 ```
 
 ## Dependências

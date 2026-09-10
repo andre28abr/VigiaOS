@@ -2,7 +2,7 @@
 
 ## Em uma frase
 
-Casca (shell) do **VigiaOS** que num único processo GTK4 oferece um **rail de seções** (Início/Hub/Red/Blue), embarca as 14 ferramentas da seção Hub via master-detail (+ Red/Blue pelo mesmo master-detail, via adaptador `Module → ToolEntry`), com tray icon, autostart XDG, password lock via Polkit e auto-lock por inatividade.
+Casca (shell) do **VigiaOS** que num único processo GTK4 oferece um **rail de seções** (Início/Hub/Red/Blue/Relatórios), embarca as 13 ferramentas da seção Hub via master-detail (+ Red/Blue pelo mesmo master-detail, via adaptador `Module → ToolEntry`), com tray icon, autostart XDG, password lock via Polkit e auto-lock por inatividade.
 
 ## O que envolve
 
@@ -15,7 +15,7 @@ Casca (shell) do **VigiaOS** que num único processo GTK4 oferece um **rail de s
 | **Path config** | `~/.config/vigia-hub/settings.json` (mode `0600`) |
 | **Path autostart** | `~/.config/autostart/vigia-hub.desktop` (XDG) |
 | **App ID D-Bus** | `br.com.vigia.OS` |
-| **Versão** | 0.11.1 |
+| **Versão** | 0.12.5 |
 
 ## Arquitetura interna
 
@@ -28,9 +28,10 @@ Layout em **3 painéis**:
 O **rail** alterna entre as **seções** (no topo) + atalhos no rodapé:
 
 - `inicio` — landing: monitor do sistema (a tool Dashboard) em tela cheia
-- `hub` — vista master-detail das 14 ferramentas registradas
-- `red` — módulos de pentest (esqueleto), mesmo master-detail
-- `blue` — módulos de SOC, mesmo master-detail
+- `hub` — vista master-detail das 13 ferramentas do catálogo (`registry.TOOLS` tem 14 entries; o `dashboard` é filtrado porque vive em Início)
+- `red` — módulos de pentest (4 prontos, 3 planejados), mesmo master-detail, atrás do termo de uso
+- `blue` — módulos de SOC (7 prontos), mesmo master-detail
+- `relatorios` — Central de Relatórios (`reports_view.py`): eventos de `vigia_common.events` por período (7/30/90/365/tudo) + exportação HTML com selo SHA-256 (`reports_html.py`)
 - (rodapé) `settings` — Configurações (view com abas) + sino de Notificações
 
 Em Hub/Red/Blue a sidebar lista os módulos agrupados por categoria — no Hub: `monitoramento`, `privacidade`, `defesa`, `sistema`, `relatorios` (ordem em `registry.CATEGORIES_ORDER`). Red/Blue entram pelo mesmo master-detail via adaptador `Module → ToolEntry`.

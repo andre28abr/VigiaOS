@@ -24,7 +24,7 @@ ExclusiveArch:  %{rust_arches}
 
 %description
 Vigia Activity Log faz parte do VigiaOS — toolkit de seguranca
-para Fedora Atomic. Le /var/log/audit/audit.log, systemd journal e
+para Fedora Workstation. Le /var/log/audit/audit.log, systemd journal e
 /var/log/fail2ban.log, sintetiza eventos em narrativas human-readable
 em portugues, detecta correlations cross-source (ex: fail2ban burst,
 kernel OOM, SELinux denial burst, SSH login suspeito), classifica

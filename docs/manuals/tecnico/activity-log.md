@@ -15,7 +15,7 @@ Frontend GTK4 que consome o JSON bundle do parser Rust `vigia-log`, consolidando
 | **Path config** | Nenhum config persistido (state em memória) |
 | **Path dados** | Lê `/var/log/audit/audit.log`, `/var/log/fail2ban.log`, journald via `journalctl` |
 | **App ID** | `br.com.vigia.ActivityLog` |
-| **Versão** | GUI 0.1.0 / engine `vigia-activity-log` 0.7.1 |
+| **Versão** | GUI 0.2.0 / engine `vigia-activity-log` 0.7.1 |
 
 ## Arquitetura interna
 

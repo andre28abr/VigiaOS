@@ -178,9 +178,9 @@ if [[ -n "$DEPS_TSV" ]]; then
     done <<< "$DEPS_TSV"
 fi
 pbot
-if ! grep -q $'^Red\x1f' <<< "$DEPS_TSV"; then
-    echo "  ${DIM}VigiaRed está em construção — sem pacotes externos ainda;"
-    echo "  aparecem aqui sozinhos quando os módulos forem declarados.${NC}"
+if [[ -z "$DEPS_TSV" ]]; then
+    warn "não consegui ler as dependências do Blue/Red da registry (install/_deps.py);"
+    echo "  ${DIM}só os pacotes do Hub entram na lista abaixo.${NC}"
 fi
 
 # Listas finais: Hub (curado) + Blue/Red (da registry); base GTK só se faltar.
@@ -253,7 +253,7 @@ prow "Produto"   "Pkgs" "O que instala"
 psep
 prow "Hub (launcher + tools)" "${#HUB_MODS[@]}"  "14 tools embarcadas + launcher"
 prow "VigiaBlue"              "${#BLUE_MODS[@]}" "7 modulos prontos"
-prow "VigiaRed"              "${#RED_MODS[@]}"  "esqueleto (em breve)"
+prow "VigiaRed"              "${#RED_MODS[@]}"  "4 de 7 modulos prontos"
 pbot
 echo "  ${DIM}pip --user (editável). Tudo roda embarcado no VigiaOS — só ele${NC}"
 echo "  ${DIM}vira ícone no menu (Hub/Red/Blue são seções dentro dele).${NC}"

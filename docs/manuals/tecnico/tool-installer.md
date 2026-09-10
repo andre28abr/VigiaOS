@@ -11,7 +11,7 @@ dentro de Configurações.
 
 | Item | Valor |
 |---|---|
-| **Pacote** | `vigia-tool-installer` |
+| **Pacote** | `vigia-installer` (versão 0.4.2) |
 | **App ID** | `br.com.vigia.ToolInstaller` |
 | **Pacotes wrapped** | `dnf` |
 | **Privilégios** | `pkexec dnf upgrade` (checagem `dnf check-update` sem root) |

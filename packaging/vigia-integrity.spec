@@ -7,7 +7,7 @@
 Name:           %{pkg_name}
 Version:        0.2.6
 Release:        1%{?dist}
-Summary:        Wrapper de AIDE com perfil Silverblue customizado
+Summary:        Wrapper de AIDE (integridade de arquivos)
 License:        Apache-2.0
 URL:            https://github.com/andre28abr/VigiaOS
 Source0:        %{url}/archive/v%{version}.tar.gz#/VigiaOS-%{version}.tar.gz
@@ -29,10 +29,9 @@ Requires:       vigia-common
 Requires:       aide
 
 %description
-Monitor de integridade de arquivos via AIDE. Perfil custom Silverblue foca em /etc, /root, cron (pula /usr read-only) + excludes /etc/systemd/system.control/ (volateis).
+Monitor de integridade de arquivos via AIDE. Usa o perfil padrao do Fedora Workstation (/etc/aide.conf + /var/lib/aide/aide.db.gz).
 
-Faz parte do VigiaOS — toolkit de seguranca para Fedora Atomic
-(Silverblue, Kinoite, Bluefin, Bazzite, Aurora).
+Faz parte do VigiaOS — toolkit de seguranca para Fedora Workstation.
 
 Comando: vigia-integrity
 

@@ -21,7 +21,7 @@ tools/vigia-blue/src/vigia_blue/modules/timeline/
 └── page.py        # GUI: Linha do tempo / Sobre
 
 tests/blue/test_timeline_backend.py   # 13 testes
-tools/vigia-blue/docs/manuals/{leigo,tecnico}/timeline.md
+docs/manuals/{leigo,tecnico}/blue-timeline.md
 ```
 
 ## Dependência

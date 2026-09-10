@@ -55,7 +55,8 @@ SECTIONS: list[tuple[str, str]] = [
         "Limitações conhecidas",
         "- Auto-refresh roda <tt>ss</tt> sync — em máquinas com muitas "
         "conexões (>1000) pode ter latência perceptível\n"
-        "- Sem DNS reverso ainda — IPs aparecem em forma numérica (v0.2)\n"
+        "- DNS reverso roda em segundo plano e depende do resolver da "
+        "máquina — IPs sem registro PTR continuam em forma numérica\n"
         "- Sem bandwidth por processo — para isso instale <tt>nethogs</tt> "
         "via Tool Installer (v0.2 integrará)"
     ),

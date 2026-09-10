@@ -5,7 +5,7 @@
 %global mod_name vigia_netmon
 
 Name:           %{pkg_name}
-Version:        0.1.1
+Version:        0.2.0
 Release:        1%{?dist}
 Summary:        Monitor de conexoes TCP/UDP em tempo real
 License:        Apache-2.0
@@ -31,8 +31,7 @@ Requires:       iproute
 %description
 Wrapper de 'ss -tunap' com auto-refresh, filtros e modo admin opt-in (pkexec) para revelar nomes de processos do sistema.
 
-Faz parte do VigiaOS — toolkit de seguranca para Fedora Atomic
-(Silverblue, Kinoite, Bluefin, Bazzite, Aurora).
+Faz parte do VigiaOS — toolkit de seguranca para Fedora Workstation.
 
 Comando: vigia-netmon
 
@@ -80,6 +79,9 @@ fi
 /usr/bin/gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 
 %changelog
+* Thu Sep 10 2026 André Augusto Azarias de Souza <andre@vigia.local> - 0.2.0-1
+- Alinha versao do spec com a tool (0.1.1 -> 0.2.0).
+
 * Sun May 31 2026 André Augusto Azarias de Souza <andre@vigia.local> - 0.1.1-1
 - Alinha a versao do spec com a tool (0.1.0 -> 0.1.1).
 

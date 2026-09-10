@@ -131,15 +131,16 @@ SECTIONS: list[tuple[str, str]] = [
     ),
     (
         "Limitações conhecidas",
-        "- Sem <b>histórico persistente</b>: ao fechar a tool, dados "
-        "somem. v0.3 vai persistir em SQLite.\n"
-        "- Sem <b>alertas</b>: não avisa se CPU passar de 95% por 1min. "
-        "v0.2 alvo.\n"
+        "- Sem <b>histórico persistente</b> das métricas: ao fechar a tool, "
+        "os gráficos e o histórico de disparos somem (só as <b>regras</b> de "
+        "alerta ficam salvas em <tt>~/.config/vigia/</tt>).\n"
+        "- Alertas só disparam <b>com a tool aberta</b> — não há serviço "
+        "em segundo plano vigiando a máquina.\n"
         "- Refresh fixo em 1s/2s — sem opção na UI ainda.\n"
         "- Temperatura: depende de <tt>/sys/class/thermal</tt>. Algumas "
         "VMs não têm (mostra 'não disponível').\n"
-        "- Sem <b>per-process I/O</b> (iotop-style). v0.2 alvo.\n"
-        "- Sem <b>per-process bandwidth</b> (nethogs-style). v0.2 alvo.\n"
+        "- Banda por processo é uma <b>medição pontual</b> (~4s via "
+        "<tt>nethogs</tt> + senha admin), não contínua.\n"
         "- Sem <b>GPU monitoring</b>. Nvidia/AMD: usar nvtop por enquanto."
     ),
     (

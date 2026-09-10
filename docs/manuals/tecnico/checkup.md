@@ -17,7 +17,7 @@ ferramenta certa via Gio actions.
 | Privilégios | **Nenhum** — tudo read-only sem root |
 | Navegação | Gio actions `show-tool` / `show-tool-tab` / `show-settings` do app |
 | Execução | Checagens rodam em `threading.Thread` (não bloqueia a UI) |
-| Versão | vigia-hub 0.11.x |
+| Versão | vigia-hub 0.12.x |
 
 ## Arquitetura interna
 

@@ -5,10 +5,10 @@ Auditoria de **Linux capabilities** (via `getcap`) com UI GTK4. Parte do [VigiaO
 ## O que faz
 
 - Escaneia o sistema procurando binarios com capabilities setadas (`setcap`)
-- Classifica cada cap em **ALTO / MEDIO / BAIXO** (~40 capabilities catalogadas pt-BR)
+- Classifica cada cap em **ALTO / MEDIO / BAIXO** (41 capabilities catalogadas pt-BR)
 - Mostra hero card com contagem total + risco mais alto
 - Lista filtravel: por risco, por path, por capability
-- Catalogo de referencia das 40 capabilities do kernel Linux
+- Catalogo de referencia das 41 capabilities do kernel Linux
 
 ## Pre-requisitos
 
@@ -27,13 +27,13 @@ pip install --user -e .
 vigia-caps
 ```
 
-Ou via Vigia Hub.
+Ou via VigiaOS (seção Hub).
 
 ## Tabs
 
 - **Visao Geral**: hero card + KPIs + botoes de scan
 - **Binarios**: lista filtravel (risco + search) com expansao mostrando cada cap
-- **Capabilities**: catalogo de referencia das 40 caps com descricao pt-BR
+- **Capabilities**: catalogo de referencia das 41 caps com descricao pt-BR
 - **Sobre**: manual didatico
 
 ## Classes de risco

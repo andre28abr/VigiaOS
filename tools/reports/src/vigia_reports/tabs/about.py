@@ -54,9 +54,13 @@ SECTIONS: list[tuple[str, str]] = [
     ),
     (
         "Limitações conhecidas",
-        "- Apenas 2 templates v0.1. v0.2 trará <i>compliance LGPD</i> e "
-        "<i>incident response</i> dedicados\n"
-        "- Sem agendamento automático — v0.2 trará systemd timer opt-in\n"
+        "- <b>6 modelos</b> prontos: <i>Atividade geral</i>, <i>Eventos de "
+        "autenticação</i>, <i>Resumo executivo</i>, <i>Acesso "
+        "administrativo</i>, <i>Conformidade LGPD</i> e <i>Saúde do "
+        "sistema</i> — sem modelo de <i>incident response</i> dedicado ainda\n"
+        "- Agendamento automático é <b>mensal</b> (timer do systemd no seu "
+        "usuário, dia 1 às 09h, um modelo por vez — aba Configurações); "
+        "não há outras frequências\n"
         "- Templates fixos — personalização requer editar "
         "<tt>vigia_reports/templates/*.html</tt>"
     ),

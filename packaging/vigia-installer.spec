@@ -30,8 +30,7 @@ Requires:       vigia-common
 %description
 Catalogo visual de ~30 ferramentas de seguranca instalaveis via rpm-ostree install ou flatpak install. Categorias: Network, Forensics, Malware, Crypto, Logs, Flatpaks.
 
-Faz parte do VigiaOS — toolkit de seguranca para Fedora Atomic
-(Silverblue, Kinoite, Bluefin, Bazzite, Aurora).
+Faz parte do VigiaOS — toolkit de seguranca para Fedora Workstation.
 
 Comando: vigia-installer
 

@@ -30,7 +30,7 @@ tools/vigia-blue/
     └── page.py         # GUI: build_content() → abas Alertas/Regras/Histórico/Sobre
 
 tests/blue/test_siem_backend.py   # 36 testes (parser, helpers, 7 regras, motor, catálogo, relatórios)
-tools/vigia-blue/docs/manuals/{leigo,tecnico}/siem.md
+docs/manuals/{leigo,tecnico}/blue-siem.md
 ```
 
 ## Dependência

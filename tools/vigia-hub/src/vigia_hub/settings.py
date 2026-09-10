@@ -128,10 +128,12 @@ def _build_desktop_content(minimized: bool = False) -> str:
     return (
         "[Desktop Entry]\n"
         "Type=Application\n"
-        "Name=Vigia Hub\n"
-        "Comment=Launcher do VigiaOS\n"
+        "Name=VigiaOS\n"
+        "Comment=Segurança, privacidade e LGPD para o Fedora Workstation\n"
         f"Exec={exec_line}\n"
-        "Icon=br.com.vigia.Hub\n"
+        # Ícone do app unificado: é o único .svg que o install/bootstrap.sh
+        # instala (o Hub.svg legado não vai para o tema de ícones).
+        "Icon=br.com.vigia.OS\n"
         "Terminal=false\n"
         "Categories=System;Security;\n"
         "X-GNOME-Autostart-enabled=true\n"

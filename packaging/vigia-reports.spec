@@ -27,13 +27,11 @@ Requires:       libadwaita
 Requires:       hicolor-icon-theme
 Requires:       vigia-common
 Requires:       python3-jinja2
-Requires:       python3-weasyprint
 
 %description
-Gera relatorios PDF/HTML para LGPD-compliance a partir do JSON do Vigia Activity Log. Templates Jinja2 + WeasyPrint. PDFs salvos em ~/.local/share/vigia-reports/ com mode 0600.
+Gera relatorios HTML para LGPD-compliance a partir do JSON do Vigia Activity Log (6 modelos, Jinja2; PDF via Imprimir do navegador). Relatorios salvos em ~/.local/share/vigia-reports/ com mode 0600.
 
-Faz parte do VigiaOS — toolkit de seguranca para Fedora Atomic
-(Silverblue, Kinoite, Bluefin, Bazzite, Aurora).
+Faz parte do VigiaOS — toolkit de seguranca para Fedora Workstation.
 
 Comando: vigia-reports
 

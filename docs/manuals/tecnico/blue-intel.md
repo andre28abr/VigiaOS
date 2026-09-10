@@ -14,7 +14,7 @@ tools/vigia-blue/src/vigia_blue/modules/intel/
 └── page.py        # GUI: Verificar / IOCs / Sobre
 
 tests/blue/test_intel_backend.py   # 19 testes
-tools/vigia-blue/docs/manuals/{leigo,tecnico}/intel.md
+docs/manuals/{leigo,tecnico}/blue-intel.md
 ```
 
 ## Backend (`backend.py`)

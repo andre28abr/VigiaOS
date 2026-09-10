@@ -33,8 +33,7 @@ Requires:       audit
 %description
 Gerenciador SELinux com 6 tabs: Status (runtime + persistent), Booleans (descricoes pt-BR de ~60 booleans), Denials + audit2allow, Files restorecon, Network ports, Processes.
 
-Faz parte do VigiaOS — toolkit de seguranca para Fedora Atomic
-(Silverblue, Kinoite, Bluefin, Bazzite, Aurora).
+Faz parte do VigiaOS — toolkit de seguranca para Fedora Workstation.
 
 Comando: vigia-selinux
 

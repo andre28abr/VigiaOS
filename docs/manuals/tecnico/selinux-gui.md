@@ -17,7 +17,7 @@ contextos de processos.
 | **Stack** | Python 3.11+ · PyGObject · GTK4 · libadwaita 1 |
 | **Path config** | Sem state local — lê `/etc/selinux/config` e `/var/log/audit/audit.log` |
 | **App ID** | `br.com.vigia.SelinuxGui` |
-| **Versão** | 0.2.0 |
+| **Versão** | 0.2.2 |
 
 ## Arquitetura interna
 

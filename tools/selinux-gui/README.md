@@ -59,7 +59,7 @@ gtk-update-icon-cache ~/.local/share/icons/hicolor 2>/dev/null || true
 update-desktop-database ~/.local/share/applications 2>/dev/null || true
 ```
 
-Ou abre via **Vigia Hub** (apartir da v0.2 do Hub registra esta ferramenta).
+Ou abre via **VigiaOS** (seção Hub).
 
 ## Limitações v0.2
 

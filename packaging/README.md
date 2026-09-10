@@ -1,5 +1,11 @@
 # VigiaOS — Empacotamento RPM (COPR)
 
+> ⚠️ **Experimental / em manutenção** — as specs estão defasadas em relação
+> aos `pyproject.toml` e o `make srpm-all` **não funciona hoje** (`VERSION`
+> único no Makefile vs. versões por pacote; faltam specs de `vigia-red` /
+> `vigia-blue` e as tags git que o fluxo espera). **Instalação suportada:**
+> os scripts em [`install/`](../install/) (`bootstrap.sh` / `vigia-setup.sh`).
+
 Este diretório contém os **spec files RPM** para distribuir a Vigia
 Suite via COPR (Cool Other Package Repo, do Fedora).
 
@@ -14,7 +20,7 @@ Suite via COPR (Cool Other Package Repo, do Fedora).
 > ⚠️ **Repo COPR ainda não foi ativado.** Os comandos abaixo só
 > funcionam APÓS o setup manual descrito mais adiante (criar conta,
 > projeto, fazer build). Por enquanto, instale via
-> `pip install --user -e .` — ver [README principal](../README.md).
+> `install/bootstrap.sh` — ver [README principal](../README.md).
 
 Quando o COPR estiver publicado, no **Fedora Workstation**:
 
@@ -39,7 +45,7 @@ sudo dnf install vigia-dashboard vigia-antivirus
 | `vigia-activity-log-gui` | 0.1.0 | frontend Python |
 | `vigia-hub` | 0.5.0 | launcher mestre |
 | `vigia-dashboard` | 0.2.0 | sistema em tempo real |
-| `vigia-privacy` | 0.3.0 | 13 toggles |
+| `vigia-privacy` | 0.3.0 | 12 toggles |
 | `vigia-selinux` | 0.2.0 | SELinux GUI |
 | `vigia-firewall` | 0.1.0 | firewalld GUI |
 | `vigia-netmon` | 0.1.0 | conexões TCP/UDP |
@@ -47,7 +53,7 @@ sudo dnf install vigia-dashboard vigia-antivirus
 | `vigia-reports` | 0.1.1 | PDF LGPD |
 | `vigia-integrity` | 0.1.3 | AIDE |
 | `vigia-installer` | 0.1.0 | catálogo tools |
-| `vigia-dns` | 0.1.0 | systemd-resolved |
+| `vigia-dns` | 0.4.3 | dnscrypt-proxy (DoH/DNSCrypt) |
 | `vigia-caps` | 0.1.0 | getcap |
 | `vigia-antivirus` | 0.1.1 | ClamAV |
 | `vigia-rootkit` | 0.2.0 | chkrootkit + rkhunter |

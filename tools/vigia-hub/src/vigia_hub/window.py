@@ -6,8 +6,9 @@
 A NAV FINA (esquerda) tem 4 modos selecionaveis:
   - 'tools'      — vista padrao master-detail das tools registradas
   - 'installer'  — Tool Installer em fullscreen (movido pra ca em v0.5)
-  - 'settings'   — configuracoes globais do Hub (em breve)
-  - 'help'       — manuais (em breve)
+  - 'settings'   — configuracoes globais do VigiaOS (autostart, tray,
+                   bloqueio por senha, backup/restauracao)
+  - 'help'       — manuais das ferramentas (leigo + tecnico)
 
 Em modo 'tools', a SIDEBAR central lista tools agrupadas por
 categoria (Monitoramento / Privacidade / Defesa / Relatorios).
@@ -859,7 +860,7 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         init_group = Adw.PreferencesGroup()
         init_group.set_title("Inicialização")
         init_group.set_description(
-            "Como o Hub inicia junto com o sistema."
+            "Como o VigiaOS inicia junto com o sistema."
         )
 
         # Switch: autostart (FUNCIONAL)
@@ -900,7 +901,7 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         self._sw_check_updates.set_title("Verificar atualizações ao iniciar")
         self._sw_check_updates.set_subtitle(
             "Procura atualizações do sistema e dos programas da suíte quando o "
-            "Hub abre e mostra um aviso no sininho de notificações (rodapé do "
+            "VigiaOS abre e mostra um aviso no sininho de notificações (rodapé do "
             "menu da esquerda). Não instala nada sozinho — é só um aviso."
         )
         self._sw_check_updates.set_active(self._settings.check_updates)
@@ -1017,18 +1018,18 @@ class VigiaHubWindow(Adw.ApplicationWindow):
             scheduler.remove_timer("vigia-scan")
 
     def _build_settings_security_tab(self) -> Gtk.Widget:
-        """Aba 'Seguranca' — protecao do Hub e tools."""
+        """Aba 'Seguranca' — protecao do VigiaOS e tools."""
         page = Adw.PreferencesPage()
 
         sec_group = Adw.PreferencesGroup()
-        sec_group.set_title("Acesso ao Hub")
+        sec_group.set_title("Acesso ao VigiaOS")
         sec_group.set_description(
-            "Proteção adicional para o launcher e suas configurações."
+            "Proteção adicional para o aplicativo e suas configurações."
         )
 
         # Switch: password lock (FUNCIONAL — pkexec via Gio.Subprocess async)
         self._sw_lock = Adw.SwitchRow()
-        self._sw_lock.set_title("Exigir senha para abrir o Hub")
+        self._sw_lock.set_title("Exigir senha para abrir o VigiaOS")
         self._sw_lock.set_subtitle(self._lock_default_subtitle())
         self._sw_lock.set_active(self._settings.password_lock)
         # IMPORTANTE: armazena handler_id pra poder block/unblock e evitar
@@ -1043,7 +1044,7 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         self._autolock_row.set_title("Auto-bloquear após inatividade")
         self._autolock_row.set_subtitle(
             "Esconde a janela e exige senha de novo na próxima abertura. "
-            "Mede inatividade da janela do Hub."
+            "Mede inatividade da janela do VigiaOS."
         )
         autolock_model = Gtk.StringList.new([
             "Desativado", "5 minutos", "10 minutos", "15 minutos",
@@ -1085,23 +1086,23 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         return page
 
     def _build_settings_about_tab(self) -> Gtk.Widget:
-        """Aba 'Sobre' — o Hub, o autor e os caminhos de configuracao."""
+        """Aba 'Sobre' — o VigiaOS, o autor e os caminhos de configuracao."""
         from . import __version__ as _ver
 
         page = Adw.PreferencesPage()
 
-        # ---- Sobre o Vigia Hub ----
+        # ---- Sobre o VigiaOS ----
         hub_group = Adw.PreferencesGroup()
-        hub_group.set_title("Sobre o Vigia Hub")
+        hub_group.set_title("Sobre o VigiaOS")
         hub_group.set_description(
-            "Launcher central do VigiaOS: reúne as ferramentas de segurança, "
-            "privacidade e auditoria (LGPD) numa janela só, em layout de 3 "
-            "painéis, com as ferramentas rodando embarcadas. O Hub cuida do "
-            "autostart, ícone na bandeja, bloqueio por senha (Polkit) e "
-            "backup/restauração da configuração."
+            "Aplicativo unificado: reúne as ferramentas de segurança, "
+            "privacidade e auditoria (LGPD) numa janela só — seções Início, "
+            "Hub, Red, Blue e Relatórios — com as ferramentas rodando "
+            "embarcadas. Cuida também do autostart, ícone na bandeja, "
+            "bloqueio por senha (Polkit) e backup/restauração da configuração."
         )
         ver_row = Adw.ActionRow()
-        ver_row.set_title("Vigia Hub")
+        ver_row.set_title("VigiaOS")
         ver_row.set_subtitle(f"Versão {_ver}")
         ver_row.add_prefix(
             Gtk.Image.new_from_icon_name("preferences-system-symbolic")
@@ -1160,7 +1161,7 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         info_group = Adw.PreferencesGroup()
         info_group.set_title("Arquivos de configuração")
         info_group.set_description(
-            "Onde o Hub armazena as preferências do usuário."
+            "Onde o VigiaOS armazena as preferências do usuário."
         )
 
         info_row = Adw.ActionRow()
@@ -1311,7 +1312,7 @@ class VigiaHubWindow(Adw.ApplicationWindow):
             body = msg
             if labels:
                 body += "\n\n" + "\n".join(f"• {label}" for label in labels)
-            body += "\n\nReinicie o Hub para aplicar todas as mudanças."
+            body += "\n\nReinicie o VigiaOS para aplicar todas as mudanças."
             show_info(self, "Backup restaurado", body)
         else:
             show_error(self, "Falha ao restaurar", msg)
@@ -1507,7 +1508,7 @@ class VigiaHubWindow(Adw.ApplicationWindow):
                 self._bell.set_notifications([])
 
     def _on_lock_toggled(self, switch: Adw.SwitchRow, *_args) -> None:
-        """User toggleou 'Exigir senha para abrir o Hub'.
+        """User toggleou 'Exigir senha para abrir o VigiaOS'.
 
         Fluxo unico (ligar ou desligar): dispara pkexec via Gio.Subprocess
         async. O dialog de senha aparece nativo do GNOME. Quando user
@@ -1565,7 +1566,7 @@ class VigiaHubWindow(Adw.ApplicationWindow):
     @staticmethod
     def _lock_default_subtitle() -> str:
         return (
-            "Pede senha admin (mesma do sudo) ao iniciar o Hub. Usa Polkit "
+            "Pede senha admin (mesma do sudo) ao iniciar o VigiaOS. Usa Polkit "
             "do sistema — nenhuma senha é armazenada pelo Vigia."
         )
 

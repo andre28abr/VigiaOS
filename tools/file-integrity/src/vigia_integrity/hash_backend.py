@@ -66,10 +66,6 @@ def hashdeep_installed() -> bool:
     return shutil.which("hashdeep") is not None
 
 
-def coreutils_installed() -> bool:
-    return shutil.which("sha256sum") is not None  # sempre vem por default
-
-
 def list_algorithms() -> list[str]:
     return list(ALGORITHMS)
 

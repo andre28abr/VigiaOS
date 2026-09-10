@@ -34,8 +34,7 @@ Requires:       libcap
 %description
 Audita binarios com Linux capabilities (alternativa granular ao SUID). Catalogo de 41 capabilities pt-BR (11 ALTO + 17 MEDIO + 13 BAIXO). Read-only em v0.1; modificacao via UI em v0.2.
 
-Faz parte do VigiaOS — toolkit de seguranca para Fedora Atomic
-(Silverblue, Kinoite, Bluefin, Bazzite, Aurora).
+Faz parte do VigiaOS — toolkit de seguranca para Fedora Workstation.
 
 Comando: vigia-caps
 

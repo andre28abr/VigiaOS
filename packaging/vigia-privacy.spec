@@ -30,8 +30,7 @@ Requires:       vigia-common
 %description
 Painel de privacidade GTK4 com 12 toggles: 10 user-scope (dconf — localizacao, telemetria, historico, lock screen, limpeza auto) + 2 system-scope via pkexec (firewall, SSH).
 
-Faz parte do VigiaOS — toolkit de seguranca para Fedora Atomic
-(Silverblue, Kinoite, Bluefin, Bazzite, Aurora).
+Faz parte do VigiaOS — toolkit de seguranca para Fedora Workstation.
 
 Comando: vigia-privacy
 

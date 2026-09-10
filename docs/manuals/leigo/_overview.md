@@ -16,8 +16,9 @@ Imagine que você guarda informações sensíveis dos seus clientes
 **cuidar** desses dados — usar antivírus, ter senhas fortes, registrar
 o que acontece no computador, fazer cópias de segurança.
 
-O VigiaOS reúne **14 ferramentas** que cuidam disso pra você, **num
-único lugar fácil de usar** — a seção **Hub**.
+O VigiaOS reúne **13 ferramentas** que cuidam disso pra você, **num
+único lugar fácil de usar** — a seção **Hub** — além do monitor do
+**Início** e da **Central de Relatórios**.
 
 ## Como funciona?
 
@@ -30,9 +31,13 @@ abre numa janela única. Do lado esquerdo tem uma barrinha que troca de
 
 🏠 **Início** — o painel que mostra o computador funcionando agora
    (memória, processador, internet) em tempo real
-🔲 **Hub** — todas as 14 ferramentas de segurança e privacidade
-🔴 **Red** — ferramentas de teste de invasão (em construção)
+🔲 **Hub** — as 13 ferramentas de segurança e privacidade
+🔴 **Red** — ferramentas de teste de invasão (4 de 7 prontas; pedem
+   aceite de um termo de uso e servem pra testar **o seu** ambiente)
 🔵 **Blue** — detecção e resposta a ameaças (para quem é da área)
+📄 **Relatórios** — a central que guarda o que as ferramentas
+   encontraram (varreduras, vírus, rootkits) e exporta um relatório
+   assinado, pra você comprovar o cuidado com os dados
 
 Lá no rodapé dessa barra ficam:
 
@@ -59,7 +64,8 @@ Lá no rodapé dessa barra ficam:
 
 ## O que cada ferramenta faz?
 
-Vou agrupar por categoria pra ficar mais fácil:
+São as 13 ferramentas do Hub, mais o monitor do Início e as
+Atualizações. Vou agrupar por categoria pra ficar mais fácil:
 
 ### ✅ Visão geral
 
@@ -74,8 +80,8 @@ Vou agrupar por categoria pra ficar mais fácil:
 
 **Sabe quem entrou e o que mexeu no seu computador.**
 
-- **Dashboard** — Mostra como o computador está agora (memória,
-  processador, internet)
+- **Monitor do Sistema** — Mostra como o computador está agora (memória,
+  processador, internet). É a seção **Início** — não fica na lista do Hub
 - **Registro de Atividades** — Lista o que aconteceu (quem fez login,
   quem instalou programa, etc)
 - **Monitor de Rede** — Mostra com qual site/serviço seu computador
@@ -116,8 +122,10 @@ Vou agrupar por categoria pra ficar mais fácil:
 
 **Comprova o que você fez (importante pra LGPD).**
 
-- **Relatórios** — Gera PDFs com tudo que aconteceu no seu sistema
-  (pode usar como prova de auditoria)
+- **Relatórios** — Gera relatórios (HTML pronto pra virar PDF) com tudo
+  que aconteceu no seu sistema (pode usar como prova de auditoria). A
+  seção **Relatórios** da barra lateral junta o que as outras
+  ferramentas encontraram
 
 ## Como começar?
 

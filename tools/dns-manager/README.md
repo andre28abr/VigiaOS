@@ -29,13 +29,13 @@ LibRedirect, etc.) — abre direto na AMO/Web Store do seu navegador.
   ```bash
   sudo dnf install dnscrypt-proxy
   ```
-  Ou via **Vigia Tool Installer** (recomendado).
+  Ou rode `install/bootstrap.sh`, que instala os backends de todas as ferramentas.
 
 ## Como rodar
 
-Normalmente embedded no **Vigia Hub**:
+Normalmente embedded no **VigiaOS** (seção Hub):
 ```bash
-vigia-hub
+vigia-os
 # clique em "DNS Manager" na sidebar
 ```
 
