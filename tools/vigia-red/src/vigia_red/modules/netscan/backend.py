@@ -182,6 +182,52 @@ def normalize_target(t: str) -> str:
     return t.strip().rstrip(".")
 
 
+# Sintaxe de faixa de octetos do nmap: `192.168.0-255.1`, `10.0.0.1,5,10-20`.
+# Antes passava pela regex de DOMÍNIO (labels `1-255` são válidos em DNS) e a
+# guarda de MAX_HOSTS só olhava CIDR — `1-255.1-255.1-255.1-255` (~4 bilhões
+# de hosts) era aceito. Agora a faixa é contada.
+_OCTET_RANGE_RE = re.compile(r"^[\d,\-]+(\.[\d,\-]+){3}$")
+
+
+def _octet_count(spec: str) -> int | None:
+    """Quantos valores um octeto nmap (`5`, `1-20`, `1,5,10-12`) cobre; None se inválido."""
+    total = 0
+    for part in spec.split(","):
+        a, sep, b = part.partition("-")
+        if not a.isdigit() or (sep and not b.isdigit()):
+            return None
+        lo, hi = int(a), (int(b) if sep else int(a))
+        if not (0 <= lo <= hi <= 255):
+            return None
+        total += hi - lo + 1
+    return total
+
+
+def estimated_hosts(t: str) -> int | None:
+    """Endereços que o alvo cobre (CIDR ou faixa de octetos); None se não é faixa/inválido."""
+    t = normalize_target(t)
+    try:
+        return ipaddress.ip_network(t, strict=False).num_addresses
+    except ValueError:
+        pass
+    if not _OCTET_RANGE_RE.match(t):
+        return None
+    n = 1
+    for spec in t.split("."):
+        c = _octet_count(spec)
+        if c is None:
+            return None
+        n *= c
+    return n
+
+
+def is_ipv6(t: str) -> bool:
+    try:
+        return ipaddress.ip_network(normalize_target(t), strict=False).version == 6
+    except ValueError:
+        return False
+
+
 def validate_target(t: str) -> bool:
     t = normalize_target(t)
     if not t or any(c.isspace() for c in t):
@@ -191,15 +237,14 @@ def validate_target(t: str) -> bool:
         return True
     except ValueError:
         pass
+    if _OCTET_RANGE_RE.match(t):
+        return estimated_hosts(t) is not None
     return "/" not in t and bool(_DOMAIN_RE.match(t.lower()))
 
 
 def network_too_large(t: str) -> bool:
-    try:
-        net = ipaddress.ip_network(normalize_target(t), strict=False)
-    except ValueError:
-        return False
-    return net.num_addresses > MAX_HOSTS
+    n = estimated_hosts(t)
+    return n is not None and n > MAX_HOSTS
 
 
 def validate_ports(ports: str) -> bool:
@@ -236,11 +281,12 @@ def build_scan_cmd(
     - com admin: respeita a técnica do perfil (SYN/UDP/-A); sem ela, o nmap como
       root usa SYN por padrão.
     """
+    v6 = ["-6"] if is_ipv6(target) else []  # sem -6 o nmap não resolve IPv6
     if "-sn" in profile.scan_args:
-        cmd = ["nmap", "-sn", "-T4", "-oX", "-", target]
+        cmd = ["nmap", *v6, "-sn", "-T4", "-oX", "-", target]
         return (["pkexec"] + cmd) if elevated else cmd
 
-    cmd = ["nmap", "-Pn", "--open", "-T4", "-oX", "-"]
+    cmd = ["nmap", *v6, "-Pn", "--open", "-T4", "-oX", "-"]
     scan = list(profile.scan_args)
     if not elevated:
         scan = [a for a in scan if a not in ("-sS", "-sU", "-O", "-A")]

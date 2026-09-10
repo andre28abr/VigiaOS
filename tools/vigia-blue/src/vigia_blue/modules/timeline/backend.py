@@ -184,14 +184,22 @@ def analyze_storage(storage: Path | str, timeout: int = 1200,
     if not psort_bin():
         result.error = "psort (plaso) não está instalado."
         return result
-    outdir = tempfile.mkdtemp(prefix="vigia-timeline-")
-    out = Path(outdir) / "timeline.jsonl"
-    rc, _o, err = proc.run(build_psort_cmd(storage, out), timeout=timeout)
-    if not out.is_file():
-        result.error = (err.strip() or "O psort não gerou saída.")[:400]
-        result.elapsed_sec = round(time.monotonic() - t0, 2)
-        return result
-    result.events = parse_psort_jsonl(_read_capped(out), max_events)
+    # TemporaryDirectory: o .jsonl (pode ter centenas de MB de linha do tempo
+    # forense) sai de /tmp ao terminar — antes ficava lá para sempre.
+    with tempfile.TemporaryDirectory(prefix="vigia-timeline-",
+                                     ignore_cleanup_errors=True) as outdir:
+        out = Path(outdir) / "timeline.jsonl"
+        rc, _o, err = proc.run(build_psort_cmd(storage, out), timeout=timeout)
+        if not out.is_file():
+            result.error = (err.strip() or "O psort não gerou saída.")[:400]
+            result.elapsed_sec = round(time.monotonic() - t0, 2)
+            return result
+        try:
+            result.events = parse_psort_jsonl(_read_capped(out), max_events)
+        except OSError as e:
+            result.error = f"Não consegui ler a saída do psort ({e})."
+            result.elapsed_sec = round(time.monotonic() - t0, 2)
+            return result
     result.total = len(result.events)
     result.elapsed_sec = round(time.monotonic() - t0, 2)
     return result
@@ -206,20 +214,28 @@ def run_timeline(source: Path | str, timeout: int = 1800,
     if not plaso_available():
         result.error = "plaso (log2timeline + psort) não está instalado."
         return result
-    tmpdir = tempfile.mkdtemp(prefix="vigia-timeline-")
-    storage = Path(tmpdir) / "timeline.plaso"
-    rc, _o, err = proc.run(build_log2timeline_cmd(storage, source), timeout=timeout)
-    if not storage.is_file():
-        result.error = (err.strip() or "log2timeline não gerou o storage.")[:400]
-        result.elapsed_sec = round(time.monotonic() - t0, 2)
-        return result
-    out = Path(tmpdir) / "timeline.jsonl"
-    rc2, _o2, err2 = proc.run(build_psort_cmd(storage, out), timeout=timeout)
-    if not out.is_file():
-        result.error = (err2.strip() or "psort não gerou saída.")[:400]
-        result.elapsed_sec = round(time.monotonic() - t0, 2)
-        return result
-    result.events = parse_psort_jsonl(_read_capped(out), max_events)
+    # TemporaryDirectory: .plaso + .jsonl (GBs, dados forenses) saem de /tmp
+    # (tmpfs = RAM) ao terminar — antes ficavam lá para sempre.
+    with tempfile.TemporaryDirectory(prefix="vigia-timeline-",
+                                     ignore_cleanup_errors=True) as tmpdir:
+        storage = Path(tmpdir) / "timeline.plaso"
+        rc, _o, err = proc.run(build_log2timeline_cmd(storage, source), timeout=timeout)
+        if not storage.is_file():
+            result.error = (err.strip() or "log2timeline não gerou o storage.")[:400]
+            result.elapsed_sec = round(time.monotonic() - t0, 2)
+            return result
+        out = Path(tmpdir) / "timeline.jsonl"
+        rc2, _o2, err2 = proc.run(build_psort_cmd(storage, out), timeout=timeout)
+        if not out.is_file():
+            result.error = (err2.strip() or "psort não gerou saída.")[:400]
+            result.elapsed_sec = round(time.monotonic() - t0, 2)
+            return result
+        try:
+            result.events = parse_psort_jsonl(_read_capped(out), max_events)
+        except OSError as e:
+            result.error = f"Não consegui ler a saída do psort ({e})."
+            result.elapsed_sec = round(time.monotonic() - t0, 2)
+            return result
     result.total = len(result.events)
     result.elapsed_sec = round(time.monotonic() - t0, 2)
     return result

@@ -36,3 +36,24 @@ class TestScanProcess:
         sp = ScanProcess()
         sp.cancel()
         assert sp.run([sys.executable, "-c", "print(1)"]) == (1, "", "")
+
+    def test_cancel_encerra_processo_longo_sem_bloquear(self):
+        import threading, time
+        sp = ScanProcess()
+        out = {}
+
+        def go():
+            out["r"] = sp.run([sys.executable, "-c", "import time; time.sleep(60)"],
+                              timeout=120)
+
+        t = threading.Thread(target=go, daemon=True)
+        t.start()
+        time.sleep(0.5)  # deixa o Popen acontecer
+        t0 = time.monotonic()
+        sp.cancel()      # volta na hora — o kill roda em thread própria
+        assert time.monotonic() - t0 < 1.0
+        t.join(timeout=10)
+        assert not t.is_alive(), "processo cancelado deveria ter terminado"
+        assert sp.cancelled is True
+        assert out["r"][0] != 0 or out["r"] == (1, "", "")
+

@@ -377,13 +377,20 @@ def analyze_pcap(pcap: Path | str, timeout: int = 300,
         result.error = "Suricata não está instalado."
         return result
 
-    outdir = tempfile.mkdtemp(prefix="vigia-ids-")
+    # Diretório temporário é REMOVIDO ao sair do bloco (antes ficava em /tmp —
+    # tmpfs — com eve.json inteiro, às vezes root-owned, para sempre).
+    with tempfile.TemporaryDirectory(prefix="vigia-ids-",
+                                     ignore_cleanup_errors=True) as outdir:
+        return _analyze_pcap_in(pcap, outdir, timeout, max_alerts, result, t0)
+
+
+def _analyze_pcap_in(pcap, outdir: str, timeout: int, max_alerts: int,
+                     result: IdsResult, t0: float) -> IdsResult:
     rc, out, err = proc.run(build_pcap_cmd(pcap, outdir), timeout=timeout)
     eve = Path(outdir) / "eve.json"
 
     # Sem permissão como usuário → tenta com privilégio (pkexec).
     if not eve.is_file() and _needs_root(err):
-        outdir = tempfile.mkdtemp(prefix="vigia-ids-")
         rc, out, err = proc.run(
             build_pcap_cmd(pcap, outdir, elevated=True), timeout=timeout)
         eve = Path(outdir) / "eve.json"
@@ -427,7 +434,7 @@ def capture_and_analyze(seconds: int, max_alerts: int = 2000) -> IdsResult:
 
     outdir = TEST_DIR / f"captura-{started.replace(':', '-')}"
     try:
-        outdir.mkdir(parents=True, exist_ok=True)
+        outdir.mkdir(parents=True, exist_ok=True, mode=0o700)
     except OSError as e:
         result.error = f"Não consegui criar a pasta de captura ({e})."
         return result

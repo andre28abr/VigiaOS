@@ -74,7 +74,7 @@ def rkhunter_installed() -> bool:
 
 # Subprocesso centralizado em vigia_common.proc.run (nunca levanta;
 # timeout/binário ausente -> (1, "", "")). Aliased p/ não mexer nos callers.
-from vigia_common.proc import run as _run
+from vigia_common.proc import run as _run, terminate as _terminate
 
 
 def get_versions() -> Versions:
@@ -253,9 +253,13 @@ def _run_scan_streaming(
     try:
         for raw_line in proc.stdout or []:
             if stop_flag is not None and stop_flag():
-                proc.terminate()
+                # Marca ANTES de sinalizar: o scanner roda como root (pkexec)
+                # e o SIGTERM direto dá EPERM — o helper pede `pkexec kill`.
                 result.cancelled = True
                 result.error = "Scan cancelado pelo usuário."
+                if not _terminate(proc):
+                    result.error = ("Cancelamento solicitado, mas o scanner "
+                                    "(root) não pôde ser encerrado.")
                 break
             line = raw_line.rstrip()
             on_line(line)

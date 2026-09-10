@@ -26,7 +26,7 @@ case "$OUTDIR" in
     *) echo "diretório fora do esperado (~/teste/ids/)" >&2; exit 2 ;;
 esac
 
-mkdir -p "$OUTDIR"
+mkdir -p -m 0700 "$OUTDIR"
 PCAP="$OUTDIR/captura.pcap"
 
 # 1) captura por SECS segundos (o timeout encerra o tcpdump no fim)
@@ -35,5 +35,8 @@ timeout "$SECS" tcpdump -i any -w "$PCAP" >/dev/null 2>&1 || true
 # 2) analisa a captura com o Suricata (gera eve.json em OUTDIR)
 suricata -r "$PCAP" -l "$OUTDIR" >/dev/null 2>&1 || true
 
-# 3) devolve a posse ao usuário (os arquivos foram criados como root)
+# 3) devolve a posse ao usuário (os arquivos foram criados como root) e fecha
+#    as permissões: um pcap tem tráfego bruto (senhas em claro, dados pessoais)
+#    — só o dono lê (LGPD), como já faz o _mem_capture.sh.
 chown -R "$OWNER" "$OUTDIR" 2>/dev/null || true
+chmod -R go-rwx "$OUTDIR" 2>/dev/null || true
