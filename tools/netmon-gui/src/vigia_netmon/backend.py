@@ -51,7 +51,7 @@ def list_connections(elevated: bool = False) -> list[NetConnection]:
         timeout = 10
     try:
         result = subprocess.run(
-            cmd, capture_output=True, text=True, timeout=timeout,
+            cmd, capture_output=True, text=True, errors="replace", timeout=timeout,
         )
     except (subprocess.SubprocessError, FileNotFoundError):
         return []

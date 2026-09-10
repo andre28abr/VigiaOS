@@ -20,6 +20,9 @@ from vigia_common.platform import install_hint  # noqa: E402
 
 from . import backend  # noqa: E402
 
+# Escapa markup Pango em valores vindos de dados (rows usam use-markup=TRUE).
+_esc = GLib.markup_escape_text
+
 _SEVERITY = {
     "info": ("Info", "dialog-information-symbolic", "accent"),
     "baixo": ("Baixo", "dialog-information-symbolic", "accent"),
@@ -37,7 +40,7 @@ def _sev(s: str) -> tuple[str, str, str]:
 def _prop(title: str, value: str) -> Adw.ActionRow:
     r = Adw.ActionRow()
     r.set_title(title)
-    r.set_subtitle(value or "—")
+    r.set_subtitle(_esc(str(value)) if value else "—")
     r.set_subtitle_lines(0)
     r.add_css_class("property")
     return r
@@ -89,8 +92,8 @@ class _AlertsView(Gtk.Box):
         self._eve_row = Adw.ActionRow()
         self._eve_row.set_title("Arquivo eve.json")
         self._eve_row.set_subtitle(
-            self._eve_path
-            or "Nenhum encontrado (normal se o Suricata não está rodando)")
+            _esc(self._eve_path) if self._eve_path
+            else "Nenhum encontrado (normal se o Suricata não está rodando)")
         self._eve_row.set_subtitle_lines(0)
         self._eve_row.add_prefix(Gtk.Image.new_from_icon_name("text-x-generic-symbolic"))
         pick = Gtk.Button(label="Selecionar")
@@ -210,7 +213,7 @@ class _AlertsView(Gtk.Box):
             return
         if f and f.get_path():
             self._eve_path = f.get_path()
-            self._eve_row.set_subtitle(self._eve_path)
+            self._eve_row.set_subtitle(_esc(self._eve_path))
             self._refresh_banner()
 
     def _on_pick_pcap(self, _btn: Gtk.Button) -> None:
@@ -246,15 +249,18 @@ class _AlertsView(Gtk.Box):
         threading.Thread(target=self._worker, args=(work,), daemon=True).start()
 
     def _worker(self, work) -> None:
-        result = work()
-        backend.save_report(result)
+        try:
+            result = work()
+            backend.save_report(result)
+        except Exception as e:  # pylint: disable=broad-except
+            # Nunca deixa a thread morrer sem devolver o controle à UI.
+            result = backend.IdsResult(error=f"Erro interno: {e}")
         GLib.idle_add(self._apply, result)
 
     def _apply(self, result: backend.IdsResult) -> bool:
         self._running = False
         self._spinner.stop()
         self._last_result = result
-        backend.save_report(result)
         self._refresh_banner()
         self._render()
         return False
@@ -270,7 +276,7 @@ class _AlertsView(Gtk.Box):
         if r.error:
             row = Adw.ActionRow()
             row.set_title("Não foi possível analisar")
-            row.set_subtitle(r.error)
+            row.set_subtitle(_esc(r.error))
             row.set_subtitle_lines(0)
             row.add_prefix(Gtk.Image.new_from_icon_name("dialog-error-symbolic"))
             self._add(row)
@@ -325,8 +331,8 @@ class _AlertsView(Gtk.Box):
     def _group_row(self, g: backend.AlertGroup) -> Adw.ExpanderRow:
         label, icon, css = _sev(g.severity)
         exp = Adw.ExpanderRow()
-        exp.set_title(g.signature + (f"   ({g.count}×)" if g.count > 1 else ""))
-        exp.set_subtitle(g.category or "—")
+        exp.set_title(_esc(g.signature) + (f"   ({g.count}×)" if g.count > 1 else ""))
+        exp.set_subtitle(_esc(g.category) if g.category else "—")
         exp.set_subtitle_lines(0)
         img = Gtk.Image.new_from_icon_name(icon)
         if css in ("warning", "error"):
@@ -376,8 +382,8 @@ class _HistoryView(Gtk.Box):
         for rep in backend.list_recent_reports():
             n = len(rep.get("alerts", []))
             row = Adw.ActionRow()
-            row.set_title(rep.get("source", "?"))
-            row.set_subtitle(f"{rep.get('started_at', '?')} · {n} alerta(s)")
+            row.set_title(_esc(str(rep.get("source", "?"))))
+            row.set_subtitle(_esc(f"{rep.get('started_at', '?')} · {n} alerta(s)"))
             row.set_subtitle_lines(0)
             icon = "dialog-warning-symbolic" if n else "emblem-ok-symbolic"
             row.add_prefix(Gtk.Image.new_from_icon_name(icon))

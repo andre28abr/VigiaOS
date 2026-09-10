@@ -82,7 +82,7 @@ def appindicator_extension_enabled() -> tuple[bool, bool]:
         result = subprocess.run(
             ["gnome-extensions", "list"],
             capture_output=True,
-            text=True,
+            text=True, errors="replace",
             timeout=5,
         )
     except (subprocess.TimeoutExpired, FileNotFoundError):
@@ -98,7 +98,7 @@ def appindicator_extension_enabled() -> tuple[bool, bool]:
         result = subprocess.run(
             ["gnome-extensions", "list", "--enabled"],
             capture_output=True,
-            text=True,
+            text=True, errors="replace",
             timeout=5,
         )
     except (subprocess.TimeoutExpired, FileNotFoundError):

@@ -21,7 +21,8 @@ class ScanProcess:
             return 1, "", ""
         try:
             self._proc = subprocess.Popen(
-                cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                text=True, errors="replace")
         except (OSError, ValueError):
             return 1, "", ""
         try:

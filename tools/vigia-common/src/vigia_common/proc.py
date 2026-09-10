@@ -17,13 +17,19 @@ import subprocess
 def run(cmd: list[str], timeout: int = 30) -> tuple[int, str, str]:
     """Roda `cmd` (lista de args) e retorna `(returncode, stdout, stderr)`.
 
-    Nunca levanta: qualquer `OSError` (binário ausente, permissão, etc.) ou
-    `SubprocessError` (timeout) vira `(1, "", "")`.
+    Nunca levanta: qualquer `OSError` (binário ausente, permissão, etc.),
+    `SubprocessError` (timeout) ou `ValueError` (decodificação de saída
+    inválida, argumento ruim) vira `(1, "", "")`.
+
+    Saída é decodificada com `errors="replace"`: bytes fora do UTF-8 (nomes
+    de arquivo Latin-1 vindos de Windows, por exemplo) viram U+FFFD em vez
+    de derrubar a thread com `UnicodeDecodeError`.
     """
     try:
         result = subprocess.run(
-            cmd, capture_output=True, text=True, timeout=timeout,
+            cmd, capture_output=True, text=True, errors="replace",
+            timeout=timeout,
         )
         return result.returncode, result.stdout, result.stderr
-    except (OSError, subprocess.SubprocessError):
+    except (OSError, ValueError, subprocess.SubprocessError):
         return 1, "", ""

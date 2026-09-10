@@ -85,12 +85,13 @@ class HistoryTab(Adw.Bin):
         error = rep.get("error", "")
 
         row = Adw.ActionRow()
-        row.set_title(f"{scanner} · {ts}")
+        row.set_title(f"{GLib.markup_escape_text(str(scanner))} · {ts}")
 
         if cancelled:
             subtitle = "cancelado"
         elif error:
-            subtitle = f"erro: {error[:80]}"
+            # stderr do pkexec/rkhunter pode conter `<`/`&` — a linha usa markup.
+            subtitle = f"erro: {GLib.markup_escape_text(str(error)[:80])}"
         elif infected > 0:
             subtitle = f"{infected} infectado(s) · {warnings} warning(s)"
         elif warnings > 0:

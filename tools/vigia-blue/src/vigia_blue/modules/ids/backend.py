@@ -98,8 +98,11 @@ def tcpdump_available() -> bool:
 def find_eve() -> Path | None:
     """Primeiro eve.json existente nos caminhos padrão (ou None)."""
     for p in DEFAULT_EVE_PATHS:
-        if p.is_file():
-            return p
+        try:
+            if p.is_file():
+                return p
+        except OSError:  # ex.: /var/log/suricata 0750 (PermissionError no 3.11/3.12)
+            continue
     return None
 
 

@@ -55,7 +55,7 @@ def check_auth() -> tuple[bool, str]:
         result = subprocess.run(
             PKEXEC_CMD,
             capture_output=True,
-            text=True,
+            text=True, errors="replace",
             timeout=300,  # 5 min pro user digitar senha
         )
     except subprocess.TimeoutExpired:

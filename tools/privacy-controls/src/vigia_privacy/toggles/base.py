@@ -117,7 +117,7 @@ def systemd_unit_toggle(
         result = subprocess.run(
             ["systemctl", "is-active", unit],
             capture_output=True,
-            text=True,
+            text=True, errors="replace",
             timeout=5,
         )
         return result.stdout.strip() == "active"
@@ -131,7 +131,7 @@ def systemd_unit_toggle(
         result = subprocess.run(
             ["pkexec", "systemctl", action, "--now", f"{unit}.service"],
             capture_output=True,
-            text=True,
+            text=True, errors="replace",
             timeout=60,
         )
         if result.returncode != 0:
@@ -146,7 +146,7 @@ def systemd_unit_toggle(
         check = subprocess.run(
             ["systemctl", "list-unit-files", f"{unit}.service", "--no-legend"],
             capture_output=True,
-            text=True,
+            text=True, errors="replace",
             timeout=5,
         )
         if check.returncode != 0 or not check.stdout.strip():

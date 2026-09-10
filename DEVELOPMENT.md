@@ -3385,6 +3385,78 @@ Então `shutil.which("nuclei")` falhava e o módulo se dava por ausente.
 
 ---
 
+### 2026-09-10 — Robustez: subprocess tolerante, workers com fronteira de exceção, markup escapado
+
+Auditoria completa (compilação, pyflakes, suíte, resolução AST de 397 imports,
+leitura de todos os backends + páginas). Três **padrões repetidos** explicavam
+quase todo cenário de "a tela travou e o botão nunca voltou"; corrigidos de uma
+vez em todo o ecossistema.
+
+**1. `UnicodeDecodeError` derrubava a thread de trabalho.** Todo `subprocess`
+usava `text=True` sem `errors="replace"`. `UnicodeDecodeError` é `ValueError`,
+não é pego por `except (OSError, SubprocessError)` — bastava a ferramenta externa
+imprimir um caminho Latin-1 (`Relat\xe9rio.pdf` vindo de Windows) para a thread
+morrer antes do `GLib.idle_add` e a UI ficar em "rodando" para sempre.
+- `vigia_common/proc.py`: `errors="replace"` + pega `ValueError` — honra o
+  contrato "nunca levanta". Conserta de uma vez os 7 módulos Blue e o Recon.
+- `vigia_red/runner.py` (`ScanProcess`), `vigia_common/scheduler.py` e **46
+  chamadas em 23 arquivos** de todas as tools (antivírus, rootkit, integridade,
+  hardening, selinux, firewall, dns, dashboard, reports, installer, hub…):
+  `text=True, errors="replace"` — byte inválido vira U+FFFD, não exceção.
+- **+2 testes** em `tests/common/test_proc.py` (saída não-UTF-8; `ValueError`)
+  e **+4** em `tests/red/test_runner.py` (novo; `ScanProcess` com bytes
+  inválidos, binário ausente, cancel antes de rodar).
+
+**2. Workers sem fronteira de exceção.** Cada `_worker` das páginas Red (recon,
+netscan, vuln, web) e Blue (yara, ids, siem, memory ×3, timeline) agora envolve
+a chamada ao backend em `try/except Exception` e **sempre** chama `idle_add`
+com um `Result(error="Erro interno: …")` — a UI volta ao estado normal e mostra
+o erro em vez de travar. `SymbolsResult` (memory) não tem `error`; usa
+`ok=False, message=…`. Antivírus: `scan_async` mata o `clamscan` no
+`wait(timeout=10)` expirado (antes ficava órfão com `returncode=None`), pega
+`Exception` genérica e garante `on_done`; `_save_report` falhando vira
+mensagem, não thread morta.
+
+**3. Saída de ferramenta inserida como markup Pango sem escape.**
+`Adw.ActionRow/ExpanderRow` têm `use-markup=TRUE` por padrão; qualquer `&`,
+`<`, `>` em hostname, URL, CVE, banner NSE, PTR, assinatura Suricata, mensagem
+journald, cmdline do Volatility, IOC ou stderr deixava a linha **em branco** com
+GTK-CRITICAL. Padrão adotado: helper de módulo `_esc = GLib.markup_escape_text`
+aplicado em **todo sink alimentado por dado** (resultados, histórico, erros,
+toasts, `REPORTS_DIR`), e dentro dos helpers compartilhados de linha
+(`_detail`, `_prop`, `_prop_row`, `_sev_expander`) para o chamador não poder
+esquecer. Constantes ficam sem escape (sem risco de double-escape). Cobertura:
+4 páginas Red, 7 páginas Blue, `antivirus/tabs/database.py` (pasta escolhida),
+`rootkit/tabs/history.py` (stderr do pkexec).
+
+**Também nesta rodada (mesmos arquivos):**
+- Exportações do Red (netscan/vuln/web) agora são **0600 desde a criação**
+  (`os.open(O_WRONLY|O_CREAT|O_TRUNC, 0o600)`), como o registry prometia; e
+  toleram `gfile.get_path() is None` (destino GVFS/sftp) sem `AttributeError`.
+- IDS: `find_eve()` não estoura mais `PermissionError` no Python 3.11/3.12 quando
+  `/var/log/suricata` é 0750 (padrão Fedora) — a página inteira não construía.
+  `save_report` era chamado 2× (uma na thread GTK); removido o duplicado.
+- Registry do Blue mostrava **0.0.18** na aba Sobre (pyproject em 0.0.25);
+  alinhado.
+- `tests/hub/test_scan.py`: `shutil.which` mockado. Sem isso o teste rodava um
+  **clamscan real** em `~/Documents ~/Downloads ~/Desktop ~/Pictures` (35 min
+  aqui) e falhava porque o próprio repo contém a assinatura EICAR nos manuais
+  do YARA/IDS e em `starter.yar`.
+- f-string sem placeholder em `file-integrity/tabs/changes.py`.
+
+Versões: vigia-common **0.3.1**, vigia-red **0.6.1**, vigia-blue **0.0.26**,
+vigia-hub **0.12.4**, antivírus **0.1.5**, rootkit **0.2.3**. As demais tools
+receberam só o `errors="replace"` (sem bump). Suíte: **1345 verdes** (4 skips
+GTK no Mac).
+
+Pendente da mesma auditoria (próximas rodadas): cancel/timeout de processos
+`pkexec` (EPERM), `events.prune()` nunca chamado (retenção LGPD), `MAX_HOSTS`
+contornável por faixa de octeto, captura IDS 0644, `/tmp` não limpo no
+Timeline/IDS, Lynis `chown`, docs públicas (README/LICENSE/AUDIT.md) e
+empacotamento RPM. Detalhe em `AUDITORIA-2026-09.local.md` (local).
+
+---
+
 ## 10. Roadmap
 
 ### 10.1 Próximas iterações por ferramenta

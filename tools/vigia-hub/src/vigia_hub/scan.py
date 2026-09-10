@@ -39,7 +39,7 @@ def scan() -> dict:
         try:
             r = subprocess.run(
                 ["clamscan", "-i", "-r", "--no-summary", *targets],
-                capture_output=True, text=True, timeout=3600)
+                capture_output=True, text=True, errors="replace", timeout=3600)
             if r.returncode == 1:  # 1 = encontrou vírus
                 found = [ln for ln in r.stdout.splitlines() if ln.strip()]
         except (OSError, subprocess.SubprocessError):

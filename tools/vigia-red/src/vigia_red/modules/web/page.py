@@ -7,8 +7,8 @@ thread, é cancelável e atualiza por `GLib.idle_add`. GTK só aqui.
 
 from __future__ import annotations
 
+import os
 import threading
-from pathlib import Path
 
 import gi
 
@@ -19,6 +19,10 @@ from gi.repository import Adw, Gio, GLib, Gtk  # noqa: E402
 
 from ... import gate  # noqa: E402
 from . import backend  # noqa: E402
+
+# Linhas Adw usam markup Pango por padrão: todo valor vindo de dados (saída do
+# wapiti, relatório, erro, entrada do usuário) passa por aqui no sink.
+_esc = GLib.markup_escape_text
 
 
 def build_content() -> Gtk.Widget:
@@ -179,9 +183,10 @@ class _ScanView(Gtk.Box):
 
     @staticmethod
     def _detail(title: str, value: str) -> Adw.ActionRow:
+        """`title` é rótulo fixo; `value` vem do wapiti (escapado aqui)."""
         r = Adw.ActionRow()
         r.set_title(title)
-        r.set_subtitle(value)
+        r.set_subtitle(_esc(str(value)))
         r.set_subtitle_lines(0)
         r.set_subtitle_selectable(True)
         return r
@@ -189,9 +194,9 @@ class _ScanView(Gtk.Box):
     def _finding_row(self, f: backend.Finding) -> Adw.ExpanderRow:
         label, css, icon = _sev(f.severity)
         exp = Adw.ExpanderRow()
-        exp.set_title(f.category)
+        exp.set_title(_esc(str(f.category)))
         loc = f"{f.method} {f.path}".strip()
-        exp.set_subtitle(loc or "—")
+        exp.set_subtitle(_esc(loc or "—"))
         exp.set_subtitle_lines(0)
         img = Gtk.Image.new_from_icon_name(icon)
         if css in ("error", "warning"):
@@ -239,7 +244,7 @@ class _ScanView(Gtk.Box):
         self._btn.add_css_class("destructive-action")
         self._spinner.start()
         self._set_results_info(
-            f"Escaneando {backend.normalize_target(raw)}… (o wapiti rastreia e "
+            f"Escaneando {_esc(backend.normalize_target(raw))}… (o wapiti rastreia e "
             "testa o site; pode levar minutos).", "applications-internet-symbolic")
         threading.Thread(
             target=self._worker, args=(raw, profile_id, self._handle),
@@ -251,7 +256,12 @@ class _ScanView(Gtk.Box):
         self._btn.set_sensitive(False)
 
     def _worker(self, target, profile_id, handle) -> None:
-        result = backend.run_scan(target, profile_id, handle=handle)
+        try:
+            result = backend.run_scan(target, profile_id, handle=handle)
+        except Exception as e:  # pylint: disable=broad-except
+            # Nunca deixa a thread morrer sem devolver o controle à UI.
+            result = backend.ScanResult(
+                target=str(target), error=f"Erro interno: {e}")
         GLib.idle_add(self._apply, result)
 
     def _apply(self, result: backend.ScanResult) -> bool:
@@ -276,7 +286,7 @@ class _ScanView(Gtk.Box):
             self._export_btn.set_sensitive(False)
             row = Adw.ActionRow()
             row.set_title("Não foi possível concluir a varredura")
-            row.set_subtitle(result.error)
+            row.set_subtitle(_esc(str(result.error)))
             row.set_subtitle_lines(0)
             row.add_prefix(Gtk.Image.new_from_icon_name("dialog-error-symbolic"))
             self._add_result(row)
@@ -322,12 +332,19 @@ class _ScanView(Gtk.Box):
         if gfile is None or not self._last_result:
             return
         path = gfile.get_path()
+        if not path:  # local sem caminho nativo (GVFS/sftp) — não há como gravar
+            print("[web] export falhou: destino sem caminho local", flush=True)
+            return
         try:
             if path.endswith(".json") and self._last_result.raw:
                 content = self._last_result.raw
             else:
                 content = backend.result_to_text(self._last_result)
-            Path(path).write_text(content, encoding="utf-8")
+            # Relatório é dado sensível: grava 0600 desde a criação.
+            fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+            with os.fdopen(fd, "w", encoding="utf-8") as fh:
+                fh.write(content)
+            os.chmod(path, 0o600)  # se o arquivo já existia com outro modo
         except OSError as e:
             print(f"[web] export falhou: {e}", flush=True)
 
@@ -369,8 +386,9 @@ class _HistoryView(Gtk.Box):
         for rep in reports:
             n = len(rep.get("findings", []))
             row = Adw.ActionRow()
-            row.set_title(rep.get("target", "?"))
-            row.set_subtitle(f"{rep.get('started_at', '?')} · {n} achado(s)")
+            row.set_title(_esc(str(rep.get("target", "?"))))
+            row.set_subtitle(
+                f"{_esc(str(rep.get('started_at', '?')))} · {n} achado(s)")
             row.add_prefix(Gtk.Image.new_from_icon_name("applications-internet-symbolic"))
             path = rep.get("_file")
             if path:
@@ -406,7 +424,7 @@ def _build_about() -> Gtk.Widget:
     g.add(integra)
     reports = Adw.ActionRow()
     reports.set_title("Relatórios")
-    reports.set_subtitle(str(backend.REPORTS_DIR) + " — clique para abrir")
+    reports.set_subtitle(_esc(str(backend.REPORTS_DIR)) + " — clique para abrir")
     reports.set_subtitle_lines(0)
     reports.add_prefix(Gtk.Image.new_from_icon_name("folder-symbolic"))
     reports.add_suffix(Gtk.Image.new_from_icon_name("adw-external-link-symbolic"))

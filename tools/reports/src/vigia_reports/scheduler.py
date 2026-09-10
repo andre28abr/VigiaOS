@@ -53,7 +53,7 @@ def _systemctl(*args: str) -> tuple[bool, str]:
     try:
         r = subprocess.run(
             ["systemctl", "--user", *args],
-            capture_output=True, text=True, timeout=20,
+            capture_output=True, text=True, errors="replace", timeout=20,
         )
     except (OSError, subprocess.SubprocessError) as e:
         return False, str(e)

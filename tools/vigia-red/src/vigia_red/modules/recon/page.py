@@ -20,6 +20,11 @@ from gi.repository import Adw, Gio, GLib, Gtk  # noqa: E402
 from ... import consent, gate, handoff  # noqa: E402
 from . import backend  # noqa: E402
 
+# Linhas Adw usam markup Pango por padrão: todo valor vindo de dados (saída da
+# ferramenta, relatório, erro, entrada do usuário) passa por aqui no sink.
+_esc = GLib.markup_escape_text
+
+
 def build_content() -> Gtk.Widget:
     """Portão do termo de uso (gate reusável do Red) → ferramenta."""
     return gate.build_gated(_build_tool)
@@ -171,7 +176,7 @@ class _ReconView(Gtk.Box):
             return exp
         for value in items[:cap]:
             r = Adw.ActionRow()
-            r.set_title(value)
+            r.set_title(_esc(str(value)))
             r.set_title_selectable(True)
             r.set_title_lines(0)
             if row_action is not None:
@@ -200,7 +205,7 @@ class _ReconView(Gtk.Box):
         handoff.set_scan_target(ip)
         btn.set_label("Enviado ✓")
         btn.set_sensitive(False)
-        self._toast(f"{ip} enviado — abra o Network Scanner")
+        self._toast(f"{_esc(str(ip))} enviado — abra o Network Scanner")
 
     # -- investigação --
     def _on_investigate(self, *_args) -> None:
@@ -217,12 +222,16 @@ class _ReconView(Gtk.Box):
         self._btn.set_sensitive(False)
         self._spinner.start()
         self._set_results_info(
-            f"Investigando {dom}… consultando fontes públicas (pode levar 1–2 min).",
+            f"Investigando {_esc(dom)}… consultando fontes públicas (pode levar 1–2 min).",
             "system-search-symbolic")
         threading.Thread(target=self._worker, args=(dom,), daemon=True).start()
 
     def _worker(self, domain: str) -> None:
-        result = backend.run_recon(domain)
+        try:
+            result = backend.run_recon(domain)
+        except Exception as e:  # pylint: disable=broad-except
+            # Nunca deixa a thread morrer sem devolver o controle à UI.
+            result = backend.ReconResult(domain=domain, error=f"Erro interno: {e}")
         GLib.idle_add(self._apply, result)
 
     def _apply(self, result: backend.ReconResult) -> bool:
@@ -235,7 +244,7 @@ class _ReconView(Gtk.Box):
         if result.error:
             row = Adw.ActionRow()
             row.set_title("Não foi possível concluir a busca")
-            row.set_subtitle(result.error)
+            row.set_subtitle(_esc(str(result.error)))
             row.set_subtitle_lines(0)
             row.add_prefix(Gtk.Image.new_from_icon_name("dialog-error-symbolic"))
             self._add_result(row)
@@ -244,7 +253,8 @@ class _ReconView(Gtk.Box):
         if result.total == 0:
             self._results.set_description(f"Concluído em {result.elapsed_sec:.0f}s.")
             row = Adw.ActionRow()
-            row.set_title(f"Nenhum dado público encontrado para {result.domain}.")
+            row.set_title(
+                f"Nenhum dado público encontrado para {_esc(str(result.domain))}.")
             row.set_subtitle(
                 "As fontes não retornaram nada. Confira o domínio (use a raiz, "
                 "ex.: nmap.com) ou tente mais tarde.")
@@ -308,9 +318,9 @@ class _HistoryView(Gtk.Box):
             n = (len(rep.get("emails", [])) + len(rep.get("hosts", []))
                  + len(rep.get("ips", [])) + len(rep.get("urls", [])))
             row = Adw.ActionRow()
-            row.set_title(rep.get("domain", "?"))
+            row.set_title(_esc(str(rep.get("domain", "?"))))
             row.set_subtitle(
-                f"{rep.get('started_at', '?')} · {n} achado(s)")
+                f"{_esc(str(rep.get('started_at', '?')))} · {n} achado(s)")
             row.add_prefix(Gtk.Image.new_from_icon_name("system-search-symbolic"))
             path = rep.get("_file")
             if path:
@@ -349,7 +359,7 @@ def _build_about() -> Gtk.Widget:
 
     reports = Adw.ActionRow()
     reports.set_title("Relatórios")
-    reports.set_subtitle(str(backend.REPORTS_DIR) + " — clique para abrir")
+    reports.set_subtitle(_esc(str(backend.REPORTS_DIR)) + " — clique para abrir")
     reports.set_subtitle_lines(0)
     reports.add_prefix(Gtk.Image.new_from_icon_name("folder-symbolic"))
     reports.add_suffix(Gtk.Image.new_from_icon_name("adw-external-link-symbolic"))

@@ -12,9 +12,12 @@ import gi
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 
-from gi.repository import Adw, Gtk  # noqa: E402
+from gi.repository import Adw, GLib, Gtk  # noqa: E402
 
 from . import backend  # noqa: E402
+
+# Escapa markup Pango em valores vindos de dados (rows usam use-markup=TRUE).
+_esc = GLib.markup_escape_text
 
 _SEVERITY = {
     "info": ("Info", "dialog-information-symbolic", "accent"),
@@ -62,8 +65,8 @@ class _PlaybookExpander(Adw.ExpanderRow):
         self._checks: dict[str, Gtk.CheckButton] = {}
 
         label, icon, css = _sev(pb.severity)
-        self.set_title(pb.title)
-        self.set_subtitle(pb.when)
+        self.set_title(_esc(pb.title))
+        self.set_subtitle(_esc(pb.when))
         self.set_subtitle_lines(0)
         img = Gtk.Image.new_from_icon_name(icon)
         if css in ("warning", "error"):
@@ -78,16 +81,16 @@ class _PlaybookExpander(Adw.ExpanderRow):
         # passos por fase
         for pi, phase in enumerate(pb.phases):
             head = Adw.ActionRow()
-            head.set_title(phase.name)
+            head.set_title(_esc(phase.name))
             head.add_css_class("heading")
             head.set_activatable(False)
             self.add_row(head)
             for si, step in enumerate(phase.steps):
                 key = backend.step_key(pi, si)
                 row = Adw.ActionRow()
-                row.set_title(step.text)
+                row.set_title(_esc(step.text))
                 if step.detail:
-                    row.set_subtitle(step.detail)
+                    row.set_subtitle(_esc(step.detail))
                     row.set_subtitle_lines(0)
                 chk = Gtk.CheckButton()
                 chk.set_valign(Gtk.Align.CENTER)
@@ -122,9 +125,9 @@ class _PlaybookExpander(Adw.ExpanderRow):
         inc.closed = done == total and total > 0
         path = backend.save_incident(inc)
         if path:
-            self.set_subtitle(
+            self.set_subtitle(_esc(
                 f"✓ Registrado: {done}/{total} passos · {inc.started_at}"
-            )
+            ))
             if self._on_saved:
                 self._on_saved()
 
@@ -183,11 +186,11 @@ class _HistoryView(Gtk.Box):
         for inc in incidents:
             n = len(inc.get("done_steps", []))
             row = Adw.ActionRow()
-            row.set_title(inc.get("playbook_title", "?"))
-            row.set_subtitle(
+            row.set_title(_esc(str(inc.get("playbook_title", "?"))))
+            row.set_subtitle(_esc(
                 f"{inc.get('started_at', '?')} · {n} passo(s) marcados"
                 + ("  ·  encerrado" if inc.get("closed") else "")
-            )
+            ))
             row.set_subtitle_lines(0)
             icon = "emblem-ok-symbolic" if inc.get("closed") else "emblem-documents-symbolic"
             row.add_prefix(Gtk.Image.new_from_icon_name(icon))

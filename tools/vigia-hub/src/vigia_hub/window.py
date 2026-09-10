@@ -1459,7 +1459,7 @@ class VigiaHubWindow(Adw.ApplicationWindow):
         import subprocess
         cmd = enable_extension_command()
         try:
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=5)
+            result = subprocess.run(cmd, capture_output=True, text=True, errors="replace", timeout=5)
             if result.returncode == 0:
                 self._show_settings_error(
                     "Extensão ativada",

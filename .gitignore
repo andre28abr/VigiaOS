@@ -30,5 +30,6 @@ packaging/rpmbuild/
 
 # Notas locais de contexto (so para consulta do Claude — nao publica)
 CONTEXT.md
+CLAUDE.md
 NOTES.md
 *.local.md

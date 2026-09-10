@@ -20,7 +20,7 @@ def _available() -> bool:
         out = subprocess.run(
             ["bluetoothctl", "list"],
             capture_output=True,
-            text=True,
+            text=True, errors="replace",
             timeout=5,
         )
         return out.returncode == 0 and bool(out.stdout.strip())
@@ -33,7 +33,7 @@ def _get() -> bool:
     out = subprocess.run(
         ["bluetoothctl", "show"],
         capture_output=True,
-        text=True,
+        text=True, errors="replace",
         timeout=5,
     )
     return "Powered: yes" in out.stdout

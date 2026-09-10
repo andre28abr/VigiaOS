@@ -82,3 +82,23 @@ class TestRun:
         proc.run(["echo", "hi"])
         assert captured["cmd"] == ["echo", "hi"]
         assert captured["shell"] is False
+
+    def test_saida_nao_utf8_nao_levanta(self):
+        # Ferramenta externa imprime um nome de arquivo Latin-1 (vindo de
+        # Windows, p.ex.). Antes: UnicodeDecodeError (ValueError) escapava
+        # do wrapper e matava a thread de trabalho da GUI.
+        import sys
+        cmd = [sys.executable, "-c",
+               "import sys; sys.stdout.buffer.write(b'caf\\xe9.pdf\\n')"]
+        rc, out, err = proc.run(cmd, timeout=10)
+        assert rc == 0
+        assert out.startswith("caf")
+        assert "\ufffd" in out  # byte inválido vira U+FFFD, não exceção
+
+    def test_valueerror_vira_tupla_de_falha(self, monkeypatch):
+        def boom(*a, **k):
+            raise ValueError("argumento inválido")
+
+        monkeypatch.setattr(subprocess, "run", boom)
+        assert proc.run(["x"]) == (1, "", "")
+

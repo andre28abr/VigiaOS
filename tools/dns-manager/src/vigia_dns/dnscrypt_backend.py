@@ -101,7 +101,7 @@ def get_version() -> str:
     try:
         result = subprocess.run(
             ["dnscrypt-proxy", "-version"],
-            capture_output=True, text=True, timeout=5,
+            capture_output=True, text=True, errors="replace", timeout=5,
         )
         for line in (result.stdout or "").splitlines():
             line = line.strip()

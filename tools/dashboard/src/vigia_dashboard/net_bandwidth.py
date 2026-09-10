@@ -122,7 +122,7 @@ def bandwidth_snapshot_blocking(
     ]
     try:
         proc = subprocess.run(
-            cmd, capture_output=True, text=True, timeout=samples * delay + 60
+            cmd, capture_output=True, text=True, errors="replace", timeout=samples * delay + 60
         )
     except subprocess.TimeoutExpired:
         res.error = "Medição excedeu o tempo limite."

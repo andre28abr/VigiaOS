@@ -242,7 +242,7 @@ def _run_scan_streaming(
             ["pkexec"] + cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
-            text=True,
+            text=True, errors="replace",
             bufsize=1,
         )
     except (OSError, FileNotFoundError) as e:

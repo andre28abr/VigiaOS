@@ -109,7 +109,7 @@ def gather_firewall() -> bool | None:
         return None
     try:
         r = subprocess.run(["systemctl", "is-active", "firewalld"],
-                           capture_output=True, text=True, timeout=5)
+                           capture_output=True, text=True, errors="replace", timeout=5)
         return r.stdout.strip() == "active"
     except (OSError, subprocess.SubprocessError):
         return None
@@ -159,7 +159,7 @@ def gather_privacy() -> tuple[int, int]:
     for schema, key, want in _PRIVACY_KEYS:
         try:
             r = subprocess.run(["gsettings", "get", schema, key],
-                               capture_output=True, text=True, timeout=5)
+                               capture_output=True, text=True, errors="replace", timeout=5)
         except (OSError, subprocess.SubprocessError):
             continue
         if r.returncode != 0:
@@ -177,7 +177,7 @@ def gather_updates() -> int | None:
         return None
     try:
         r = subprocess.run(["dnf", "-q", "--cacheonly", "check-update"],
-                           capture_output=True, text=True, timeout=20)
+                           capture_output=True, text=True, errors="replace", timeout=20)
     except (OSError, subprocess.SubprocessError):
         return None
     if r.returncode == 0:
