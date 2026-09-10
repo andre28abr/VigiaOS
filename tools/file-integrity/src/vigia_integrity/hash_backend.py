@@ -170,10 +170,20 @@ def _python_hash_dir(d: Path, algorithm: str) -> dict[str, str]:
         try:
             h, _ = hash_blocking(str(f), algorithm)
             if h:
-                hashes[str(f.relative_to(d))] = h
+                hashes[safe_name(str(f.relative_to(d)))] = h
         except (OSError, ValueError):
             continue
     return hashes
+
+
+def safe_name(name: str) -> str:
+    """Nome de arquivo seguro para JSON UTF-8.
+
+    Nomes com bytes fora do UTF-8 chegam do filesystem como surrogates
+    (`surrogateescape`) e `json.dump` estourava `UnicodeEncodeError`, deixando
+    a baseline meio escrita. Os bytes inválidos viram U+FFFD.
+    """
+    return name.encode("utf-8", "surrogateescape").decode("utf-8", "replace")
 
 
 def _hashdeep_hash_dir(d: Path, algorithm: str) -> dict[str, str] | None:
@@ -299,13 +309,14 @@ def create_baseline_blocking(
             "engine": result.engine,
             "hashes": hashes,
         }
-        with open(outp, "w", encoding="utf-8") as f:
+        fd = os.open(str(outp), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
         try:
             os.chmod(outp, 0o600)
         except OSError:
             pass
-    except (OSError, PermissionError) as e:
+    except (OSError, ValueError) as e:  # ValueError cobre UnicodeEncodeError
         result.error = f"Falha ao criar baseline: {e}"
 
     return result

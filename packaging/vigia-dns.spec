@@ -5,7 +5,7 @@
 %global mod_name vigia_dns
 
 Name:           %{pkg_name}
-Version:        0.4.3
+Version:        0.4.4
 Release:        1%{?dist}
 Summary:        DNS encriptado (DoH/DNSCrypt) via dnscrypt-proxy
 License:        Apache-2.0

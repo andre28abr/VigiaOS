@@ -142,7 +142,11 @@ def create_backup(dest: Path | None = None) -> tuple[bool, str, Path | None]:
     tmp = dest.parent / (dest.name + ".tmp")
     file_count = 0
     try:
-        with zipfile.ZipFile(tmp, "w", zipfile.ZIP_DEFLATED) as zf:
+        # `dest` pode estar fora da pasta 0700 (USB, ~/Documentos): o zip nasce
+        # 0600, em vez de ficar legível pela umask enquanto é escrito.
+        fd = os.open(str(tmp), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        with os.fdopen(fd, "wb") as fh, \
+                zipfile.ZipFile(fh, "w", zipfile.ZIP_DEFLATED) as zf:
             zf.writestr(
                 "MANIFEST.json",
                 json.dumps(manifest, ensure_ascii=False, indent=2),
@@ -307,7 +311,9 @@ def restore_backup(
                 target = _target_path(name)
                 try:
                     target.parent.mkdir(parents=True, exist_ok=True)
-                    with zf.open(name) as src, open(target, "wb") as dst:
+                    fd = os.open(str(target),
+                                 os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+                    with zf.open(name) as src, os.fdopen(fd, "wb") as dst:
                         dst.write(src.read())
                     os.chmod(target, 0o600)
                 except OSError as e:

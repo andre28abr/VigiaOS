@@ -28,6 +28,19 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 
+def _page_kb() -> int:
+    """Tamanho da página de memória em KiB (4 no x86_64; 16/64 em ARM64).
+    /proc/<pid>/statm conta em páginas — assumir 4 subestimava RSS em 16× no
+    aarch64 com páginas de 64 KiB."""
+    try:
+        return max(1, int(os.sysconf("SC_PAGE_SIZE")) // 1024)
+    except (ValueError, OSError, AttributeError):
+        return 4
+
+
+_PAGE_KB = _page_kb()
+
+
 # ============================================================
 # Dataclasses
 # ============================================================
@@ -809,7 +822,7 @@ def list_processes(include_connections: bool = True, include_io: bool = True) ->
                     statm_parts = f.read().split()
                 if len(statm_parts) >= 2:
                     rss_pages = int(statm_parts[1])
-                    rss_kb = rss_pages * 4  # 4 KB / page
+                    rss_kb = rss_pages * _PAGE_KB
             except (OSError, ValueError):
                 pass
 

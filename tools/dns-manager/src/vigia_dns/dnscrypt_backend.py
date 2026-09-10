@@ -152,8 +152,11 @@ def get_status() -> DnsCryptStatus:
     if st.config_exists:
         data = _read_config_parsed()
         listen = data.get("listen_addresses", [])
-        if listen:
-            st.listen_address = listen[0]
+        # TOML editado à mão pode trazer string ou número: só lista conta.
+        if isinstance(listen, list) and listen:
+            st.listen_address = str(listen[0])
+        elif isinstance(listen, str) and listen:
+            st.listen_address = listen
 
         servers = data.get("server_names", [])
         if isinstance(servers, list):

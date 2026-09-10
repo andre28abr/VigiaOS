@@ -5,7 +5,7 @@ código que estava duplicado em ~15 `_helpers.py` por tool.
 
 ## Status
 
-v0.3.2 — biblioteca interna. Sem GUI, sem entry point. Além dos helpers,
+v0.3.3 — biblioteca interna. Sem GUI, sem entry point. Além dos helpers,
 hoje concentra `shell` (`Module`/`Dependency` — o adaptador que leva Red/Blue
 pro master-detail), `events` (Central de Relatórios, SQLite `0600`, retenção
 180 dias), `proc` (subprocess/cancelamento) e `theme`.

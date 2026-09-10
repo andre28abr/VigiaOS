@@ -5,7 +5,7 @@
 %global mod_name vigia_dashboard
 
 Name:           %{pkg_name}
-Version:        0.4.2
+Version:        0.4.3
 Release:        1%{?dist}
 Summary:        Dashboard de sistema em tempo real (substitui htop/btop)
 License:        Apache-2.0

@@ -224,3 +224,23 @@ class TestPermsRobustez:
         assert rid is not None
         e = events.query(db_path=db)[0]
         assert "s" in e.payload   # set virou string via default=str, mas chave fica
+
+
+class TestEscapeLike:
+    def test_curingas_viram_literais(self):
+        from vigia_common.events import escape_like
+        assert escape_like("100%") == "100\\%"
+        assert escape_like("a_b") == "a\\_b"
+        assert escape_like("c:\\x") == "c:\\\\x"
+
+    def test_busca_com_porcento_nao_casa_tudo(self, tmp_path):
+        from vigia_common import events
+        db = tmp_path / "e.db"
+        events.record("t", "alfa 100% ok", category="c", severity="info", db_path=db)
+        events.record("t", "beta", category="c", severity="info", db_path=db)
+        assert len(events.query(search="100%", db_path=db)) == 1
+        # "%" literal só existe no 1º título (como curinga casaria os 2)
+        assert len(events.query(search="%", db_path=db)) == 1
+        # "_" literal não existe em nenhum (como curinga casaria os 2)
+        assert len(events.query(search="_", db_path=db)) == 0
+

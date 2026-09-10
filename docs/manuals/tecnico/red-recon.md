@@ -6,7 +6,7 @@ públicas (transparência de certificados, DNS, buscadores) e devolve a superfí
 externa — e-mails, subdomínios, IPs, URLs. **Passivo por princípio**: nunca toca
 nos servidores do alvo, só lê o que já é público.
 
-> **Pacote:** vigia-red 0.6.2 · **Status:** `pronto` (1º módulo real do Red).
+> **Pacote:** vigia-red 0.6.3 · **Status:** `pronto` (1º módulo real do Red).
 > Segue o padrão do ecossistema: *backend puro/testável + `page.py` (GUI) ligado
 > ao shell via `Module.impl`*. Portão de termo de uso (`gate.build_gated`) antes
 > da ferramenta.

@@ -335,12 +335,20 @@ def save_report(result: ScanResult) -> Path | None:
     return path if save_json_0600(path, result_to_dict(result)) else None
 
 
+def _mtime_or_zero(p: Path) -> float:
+    """mtime, ou 0 se o arquivo sumiu entre o glob e o stat (TOCTOU)."""
+    try:
+        return p.stat().st_mtime
+    except OSError:
+        return 0.0
+
+
 def list_recent_reports(limit: int = 20) -> list[dict]:
     if not REPORTS_DIR.is_dir():
         return []
     files = sorted(
         REPORTS_DIR.glob("vuln-*.json"),
-        key=lambda p: p.stat().st_mtime,
+        key=_mtime_or_zero,
         reverse=True,
     )
     out: list[dict] = []

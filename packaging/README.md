@@ -47,13 +47,13 @@ sudo dnf install vigia-dashboard vigia-antivirus
 | `vigia-dashboard` | 0.2.0 | sistema em tempo real |
 | `vigia-privacy` | 0.3.0 | 12 toggles |
 | `vigia-selinux` | 0.2.0 | SELinux GUI |
-| `vigia-firewall` | 0.1.0 | firewalld GUI |
+| `vigia-firewall` | 0.1.1 | firewalld GUI |
 | `vigia-netmon` | 0.1.0 | conexões TCP/UDP |
 | `vigia-hardening` | 0.1.2 | Lynis |
 | `vigia-reports` | 0.1.1 | PDF LGPD |
 | `vigia-integrity` | 0.1.3 | AIDE |
 | `vigia-installer` | 0.1.0 | catálogo tools |
-| `vigia-dns` | 0.4.3 | dnscrypt-proxy (DoH/DNSCrypt) |
+| `vigia-dns` | 0.4.4 | dnscrypt-proxy (DoH/DNSCrypt) |
 | `vigia-caps` | 0.1.0 | getcap |
 | `vigia-antivirus` | 0.1.1 | ClamAV |
 | `vigia-rootkit` | 0.2.0 | chkrootkit + rkhunter |

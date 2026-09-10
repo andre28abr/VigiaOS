@@ -3606,6 +3606,58 @@ verdes** (1377 coletados; 4 skips GTK no Mac). **+10 testes**.
 
 ---
 
+### 2026-09-10 — Rodada final da auditoria: itens médios/baixos
+
+Quarta rodada (seção 2 de `AUDITORIA-2026-09.local.md`). Nada muda de
+comportamento visível; é hygiene de segurança e correção de bordas.
+
+**Arquivos sensíveis nascem 0600** (antes: criados com a umask e `chmod`
+depois — janela em que o conteúdo inteiro ficava legível):
+`state.save_json_0600` (o helper finalmente faz o que o nome diz),
+`vigia_hub/backup.py` (zip do backup, que pode ir pra USB/Documentos, e cada
+arquivo restaurado), `reports/renderer.py` (HTML do relatório e o pacote
+`.zip` de integridade), `file-integrity/hash_backend.py` (baseline). Padrão:
+`os.open(O_WRONLY|O_CREAT|O_TRUNC, 0o600)` + `os.fdopen`.
+
+**Firewall: 1 diálogo polkit em vez de 2.** `--permanent` e `--reload` eram
+dois `pkexec`; cancelar o segundo deixava a regra salva em disco mas não
+aplicada e a UI dizia "cancelado". `fw_and_reload_argv()` (puro) monta
+`bash -c 'firewall-cmd "$@" && firewall-cmd --reload' _ ARGS…` — args
+posicionais, nada interpolado na string; `_pkexec_fw_reload()` usa isso.
+`_pkexec_run` é o helper comum. Testes ajustados + 2 novos.
+
+**Central de Relatórios (`events.py`)**: busca escapa `%`/`_`/`\`
+(`escape_like` + `LIKE … ESCAPE '\'`) — "100%" não casa tudo mais;
+`_connect` fecha a conexão se o `executescript` falhar (DB corrompido não
+vaza handle).
+
+**Bordas**: `hash_backend.safe_name()` — nomes com bytes fora do UTF-8 chegam
+como surrogates e o `json.dump` estourava `UnicodeEncodeError` no meio da
+baseline; dashboard `_PAGE_KB` via `os.sysconf("SC_PAGE_SIZE")` (RSS era 16×
+menor em aarch64 de página 64 KiB); dnscrypt `listen_addresses` só é lido se
+for lista; IDS `_needs_root` só reconhece falta de permissão ("could not open"
+de pcap corrompido disparava diálogo de senha root); gate do Red não destrava
+se `consent.accept()` não gravou o registro 0600 (explica na tela); Intel lê
+no máximo 20 MB e JSON que não é OTX/MISP **não** vira lista de IOCs lixo;
+YARA `_RULE_RE` ancorado no início da linha com `private|global` opcionais
+(a palavra "rule" dentro de `description = "this rule…"` criava regra
+fantasma e roubava o meta); `list_recent_reports` dos 4 módulos Red tolera
+arquivo apagado entre `glob` e `stat` (`_mtime_or_zero`).
+
+Testes: **+12** (`tests/common/test_events.py` escape; `tests/firewall`
+argv+caminho único; `tests/blue/test_audit_fixes.py` regex YARA/`_needs_root`;
+`tests/hash/test_safe_name.py`; `tests/dashboard/test_page_kb.py`). Versões:
+common **0.3.3**, hub **0.12.6**, blue **0.0.28**, red **0.6.3**, firewall
+**0.1.1**, dashboard **0.4.3**, dns **0.4.4**, integrity **0.2.7**, reports
+**0.2.8** (README/manuais/specs acompanham). Suíte: **1385 verdes**.
+
+Da auditoria ficou só o **empacotamento RPM** (Makefile com VERSION único,
+sem specs de red/blue, tags git, helpers `_ids/_mem_capture.sh` e
+`docs/manuals` não empacotados) — marcado como experimental no README;
+atacar quando for publicar no COPR.
+
+---
+
 ## 10. Roadmap
 
 ### 10.1 Próximas iterações por ferramenta

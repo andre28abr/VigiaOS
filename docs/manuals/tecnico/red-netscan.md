@@ -6,7 +6,7 @@ XML (`-oX -`), parseada com a stdlib. Por padrão roda **sem root** (TCP connect
 `-sT`); o **Modo admin** (pkexec) libera SYN (`-sS`), UDP (`-sU`) e detecção de
 SO (`-O`/`-A`).
 
-> **Pacote:** vigia-red 0.6.2 · **Status:** `pronto`. Padrão do ecossistema:
+> **Pacote:** vigia-red 0.6.3 · **Status:** `pronto`. Padrão do ecossistema:
 > *backend puro/testável + `page.py` ligado via `Module.impl`*, atrás do portão
 > de termo de uso (`gate.build_gated`). Usa o runner cancelável compartilhado
 > `vigia_red.runner.ScanProcess`.

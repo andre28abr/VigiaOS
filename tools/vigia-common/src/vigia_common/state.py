@@ -37,9 +37,12 @@ def save_json_0600(path, data: Any) -> bool:
         path.parent.mkdir(parents=True, exist_ok=True)
         os.chmod(path.parent, 0o700)
         tmp = path.with_name(path.name + ".tmp")
-        with open(tmp, "w", encoding="utf-8") as f:
+        # O_CREAT com 0600 desde o primeiro byte (sem janela em que o .tmp
+        # existe com a umask padrão e o conteúdo inteiro dentro).
+        fd = os.open(str(tmp), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
-        os.chmod(tmp, 0o600)
+        os.chmod(tmp, 0o600)  # se o .tmp já existia com outro modo
         os.replace(tmp, path)
         return True
     except OSError as e:

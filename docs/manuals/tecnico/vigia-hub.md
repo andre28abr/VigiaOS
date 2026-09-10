@@ -15,7 +15,7 @@ Casca (shell) do **VigiaOS** que num único processo GTK4 oferece um **rail de s
 | **Path config** | `~/.config/vigia-hub/settings.json` (mode `0600`) |
 | **Path autostart** | `~/.config/autostart/vigia-hub.desktop` (XDG) |
 | **App ID D-Bus** | `br.com.vigia.OS` |
-| **Versão** | 0.12.5 |
+| **Versão** | 0.12.6 |
 
 ## Arquitetura interna
 
