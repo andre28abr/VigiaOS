@@ -52,6 +52,39 @@ class TestNetworkTooLarge:
     def test_limite(self):
         assert not b.network_too_large("10.0.0.0/22")       # 1024
 
+    def test_dominio_nao_e_faixa(self):
+        assert not b.network_too_large("exemplo.com")
+        assert b.estimated_hosts("exemplo.com") is None
+
+
+class TestOctetRanges:
+    """Sintaxe nmap `a-b.c.d.e` / `a,b.c.d.e` — antes passava como "domínio" e
+    driblava a guarda de MAX_HOSTS (`1-255.1-255.1-255.1-255` = 4 bilhões)."""
+
+    @pytest.mark.parametrize("t,n", [
+        ("192.168.0-255.1", 256),
+        ("192.168.1.1-9", 9),
+        ("10.0.0.1,5,10-12", 5),
+        ("10.0.0.1", 1),
+    ])
+    def test_conta_hosts(self, t, n):
+        assert b.validate_target(t)
+        assert b.estimated_hosts(t) == n
+
+    def test_faixa_gigante_e_bloqueada(self):
+        t = "1-255.1-255.1-255.1-255"
+        assert b.validate_target(t)          # sintaxe válida...
+        assert b.network_too_large(t)        # ...mas a guarda pega
+        assert b.estimated_hosts(t) == 255 ** 4
+
+    def test_duas_classes_c_bloqueadas(self):
+        assert b.network_too_large("192.168.0-255.0-255")   # 65536
+
+    @pytest.mark.parametrize("t", ["1-300.1.1.1", "5-1.1.1.1", "1-.1.1.1", "1,,2.1.1.1"])
+    def test_faixa_invalida_e_rejeitada(self, t):
+        assert not b.validate_target(t)
+        assert b.estimated_hosts(t) is None
+
 
 class TestValidatePorts:
     @pytest.mark.parametrize("p", ["", "80", "80,443", "8000-8100", "22,80,8000-8010"])
@@ -64,6 +97,15 @@ class TestValidatePorts:
 
 
 class TestBuildCmd:
+    def test_ipv6_recebe_flag_6(self):
+        cmd = b.build_scan_cmd("2001:db8::1", _profile("padrao"))
+        assert cmd[:2] == ["nmap", "-6"]
+        sweep = b.build_scan_cmd("2001:db8::1", _profile("pingsweep"))
+        assert sweep[:2] == ["nmap", "-6"] and "-sn" in sweep
+
+    def test_ipv4_nao_recebe_flag_6(self):
+        assert "-6" not in b.build_scan_cmd("192.168.0.1", _profile("padrao"))
+
     def test_padrao_sem_root(self):
         cmd = b.build_scan_cmd("exemplo.com", _profile("padrao"))
         assert cmd[0] == "nmap" and "pkexec" not in cmd

@@ -189,7 +189,9 @@ def set_boolean(name: str, value: bool, persistent: bool = True) -> None:
     if persistent:
         args.append("-P")
     args.extend([name, "on" if value else "off"])
-    _run_pkexec(args, op=f"setsebool {name}")
+    # `-P` reconstrói a policy: 20-60 s numa VM é normal.
+    _run_pkexec(args, op=f"setsebool {name}",
+                timeout=300 if persistent else 30)
 
 
 # ============================================================================
@@ -402,12 +404,22 @@ def _require_pkexec() -> None:
         raise RuntimeError("pkexec não encontrado. Instale o 'polkit': sudo dnf install polkit.")
 
 
-def _run_pkexec(args: list[str], *, op: str) -> None:
-    """Roda 'pkexec <args>' e trata cancelamento de polkit."""
-    result = subprocess.run(
-        ["pkexec"] + args,
-        capture_output=True, text=True, errors="replace", timeout=30,
-    )
+def _run_pkexec(args: list[str], *, op: str, timeout: int = 30) -> None:
+    """Roda 'pkexec <args>' e trata cancelamento de polkit.
+
+    Estourado o `timeout`, o `subprocess` tenta matar o filho — que é root —
+    e recebe EPERM (`PermissionError`); o comando segue rodando. Reportamos
+    isso honestamente em vez de deixar a exceção vazar.
+    """
+    try:
+        result = subprocess.run(
+            ["pkexec"] + args,
+            capture_output=True, text=True, errors="replace", timeout=timeout,
+        )
+    except (subprocess.TimeoutExpired, PermissionError) as e:
+        raise RuntimeError(
+            f"{op} demorou mais que {timeout}s e pode ainda estar em "
+            "execução. Verifique o estado em alguns instantes.") from e
     if result.returncode != 0:
         stderr = (result.stderr or result.stdout).strip()
         if "Request dismissed" in stderr or result.returncode == 126:

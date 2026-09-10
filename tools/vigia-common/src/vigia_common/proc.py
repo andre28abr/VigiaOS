@@ -33,3 +33,42 @@ def run(cmd: list[str], timeout: int = 30) -> tuple[int, str, str]:
         return result.returncode, result.stdout, result.stderr
     except (OSError, ValueError, subprocess.SubprocessError):
         return 1, "", ""
+
+
+def terminate(process, *, grace: float = 3.0) -> bool:
+    """Encerra um `Popen` com SIGTERM (depois SIGKILL) e faz `wait()`.
+
+    Se o processo foi lançado via `pkexec` ele roda como **root**: o sinal
+    direto dá `EPERM` (e o `subprocess` deixaria o processo órfão rodando).
+    Nesse caso pede o kill via `pkexec kill -TERM <pid>` — um diálogo polkit.
+    Devolve True se conseguiu sinalizar o processo. Nunca levanta.
+    """
+    if process is None:
+        return False
+    try:
+        process.terminate()
+    except PermissionError:
+        return _kill_elevated(process.pid)
+    except OSError:
+        return False
+    try:
+        process.wait(timeout=grace)
+    except subprocess.TimeoutExpired:
+        try:
+            process.kill()
+            process.wait(timeout=grace)
+        except (OSError, subprocess.TimeoutExpired):
+            pass
+    return True
+
+
+def _kill_elevated(pid: int) -> bool:
+    """`pkexec kill -TERM <pid>` — único jeito de parar um filho root."""
+    try:
+        r = subprocess.run(
+            ["pkexec", "kill", "-TERM", str(pid)],
+            capture_output=True, text=True, errors="replace", timeout=120,
+        )
+        return r.returncode == 0
+    except (OSError, ValueError, subprocess.SubprocessError):
+        return False

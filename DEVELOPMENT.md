@@ -3457,6 +3457,71 @@ empacotamento RPM. Detalhe em `AUDITORIA-2026-09.local.md` (local).
 
 ---
 
+### 2026-09-10 — LGPD na prática + bugs da auditoria: retenção, 0600 na captura, /tmp limpo, pkexec cancelável, MAX_HOSTS
+
+Segunda rodada da auditoria (itens 3 e 4 de `AUDITORIA-2026-09.local.md`).
+
+**LGPD / dados sensíveis**
+- **Retenção de 180 dias agora acontece.** `events.prune()` existia desde a
+  Central de Relatórios mas **nenhum código chamava** — eventos acumulavam para
+  sempre. `app.py` roda `_prune_events()` em thread daemon no `do_activate`
+  (I/O de SQLite não atrasa a janela; nunca levanta; loga quantos saíram).
+- **Captura ao vivo do IDS era 0644.** `_ids_capture.sh` fazia `chown -R` mas
+  não `chmod`; um pcap tem tráfego bruto (senhas em claro, dados pessoais).
+  Agora `mkdir -m 0700` + `chmod -R go-rwx` (como o `_mem_capture.sh` já fazia)
+  e `outdir.mkdir(mode=0o700)` no backend.
+- **`/tmp` deixava de herança dados forenses.** `mkdtemp` em `timeline`
+  (`.plaso` + `.jsonl`, GBs) e `ids` (`eve.json`, às vezes root-owned no caminho
+  pkexec) nunca era removido — em tmpfs, isso é RAM. Trocado por
+  `tempfile.TemporaryDirectory(ignore_cleanup_errors=True)` com o parse
+  **dentro** do bloco (`analyze_pcap` → `_analyze_pcap_in`). `_read_capped`
+  fora do try (levantava `OSError` na thread) agora vira `result.error`.
+
+**Processos `pkexec` (rodam como root) não podiam ser cancelados**
+- `proc.terminate(process)` (novo em `vigia_common/proc.py`): SIGTERM → wait →
+  SIGKILL; se o SIGTERM dá `EPERM` (filho de pkexec) pede `pkexec kill -TERM
+  <pid>` (`_kill_elevated`, 1 diálogo polkit). Nunca levanta; devolve se
+  conseguiu sinalizar.
+- `vigia_red/runner.py` (`ScanProcess`): `cancel()` roda o `_terminate` em
+  **thread própria** (antes fazia `wait(3)` na thread GTK → janela congelada) e
+  marca `cancel_failed`; race "cancel antes do Popen" fechada (checa a flag
+  logo após o Popen). Antes, "Cancelar" no nmap em modo admin era um no-op
+  silencioso e o nmap seguia varrendo o alvo.
+- Rootkit: `result.cancelled = True` **antes** de sinalizar (antes o `EPERM`
+  virava "Erro durante scan: Operation not permitted" e `cancelled` ficava
+  False); usa o helper.
+- SELinux: `_run_pkexec(timeout=…)` por operação — `setsebool -P` reconstrói a
+  policy (20-60 s numa VM) e tinha `timeout=30`; a GUI revertia o switch
+  enquanto o comando terminava com sucesso. Agora 300 s, e `TimeoutExpired`/
+  `PermissionError` (o kill do filho root falha) viram `RuntimeError` honesto
+  ("pode ainda estar em execução").
+
+**Network Scanner**
+- **Guarda de `MAX_HOSTS` era contornável.** `1-255.1-255.1-255.1-255` passava
+  em `validate_target` (labels `1-255` são válidos pela regex de domínio) e
+  `network_too_large` só olhava CIDR → nmap em ~4 bilhões de hosts. Novo
+  `estimated_hosts()` conta faixas de octeto no formato nmap (`a-b`, `a,b`)
+  e CIDR; `validate_target` valida a sintaxe de faixa; `network_too_large`
+  usa a contagem. `192.168.0-255.1` (256) segue permitido.
+- **IPv6 recebia "Failed to resolve".** `build_scan_cmd` põe `-6` quando o
+  alvo é IPv6 (`is_ipv6`).
+
+**Hardening (Lynis)**
+- `chown root:$user` assumia grupo primário == nome do usuário; em LDAP/AD ou
+  grupo `users` falhava em silêncio (`|| true`) → relatório `root:root 0640` →
+  "Não avaliado" (o bug que o comentário dizia corrigir). Agora
+  `chown root:$(id -gn "$user")`. Regex do username aceita maiúsculas e ponto
+  (shadow-utils/GNOME aceitam) — antes caía no fallback `chmod 644`.
+
+Testes: **+18** (`tests/red/test_netscan_backend.py` faixas de octeto/IPv6;
+`tests/common/test_proc.py` `terminate`/EPERM/`pkexec kill`;
+`tests/red/test_runner.py` cancel sem bloquear). Manuais técnicos do IDS e
+Timeline atualizados. Versões: common **0.3.2**, red **0.6.2**, blue
+**0.0.27**, hub **0.12.5**, rootkit **0.2.4**, selinux **0.2.2**, hardening
+**0.1.6**. Suíte: **1363 verdes**.
+
+---
+
 ## 10. Roadmap
 
 ### 10.1 Próximas iterações por ferramenta

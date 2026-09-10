@@ -68,7 +68,10 @@ Toca disco/sistema:
 
 - Ler eve.json do usuário roda **sem root**. (Em `/var/log/suricata`, o acesso
   depende da permissão do arquivo; pkexec p/ paths root fica como pendência.)
-- Relatórios **0600**; nada sai da máquina.
+- Relatórios **0600**; nada sai da máquina. A **captura ao vivo** também: o helper
+  `_ids_capture.sh` cria a pasta 0700 e fecha `pcap`/`eve.json` com `go-rwx`
+  (tráfego bruto = senhas em claro/dados pessoais). A análise de pcap usa
+  `tempfile.TemporaryDirectory` — o `eve.json` temporário sai de `/tmp` ao terminar.
 
 ## Pendências (próximos passos)
 

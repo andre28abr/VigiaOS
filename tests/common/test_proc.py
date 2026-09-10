@@ -102,3 +102,47 @@ class TestRun:
         monkeypatch.setattr(subprocess, "run", boom)
         assert proc.run(["x"]) == (1, "", "")
 
+
+class TestTerminate:
+    def test_encerra_processo_comum(self):
+        import sys
+        p = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(60)"])
+        assert proc.terminate(p, grace=5) is True
+        assert p.returncode is not None  # já fez wait()
+
+    def test_none_nao_levanta(self):
+        assert proc.terminate(None) is False
+
+    def test_eperm_pede_pkexec_kill(self, monkeypatch):
+        # Filho de pkexec roda como root: SIGTERM direto dá EPERM. O helper
+        # então pede `pkexec kill` (e devolve o resultado dele).
+        class Root:
+            pid = 4242
+
+            def terminate(self):
+                raise PermissionError("Operation not permitted")
+
+        chamado = {}
+
+        def fake_kill(pid):
+            chamado["pid"] = pid
+            return True
+
+        monkeypatch.setattr(proc, "_kill_elevated", fake_kill)
+        assert proc.terminate(Root()) is True
+        assert chamado["pid"] == 4242
+
+    def test_kill_elevated_usa_pkexec_kill(self, monkeypatch):
+        seen = {}
+
+        def fake_run(cmd, **kw):
+            seen["cmd"] = cmd
+
+            class R:
+                returncode = 0
+            return R()
+
+        monkeypatch.setattr(subprocess, "run", fake_run)
+        assert proc._kill_elevated(99) is True
+        assert seen["cmd"] == ["pkexec", "kill", "-TERM", "99"]
+

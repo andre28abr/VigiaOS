@@ -47,7 +47,8 @@ Toca disco/sistema:
 - **`_read_capped`** — lê só os primeiros N bytes (timelines crescem muito).
 - `analyze_psort_file` / `analyze_storage` / `run_timeline` — todas devolvem
   `TimelineResult(events, source, total, elapsed_sec, error, started_at)` e
-  nunca levantam. Usam `proc.run` (argv em lista) e `tempfile.mkdtemp`.
+  nunca levantam. Usam `proc.run` (argv em lista) e `tempfile.TemporaryDirectory`
+  (o `.plaso`/`.jsonl` — GBs de dado forense — é apagado de `/tmp` ao terminar).
 
 ## GUI (`page.py`)
 

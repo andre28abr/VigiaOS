@@ -34,6 +34,8 @@ Comportamento de password_lock + autostart + minimized (v0.5.10):
 
 from __future__ import annotations
 
+import threading
+
 import gi
 
 gi.require_version("Gtk", "4.0")
@@ -49,6 +51,17 @@ from .settings import load_settings
 from .theme import apply_base_css, apply_ui_theme, follow_system_theme
 from .tray import TrayManager
 from .window import VigiaHubWindow
+
+
+def _prune_events() -> None:
+    """Aplica a retenção padrão da Central de Relatórios. Nunca levanta."""
+    try:
+        from vigia_common import events
+        n = events.prune()
+        if n:
+            get_logger(__name__).info("retenção: %d evento(s) antigo(s) removido(s)", n)
+    except Exception:  # pylint: disable=broad-except
+        pass
 
 
 _log = get_logger("vigia_hub.app")
@@ -194,6 +207,11 @@ class VigiaHubApp(Adw.Application):
         # aberto pelo menu não enxerga ferramentas instaladas pelo usuário
         # (ex.: nuclei via `go install` → "não instalado" mesmo instalado).
         ensure_user_bins_on_path()
+
+        # LGPD: retenção da Central de Relatórios (180 dias). `prune()` existia
+        # mas ninguém chamava — eventos acumulavam para sempre. Em thread: I/O
+        # de SQLite não pode atrasar a janela.
+        threading.Thread(target=_prune_events, daemon=True).start()
 
         settings = load_settings()
 

@@ -233,7 +233,9 @@ def run_audit_blocking() -> tuple[bool, str]:
     # USER='root && rm -rf /' nao injeta comando (o script trata "$1" como
     # dado, nao como codigo). Validacao extra: regex POSIX-conforme.
     raw_user = os.environ.get("USER") or os.environ.get("LOGNAME") or ""
-    if re.match(r"^[a-z_][a-z0-9_-]{0,31}\$?$", raw_user):
+    # shadow-utils/GNOME aceitam maiúsculas e ponto; sem elas o usuário
+    # caía no fallback 644 (relatório legível por todos — LGPD).
+    if re.match(r"^[a-zA-Z_][a-zA-Z0-9_.-]{0,31}\$?$", raw_user):
         # POSIX-compliant username
         validated_user = raw_user
     else:
@@ -249,8 +251,11 @@ lynis audit system --quiet --no-colors
 rc=$?
 if [ -n "$target_user" ]; then
     # LGPD: chown pro user + 640 — so root e o dono leem (nao world-readable).
-    chown "root:$target_user" /var/log/lynis-report.dat 2>/dev/null || true
-    chown "root:$target_user" /var/log/lynis.log 2>/dev/null || true
+    # Grupo PRIMARIO real do usuario (LDAP/AD ou grupo `users`: nome do grupo
+    # != nome do usuario, e o chown antigo falhava em silencio -> "Nao avaliado").
+    target_group="$(id -gn "$target_user" 2>/dev/null || echo "$target_user")"
+    chown "root:$target_group" /var/log/lynis-report.dat 2>/dev/null || true
+    chown "root:$target_group" /var/log/lynis.log 2>/dev/null || true
     chmod 640 /var/log/lynis-report.dat 2>/dev/null || true
     chmod 640 /var/log/lynis.log 2>/dev/null || true
 else
