@@ -21,7 +21,7 @@ def _fw_cmd(*args: str, timeout: int = 10) -> tuple[int, str, str]:
     try:
         result = subprocess.run(
             ["firewall-cmd"] + list(args),
-            capture_output=True, text=True, timeout=timeout,
+            capture_output=True, text=True, errors="replace", timeout=timeout,
         )
         return result.returncode, result.stdout.strip(), result.stderr.strip()
     except (subprocess.SubprocessError, FileNotFoundError):
@@ -34,7 +34,7 @@ def _pkexec_fw(*args: str, timeout: int = 30) -> None:
         raise RuntimeError("pkexec não encontrado. Instale polkit.")
     result = subprocess.run(
         ["pkexec", "firewall-cmd"] + list(args),
-        capture_output=True, text=True, timeout=timeout,
+        capture_output=True, text=True, errors="replace", timeout=timeout,
     )
     if result.returncode != 0:
         stderr = (result.stderr or result.stdout).strip()
@@ -84,7 +84,7 @@ def _pkexec_systemctl(action: str, unit: str) -> None:
         ["pkexec", "systemctl", action, "--now", f"{unit}.service"]
         if action in ("enable", "disable")
         else ["pkexec", "systemctl", action, f"{unit}.service"],
-        capture_output=True, text=True, timeout=30,
+        capture_output=True, text=True, errors="replace", timeout=30,
     )
     if result.returncode != 0:
         stderr = (result.stderr or result.stdout).strip()

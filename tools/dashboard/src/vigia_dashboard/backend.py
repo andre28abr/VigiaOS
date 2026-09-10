@@ -934,7 +934,7 @@ def kill_process(pid: int, sig: int = _signal.SIGTERM) -> tuple[bool, str]:
         try:
             result = subprocess.run(
                 ["pkexec", "kill", f"-{sig_name}", str(pid)],
-                capture_output=True, text=True, timeout=10,
+                capture_output=True, text=True, errors="replace", timeout=10,
             )
             if result.returncode in (126, 127):
                 return False, "Autenticação cancelada."

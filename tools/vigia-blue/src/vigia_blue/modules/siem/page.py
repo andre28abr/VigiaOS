@@ -20,6 +20,9 @@ from gi.repository import Adw, GLib, Gtk  # noqa: E402
 
 from . import backend  # noqa: E402
 
+# Escapa markup Pango em valores vindos de dados (rows usam use-markup=TRUE).
+_esc = GLib.markup_escape_text
+
 
 def build_content() -> Gtk.Widget:
     """Conteúdo auto-contido do Vigia SIEM (header próprio + abas)."""
@@ -65,7 +68,7 @@ def _sev(severity: str) -> tuple[str, str, str]:
 def _prop_row(title: str, value: str) -> Adw.ActionRow:
     r = Adw.ActionRow()
     r.set_title(title)
-    r.set_subtitle(value)
+    r.set_subtitle(_esc(str(value)))
     r.set_subtitle_lines(0)
     r.add_css_class("property")
     return r
@@ -75,8 +78,8 @@ def _sev_expander(title: str, subtitle: str, severity: str) -> Adw.ExpanderRow:
     """ExpanderRow com ícone + pílula de severidade (usado em Alertas e Regras)."""
     label, icon, css = _sev(severity)
     exp = Adw.ExpanderRow()
-    exp.set_title(title)
-    exp.set_subtitle(subtitle)
+    exp.set_title(_esc(str(title)))
+    exp.set_subtitle(_esc(str(subtitle)))
     exp.set_subtitle_lines(0)
     img = Gtk.Image.new_from_icon_name(icon)
     if css in ("warning", "error"):
@@ -209,8 +212,12 @@ class _AlertsView(Gtk.Box):
         ).start()
 
     def _worker(self, sources: list[str], elevated: bool) -> None:
-        result = backend.analyze(sources=sources, elevated=elevated)
-        backend.save_report(result)
+        try:
+            result = backend.analyze(sources=sources, elevated=elevated)
+            backend.save_report(result)
+        except Exception as e:  # pylint: disable=broad-except
+            # Nunca deixa a thread morrer sem devolver o controle à UI.
+            result = backend.SiemResult(sources=sources, error=f"Erro interno: {e}")
         GLib.idle_add(self._apply, result)
 
     def _apply(self, result: backend.SiemResult) -> bool:
@@ -223,7 +230,7 @@ class _AlertsView(Gtk.Box):
         if result.error:
             row = Adw.ActionRow()
             row.set_title("Não foi possível analisar")
-            row.set_subtitle(result.error)
+            row.set_subtitle(_esc(result.error))
             row.set_subtitle_lines(0)
             row.add_prefix(Gtk.Image.new_from_icon_name("dialog-error-symbolic"))
             self._add(row)
@@ -317,11 +324,11 @@ class _HistoryView(Gtk.Box):
             alerts = rep.get("alerts", [])
             n = len(alerts)
             row = Adw.ActionRow()
-            row.set_title(rep.get("started_at", "?"))
+            row.set_title(_esc(str(rep.get("started_at", "?"))))
             srcs = ", ".join(rep.get("sources", []) or [])
-            row.set_subtitle(
+            row.set_subtitle(_esc(
                 f"{n} alerta(s) · {rep.get('events_count', 0)} evento(s) · {srcs}"
-            )
+            ))
             row.set_subtitle_lines(0)
             icon = "dialog-warning-symbolic" if n else "emblem-ok-symbolic"
             row.add_prefix(Gtk.Image.new_from_icon_name(icon))

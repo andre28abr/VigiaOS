@@ -19,6 +19,9 @@ from gi.repository import Adw, GLib, Gtk  # noqa: E402
 
 from . import backend  # noqa: E402
 
+# Escapa markup Pango em valores vindos de dados (rows usam use-markup=TRUE).
+_esc = GLib.markup_escape_text
+
 _MAX_DISPLAY = 400
 
 
@@ -173,8 +176,8 @@ class _AnalyzeView(Gtk.Box):
             return
         if f and f.get_path():
             self._dump = f.get_path()
-            self._dump_row.set_title(f.get_basename() or self._dump)
-            self._dump_row.set_subtitle(self._dump)
+            self._dump_row.set_title(_esc(f.get_basename() or self._dump))
+            self._dump_row.set_subtitle(_esc(self._dump))
 
     # ---- captura nativa (AVML via pkexec) ----
 
@@ -199,7 +202,11 @@ class _AnalyzeView(Gtk.Box):
         threading.Thread(target=self._cap_worker, daemon=True).start()
 
     def _cap_worker(self) -> None:
-        res = backend.capture_dump()
+        try:
+            res = backend.capture_dump()
+        except Exception as e:  # pylint: disable=broad-except
+            # Nunca deixa a thread morrer sem devolver o controle à UI.
+            res = backend.CaptureResult(ok=False, error=f"Erro interno: {e}")
         GLib.idle_add(self._cap_done, res)
 
     def _cap_done(self, res: "backend.CaptureResult") -> bool:
@@ -209,13 +216,13 @@ class _AnalyzeView(Gtk.Box):
         self._refresh_capture()
         if res.ok:
             self._dump = res.path
-            self._dump_row.set_title(Path(res.path).name)
-            self._dump_row.set_subtitle(res.path)
+            self._dump_row.set_title(_esc(Path(res.path).name))
+            self._dump_row.set_subtitle(_esc(res.path))
             self._cap_row.set_subtitle(
                 f"Capturado em {res.elapsed_sec:.0f}s — já selecionado. "
                 "Escolha um plugin e clique em Analisar.")
         else:
-            self._cap_row.set_subtitle(f"Falha: {res.error}")
+            self._cap_row.set_subtitle(_esc(f"Falha: {res.error}"))
         return False
 
     def _on_run(self, _btn: Gtk.Button) -> None:
@@ -236,7 +243,11 @@ class _AnalyzeView(Gtk.Box):
                          daemon=True).start()
 
     def _worker(self, dump: str, plugin: str) -> None:
-        result = backend.run_plugin(dump, plugin)
+        try:
+            result = backend.run_plugin(dump, plugin)
+        except Exception as e:  # pylint: disable=broad-except
+            # Nunca deixa a thread morrer sem devolver o controle à UI.
+            result = backend.MemResult(plugin=plugin, error=f"Erro interno: {e}")
         GLib.idle_add(self._apply, result)
 
     def _apply(self, result: backend.MemResult) -> bool:
@@ -252,7 +263,7 @@ class _AnalyzeView(Gtk.Box):
             else:
                 row = Adw.ActionRow()
                 row.set_title("Não foi possível analisar")
-                row.set_subtitle(result.error)
+                row.set_subtitle(_esc(result.error))
                 row.set_subtitle_lines(0)
                 row.add_prefix(
                     Gtk.Image.new_from_icon_name("dialog-error-symbolic"))
@@ -280,15 +291,15 @@ class _AnalyzeView(Gtk.Box):
 
     def _row_widget(self, columns: list[str], row: dict) -> Adw.ExpanderRow:
         exp = Adw.ExpanderRow()
-        exp.set_title(backend.row_summary(columns, row))
+        exp.set_title(_esc(backend.row_summary(columns, row)))
         exp.set_subtitle_lines(0)
         for c in columns:
             v = row.get(c)
             if v in (None, ""):
                 continue
             r = Adw.ActionRow()
-            r.set_title(c)
-            r.set_subtitle(str(v))
+            r.set_title(_esc(str(c)))
+            r.set_subtitle(_esc(str(v)))
             r.set_subtitle_lines(0)
             r.add_css_class("property")
             exp.add_row(r)
@@ -326,7 +337,12 @@ class _AnalyzeView(Gtk.Box):
                          daemon=True).start()
 
     def _sym_worker(self, dump: str) -> None:
-        res = backend.generate_symbols(dump)
+        try:
+            res = backend.generate_symbols(dump)
+        except Exception as e:  # pylint: disable=broad-except
+            # Nunca deixa a thread morrer sem devolver o controle à UI.
+            # SymbolsResult não tem campo `error` — usa ok=False + message.
+            res = backend.SymbolsResult(ok=False, message=f"Erro interno: {e}")
         GLib.idle_add(self._sym_done, res)
 
     def _sym_done(self, res: "backend.SymbolsResult") -> bool:
@@ -339,14 +355,14 @@ class _AnalyzeView(Gtk.Box):
         if res.ok:
             row = Adw.ActionRow()
             row.set_title("Símbolos prontos ✓")
-            row.set_subtitle(res.message)
+            row.set_subtitle(_esc(res.message))
             row.set_subtitle_lines(0)
             row.add_prefix(Gtk.Image.new_from_icon_name("emblem-ok-symbolic"))
             self._add(row)
             return False
         row = Adw.ActionRow()
         row.set_title("Ainda faltam símbolos")
-        row.set_subtitle(res.message)
+        row.set_subtitle(_esc(res.message))
         row.set_subtitle_lines(0)
         row.add_prefix(Gtk.Image.new_from_icon_name("dialog-warning-symbolic"))
         self._add(row)

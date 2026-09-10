@@ -24,7 +24,7 @@ def get_mode() -> str:
     try:
         result = subprocess.run(
             ["getenforce"],
-            capture_output=True, text=True, timeout=5,
+            capture_output=True, text=True, errors="replace", timeout=5,
         )
         if result.returncode == 0:
             return result.stdout.strip()
@@ -36,7 +36,7 @@ def get_mode() -> str:
 def get_policy_type() -> str:
     try:
         result = subprocess.run(
-            ["sestatus"], capture_output=True, text=True, timeout=5,
+            ["sestatus"], capture_output=True, text=True, errors="replace", timeout=5,
         )
         for line in result.stdout.splitlines():
             if "Loaded policy name:" in line:
@@ -49,7 +49,7 @@ def get_policy_type() -> str:
 def get_policy_version() -> str:
     try:
         result = subprocess.run(
-            ["sestatus"], capture_output=True, text=True, timeout=5,
+            ["sestatus"], capture_output=True, text=True, errors="replace", timeout=5,
         )
         for line in result.stdout.splitlines():
             if "Policy version:" in line:
@@ -95,7 +95,7 @@ def set_persistent_mode(mode: str) -> None:
         "pkexec", "sh", "-c",
         f"sed -i 's/^SELINUX=.*/SELINUX={mode}/' /etc/selinux/config"
     ]
-    result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+    result = subprocess.run(cmd, capture_output=True, text=True, errors="replace", timeout=30)
     if result.returncode != 0:
         stderr = (result.stderr or result.stdout).strip()
         if "Request dismissed" in stderr or result.returncode == 126:
@@ -138,7 +138,7 @@ def _try_semanage_booleans() -> list[Boolean]:
     try:
         result = subprocess.run(
             ["semanage", "boolean", "-l"],
-            capture_output=True, text=True, timeout=15,
+            capture_output=True, text=True, errors="replace", timeout=15,
         )
     except (subprocess.SubprocessError, FileNotFoundError):
         return []
@@ -167,7 +167,7 @@ def _getsebool_booleans() -> list[Boolean]:
     try:
         result = subprocess.run(
             ["getsebool", "-a"],
-            capture_output=True, text=True, timeout=10,
+            capture_output=True, text=True, errors="replace", timeout=10,
         )
     except (subprocess.SubprocessError, FileNotFoundError):
         return []
@@ -218,7 +218,7 @@ def get_recent_denials(since: str = "today") -> list[Denial]:
     """
     _require_pkexec()
     cmd = ["pkexec", "ausearch", "-m", "AVC", "-ts", since, "--raw"]
-    result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+    result = subprocess.run(cmd, capture_output=True, text=True, errors="replace", timeout=30)
     if result.returncode == 1 and "no matches" in (result.stdout + result.stderr).lower():
         return []  # nenhum denial — nao e' erro
     if result.returncode != 0:
@@ -274,7 +274,7 @@ def audit2allow_suggest(denial_raw: str) -> str:
         result = subprocess.run(
             ["audit2allow"],
             input=denial_raw,
-            capture_output=True, text=True, timeout=15,
+            capture_output=True, text=True, errors="replace", timeout=15,
         )
         if result.returncode == 0 and result.stdout.strip():
             return result.stdout.strip()
@@ -299,7 +299,7 @@ def restorecon(path: str, recursive: bool = True, verbose: bool = True) -> str:
     # '--help' ou '-F' seria interpretado como flag pelo restorecon.
     args.append("--")
     args.append(path)
-    result = subprocess.run(args, capture_output=True, text=True, timeout=120)
+    result = subprocess.run(args, capture_output=True, text=True, errors="replace", timeout=120)
     if result.returncode != 0:
         stderr = (result.stderr or result.stdout).strip()
         if "Request dismissed" in stderr or result.returncode == 126:
@@ -326,7 +326,7 @@ def list_ports() -> list[PortMapping]:
     try:
         result = subprocess.run(
             ["semanage", "port", "-l"],
-            capture_output=True, text=True, timeout=15,
+            capture_output=True, text=True, errors="replace", timeout=15,
         )
     except (subprocess.SubprocessError, FileNotFoundError):
         return []
@@ -362,7 +362,7 @@ def list_processes(limit: int = 200) -> list[ProcessInfo]:
     try:
         result = subprocess.run(
             ["ps", "-eZ", "-o", "label,pid,user,comm", "--no-headers"],
-            capture_output=True, text=True, timeout=10,
+            capture_output=True, text=True, errors="replace", timeout=10,
         )
     except (subprocess.SubprocessError, FileNotFoundError):
         return []
@@ -406,7 +406,7 @@ def _run_pkexec(args: list[str], *, op: str) -> None:
     """Roda 'pkexec <args>' e trata cancelamento de polkit."""
     result = subprocess.run(
         ["pkexec"] + args,
-        capture_output=True, text=True, timeout=30,
+        capture_output=True, text=True, errors="replace", timeout=30,
     )
     if result.returncode != 0:
         stderr = (result.stderr or result.stdout).strip()

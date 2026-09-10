@@ -18,6 +18,9 @@ from gi.repository import Adw, GLib, Gtk  # noqa: E402
 
 from . import backend  # noqa: E402
 
+# Escapa markup Pango em valores vindos de dados (rows usam use-markup=TRUE).
+_esc = GLib.markup_escape_text
+
 _TYPE_ICON = {
     "ip": "network-workgroup-symbolic",
     "domain": "web-browser-symbolic",
@@ -153,7 +156,7 @@ class _CheckView(Gtk.Box):
 
     def _match_row(self, mt: backend.Match) -> Adw.ExpanderRow:
         exp = Adw.ExpanderRow()
-        exp.set_title(mt.indicator)
+        exp.set_title(_esc(mt.indicator))
         exp.set_subtitle("⚠ Conhecido como malicioso na base")
         exp.set_subtitle_lines(0)
         img = Gtk.Image.new_from_icon_name("dialog-warning-symbolic")
@@ -169,7 +172,7 @@ class _CheckView(Gtk.Box):
         ):
             r = Adw.ActionRow()
             r.set_title(title)
-            r.set_subtitle(value)
+            r.set_subtitle(_esc(str(value)))
             r.set_subtitle_lines(0)
             r.add_css_class("property")
             exp.add_row(r)
@@ -244,9 +247,9 @@ class _IocsView(Gtk.Box):
             return
         for ioc in iocs[:300]:
             row = Adw.ActionRow()
-            row.set_title(ioc.value)
-            row.set_subtitle(f"{ioc.type} · {ioc.source}"
-                             + (f" · {ioc.note}" if ioc.note else ""))
+            row.set_title(_esc(ioc.value))
+            row.set_subtitle(_esc(f"{ioc.type} · {ioc.source}"
+                                  + (f" · {ioc.note}" if ioc.note else "")))
             row.set_subtitle_lines(0)
             row.add_prefix(Gtk.Image.new_from_icon_name(
                 _TYPE_ICON.get(ioc.type, "dialog-question-symbolic")))

@@ -307,7 +307,7 @@ def scan_async(
                 cmd,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
-                text=True,
+                text=True, errors="replace",
                 bufsize=1,
             )
         except (OSError, FileNotFoundError) as e:
@@ -348,9 +348,28 @@ def scan_async(
                     result.raw_summary += line + "\n"
 
             proc.wait(timeout=10)
-        except (OSError, subprocess.TimeoutExpired) as e:
+        except subprocess.TimeoutExpired as e:
+            # clamscan não encerrou sozinho: mata em vez de deixar órfão
+            # (returncode ficaria None e o processo continuaria rodando).
+            try:
+                proc.kill()
+                proc.wait(timeout=5)
+            except (OSError, subprocess.TimeoutExpired):
+                pass
             if not result.error:
                 result.error = f"Erro durante scan: {e}"
+        except OSError as e:
+            if not result.error:
+                result.error = f"Erro durante scan: {e}"
+        except Exception as e:  # pylint: disable=broad-except
+            # Qualquer outra falha inesperada (parser, callback): não deixa a
+            # thread morrer sem devolver o ScanResult à UI.
+            try:
+                proc.kill()
+            except OSError:
+                pass
+            if not result.error:
+                result.error = f"Erro interno durante scan: {e}"
 
         result.elapsed_sec = round(time.time() - start, 2)
 
@@ -367,7 +386,10 @@ def scan_async(
             result.error = "ClamAV reportou erro de execução (rc=2)."
 
         if not result.error:
-            _save_report(result)
+            try:
+                _save_report(result)
+            except OSError as e:
+                result.error = f"Scan concluído, mas não foi possível salvar o relatório: {e}"
             try:
                 from vigia_common.events import record
                 n = len(result.findings)

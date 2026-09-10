@@ -272,7 +272,7 @@ exit $rc
         result = subprocess.run(
             ["pkexec", "bash", "-c", script, "vigia-hardening", validated_user],
             capture_output=True,
-            text=True,
+            text=True, errors="replace",
             timeout=600,
         )
     except subprocess.TimeoutExpired:

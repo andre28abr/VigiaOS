@@ -188,7 +188,7 @@ class ChangesTab(Adw.Bin):
         copy_btn = Gtk.Button.new_from_icon_name("edit-copy-symbolic")
         copy_btn.set_valign(Gtk.Align.CENTER)
         copy_btn.add_css_class("flat")
-        copy_btn.set_tooltip_text(f"Copiar caminho")
+        copy_btn.set_tooltip_text("Copiar caminho")
         copy_btn.connect("clicked", self._on_copy, c.path)
         row.add_suffix(copy_btn)
 

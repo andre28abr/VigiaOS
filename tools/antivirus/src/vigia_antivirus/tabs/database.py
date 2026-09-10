@@ -232,7 +232,8 @@ class DatabaseTab(Adw.Bin):
             target = r.get("target", "?")
 
             row = Adw.ActionRow(title=ts_h)
-            sub = f"{target} · {files} arquivo{'s' if files != 1 else ''}"
+            # Pasta escolhida pelo usuário pode ter `&`/`<` — a linha usa markup.
+            sub = f"{GLib.markup_escape_text(str(target))} · {files} arquivo{'s' if files != 1 else ''}"
             if inf > 0:
                 sub += f" · {inf} infectado{'s' if inf != 1 else ''}"
             row.set_subtitle(sub)

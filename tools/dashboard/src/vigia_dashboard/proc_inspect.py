@@ -103,7 +103,7 @@ def inspect_process_blocking(pid: int, duration: int = 5) -> InspectResult:
     ]
     try:
         proc = subprocess.run(
-            cmd, capture_output=True, text=True, timeout=duration + 60
+            cmd, capture_output=True, text=True, errors="replace", timeout=duration + 60
         )
     except subprocess.TimeoutExpired:
         res.error = "Inspeção excedeu o tempo limite."

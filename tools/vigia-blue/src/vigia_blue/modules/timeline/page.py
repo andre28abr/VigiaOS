@@ -18,6 +18,9 @@ from gi.repository import Adw, GLib, Gtk  # noqa: E402
 
 from . import backend  # noqa: E402
 
+# Escapa markup Pango em valores vindos de dados (rows usam use-markup=TRUE).
+_esc = GLib.markup_escape_text
+
 _MAX_DISPLAY = 600
 
 
@@ -185,7 +188,11 @@ class _TimelineView(Gtk.Box):
         threading.Thread(target=self._worker, args=(work,), daemon=True).start()
 
     def _worker(self, work) -> None:
-        result = work()
+        try:
+            result = work()
+        except Exception as e:  # pylint: disable=broad-except
+            # Nunca deixa a thread morrer sem devolver o controle à UI.
+            result = backend.TimelineResult(error=f"Erro interno: {e}")
         GLib.idle_add(self._apply, result)
 
     def _apply(self, result: backend.TimelineResult) -> bool:
@@ -198,7 +205,7 @@ class _TimelineView(Gtk.Box):
         if result.error:
             row = Adw.ActionRow()
             row.set_title("Não foi possível montar a linha do tempo")
-            row.set_subtitle(result.error)
+            row.set_subtitle(_esc(result.error))
             row.set_subtitle_lines(0)
             row.add_prefix(Gtk.Image.new_from_icon_name("dialog-error-symbolic"))
             self._add(row)
@@ -224,8 +231,8 @@ class _TimelineView(Gtk.Box):
 
     def _event_row(self, ev: backend.Event) -> Adw.ActionRow:
         row = Adw.ActionRow()
-        row.set_title(ev.timestamp or "(sem data)")
-        row.set_subtitle(ev.message or ev.data_type or "—")
+        row.set_title(_esc(ev.timestamp) if ev.timestamp else "(sem data)")
+        row.set_subtitle(_esc(ev.message or ev.data_type or "—"))
         row.set_subtitle_lines(0)
         row.add_prefix(Gtk.Image.new_from_icon_name("x-office-calendar-symbolic"))
         if ev.data_type:

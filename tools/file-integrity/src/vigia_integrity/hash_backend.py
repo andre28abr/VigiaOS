@@ -186,7 +186,7 @@ def _hashdeep_hash_dir(d: Path, algorithm: str) -> dict[str, str] | None:
     try:
         proc = subprocess.run(
             ["hashdeep", "-r", "-c", algorithm, "."],
-            cwd=str(d), capture_output=True, text=True, timeout=1800,
+            cwd=str(d), capture_output=True, text=True, errors="replace", timeout=1800,
         )
     except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
         return None

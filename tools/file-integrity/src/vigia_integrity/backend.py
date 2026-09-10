@@ -385,7 +385,7 @@ fi
         result = subprocess.run(
             ["pkexec", "bash", "-c", script],
             capture_output=True,
-            text=True,
+            text=True, errors="replace",
             timeout=1800,
         )
     except subprocess.TimeoutExpired:
@@ -430,7 +430,7 @@ def run_check_blocking() -> CheckResult:
         proc = subprocess.run(
             ["pkexec", "aide", "-c", str(active_conf_path()), "--check"],
             capture_output=True,
-            text=True,
+            text=True, errors="replace",
             timeout=1800,
         )
     except subprocess.TimeoutExpired:
@@ -486,7 +486,7 @@ fi
         result = subprocess.run(
             ["pkexec", "bash", "-c", script],
             capture_output=True,
-            text=True,
+            text=True, errors="replace",
             timeout=1800,
         )
     except subprocess.TimeoutExpired:

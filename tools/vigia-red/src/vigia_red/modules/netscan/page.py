@@ -7,8 +7,8 @@ atualiza por `GLib.idle_add`. GTK só aqui — `backend.py` é puro.
 
 from __future__ import annotations
 
+import os
 import threading
-from pathlib import Path
 
 import gi
 
@@ -19,6 +19,10 @@ from gi.repository import Adw, Gio, GLib, Gtk  # noqa: E402
 
 from ... import gate, handoff  # noqa: E402
 from . import backend  # noqa: E402
+
+# Linhas Adw usam markup Pango por padrão: todo valor vindo de dados (saída do
+# nmap, relatório, erro, entrada do usuário, handoff) passa por aqui no sink.
+_esc = GLib.markup_escape_text
 
 
 def build_content() -> Gtk.Widget:
@@ -266,16 +270,17 @@ class _ScanView(Gtk.Box):
         extra = " ".join(x for x in (p.product, p.version) if x)
         if extra:
             parts.append(extra)
-        subtitle = " · ".join(parts) or "aberta"
+        subtitle = _esc(" · ".join(parts) or "aberta")
+        title = _esc(f"Porta {p.port}/{p.proto.upper()}")
         icon = "network-transmit-receive-symbolic"
         if p.scripts:
             row = Adw.ExpanderRow()
-            row.set_title(f"Porta {p.port}/{p.proto.upper()}")
+            row.set_title(title)
             row.set_subtitle(subtitle)
             row.add_prefix(Gtk.Image.new_from_icon_name(icon))
             for s in p.scripts:
                 sr = Adw.ActionRow()
-                sr.set_title(s)
+                sr.set_title(_esc(str(s)))
                 sr.set_title_lines(0)
                 sr.set_title_selectable(True)
                 sr.add_css_class("monospace")
@@ -283,7 +288,7 @@ class _ScanView(Gtk.Box):
                 row.add_row(sr)
             return row
         row = Adw.ActionRow()
-        row.set_title(f"Porta {p.port}/{p.proto.upper()}")
+        row.set_title(title)
         row.set_subtitle(subtitle)
         row.set_subtitle_lines(0)
         row.set_title_selectable(True)
@@ -292,14 +297,14 @@ class _ScanView(Gtk.Box):
 
     def _host_expander(self, host: backend.Host, single: bool) -> Adw.ExpanderRow:
         exp = Adw.ExpanderRow()
-        exp.set_title(host.hostname or host.address)
+        exp.set_title(_esc(str(host.hostname or host.address)))
         n = len(host.ports)
         sub = f"{n} porta(s) aberta(s)"
         if host.hostname and host.address:
             sub = f"{host.address} · {sub}"
         if host.os:
             sub += f" · SO: {host.os}"
-        exp.set_subtitle(sub)
+        exp.set_subtitle(_esc(sub))
         exp.set_subtitle_lines(0)
         exp.add_prefix(Gtk.Image.new_from_icon_name("computer-symbolic"))
         exp.set_expanded(single or n <= 8)
@@ -334,7 +339,7 @@ class _ScanView(Gtk.Box):
         self._btn.add_css_class("destructive-action")
         self._spinner.start()
         self._set_results_info(
-            f"Escaneando {backend.normalize_target(raw)}… (pode levar de "
+            f"Escaneando {_esc(backend.normalize_target(raw))}… (pode levar de "
             "segundos a minutos, conforme o perfil).", "network-wired-symbolic")
         threading.Thread(
             target=self._worker,
@@ -347,9 +352,14 @@ class _ScanView(Gtk.Box):
         self._btn.set_sensitive(False)
 
     def _worker(self, target, profile_id, elevated, ports, scripts, handle) -> None:
-        result = backend.run_scan(
-            target, profile_id, elevated=elevated, ports=ports, scripts=scripts,
-            handle=handle)
+        try:
+            result = backend.run_scan(
+                target, profile_id, elevated=elevated, ports=ports, scripts=scripts,
+                handle=handle)
+        except Exception as e:  # pylint: disable=broad-except
+            # Nunca deixa a thread morrer sem devolver o controle à UI.
+            result = backend.ScanResult(
+                target=str(target), error=f"Erro interno: {e}")
         GLib.idle_add(self._apply, result)
 
     def _apply(self, result: backend.ScanResult) -> bool:
@@ -374,7 +384,7 @@ class _ScanView(Gtk.Box):
             self._export_btn.set_sensitive(False)
             row = Adw.ActionRow()
             row.set_title("Não foi possível concluir a varredura")
-            row.set_subtitle(result.error)
+            row.set_subtitle(_esc(str(result.error)))
             row.set_subtitle_lines(0)
             row.add_prefix(Gtk.Image.new_from_icon_name("dialog-error-symbolic"))
             self._add_result(row)
@@ -390,9 +400,9 @@ class _ScanView(Gtk.Box):
                 f"{len(result.hosts)} host(s) vivo(s) · {result.elapsed_sec:.0f}s.")
             for h in result.hosts:
                 row = Adw.ActionRow()
-                row.set_title(h.hostname or h.address)
+                row.set_title(_esc(str(h.hostname or h.address)))
                 if h.hostname and h.address:
-                    row.set_subtitle(h.address)
+                    row.set_subtitle(_esc(str(h.address)))
                 row.set_title_selectable(True)
                 row.add_prefix(Gtk.Image.new_from_icon_name("computer-symbolic"))
                 self._add_result(row)
@@ -401,7 +411,8 @@ class _ScanView(Gtk.Box):
         if not hosts_with_ports:
             self._results.set_description(f"Concluído em {result.elapsed_sec:.0f}s.")
             row = Adw.ActionRow()
-            row.set_title(f"Nenhuma porta aberta encontrada em {result.target}.")
+            row.set_title(
+                f"Nenhuma porta aberta encontrada em {_esc(str(result.target))}.")
             row.set_subtitle(
                 "O alvo pode estar protegido por firewall, ou tente o perfil "
                 "Completa (todas as portas).")
@@ -427,7 +438,7 @@ class _ScanView(Gtk.Box):
         target = handoff.take_scan_target()
         if target:
             self._entry.set_text(target)
-            self._toast(f"Alvo recebido do Recon: {target}")
+            self._toast(f"Alvo recebido do Recon: {_esc(str(target))}")
 
     # -- exportar (.txt legível ou .xml cru do nmap) --
     def _on_export(self, _btn: Gtk.Button) -> None:
@@ -446,12 +457,19 @@ class _ScanView(Gtk.Box):
         if gfile is None or not self._last_result:
             return
         path = gfile.get_path()
+        if not path:  # local sem caminho nativo (GVFS/sftp) — não há como gravar
+            print("[netscan] export falhou: destino sem caminho local", flush=True)
+            return
         try:
             if path.endswith(".xml") and self._last_result.raw_xml:
                 content = self._last_result.raw_xml
             else:
                 content = backend.result_to_text(self._last_result)
-            Path(path).write_text(content, encoding="utf-8")
+            # Relatório é dado sensível: grava 0600 desde a criação.
+            fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+            with os.fdopen(fd, "w", encoding="utf-8") as fh:
+                fh.write(content)
+            os.chmod(path, 0o600)  # se o arquivo já existia com outro modo
         except OSError as e:
             print(f"[netscan] export falhou: {e}", flush=True)
 
@@ -493,9 +511,9 @@ class _HistoryView(Gtk.Box):
         for rep in reports:
             ports = sum(len(h.get("ports", [])) for h in rep.get("hosts", []))
             row = Adw.ActionRow()
-            row.set_title(rep.get("target", "?"))
+            row.set_title(_esc(str(rep.get("target", "?"))))
             row.set_subtitle(
-                f"{rep.get('started_at', '?')} · {ports} porta(s) aberta(s)")
+                f"{_esc(str(rep.get('started_at', '?')))} · {ports} porta(s) aberta(s)")
             row.add_prefix(Gtk.Image.new_from_icon_name("network-wired-symbolic"))
             path = rep.get("_file")
             if path:
@@ -529,7 +547,7 @@ def _build_about() -> Gtk.Widget:
     g.add(integra)
     reports = Adw.ActionRow()
     reports.set_title("Relatórios")
-    reports.set_subtitle(str(backend.REPORTS_DIR) + " — clique para abrir")
+    reports.set_subtitle(_esc(str(backend.REPORTS_DIR)) + " — clique para abrir")
     reports.set_subtitle_lines(0)
     reports.add_prefix(Gtk.Image.new_from_icon_name("folder-symbolic"))
     reports.add_suffix(Gtk.Image.new_from_icon_name("adw-external-link-symbolic"))

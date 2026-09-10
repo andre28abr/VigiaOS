@@ -347,7 +347,7 @@ lastb -F -n 100 2>/dev/null
         result = subprocess.run(
             ["pkexec", "bash", "-c", script],
             capture_output=True,
-            text=True,
+            text=True, errors="replace",
             timeout=180,
         )
     except (subprocess.TimeoutExpired, FileNotFoundError):

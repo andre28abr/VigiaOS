@@ -23,6 +23,9 @@ from vigia_common.platform import install_hint  # noqa: E402
 
 from . import backend  # noqa: E402
 
+# Escapa markup Pango em valores vindos de dados (rows usam use-markup=TRUE).
+_esc = GLib.markup_escape_text
+
 
 def build_content() -> Gtk.Widget:
     """Conteúdo auto-contido do Vigia YARA (header próprio + abas)."""
@@ -177,7 +180,7 @@ class _ScanView(Gtk.Box):
     def _detail(self, title: str, value: str) -> Adw.ActionRow:
         r = Adw.ActionRow()
         r.set_title(title)
-        r.set_subtitle(value)
+        r.set_subtitle(_esc(str(value)))
         r.set_subtitle_lines(0)
         r.add_css_class("property")
         return r
@@ -185,8 +188,8 @@ class _ScanView(Gtk.Box):
     def _match_row(self, m: backend.Match) -> Adw.ExpanderRow:
         label, icon, css = _sev(m.severity)
         exp = Adw.ExpanderRow()
-        exp.set_title(Path(m.path).name or m.path)
-        exp.set_subtitle(m.description or m.rule)
+        exp.set_title(_esc(Path(m.path).name or m.path))
+        exp.set_subtitle(_esc(m.description or m.rule))
         exp.set_subtitle_lines(0)
         img = Gtk.Image.new_from_icon_name(icon)
         if css in ("warning", "error"):
@@ -243,15 +246,15 @@ class _ScanView(Gtk.Box):
         if folder is None:
             return
         self._target = folder.get_path()
-        self._target_row.set_title(folder.get_basename() or self._target)
-        self._target_row.set_subtitle(self._target)
+        self._target_row.set_title(_esc(folder.get_basename() or self._target))
+        self._target_row.set_subtitle(_esc(self._target))
 
     # -- scan --
     def _on_ruleset_changed(self, combo: Adw.ComboRow, _param) -> None:
         idx = combo.get_selected()
         if 0 <= idx < len(self._rulesets):
             rs = self._rulesets[idx]
-            combo.set_subtitle(f"{rs.rule_count} regra(s) · {rs.description}")
+            combo.set_subtitle(_esc(f"{rs.rule_count} regra(s) · {rs.description}"))
 
     def _on_scan(self, _btn: Gtk.Button) -> None:
         if self._scanning:
@@ -273,8 +276,12 @@ class _ScanView(Gtk.Box):
         ).start()
 
     def _worker(self, target: str, rules) -> None:
-        result = backend.scan(target, rules=rules)
-        backend.save_report(result)
+        try:
+            result = backend.scan(target, rules=rules)
+            backend.save_report(result)
+        except Exception as e:  # pylint: disable=broad-except
+            # Nunca deixa a thread morrer sem devolver o controle à UI.
+            result = backend.ScanResult(target=target, error=f"Erro interno: {e}")
         GLib.idle_add(self._apply_results, result)
 
     def _apply_results(self, result: backend.ScanResult) -> bool:
@@ -286,7 +293,7 @@ class _ScanView(Gtk.Box):
 
         if result.error:
             row = Adw.ActionRow()
-            row.set_title(f"Erro: {result.error}")
+            row.set_title(_esc(f"Erro: {result.error}"))
             row.set_subtitle_lines(0)
             row.add_prefix(Gtk.Image.new_from_icon_name("dialog-error-symbolic"))
             self._add_result(row)
@@ -353,11 +360,11 @@ class _HistoryView(Gtk.Box):
         for rep in reports:
             n = len(rep.get("matches", []))
             row = Adw.ActionRow()
-            row.set_title(rep.get("target", "?"))
-            row.set_subtitle(
+            row.set_title(_esc(str(rep.get("target", "?"))))
+            row.set_subtitle(_esc(
                 f"{rep.get('started_at', '?')} · {n} match(es) · "
                 f"{rep.get('rules_count', 0)} regra(s)"
-            )
+            ))
             icon = "dialog-warning-symbolic" if n else "emblem-ok-symbolic"
             row.add_prefix(Gtk.Image.new_from_icon_name(icon))
             self._group.add(row)
@@ -385,7 +392,7 @@ def _build_about() -> Gtk.Widget:
     g.add(row)
     rules_row = Adw.ActionRow()
     rules_row.set_title("Pasta de regras")
-    rules_row.set_subtitle(str(backend.RULES_DIR) + " — clique para abrir e adicionar as suas")
+    rules_row.set_subtitle(_esc(str(backend.RULES_DIR)) + " — clique para abrir e adicionar as suas")
     rules_row.set_subtitle_lines(0)
     rules_row.add_prefix(Gtk.Image.new_from_icon_name("folder-symbolic"))
     rules_row.add_suffix(Gtk.Image.new_from_icon_name("adw-external-link-symbolic"))

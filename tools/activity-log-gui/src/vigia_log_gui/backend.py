@@ -113,7 +113,7 @@ def run_bundle(
 
     try:
         result = subprocess.run(
-            cmd, capture_output=True, text=True, timeout=timeout,
+            cmd, capture_output=True, text=True, errors="replace", timeout=timeout,
         )
     except subprocess.TimeoutExpired:
         bundle.raw_error = f"vigia-log demorou mais de {timeout}s. Tente reduzir --limit ou desligar sources."

@@ -41,7 +41,8 @@ def _systemctl(*args: str) -> bool:
         return False
     try:
         r = subprocess.run(["systemctl", "--user", *args],
-                           capture_output=True, text=True, timeout=15)
+                           capture_output=True, text=True, errors="replace",
+                           timeout=15)
         return r.returncode == 0
     except (OSError, subprocess.SubprocessError):
         return False
@@ -83,7 +84,8 @@ def timer_enabled(name: str) -> bool:
     try:
         r = subprocess.run(["systemctl", "--user", "is-enabled",
                             f"{name}.timer"],
-                           capture_output=True, text=True, timeout=10)
+                           capture_output=True, text=True, errors="replace",
+                           timeout=10)
         return r.stdout.strip() == "enabled"
     except (OSError, subprocess.SubprocessError):
         return False

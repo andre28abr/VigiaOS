@@ -44,7 +44,7 @@ def is_package_installed(pkg: str) -> bool:
         result = subprocess.run(
             ["rpm", "-q", pkg],
             capture_output=True,
-            text=True,
+            text=True, errors="replace",
             timeout=5,
         )
         return result.returncode == 0
@@ -62,7 +62,7 @@ def _run_pkg_cmd(cmd: list[str], timeout: int, label: str) -> tuple[bool, str]:
     returncode 126/127 = autenticacao pkexec cancelada."""
     try:
         result = subprocess.run(
-            cmd, capture_output=True, text=True, timeout=timeout,
+            cmd, capture_output=True, text=True, errors="replace", timeout=timeout,
         )
     except subprocess.TimeoutExpired:
         return False, f"{label} excedeu o tempo limite."
@@ -175,7 +175,7 @@ def check_updates() -> UpdateInfo:
     cmd = check_update_command()
     try:
         result = subprocess.run(
-            cmd, capture_output=True, text=True, timeout=180,
+            cmd, capture_output=True, text=True, errors="replace", timeout=180,
         )
     except subprocess.TimeoutExpired:
         info.error = "A checagem excedeu o tempo limite."
