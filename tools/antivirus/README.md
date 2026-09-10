@@ -6,8 +6,9 @@ frequência no GTK4).
 
 ## Status
 
-v0.1.0 — alpha. Funcional para scan on-demand, update de base de assinaturas
-e visualização de findings.
+v0.1.5 — estável. Scan on-demand, update de base de assinaturas,
+visualização de findings, varredura semanal agendada pela casca (timer do
+usuário) e gravação de eventos na Central de Relatórios.
 
 ## Features
 

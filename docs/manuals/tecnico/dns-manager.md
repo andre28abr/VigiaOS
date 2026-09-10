@@ -11,7 +11,7 @@ preservando comentários, e migração 1-click de `systemd-resolved` para
 
 | Item | Valor |
 |---|---|
-| **Pacote** | `vigia-dns-manager` (versão 0.4.1) |
+| **Pacote** | `vigia-dns` (versão 0.4.3) |
 | **App ID** | `br.com.vigia.DnsManager` |
 | **Pacotes wrapped** | `dnscrypt-proxy` |
 | **Privilégios** | `pkexec systemctl` + `pkexec bash -c` (escrita atômica de config) |
@@ -34,11 +34,10 @@ vigia_dns/
     `-- about.py
 ```
 
-> Nota histórica: o código em `tabs/about.py` ainda fala de "Modo
-> simples (systemd-resolved DoT)" vs "Modo avançado (dnscrypt-proxy)" —
-> texto stale da v0.2. Desde v0.3 a tool é **dnscrypt-only**. A v0.4
-> removeu blocklists e stats (ad-blocking é melhor servido por uBlock
-> Origin no navegador).
+> Nota histórica: a v0.2 tinha um "Modo simples" (systemd-resolved DoT)
+> e um "Modo avançado" (dnscrypt-proxy). Desde v0.3 a tool é
+> **dnscrypt-only**. A v0.4 removeu blocklists e stats (ad-blocking é
+> melhor servido por uBlock Origin no navegador).
 
 ### Catálogo de 11 servers
 
@@ -147,7 +146,7 @@ systemctl enable --now systemd-resolved
 |---|---|
 | **Status** | Hero com 4 estados: "não instalado" / "parado" / "Quase lá" (rodando mas resolv.conf não aponta) / "Ativo e seguro". Action bar: Atualizar / Ativar dnscrypt-proxy / Restaurar systemd-resolved. Info group: serviço/versão/listen address. Config group: servers ativos, require DNSSEC, require no-logs. |
 | **Provedores** | Lista os 11 servers em `Adw.ExpanderRow` com badges (DoH/DoT/DNSCrypt, no-logs, DNSSEC, no-filter, country). Aplicar -> `set_servers_blocking([id])` -> edita TOML -> restart dnscrypt-proxy. Banner amarelo se dnscrypt não está ativo. |
-| **Sobre** | 5 seções markup-formatted (NB: parte do texto é v0.2 stale). |
+| **Sobre** | 5 seções markup-formatted. |
 
 ## Quando usar
 
@@ -171,7 +170,6 @@ systemctl enable --now systemd-resolved
   config da conexão não tem `ignore-auto-dns yes`.
 - Anonymized DNS Relay (`anon-cs-fr`) listado mas requer setup
   adicional de `anonymized_dns` no .toml (v0.2.1+).
-- Texto da aba "Sobre" é stale (fala de Modo simples / Modo avançado da v0.2).
 
 ## Trecho de código relevante
 

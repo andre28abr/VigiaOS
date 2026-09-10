@@ -244,15 +244,6 @@ CATALOG: list[CatalogEntry] = [
 ]
 
 
-def by_category() -> dict[str, list[CatalogEntry]]:
-    """Retorna {category: [entries]} preservando ordem do catalogo."""
-    out: dict[str, list[CatalogEntry]] = {}
-    for entry in CATALOG:
-        out.setdefault(entry.category, []).append(entry)
-    # Reordena baseado em CATEGORIES_ORDER
-    return {c: out[c] for c in CATEGORIES_ORDER if c in out}
-
-
 def find_by_package(package: str) -> CatalogEntry | None:
     for e in CATALOG:
         if e.package == package:

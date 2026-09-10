@@ -33,7 +33,7 @@ pip install --user -e .
 vigia-integrity
 ```
 
-Ou via Vigia Hub.
+Ou via VigiaOS (seção Hub).
 
 ## Fluxo tipico
 

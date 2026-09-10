@@ -1,68 +1,71 @@
-# Vigia Hub
+# Casca do VigiaOS (`vigia-hub`)
 
-> Launcher mestre do **VigiaOS**. Em vez de cada ferramenta ter seu próprio
-> ícone no menu do GNOME, o Hub aparece como um único app que lista todas as
-> ferramentas disponíveis e lança cada uma com um clique.
+> A **casca** (shell) do **VigiaOS**: um único app GTK4 + libadwaita que
+> reúne todas as ferramentas numa janela só. O pacote ainda se chama
+> `vigia-hub` por herança — hoje ele é o app inteiro, não só o launcher.
 
 ## Estado
 
-🟡 **v0.1 MVP** — registra Activity Log e Privacy Controls. Detecta automaticamente
-quais estão instaladas (via `shutil.which()` no binário).
+🟢 **v0.12.5** — rail de **5 seções**:
+
+| Seção | O que mostra |
+|---|---|
+| **Início** | Monitor do Sistema em tela cheia (a tool `dashboard`, promovida pra cá) |
+| **Hub** | Master-detail com as **13 ferramentas** do catálogo (`registry.py`), agrupadas por categoria; a primeira é o **Tudo Certo?** (checkup 🟢🟡🔴) |
+| **Red** | Módulos de pentest do `vigia-red` (4 prontos, 3 planejados) atrás de um termo de uso |
+| **Blue** | Módulos de SOC do `vigia-blue` (7 prontos) |
+| **Relatórios** | **Central de Relatórios** — eventos gravados pelas ferramentas (`vigia_common.events`, SQLite `0600`, retenção 180 dias), filtros 7/30/90/365 dias, exportação HTML com selo SHA-256 |
+
+No rodapé do rail: **Configurações** (abas Sobre · Atualizações · Aplicação ·
+Segurança · Ajuda) e o sino de **Notificações**. A **Ajuda** carrega os manuais
+leigos e técnicos de `docs/manuals/` dentro do app.
+
+Recursos da casca: busca rápida `Ctrl+K`, tema Terminal opcional, notificações
+de segurança, varredura de vírus semanal (timer systemd do usuário), autostart
+XDG, ícone na bandeja (subprocess GTK3), bloqueio por senha via Polkit,
+backup/restauração da configuração (`.zip` `0600`).
 
 ## Como funciona
 
-`src/vigia_hub/registry.py` contém uma lista `TOOLS` de `ToolEntry`. Cada entry sabe:
-- `id`, `name`, `description`, `icon`
-- `exec_cmd`: comando para spawnar
-- `needs_terminal`: True para CLI tools (abre em gnome-console/ptyxis/etc.)
-- `needs_root`: True para tools que precisam sudo
-- `available_fn`: lambda que checa se o binário existe
+`src/vigia_hub/registry.py` contém a lista `TOOLS` de `ToolEntry`. Cada entry
+declara `id`, `name`, `description`, `long_description`, `features`,
+`icon_path`, `category`, `wrapped_packages`, `available_fn` (checa se o
+backend existe) e, principalmente, **`embedded_module`** — o módulo Python
+cuja função `build_content()` devolve o widget que a casca embute no painel
+de conteúdo (import lazy, widget cacheado entre trocas).
 
-Window mostra cada tool como `Adw.ActionRow` com ícone, descrição e botão "Abrir".
-Click no botão chama `subprocess.Popen` com os wrappers apropriados:
-- `needs_root=True` → prefix `sudo`
-- `needs_terminal=True` → prefix `<terminal-binary> --`
+Red e Blue não têm `ToolEntry` próprio: seus módulos (`Module`, em
+`vigia_common.shell`) entram pelo **mesmo master-detail** via um adaptador
+`Module → ToolEntry`. A bolinha de disponibilidade nesses casos é **por
+dependência** (`Module.requires`), e a aba *Instalador* mostra o comando de
+instalação de cada uma.
 
-Terminais procurados em ordem: `kgx`, `ptyxis`, `gnome-terminal`, `konsole`, `xterm`, `alacritty`.
+Escalada de privilégio é sempre **dentro de cada ferramenta**, via `pkexec`
+(diálogo Polkit) — a casca nunca prefixa `sudo` em nada.
 
-## Adicionar uma ferramenta nova
+## Adicionar uma ferramenta nova ao Hub
 
-Em `src/vigia_hub/registry.py`, append:
+Em `src/vigia_hub/registry.py`, acrescente um `ToolEntry` apontando
+`embedded_module` para o módulo que expõe `build_content()`; escolha a
+`category` entre as de `CATEGORIES_ORDER`. Roteiro completo (pyproject,
+ícone, manuais leigo/técnico, testes) em
+[DEVELOPMENT.md §7](../../DEVELOPMENT.md#7-como-adicionar-uma-ferramenta-nova).
 
-```python
-ToolEntry(
-    id="selinux-gui",
-    name="SELinux GUI",
-    description="Gerenciador moderno de policies SELinux",
-    icon="br.com.vigia.SelinuxGui",
-    exec_cmd=["vigia-selinux"],
-    needs_terminal=False,
-    needs_root=False,  # internal pkexec, nao precisa sudo no launch
-    available_fn=lambda: shutil.which("vigia-selinux") is not None,
-),
-```
+Reabra o **VigiaOS** (não só a ferramenta — ela roda embarcada) e ela aparece
+na lista.
 
-Salva. Reabre o Hub. Aparece automaticamente.
+## Setup
 
-## Setup na VM
+O jeito recomendado é `install/bootstrap.sh` (ou `install/vigia-setup.sh`),
+que instala tudo em editable mode e registra o `.desktop` do app
+(`data/br.com.vigia.OS.desktop`) + ícone no menu do GNOME. Só o pacote, à mão:
 
 ```bash
 cd ~/dev/VigiaOS/tools/vigia-hub
 pip install --user -e .
-
-# Instalar entry no menu GNOME
-mkdir -p ~/.local/share/applications ~/.local/share/icons/hicolor/scalable/apps
-cp data/br.com.vigia.Hub.desktop ~/.local/share/applications/
-cp data/br.com.vigia.Hub.svg ~/.local/share/icons/hicolor/scalable/apps/
-update-desktop-database ~/.local/share/applications 2>/dev/null || true
+vigia-os          # aliases: vigia-hub / vigia-red / vigia-blue abrem já na seção
 ```
-
-Aperta Super, digita "Vigia Hub". Apenas **1 entry** aparece no menu, em vez
-de uma por ferramenta. Cada tool é lançada de dentro do Hub.
 
 ## Roadmap
 
-- v0.2: status de cada tool (versão instalada, última execução)
-- v0.3: integração via `gio launch <app-id>` (respeita Terminal=true do .desktop, mais portavel)
-- v0.4: settings global da suite (tema, fonte, paths)
-- v0.5: notificações desktop quando tools terminam tarefas longas
+Ver [DEVELOPMENT.md §10](../../DEVELOPMENT.md#10-roadmap).

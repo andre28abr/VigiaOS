@@ -32,8 +32,7 @@ Dashboard de sistema em tempo real — CPU, memoria, disco I/O, rede e processos
 
 v0.2: per-process I/O (substitui iotop), per-process conexoes, alertas configuraveis com notificacao desktop.
 
-Faz parte do VigiaOS — toolkit de seguranca para Fedora Atomic
-(Silverblue, Kinoite, Bluefin, Bazzite, Aurora).
+Faz parte do VigiaOS — toolkit de seguranca para Fedora Workstation.
 
 Comando: vigia-dashboard
 

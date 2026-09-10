@@ -5,7 +5,7 @@
 %global mod_name vigia_common
 
 Name:           %{pkg_name}
-Version:        0.2.21
+Version:        0.3.2
 Release:        1%{?dist}
 Summary:        Helpers compartilhados entre as ferramentas do VigiaOS
 License:        Apache-2.0
@@ -53,6 +53,9 @@ cd tools/vigia-common
 %{python3_sitelib}/%{mod_name}-*.dist-info/
 
 %changelog
+* Thu Sep 10 2026 André Augusto Azarias de Souza <andre@vigia.local> - 0.3.2-1
+- Alinha versao do spec com a tool (0.2.21 -> 0.3.2).
+
 * Tue Jun 02 2026 André Augusto Azarias de Souza <andre@vigia.local> - 0.2.21-1
 - UI: largura do conteudo padronizada em TODO o ecossistema — Adw.Clamp
   1100/900 (era 820/640 no shell e variava 720-1000 nas tools). Conteudo mais

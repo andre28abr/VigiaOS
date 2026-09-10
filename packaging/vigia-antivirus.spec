@@ -32,8 +32,7 @@ Requires:       clamav-update
 %description
 Antivirus on-demand para Linux desktop usando engine ClamAV. Streaming de findings, update via freshclam, banner de estado, reports em ~/.local/share/vigia-antivirus/ mode 0600.
 
-Faz parte do VigiaOS — toolkit de seguranca para Fedora Atomic
-(Silverblue, Kinoite, Bluefin, Bazzite, Aurora).
+Faz parte do VigiaOS — toolkit de seguranca para Fedora Workstation.
 
 Comando: vigia-antivirus
 

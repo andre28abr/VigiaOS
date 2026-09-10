@@ -104,6 +104,57 @@ STATUS_PILL = {
 }
 
 
+def manual_dirs() -> list["Path"]:
+    """Diretórios candidatos dos manuais (mesma convenção do Vigia Hub).
+
+    1. Dev/editable: `<repo>/docs/manuals` (este arquivo mora em
+       tools/vigia-common/src/vigia_common/ → repo = parents[4]).
+    2. Sistema: /usr/share/vigia-hub/manuals e ~/.local/share/vigia-hub/manuals.
+    """
+    from pathlib import Path
+    out: list[Path] = []
+    try:
+        dev = Path(__file__).resolve().parents[4] / "docs" / "manuals"
+        if dev.is_dir():
+            out.append(dev)
+    except (IndexError, OSError):
+        pass
+    for sp in (Path("/usr/share/vigia-hub/manuals"),
+               Path("/usr/local/share/vigia-hub/manuals"),
+               Path.home() / ".local" / "share" / "vigia-hub" / "manuals"):
+        if sp.is_dir():
+            out.append(sp)
+    return out
+
+
+def find_product_manual(product_key: str, module_id: str, kind: str,
+                        dirs: "list[Path] | None" = None) -> "Path | None":
+    """Caminho do manual `docs/manuals/<kind>/<produto>-<módulo>.md`, ou None.
+
+    `kind` é "leigo" ou "tecnico". Os manuais de Red/Blue vivem na mesma pasta
+    dos manuais do Hub, prefixados pela chave do produto (`blue-yara.md`) —
+    assim a aba Ajuda do VigiaOS e a casca standalone leem o MESMO arquivo.
+    """
+    for base in (manual_dirs() if dirs is None else dirs):
+        cand = base / kind / f"{product_key}-{module_id}.md"
+        if cand.is_file():
+            return cand
+    return None
+
+
+def load_product_manual(product_key: str, module_id: str, kind: str) -> str:
+    """Conteúdo Markdown do manual, ou um texto curto dizendo que não existe."""
+    path = find_product_manual(product_key, module_id, kind)
+    if path is None:
+        return (f"# Manual em preparação\n\nEste módulo ainda não tem manual "
+                f"{'técnico' if kind == 'tecnico' else 'simples'}.\n\n"
+                f"Arquivo esperado: `docs/manuals/{kind}/{product_key}-{module_id}.md`.")
+    try:
+        return path.read_text(encoding="utf-8")
+    except OSError as e:
+        return f"# Erro ao ler o manual\n\n`{e}`"
+
+
 def count_by_status(modules: list[Module]) -> dict[str, int]:
     """Quantos módulos em cada status (usado no Instalador / Sobre)."""
     out: dict[str, int] = {}
@@ -411,22 +462,92 @@ def run_product(meta: ProductMeta, modules: list[Module],
         return tv
 
     def _config_page() -> Gtk.Widget:
+        # A casca standalone não tem preferências próprias: os módulos rodam
+        # embarcados no VigiaOS, e é lá (Configurações) que ficam tema, senha
+        # de acesso, notificações e retenção de relatórios.
         sp = _placeholder(
             "preferences-system-symbolic",
             "Configurações",
-            f"As preferências do {meta.name} (tema, atalhos, comportamento) "
-            "chegam aqui. Em breve.",
+            f"O {meta.name} não tem preferências próprias. Tema, senha de "
+            "acesso, notificações e retenção da Central de Relatórios ficam em "
+            "VigiaOS → Configurações.",
         )
         return _content_with_header("Configurações", sp)
 
     def _help_page() -> Gtk.Widget:
-        sp = _placeholder(
-            "help-browser-symbolic",
-            "Ajuda",
-            "Manuais leigos e técnicos (Markdown, renderizados in-app) chegam "
-            "junto com cada módulo — mesmo formato do Vigia Hub.",
-        )
-        return _content_with_header("Ajuda", sp)
+        """Ajuda: lista dos módulos prontos à esquerda; manual Simples/Técnico
+        (Markdown → Pango, via `vigia_common.markdown`) à direita. Lê os mesmos
+        arquivos que a aba Ajuda do VigiaOS (`docs/manuals/<kind>/<produto>-<id>.md`)."""
+        from .markdown import md_to_pango_block
+
+        ready = [m for m in modules if m.status == "pronto"]
+
+        listbox = Gtk.ListBox()
+        listbox.set_selection_mode(Gtk.SelectionMode.SINGLE)
+        listbox.add_css_class("navigation-sidebar")
+        for m in ready:
+            row = Adw.ActionRow()
+            row.set_title(m.name)
+            row.set_use_markup(False)
+            row.add_prefix(Gtk.Image.new_from_icon_name(m.icon))
+            row._module_id = m.id  # type: ignore[attr-defined]
+            listbox.append(row)
+        side_scroll = Gtk.ScrolledWindow()
+        side_scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        side_scroll.set_child(listbox)
+        side_scroll.set_size_request(240, -1)
+
+        labels: dict[str, Gtk.Label] = {}
+        stack = Adw.ViewStack()
+        for kind, title, icon in (("leigo", "Simples", "user-info-symbolic"),
+                                  ("tecnico", "Técnico", "utilities-terminal-symbolic")):
+            lbl = Gtk.Label()
+            lbl.set_use_markup(True)
+            lbl.set_wrap(True)
+            lbl.set_xalign(0.0)
+            lbl.set_valign(Gtk.Align.START)
+            lbl.set_selectable(True)
+            lbl.set_margin_top(12)
+            lbl.set_margin_bottom(24)
+            lbl.set_margin_start(12)
+            lbl.set_margin_end(12)
+            lbl.set_markup(GLib.markup_escape_text(
+                "Escolha um módulo na lista para ver o manual."))
+            labels[kind] = lbl
+            sc = Gtk.ScrolledWindow()
+            sc.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+            sc.set_child(_widen_clamps(Adw.Clamp(child=lbl)))
+            sc.set_vexpand(True)
+            stack.add_titled_with_icon(sc, kind, title, icon)
+
+        def _on_select(_lb, row) -> None:
+            mid = getattr(row, "_module_id", None) if row is not None else None
+            if not mid:
+                return
+            for kind, lbl in labels.items():
+                lbl.set_markup(md_to_pango_block(
+                    load_product_manual(meta.key, mid, kind)))
+
+        listbox.connect("row-selected", _on_select)
+
+        switcher = Adw.ViewSwitcher()
+        switcher.set_stack(stack)
+        switcher.set_policy(Adw.ViewSwitcherPolicy.WIDE)
+        header = Adw.HeaderBar()
+        header.set_title_widget(switcher)
+        content = Adw.ToolbarView()
+        content.add_top_bar(header)
+        content.set_content(stack)
+
+        split = Adw.OverlaySplitView()
+        split.set_sidebar(side_scroll)
+        split.set_content(content)
+        split.set_sidebar_width_fraction(0.28)
+        if not ready:
+            return _content_with_header("Ajuda", _placeholder(
+                "help-browser-symbolic", "Ajuda",
+                "Os manuais aparecem aqui conforme cada módulo fica pronto."))
+        return split
 
     def _about_page() -> Gtk.Widget:
         page = Adw.PreferencesPage()
@@ -436,7 +557,9 @@ def run_product(meta: ProductMeta, modules: list[Module],
         prod.set_description(meta.tagline)
         ver = Adw.ActionRow()
         ver.set_title(meta.name)
-        ver.set_subtitle(f"Versão {meta.version} · esqueleto (módulos em breve)")
+        _ready = count_by_status(modules).get("pronto", 0)
+        ver.set_subtitle(f"Versão {meta.version} · {_ready} de {len(modules)} "
+                         "módulo(s) pronto(s)")
         ver.add_prefix(Gtk.Image.new_from_icon_name("preferences-system-symbolic"))
         prod.add(ver)
         if meta.audience:

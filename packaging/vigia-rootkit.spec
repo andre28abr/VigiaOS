@@ -39,8 +39,7 @@ output em tempo real, KPI cards (testes/warnings/infectados) e historico em
 ~/.local/share/vigia-rootkit/scans/ mode 0600 (JSON pra audit/LGPD). Roda como
 root via pkexec.
 
-Faz parte do VigiaOS — toolkit de seguranca para Fedora Atomic
-(Silverblue, Kinoite, Bluefin, Bazzite, Aurora).
+Faz parte do VigiaOS — toolkit de seguranca para Fedora Workstation.
 
 Comando: vigia-rootkit
 

@@ -76,16 +76,3 @@ def remove_timer(name: str) -> bool:
             ok = False
     _systemctl("daemon-reload")
     return ok
-
-
-def timer_enabled(name: str) -> bool:
-    if not shutil.which("systemctl"):
-        return False
-    try:
-        r = subprocess.run(["systemctl", "--user", "is-enabled",
-                            f"{name}.timer"],
-                           capture_output=True, text=True, errors="replace",
-                           timeout=10)
-        return r.stdout.strip() == "enabled"
-    except (OSError, subprocess.SubprocessError):
-        return False

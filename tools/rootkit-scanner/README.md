@@ -3,7 +3,7 @@
 Wrapper unificado de **chkrootkit** + **Rootkit Hunter** com UI GTK4.
 Parte do [VigiaOS](../../README.md).
 
-v0.2.0: reescrito do zero usando pattern identico ao Antivirus.
+v0.2.4 (a v0.2.0 foi reescrita do zero usando pattern identico ao Antivirus).
 
 ## O que faz
 
@@ -17,13 +17,13 @@ v0.2.0: reescrito do zero usando pattern identico ao Antivirus.
 - `chkrootkit` instalado (sudo dnf install chkrootkit)
 - `rkhunter` instalado (sudo dnf install rkhunter)
 
-Use o **Vigia Tool Installer** pra instalacao 1-click.
+Ou rode `install/bootstrap.sh`, que instala os backends de todas as ferramentas.
 
 ## Como rodar
 
-Normalmente embedded no **Vigia Hub**:
+Normalmente embedded no **VigiaOS** (seção Hub):
 ```bash
-vigia-hub
+vigia-os
 ```
 
 Standalone:

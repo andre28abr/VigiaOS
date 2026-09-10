@@ -8,7 +8,7 @@ visualização nativa em UI moderna, sem terminal.
 
 ## Status
 
-v0.1.0 — alpha. Funcional para todas as métricas principais.
+v0.4.2 — estável. É a seção **Início** do VigiaOS (monitor em tempo real, per-process I/O, alertas, inspetor de syscalls, banda por processo).
 
 ## Features
 

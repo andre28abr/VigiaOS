@@ -5,9 +5,9 @@
 %global mod_name vigia_hub
 
 Name:           %{pkg_name}
-Version:        0.8.2
+Version:        0.12.5
 Release:        1%{?dist}
-Summary:        Launcher mestre do VigiaOS (3 paineis, embedded mode)
+Summary:        VigiaOS — app unificado (Inicio + Hub + Red + Blue + Relatorios)
 License:        Apache-2.0
 URL:            https://github.com/andre28abr/VigiaOS
 Source0:        %{url}/archive/v%{version}.tar.gz#/VigiaOS-%{version}.tar.gz
@@ -26,16 +26,16 @@ Requires:       gtk4
 Requires:       libadwaita
 Requires:       hicolor-icon-theme
 Requires:       vigia-common
+Requires:       python3-markdown
 
 %description
-Vigia Hub e' o launcher mestre do VigiaOS. Apresenta 18+ ferramentas em layout master-detail-content (3 paineis): nav lateral fina com icones + sidebar categorizada (Monitoramento, Privacidade, Defesa, Relatorios) + content embedded.
+VigiaOS e' o aplicativo unificado da suite: secoes Inicio (monitor), Hub (ferramentas defensivas), Red, Blue e Relatorios numa janela so, em layout de 3 paineis (rail com icones + sidebar categorizada + conteudo embarcado).
 
 Tools sao embarcadas diretamente no painel direito (single-window) quando disponiveis; fallback para subprocess se nao embeddable.
 
-Faz parte do VigiaOS — toolkit de seguranca para Fedora Atomic
-(Silverblue, Kinoite, Bluefin, Bazzite, Aurora).
+Faz parte do VigiaOS — toolkit de seguranca para Fedora Workstation.
 
-Comando: vigia-hub
+Comando: vigia-os (alias: vigia-hub)
 
 %prep
 %autosetup -n VigiaOS-%{version}
@@ -50,20 +50,25 @@ cd tools/vigia-hub
     --no-deps --no-index --find-links=../../dist %{pkg_name}
 
 # Desktop entry + icon
-install -Dpm 0644 data/br.com.vigia.*.desktop \
+install -Dpm 0644 data/br.com.vigia.OS.desktop \
     %{buildroot}%{_datadir}/applications/
 install -Dpm 0644 data/br.com.vigia.*.svg \
     %{buildroot}%{_datadir}/icons/hicolor/scalable/apps/
 
-desktop-file-validate %{buildroot}%{_datadir}/applications/br.com.vigia.*.desktop
+desktop-file-validate %{buildroot}%{_datadir}/applications/br.com.vigia.OS.desktop
 
 %files
 %license LICENSE
 %doc tools/vigia-hub/README.md
+%{_bindir}/vigia-os
 %{_bindir}/vigia-hub
+%{_bindir}/vigia-os-tray
+%{_bindir}/vigia-hub-tray
+%{_bindir}/vigia
+%{_bindir}/vigia-scan
 %{python3_sitelib}/%{mod_name}/
 %{python3_sitelib}/%{mod_name}-*.dist-info/
-%{_datadir}/applications/br.com.vigia.*.desktop
+%{_datadir}/applications/br.com.vigia.OS.desktop
 %{_datadir}/icons/hicolor/scalable/apps/br.com.vigia.*.svg
 
 %post
@@ -81,6 +86,11 @@ fi
 /usr/bin/gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 
 %changelog
+* Thu Sep 10 2026 André Augusto Azarias de Souza <andre@vigia.local> - 0.12.5-1
+- Alinha versao do spec com a tool (0.8.2 -> 0.12.5). Um unico .desktop
+  (br.com.vigia.OS); empacota vigia-os, vigia-os-tray, vigia-hub-tray, vigia e
+  vigia-scan; Requires python3-markdown.
+
 * Tue Jun 02 2026 André Augusto Azarias de Souza <andre@vigia.local> - 0.8.2-1
 - UI: largura do conteudo padronizada em 1100/900 (Adw.Clamp), incluindo a
   pagina de detalhe fallback (era 720/600). Consistente com o resto do ecossistema.
@@ -96,7 +106,7 @@ fi
   ('Verificar atualizacoes ao iniciar', default ligado). Read-only, sem root.
 
 * Mon Jun 01 2026 André Augusto Azarias de Souza <andre@vigia.local> - 0.7.6-1
-- Icone limpo (olho, sem wordmark gravado) + reposicionamento: VigiaHub = produto, VigiaOS = ecossistema.
+- Icone limpo (olho, sem wordmark gravado) + reposicionamento: VigiaOS = produto/app, Hub = secao dentro dele.
 
 * Mon Jun 01 2026 André Augusto Azarias de Souza <andre@vigia.local> - 0.7.5-1
 - Aba Sobre (Config): cartao do Autor (bio + links LinkedIn/GitHub) +

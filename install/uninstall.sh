@@ -93,7 +93,7 @@ fi
 # 6) OPCIONAL: backends de sistema (dnf) + stack forense/SOC do VigiaBlue
 if [ $DO_BACKENDS -eq 1 ]; then
     info "Removendo backends de sistema (dnf)..."
-    BACKENDS=(lynis aide chkrootkit rkhunter clamav clamav-update nethogs
+    BACKENDS=(lynis aide chkrootkit rkhunter clamav clamav-update mtr nethogs
               fail2ban dnscrypt-proxy md5deep
               yara suricata tcpdump)            # + stack do VigiaBlue
     run sudo dnf remove -y "${BACKENDS[@]}" || warn "alguns backends não removidos."

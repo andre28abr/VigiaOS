@@ -413,4 +413,17 @@ MANUAL_ENTRIES: list[ManualEntry] = [
     ManualEntry("capabilities-inspector", "Capabilities Inspector", "preferences-system-symbolic"),
     ManualEntry("antivirus", "Antivirus", "security-medium-symbolic"),
     ManualEntry("rootkit-scanner", "Rootkit Scanner", "dialog-warning-symbolic"),
+    # --- VigiaRed (pentest educacional) — docs/manuals/<kind>/red-<módulo>.md
+    ManualEntry("red-recon", "Red · Recon (OSINT)", "system-search-symbolic"),
+    ManualEntry("red-netscan", "Red · Network Scanner", "network-workgroup-symbolic"),
+    ManualEntry("red-vuln", "Red · Vuln Scanner", "dialog-warning-symbolic"),
+    ManualEntry("red-web", "Red · Web Scanner", "web-browser-symbolic"),
+    # --- VigiaBlue (detecção e resposta) — docs/manuals/<kind>/blue-<módulo>.md
+    ManualEntry("blue-yara", "Blue · YARA Hunting", "edit-find-symbolic"),
+    ManualEntry("blue-siem", "Blue · SIEM", "view-list-symbolic"),
+    ManualEntry("blue-ids", "Blue · IDS (Suricata)", "network-wireless-symbolic"),
+    ManualEntry("blue-memory", "Blue · Forense de memória", "drive-harddisk-symbolic"),
+    ManualEntry("blue-timeline", "Blue · Linha do tempo", "x-office-calendar-symbolic"),
+    ManualEntry("blue-intel", "Blue · Threat Intel", "security-high-symbolic"),
+    ManualEntry("blue-playbooks", "Blue · Playbooks", "accessories-text-editor-symbolic"),
 ]

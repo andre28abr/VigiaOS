@@ -15,7 +15,7 @@ Monitor de sistema em tempo real (CPU/RAM/disco/rede/processos) que lê `/proc` 
 | **Path config** | `~/.config/vigia/dashboard-alerts.json` (mode `0600`) |
 | **Path dados** | Sem persistência — histórico em memória, perdido ao fechar |
 | **App ID** | `br.com.vigia.Dashboard` |
-| **Versão** | 0.4.1 |
+| **Versão** | 0.4.2 |
 
 ## Arquitetura interna
 

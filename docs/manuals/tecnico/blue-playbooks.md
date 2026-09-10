@@ -15,7 +15,7 @@ tools/vigia-blue/src/vigia_blue/modules/playbooks/
 └── page.py        # GUI: Playbooks (checklist) / Histórico / Sobre
 
 tests/blue/test_playbooks_backend.py   # 12 testes
-tools/vigia-blue/docs/manuals/{leigo,tecnico}/playbooks.md
+docs/manuals/{leigo,tecnico}/blue-playbooks.md
 ```
 
 ## Backend (`backend.py`) — tudo puro/testável

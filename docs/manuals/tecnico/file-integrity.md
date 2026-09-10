@@ -10,7 +10,7 @@ usuário — duas escalas, mesma lógica de "baseline + diff".
 
 | Item | Valor |
 |---|---|
-| **Pacote** | `vigia-file-integrity` (versão 0.2.0) |
+| **Pacote** | `vigia-integrity` (versão 0.2.6) |
 | **App ID** | `br.com.vigia.FileIntegrity` |
 | **Pacotes wrapped** | `aide`, `coreutils` (hashlib do Python stdlib para hash ad-hoc) |
 | **Privilégios** | AIDE: tudo via `pkexec`. Hash ad-hoc: sem privilégios |
@@ -96,7 +96,7 @@ hashlib.new("sha256").update(chunk)  # 1MB por iteracao
 - **Pós-`sudo dnf upgrade`**: rodar `aide --check`, validar mudanças
   legítimas em `/etc`, clicar "Re-baseline" para aceitar.
 - **Forense / cadeia de custódia**: tab Hash + Verificar com sha256/sha512.
-- **Snapshot de diretório user-space**: tab Baseline para `/home/andre/casos/processo-X`.
+- **Snapshot de diretório user-space**: tab Baseline para `/home/usuario/casos/processo-X`.
 
 ## Limitações conhecidas
 

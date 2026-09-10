@@ -33,7 +33,7 @@ pip install --user -e .
 vigia-hardening
 ```
 
-Ou via Vigia Hub (botao "Abrir").
+Ou via VigiaOS (seção Hub).
 
 ## Estrutura
 

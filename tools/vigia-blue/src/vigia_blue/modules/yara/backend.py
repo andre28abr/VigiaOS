@@ -74,11 +74,6 @@ def yara_available() -> bool:
     return shutil.which("yara") is not None
 
 
-def yara_version() -> str:
-    rc, out, _ = proc.run(["yara", "--version"], timeout=5)
-    return out.strip() if rc == 0 else ""
-
-
 def list_rules(rules_dir: Path | str = RULES_DIR) -> list[Path]:
     """Arquivos de regra (.yar/.yara) num diretório, ordenados."""
     d = Path(rules_dir)

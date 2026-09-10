@@ -31,8 +31,7 @@ Requires:       firewalld
 %description
 GUI para firewalld: status, zona padrao, services e portas por zona. Write via 'pkexec firewall-cmd --permanent --reload'.
 
-Faz parte do VigiaOS — toolkit de seguranca para Fedora Atomic
-(Silverblue, Kinoite, Bluefin, Bazzite, Aurora).
+Faz parte do VigiaOS — toolkit de seguranca para Fedora Workstation.
 
 Comando: vigia-firewall
 

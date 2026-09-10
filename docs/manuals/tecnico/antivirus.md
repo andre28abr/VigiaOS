@@ -36,7 +36,7 @@ Estrutura do report:
 
 ```json
 {
-  "target": "/home/andre/Downloads",
+  "target": "~/Downloads",
   "started_at": "2026-05-28T15:30:00",
   "scanned_files": 1247,
   "scanned_dirs": 89,
@@ -67,7 +67,7 @@ pkexec freshclam
 Scan on-demand (sem root, streaming):
 
 ```bash
-clamscan -r --no-summary=no --bell=no /home/andre/Downloads
+clamscan -r --no-summary=no --bell=no ~/Downloads
 ```
 
 Exit codes do ClamAV (tratados pelo backend):

@@ -1,5 +1,7 @@
 """Constantes de layout padronizadas (Spacing/margens)."""
 
+__version__ = "0.3.2"  # mantenha igual ao pyproject.toml
+
 # Margens externas do container Gtk.Box principal de uma tab
 MARGIN_OUTER_TOP = 24
 MARGIN_OUTER_BOTTOM = 32

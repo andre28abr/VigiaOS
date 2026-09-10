@@ -43,7 +43,7 @@ pip install --user -e .
 vigia-log-gui
 ```
 
-Ou via Vigia Hub.
+Ou via VigiaOS (seção Hub).
 
 ## Fluxo
 

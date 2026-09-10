@@ -25,7 +25,7 @@ tools/vigia-blue/src/vigia_blue/modules/ids/
 └── page.py        # GUI: Alertas / Histórico / Sobre
 
 tests/blue/test_ids_backend.py   # 12 testes
-tools/vigia-blue/docs/manuals/{leigo,tecnico}/ids.md
+docs/manuals/{leigo,tecnico}/blue-ids.md
 ```
 
 ## Backend (`backend.py`)

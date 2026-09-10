@@ -7,7 +7,7 @@
 Name:           %{pkg_name}
 Version:        0.4.3
 Release:        1%{?dist}
-Summary:        Wrapper systemd-resolved com 9 providers DoT
+Summary:        DNS encriptado (DoH/DNSCrypt) via dnscrypt-proxy
 License:        Apache-2.0
 URL:            https://github.com/andre28abr/VigiaOS
 Source0:        %{url}/archive/v%{version}.tar.gz#/VigiaOS-%{version}.tar.gz
@@ -26,13 +26,12 @@ Requires:       gtk4
 Requires:       libadwaita
 Requires:       hicolor-icon-theme
 Requires:       vigia-common
-Requires:       systemd-resolved
+Requires:       dnscrypt-proxy
 
 %description
-Configura systemd-resolved (DNS over TLS). Catalogo de 9 providers: Cloudflare (3 variantes), Quad9, AdGuard (2), Mullvad (2), Google. Backup automatico em .vigia-backup.
+Configura o dnscrypt-proxy como resolvedor DNS do sistema (DoH/DNSCrypt). Catalogo de 11 servers: Cloudflare (3), Quad9 (3), AdGuard (2), Mullvad (2), relay anonimo. Migracao 1-click a partir do systemd-resolved com backup e restauracao.
 
-Faz parte do VigiaOS — toolkit de seguranca para Fedora Atomic
-(Silverblue, Kinoite, Bluefin, Bazzite, Aurora).
+Faz parte do VigiaOS — toolkit de seguranca para Fedora Workstation.
 
 Comando: vigia-dns
 

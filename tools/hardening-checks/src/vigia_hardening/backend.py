@@ -122,10 +122,6 @@ def lynis_installed() -> bool:
     return shutil.which("lynis") is not None
 
 
-def report_exists() -> bool:
-    return REPORT_PATH.is_file()
-
-
 def report_age_minutes() -> int | None:
     if not REPORT_PATH.is_file():
         return None

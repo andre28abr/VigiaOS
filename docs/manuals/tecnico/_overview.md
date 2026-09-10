@@ -4,8 +4,9 @@
 
 VigiaOS é **um app desktop** (GTK4 + libadwaita, `application_id`
 `br.com.vigia.OS`) com um **rail de seções** — **Início** (monitor do
-sistema), **Hub** (14 ferramentas de segurança/privacidade), **Red**
-(pentest, esqueleto) e **Blue** (SOC) — focado em segurança, privacidade
+sistema), **Hub** (13 ferramentas de segurança/privacidade), **Red**
+(pentest, 4 de 7 módulos), **Blue** (SOC, 7 módulos) e **Relatórios**
+(central de eventos das ferramentas) — focado em segurança, privacidade
 e conformidade com LGPD para Fedora Workstation. Lançado por `vigia-os`
 (aliases `vigia-hub`/`vigia-blue`/`vigia-red` abrem o app já na seção).
 
@@ -20,7 +21,7 @@ o mesmo master-detail; Red/Blue entram via adaptador `Module → ToolEntry`.
 | GUI | Python 3.11+ · PyGObject · GTK4 · libadwaita 1 |
 | Lib interna | `vigia-common` (helpers compartilhados) |
 | Activity Log core | Rust + Ratatui (TUI) |
-| Reports | Jinja2 + WeasyPrint (PDF) |
+| Reports | Jinja2 + gráficos SVG (HTML imprimível — sem WeasyPrint) |
 | Tray icon | AyatanaAppIndicator3 (subprocess GTK3) |
 | Autenticação | pkexec + Polkit (via `Gio.Subprocess` async) |
 | State local | JSON em `~/.config/vigia-*/` (chmod 0600) |
@@ -37,14 +38,16 @@ o mesmo master-detail; Red/Blue entram via adaptador `Module → ToolEntry`.
 │ │ - Hub      │ │ Categorias:  │ │ build_content():   │ │
 │ │ - Red      │ │ - Monitor.   │ │   Gtk.Widget       │ │
 │ │ - Blue     │ │ - Privac.    │ │                    │ │
-│ │ ────────── │ │ - Defesa     │ └────────────────────┘ │
-│ │ - Config.  │ │ - Sistema    │                        │
-│ │ - 🔔       │ │ - Reports    │                        │
+│ │ - Relat.   │ │ - Defesa     │ └────────────────────┘ │
+│ │ ────────── │ │ - Sistema    │                        │
+│ │ - Config.  │ │ - Reports    │                        │
+│ │ - 🔔       │ │              │                        │
 │ └────────────┘ └──────────────┘                        │
 └─────────────────────────────────────────────────────────┘
 ```
 
-O rail troca de **seção**; **Início** é a landing (monitor do sistema).
+O rail troca de **seção**; **Início** é a landing (monitor do sistema) e
+**Relatórios** é a Central de Relatórios (eventos de `vigia_common.events`).
 Em Hub/Red/Blue, a sidebar lista os módulos por categoria e cada tool
 exporta `build_content() -> Gtk.Widget`, embedded diretamente no
 `Gtk.Stack` — navegação sem spawnar processos separados. Red/Blue
@@ -147,7 +150,7 @@ separação em subprocess.
 git clone https://github.com/andre28abr/VigiaOS.git ~/dev/VigiaOS
 cd ~/dev/VigiaOS
 (cd tools/vigia-common && pip install --user -e .)
-for d in vigia-hub privacy-controls selinux-gui firewall-gui ...; do
+for d in vigia-hub vigia-red vigia-blue privacy-controls selinux-gui firewall-gui ...; do
   (cd tools/$d && pip install --user -e .)
 done
 vigia-os  # abre o app (aliases: vigia-hub / vigia-blue / vigia-red)

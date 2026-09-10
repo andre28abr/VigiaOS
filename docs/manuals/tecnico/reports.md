@@ -10,7 +10,7 @@ a partir de `journalctl`, `last` e `lastb` — pensado para auditoria LGPD.
 
 | Item | Valor |
 |---|---|
-| **Pacote** | `vigia-reports` (versão 0.2.6) |
+| **Pacote** | `vigia-reports` (versão 0.2.7) |
 | **App ID** | `br.com.vigia.Reports` |
 | **Pacotes wrapped** | `journalctl`, `last`, `lastb` |
 | **Templating** | Jinja2 (`PackageLoader("vigia_reports", "templates")`) |

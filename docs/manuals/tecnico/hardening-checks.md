@@ -16,7 +16,7 @@ escaneável em vez do wall-of-text do terminal.
 | **Stack** | Python 3.11+ · PyGObject · GTK4 · libadwaita 1 |
 | **Path config** | Sem state local — lê `/var/log/lynis-report.dat` (formato chave=valor) |
 | **App ID** | `br.com.vigia.HardeningChecks` |
-| **Versão** | 0.1.2 |
+| **Versão** | 0.1.6 |
 
 ## Arquitetura interna
 

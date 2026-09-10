@@ -11,7 +11,7 @@
 %global mod_name vigia_log_gui
 
 Name:           %{pkg_name}
-Version:        0.1.2
+Version:        0.2.0
 Release:        1%{?dist}
 Summary:        Frontend GTK4 do Vigia Activity Log (parser Rust)
 License:        Apache-2.0
@@ -37,8 +37,7 @@ Requires:       vigia-activity-log
 %description
 GUI Python do parser Rust vigia-log. Consolida audit.log, systemd journal e fail2ban.log numa unica linha do tempo, detecta correlations cross-source, classifica por severidade.
 
-Faz parte do VigiaOS — toolkit de seguranca para Fedora Atomic
-(Silverblue, Kinoite, Bluefin, Bazzite, Aurora).
+Faz parte do VigiaOS — toolkit de seguranca para Fedora Workstation.
 
 Comando: vigia-log-gui
 
@@ -86,6 +85,9 @@ fi
 /usr/bin/gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 
 %changelog
+* Thu Sep 10 2026 André Augusto Azarias de Souza <andre@vigia.local> - 0.2.0-1
+- Alinha versao do spec com a tool (0.1.2 -> 0.2.0).
+
 * Mon Jun 01 2026 André Augusto Azarias de Souza <andre@vigia.local> - 0.1.2-1
 - Icone novo (olho + linhas de log), sem wordmark.
 

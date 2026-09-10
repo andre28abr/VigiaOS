@@ -29,7 +29,7 @@ warn() { echo "  ${Y}!${N} $*"; }
 die()  { echo "  ${R}✗${N} $*" >&2; exit 1; }
 
 case "${1:-}" in
-    -h|--help) sed -n '2,18p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    -h|--help) sed -n '2,19p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
 esac
 
 PCAP="${1:-$HOME/teste/ids/vigia-ids-demo.pcap}"

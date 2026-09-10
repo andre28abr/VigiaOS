@@ -206,7 +206,7 @@ TOOLS: list[ToolEntry] = [
         name="Privacy Controls",
         description="Painel central de toggles de privacidade.",
         long_description=(
-            "Centraliza **13 configurações de privacidade** do GNOME e do sistema "
+            "Centraliza **12 configurações de privacidade** do GNOME e do sistema "
             "que normalmente exigem editar `dconf`, `/etc/selinux/config`, "
             "`systemctl` ou `firewall-cmd` separadamente. Cada toggle muda o "
             "estado **real** do sistema na hora.\n\n"
@@ -240,30 +240,32 @@ TOOLS: list[ToolEntry] = [
     ToolEntry(
         id="dns-manager",
         name="DNS Manager",
-        description="Gerenciador DNS com provedores curados e DoT.",
+        description="DNS encriptado (DoH/DNSCrypt) via dnscrypt-proxy.",
         long_description=(
-            "Gerencia o DNS do sistema via **systemd-resolved**. Catálogo de "
-            "**11 provedores populares** (Cloudflare, Quad9, AdGuard, Mullvad, "
-            "Google, etc.) com descrição + filtros (ads, malware, adulto) e "
+            "Coloca o **dnscrypt-proxy** como resolvedor DNS da máquina e "
+            "cuida da configuração inteira. Catálogo curado de **11 servers** "
+            "(Cloudflare, Quad9, AdGuard, Mullvad + variantes com filtro) "
+            "com descrição, país e selos (DoH/DNSCrypt, sem logs, DNSSEC) e "
             "**1-click apply**.\n\n"
-            "**DNS over TLS (DoT)** encriptado por padrão — sem isso, ISP "
-            "e qualquer um na sua rede vê seu histórico de navegação. "
-            "Substitui o passo-a-passo manual em `/etc/systemd/resolved.conf` "
-            "+ `systemctl restart`.\n\n"
-            "**Backup automático** do config atual antes de aplicar — "
-            "permite voltar com 1 botão. **Flush cache** quando precisar "
-            "forçar nova resolução.\n\n"
-            "Provedores com filtros (Cloudflare Family, AdGuard, Mullvad "
-            "AdBlock) bloqueiam ads/malware/adulto no **nível DNS** — antes "
-            "do navegador nem requisitar. Mais leve que ad-blocker no browser "
-            "e funciona em todos os apps."
+            "Consultas saem **encriptadas por DoH (HTTPS/443) ou DNSCrypt** "
+            "— sem isso, ISP e qualquer um na sua rede vê seu histórico de "
+            "navegação. Substitui editar `/etc/dnscrypt-proxy/dnscrypt-proxy.toml` "
+            "na mão + `systemctl restart`.\n\n"
+            "**Migração com volta garantida**: ao ativar, faz backup do "
+            "`resolved.conf` e do `resolv.conf`, desliga o systemd-resolved e "
+            "aponta o sistema para `127.0.0.1`. **Restaurar systemd-resolved** "
+            "desfaz tudo com 1 botão.\n\n"
+            "Servers com filtro (Cloudflare Family/Security, AdGuard, Mullvad "
+            "AdBlock, Quad9) bloqueiam ads/malware/adulto no **nível DNS** — "
+            "antes do navegador nem requisitar. Mais leve que ad-blocker no "
+            "browser e funciona em todos os apps."
         ),
         features=[
-            "**3 tabs**: Status (provedor + interfaces), Provedores (catálogo), Sobre",
-            "Catálogo com **11 provedores curados** (Cloudflare, Quad9, AdGuard, Mullvad, ...)",
-            "Toggle **DNS over TLS (DoT)** — encripta queries",
-            "Backup automático do `/etc/systemd/resolved.conf` antes de aplicar",
-            "**Flush cache** + **Restaurar padrão** com 1 clique",
+            "**3 tabs**: Status (serviço, servers ativos, DNSSEC/no-logs), Provedores (catálogo), Sobre",
+            "Catálogo com **11 servers curados** (Cloudflare, Quad9, AdGuard, Mullvad, ...) — DoH e DNSCrypt",
+            "**Ativar dnscrypt-proxy** em 1 clique (uma chamada Polkit faz backups + troca o backend)",
+            "Edita o `dnscrypt-proxy.toml` linha a linha, preservando comentários; backup em `.vigia-backup`",
+            "**Restaurar systemd-resolved** com 1 clique (volta ao padrão do Fedora)",
         ],
         icon_path=_TOOLS_DIR / "dns-manager" / "data" / "br.com.vigia.DnsManager.svg",
         exec_cmd=["vigia-dns"],
@@ -271,7 +273,7 @@ TOOLS: list[ToolEntry] = [
         available_fn=lambda: shutil.which("vigia-dns") is not None,
         embedded_module="vigia_dns.window",
         category="privacidade",
-        wrapped_packages=["systemd-resolved", "resolvectl"],
+        wrapped_packages=["dnscrypt-proxy", "systemctl"],
     ),
     ToolEntry(
         id="selinux-gui",
