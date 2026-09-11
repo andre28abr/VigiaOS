@@ -25,6 +25,7 @@ from __future__ import annotations
 import os
 import shutil
 from dataclasses import dataclass, field
+from pathlib import Path
 
 from .platform import install_hint, package_manager
 
@@ -104,14 +105,13 @@ STATUS_PILL = {
 }
 
 
-def manual_dirs() -> list["Path"]:
+def manual_dirs() -> list[Path]:
     """Diretórios candidatos dos manuais (mesma convenção do Vigia Hub).
 
     1. Dev/editable: `<repo>/docs/manuals` (este arquivo mora em
        tools/vigia-common/src/vigia_common/ → repo = parents[4]).
     2. Sistema: /usr/share/vigia-hub/manuals e ~/.local/share/vigia-hub/manuals.
     """
-    from pathlib import Path
     out: list[Path] = []
     try:
         dev = Path(__file__).resolve().parents[4] / "docs" / "manuals"
@@ -128,7 +128,7 @@ def manual_dirs() -> list["Path"]:
 
 
 def find_product_manual(product_key: str, module_id: str, kind: str,
-                        dirs: "list[Path] | None" = None) -> "Path | None":
+                        dirs: list[Path] | None = None) -> Path | None:
     """Caminho do manual `docs/manuals/<kind>/<produto>-<módulo>.md`, ou None.
 
     `kind` é "leigo" ou "tecnico". Os manuais de Red/Blue vivem na mesma pasta
