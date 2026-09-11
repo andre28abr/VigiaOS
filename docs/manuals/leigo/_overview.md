@@ -32,7 +32,7 @@ abre numa janela única. Do lado esquerdo tem uma barrinha que troca de
 🏠 **Início** — o painel que mostra o computador funcionando agora
    (memória, processador, internet) em tempo real
 🔲 **Hub** — as 13 ferramentas de segurança e privacidade
-🔴 **Red** — ferramentas de teste de invasão (4 de 7 prontas; pedem
+🔴 **Red** — ferramentas de teste de invasão (7 prontas; pedem
    aceite de um termo de uso e servem pra testar **o seu** ambiente)
 🔵 **Blue** — detecção e resposta a ameaças (para quem é da área)
 📄 **Relatórios** — a central que guarda o que as ferramentas

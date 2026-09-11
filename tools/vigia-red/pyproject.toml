@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "vigia-red"
-version = "0.6.3"
-description = "VigiaRed — Suíte ofensiva (pentest / red team) do ecossistema VigiaOS. 4 módulos reais: Recon (OSINT), Network Scanner (nmap), Vuln Scanner (nuclei), Web Scanner (wapiti)."
+version = "0.7.0"
+description = "VigiaRed — Suíte ofensiva (pentest / red team) do ecossistema VigiaOS. 7 módulos: Recon (OSINT), Network Scanner (nmap), Vuln Scanner (nuclei), Web Scanner (wapiti), Wireless (aircrack-ng), Exploit (Metasploit), Cracker (john/hashcat)."
 license = { text = "Apache-2.0" }
 requires-python = ">=3.11"
 authors = [{ name = "André Augusto Azarias de Souza" }]

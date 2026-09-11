@@ -3658,6 +3658,55 @@ atacar quando for publicar no COPR.
 
 ---
 
+### 2026-09-10 — VigiaRed COMPLETO: 3 últimos módulos (Wireless, Exploit, Cracker)
+
+Os 3 módulos que faltavam do Red saíram do esqueleto. Decisão do André: fazer
+os três como **laboratório educacional**, atrás do termo de uso, assumindo que
+são os mais dual-use da suíte. Mesmo padrão dos outros: backend puro/testável
+(validado no Mac) + `page.py` (validado na VM) + 2 manuais + testes.
+
+**Vigia Cracker** (`vigia_red.modules.cracker`) — auditoria DEFENSIVA de senhas.
+Dado um arquivo de hashes que o usuário já possui (ex.: `/etc/shadow` do próprio
+servidor), testa quais caem num ataque de dicionário — para exigir a troca das
+fracas. Engines `john` (CPU) e `hashcat` (GPU); catálogo `HASH_TYPES`
+(MD5→sha512crypt, NTLM, bcrypt…); perfis dicionário/regras. Montadores
+`build_john_cmd`/`build_hashcat_cmd` (+ `--show`), parsers `parse_john_show`/
+`parse_hashcat_show`. **O relatório 0600 NÃO grava a senha em claro** — só o
+identificador do hash fraco (`weak_identifiers`). 26 testes.
+
+**Vigia Wireless** (`vigia_red.modules.wireless`) — robustez da senha da PRÓPRIA
+rede Wi-Fi. Responde "minha senha aguenta um dicionário?". Dois passos: (1)
+capturar o handshake — feito **fora do app** (modo monitor + root); a aba Sobre
+documenta e monta os comandos `build_airodump_cmd`/`build_aireplay_deauth_cmd`
+como TEXTO (o app não captura sozinho); (2) testar o `.cap` com `aircrack-ng`
+(`build_aircrack_cmd`, `parse_aircrack_output`, `capture_has_handshake`) — o
+único passo que o app executa. "Só na sua rede / Lei 12.737/2012" repetido.
+Relatório 0600 sem a senha em claro. 24 testes.
+
+**Vigia Exploit** (`vigia_red.modules.exploit`) — explorador EDUCACIONAL do
+Metasploit. (1) Buscar/ler info de módulos (`run_search`/`get_module_info`,
+`parse_search_table`) — não toca em alvo; a busca é sanitizada
+(`sanitize_query`) para não emendar comandos no `-x` do msfconsole. (2) Gerar
+payload de LABORATÓRIO com `msfvenom` (`build_msfvenom_cmd`) — **sem `-x`
+(embutir em .exe real), sem `-e`/`-i` (encoders de evasão)**: payload padrão,
+detectável por qualquer AV, para praticar contra alvo de treino próprio
+(Metasploitable). Payloads e formatos são catálogos curados; LHOST validado como
+IP; saída 0600 em `~/.local/share/vigia-exploit/payloads`. 24 testes.
+
+**Fiação**: `registry.py` — os 3 viraram `status="pronto"` com `impl=...page` e
+`requires` (aircrack-ng rpm / metasploit source-installer Rapid7 / john+hashcat
+rpm). `MANUAL_ENTRIES` (vigia_hub/manuals.py) ganhou as 3 entradas → aparecem na
+Ajuda do VigiaOS. Manuais em `docs/manuals/{leigo,tecnico}/red-{wireless,exploit,
+cracker}.md` (teste de cobertura já exigia). `test_adapters` atualizado (7 reais).
+Contagens "4 de 7" → 7 no README/manuais/vigia-setup.sh. VigiaRed **v0.7.0**.
+Suíte: **1460 verdes** (+~74 testes). Runner cancelável `ScanProcess` e portão
+`gate.build_gated` reusados; nenhum backend externo roda no Mac (páginas
+validadas por `compileall`, GUI conferida na VM).
+
+Com isso o **VigiaRed fica 7/7** — a seção Red deixa de ter módulos planejados.
+
+---
+
 ## 10. Roadmap
 
 ### 10.1 Próximas iterações por ferramenta
