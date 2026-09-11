@@ -58,7 +58,7 @@ identidade visual (zinc + emerald) e os padrões de UI (GTK4 + libadwaita).
 |---|---|---|---|
 | **Início** | Todos | Monitor do sistema em tempo real (CPU/RAM/disco/rede/processos) | 🟢 Ativo |
 | **Hub** | Advogado, profissional liberal, escritório LGPD | Segurança + privacidade + hardening + auditoria **single-host** (13 ferramentas) | 🟢 Ativo |
-| **Red** | Pentester, red team | Ferramentas **ofensivas** com GUI (OSINT, scanner de rede, vuln, web) + termo de uso (Lei 12.737/12) | 🟠 4 de 7 módulos prontos |
+| **Red** | Pentester, red team | Ferramentas **ofensivas** com GUI (OSINT, scanner de rede, vuln, web, Wi-Fi, Metasploit, senhas) + termo de uso (Lei 12.737/12) | 🟢 7 módulos prontos |
 | **Blue** | Blue team, analista de SOC | **Detecção e resposta** (SIEM-lite, IDS, YARA hunting, forense de memória, threat intel) | 🟢 7 módulos prontos |
 | **Relatórios** | Todos | **Central de Relatórios** — eventos das ferramentas (recon/scan/vuln/web/antivírus/rootkit) em SQLite local `0600`, retenção LGPD 180 dias, filtros 7/30/90/365 dias, exportação HTML com selo SHA-256 | 🟢 Ativo |
 
@@ -147,7 +147,7 @@ vive na seção **Início**; as **13 ferramentas da seção Hub** são as linhas
 Controls, DNS Manager, SELinux Manager, Firewall Manager, Network Monitor,
 Hardening Checks, Reports, File Integrity, Capabilities Inspector, Rootkit
 Scanner e Antivirus. As **Atualizações** — antigo "Tool Installer" — viraram
-uma aba dentro de Configurações. Fora do Hub ficam ainda os 4 módulos prontos
+uma aba dentro de Configurações. Fora do Hub ficam ainda os 7 módulos prontos
 do **Red** (Recon, Network Scanner, Vuln Scanner, Web Scanner), os 7 do
 **Blue** (YARA, SIEM, IDS, Memória, Timeline, Intel, Playbooks) e a **Central
 de Relatórios**.)*

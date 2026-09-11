@@ -204,9 +204,10 @@ def test_adapts_real_red_registry():
     tools = [module_to_tool(m, "red") for m in MODULES]
     assert len(tools) == len(MODULES)
     assert all(t.id.startswith("red:") for t in tools)
-    # Recon (OSINT), Network Scanner (nmap), Vuln Scanner (nuclei) e Web Scanner
-    # (wapiti) são os módulos reais; o resto é esqueleto.
-    real = {"red:recon", "red:netscan", "red:vuln", "red:web"}
+    # Os 7 módulos do Red estão prontos (recon, netscan, vuln, web, wireless,
+    # exploit, cracker) — cada um com backend + página embarcada.
+    real = {"red:recon", "red:netscan", "red:vuln", "red:web",
+            "red:wireless", "red:exploit", "red:cracker"}
     for t in tools:
         if t.id in real:
             assert not t.is_planned

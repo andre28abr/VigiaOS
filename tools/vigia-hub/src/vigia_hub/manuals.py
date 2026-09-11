@@ -418,6 +418,9 @@ MANUAL_ENTRIES: list[ManualEntry] = [
     ManualEntry("red-netscan", "Red · Network Scanner", "network-workgroup-symbolic"),
     ManualEntry("red-vuln", "Red · Vuln Scanner", "dialog-warning-symbolic"),
     ManualEntry("red-web", "Red · Web Scanner", "web-browser-symbolic"),
+    ManualEntry("red-wireless", "Red · Wireless (Wi-Fi)", "network-wireless-symbolic"),
+    ManualEntry("red-exploit", "Red · Exploit (Metasploit)", "utilities-terminal-symbolic"),
+    ManualEntry("red-cracker", "Red · Cracker (senhas)", "dialog-password-symbolic"),
     # --- VigiaBlue (detecção e resposta) — docs/manuals/<kind>/blue-<módulo>.md
     ManualEntry("blue-yara", "Blue · YARA Hunting", "edit-find-symbolic"),
     ManualEntry("blue-siem", "Blue · SIEM", "view-list-symbolic"),

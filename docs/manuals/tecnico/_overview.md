@@ -5,7 +5,7 @@
 VigiaOS é **um app desktop** (GTK4 + libadwaita, `application_id`
 `br.com.vigia.OS`) com um **rail de seções** — **Início** (monitor do
 sistema), **Hub** (13 ferramentas de segurança/privacidade), **Red**
-(pentest, 4 de 7 módulos), **Blue** (SOC, 7 módulos) e **Relatórios**
+(pentest, 7 módulos), **Blue** (SOC, 7 módulos) e **Relatórios**
 (central de eventos das ferramentas) — focado em segurança, privacidade
 e conformidade com LGPD para Fedora Workstation. Lançado por `vigia-os`
 (aliases `vigia-hub`/`vigia-blue`/`vigia-red` abrem o app já na seção).

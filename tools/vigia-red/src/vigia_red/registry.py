@@ -1,8 +1,8 @@
 """Registro de módulos do VigiaRed (pentest / red team).
 
-Esqueleto: nomes, ícones, categorias e o que cada módulo vai integrar. Os
-backends entram depois, módulo a módulo, com termo de uso na 1ª execução
-(Lei 12.737/2012).
+7 módulos, todos prontos e com backend puro + GUI (`Module.impl`): recon,
+netscan, vuln, web, wireless, exploit, cracker. Todos passam pelo termo de uso
+na 1ª execução (Lei 12.737/2012) — uso só em sistemas próprios/autorizados.
 """
 
 from __future__ import annotations
@@ -13,10 +13,10 @@ META = ProductMeta(
     key="red",
     name="VigiaRed",
     app_id="br.com.vigia.Red",
-    version="0.6.3",
+    version="0.7.0",
     tagline=(
         "Suíte ofensiva (pentest / red team) com interface gráfica moderna — "
-        "parte do ecossistema VigiaOS. Esqueleto: os módulos chegam um a um."
+        "parte do ecossistema VigiaOS. 7 módulos, todos atrás de termo de uso."
     ),
     accent="#ef4444",
     audience="Pentester, red team, security researcher.",
@@ -113,32 +113,65 @@ MODULES: list[Module] = [
     Module(
         id="wireless", name="Vigia Wireless", category="wireless",
         icon="network-wireless-symbolic",
-        summary="Auditoria de redes Wi-Fi",
-        description="Auditoria de segurança de redes sem fio próprias: captura "
-                    "de handshake e teste de robustez de senha.",
-        wraps=["aircrack-ng", "wifite"],
-        features=["Captura de handshake WPA/WPA2", "Teste de força de senha",
-                  "Inventário de redes ao alcance"],
+        summary="Robustez da senha da SUA rede Wi-Fi",
+        description="Auditoria da SUA própria rede sem fio: testa se a senha do "
+                    "Wi-Fi resiste a um ataque de dicionário sobre um handshake "
+                    "capturado. Responde 'minha senha aguenta?', não serve para "
+                    "acessar rede alheia (Lei 12.737/2012).",
+        wraps=["aircrack-ng"],
+        features=["Testa handshake WPA/WPA2 contra wordlist",
+                  "Monta o passo de captura (airodump-ng) — documentado",
+                  "Relatório 0600 (sem salvar a senha em claro no histórico)"],
+        status="pronto",
+        impl="vigia_red.modules.wireless.page",
+        requires=(Dependency(
+            "aircrack-ng", ("aircrack-ng",), "rpm", "aircrack-ng",
+            note="Suíte de auditoria Wi-Fi. A CAPTURA do handshake exige placa "
+                 "em modo monitor + root; o TESTE só precisa do .cap."),),
     ),
     Module(
         id="exploit", name="Vigia Exploit", category="exploit",
         icon="utilities-terminal-symbolic",
-        summary="Framework de exploração (Metasploit)",
-        description="Front-end gráfico leve para seleção de módulos, payloads "
-                    "e sessões do Metasploit Framework.",
+        summary="Explorador educacional do Metasploit",
+        description="Aprenda como um framework de exploração é organizado: busca "
+                    "e informação de módulos do Metasploit, e geração de payload "
+                    "para praticar contra um alvo de LABORATÓRIO seu (ex.: "
+                    "Metasploitable). Não embute payload em executável real nem "
+                    "evade antivírus — é para estudo.",
         wraps=["metasploit-framework"],
-        features=["Busca de módulos/exploits", "Geração de payload",
-                  "Gestão de sessões"],
+        features=["Busca e info de módulos (não toca em alvo)",
+                  "Geração de payload de laboratório (msfvenom, 0600)",
+                  "Enquadrado em alvos próprios/de treino (Lei 12.737/2012)"],
+        status="pronto",
+        impl="vigia_red.modules.exploit.page",
+        requires=(Dependency(
+            "metasploit-framework", ("msfconsole", "msfvenom"), "source",
+            "metasploit-framework",
+            install="curl https://raw.githubusercontent.com/rapid7/"
+                    "metasploit-omnibus/master/config/templates/"
+                    "metasploit-framework-wrappers/msfupdate.erb > /tmp/msfinstall "
+                    "&& chmod +x /tmp/msfinstall && sudo /tmp/msfinstall",
+            note="Framework de exploração (grande, ~1 GB). Instalador oficial "
+                 "Rapid7 — não está nos repositórios padrão do Fedora."),),
     ),
     Module(
         id="cracker", name="Vigia Cracker", category="password",
         icon="dialog-password-symbolic",
-        summary="Auditoria de senhas e hashes",
-        description="Teste de robustez de hashes/senhas com wordlists e regras "
-                    "(auditoria autorizada).",
-        wraps=["hashcat", "john"],
-        features=["Ataque por dicionário e regras", "GPU (hashcat)",
-                  "Identificação de tipo de hash"],
+        summary="Robustez de senhas/hashes (auditoria)",
+        description="Auditoria DEFENSIVA de senhas: dado um arquivo de hashes que "
+                    "VOCÊ já possui (ex.: /etc/shadow do seu servidor), testa "
+                    "quais senhas são fracas o bastante para cair num ataque de "
+                    "dicionário — para exigir a troca delas.",
+        wraps=["john", "hashcat"],
+        features=["Ataque por dicionário (+ regras) com john ou hashcat",
+                  "Catálogo de tipos de hash comuns (MD5→sha512crypt, NTLM…)",
+                  "Relatório 0600 (guarda só o identificador do hash fraco)"],
+        status="pronto",
+        impl="vigia_red.modules.cracker.page",
+        requires=(Dependency(
+            "John the Ripper (ou hashcat)", ("john", "hashcat"), "rpm", "john",
+            note="john roda em CPU (sem setup). hashcat usa GPU (mais rápido) — "
+                 "instale com: sudo dnf install hashcat."),),
     ),
 ]
 

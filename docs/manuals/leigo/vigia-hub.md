@@ -34,7 +34,7 @@ A barrinha da esquerda troca de **seção**:
 
 - **Início** — o painel do sistema em tempo real (CPU, RAM, disco, rede, processos). É a tela que abre primeiro.
 - **Hub** — a lista das 13 ferramentas. Clica e ela abre. A primeira da lista é o **Tudo Certo?** (um semáforo 🟢🟡🔴 que checa se o computador está seguro de relance). As outras principais são **Activity Log** (logs traduzidos), **Privacy Controls** (toggles de privacidade), **Firewall**, **Antivirus**, **Reports** e mais.
-- **Red** — ferramentas de teste de invasão (4 de 7 prontas). Antes de liberar, pede o aceite de um **termo de uso**: é pra testar **o seu** computador ou rede, nunca a dos outros.
+- **Red** — ferramentas de teste de invasão (7 prontas). Antes de liberar, pede o aceite de um **termo de uso**: é pra testar **o seu** computador ou rede, nunca a dos outros.
 - **Blue** — detecção e resposta a ameaças (para quem é da área de segurança).
 - **Relatórios** — a central que guarda o que as ferramentas encontraram (varreduras, vírus, rootkits) por período (7, 30, 90, 365 dias) e exporta um relatório em HTML com selo de integridade.
 

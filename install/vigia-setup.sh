@@ -253,7 +253,7 @@ prow "Produto"   "Pkgs" "O que instala"
 psep
 prow "Hub (launcher + tools)" "${#HUB_MODS[@]}"  "14 tools embarcadas + launcher"
 prow "VigiaBlue"              "${#BLUE_MODS[@]}" "7 modulos prontos"
-prow "VigiaRed"              "${#RED_MODS[@]}"  "4 de 7 modulos prontos"
+prow "VigiaRed"              "${#RED_MODS[@]}"  "7 modulos prontos"
 pbot
 echo "  ${DIM}pip --user (editável). Tudo roda embarcado no VigiaOS — só ele${NC}"
 echo "  ${DIM}vira ícone no menu (Hub/Red/Blue são seções dentro dele).${NC}"
