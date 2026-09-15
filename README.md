@@ -11,14 +11,14 @@
 > ferramentas sobre o Fedora vanilla.
 
 [![ci](https://github.com/andre28abr/VigiaOS/actions/workflows/ci.yml/badge.svg)](https://github.com/andre28abr/VigiaOS/actions/workflows/ci.yml)
-![Status](https://img.shields.io/badge/status-v0.x%20ativo%20%C2%B7%20auditado-success)
+![Status](https://img.shields.io/badge/status-v0.8.0%20%C2%B7%20auditado-success)
 ![Python](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white)
+![Rust](https://img.shields.io/badge/Rust-Activity%20Log%20core-000000?logo=rust&logoColor=white)
 ![GTK4](https://img.shields.io/badge/GTK4-libadwaita-4A86CF?logo=gnome&logoColor=white)
-![Rust](https://img.shields.io/badge/Rust-Activity%20Log%20core-dea584?logo=rust&logoColor=black)
-![Tests](https://img.shields.io/badge/tests-1460%20python%20%2B%2028%20rust-success)
-![License](https://img.shields.io/badge/license-Apache--2.0-orange)
 ![Fedora](https://img.shields.io/badge/Fedora-Workstation-51A2DA?logo=fedora&logoColor=white)
+![Tests](https://img.shields.io/badge/tests-1460%20python%20%2B%2028%20rust-success)
 ![LGPD](https://img.shields.io/badge/LGPD-by%20design-10b981)
+![License](https://img.shields.io/badge/license-Apache--2.0-orange)
 
 > **Projeto educacional.** O VigiaOS é um projeto de **estudo** — citado pelo
 > autor como material didático — com foco em segurança **defensiva** (blue
@@ -43,13 +43,35 @@ Desde 2025 conduz, como **product owner técnico**, projetos open-source de segu
 
 ### 📂 Outros projetos do autor
 
-- **[SentinelBR](https://github.com/andre28abr/SentinelBR-platform)**: plataforma open-source de SIEM + LGPD para PMEs brasileiras: agente Go com gRPC e mTLS, detecção em tempo real, resposta automatizada e compliance LGPD nativa, multi-tenant.
-- **[Plataforma LGPD](https://github.com/andre28abr/lgpd-platform)**: plataforma web multi-tenant que treina, avalia e certifica os setores de uma empresa em LGPD e dá ao DPO as ferramentas de operação (ROPA, RIPD, direitos do titular, incidentes).
-- **[Peapod](https://github.com/andre28abr/Peapod)**: sandboxes isolados e descartáveis para agentes de IA (MCP, CLI, dashboard web e app nativo de macOS): rede desligada por padrão, allowlist de domínios e trilha de auditoria. Go e Swift.
-- **[Uptend](https://github.com/andre28abr/Uptend)**: app nativo de macOS para configurar e manter o Mac e auditar servidores Linux: coletor portátil, relatórios, correlação com CVEs, MITRE ATT&CK, lente LGPD e playbook de hardening com rollback. Swift 6.
-- **[banana](https://github.com/andre28abr/banana)**: editor local-first de notas Markdown, código e PDF, com vault cifrado (Argon2id + AES-256-GCM). Tauri 2, Rust e Svelte 5.
+**[SentinelBR](https://github.com/andre28abr/SentinelBR-platform)** ![Python](https://img.shields.io/badge/-Python-3776AB?logo=python&logoColor=white) ![Go](https://img.shields.io/badge/-Go-00ADD8?logo=go&logoColor=white) ![React](https://img.shields.io/badge/-React-20232A?logo=react&logoColor=61DAFB)<br>
+Plataforma open-source de **SIEM + LGPD** para PMEs brasileiras: agente Go com gRPC e mTLS, detecção em tempo real, resposta automatizada e compliance LGPD nativa, multi-tenant. 225 testes, CI em 16 jobs.
+
+**[Plataforma LGPD](https://github.com/andre28abr/lgpd-platform)** ![Python](https://img.shields.io/badge/-Python-3776AB?logo=python&logoColor=white) ![Flask](https://img.shields.io/badge/-Flask-000000?logo=flask&logoColor=white) ![PostgreSQL](https://img.shields.io/badge/-PostgreSQL-4169E1?logo=postgresql&logoColor=white)<br>
+Plataforma web multi-tenant que **treina, avalia e certifica** os setores de uma empresa em LGPD e dá ao DPO as ferramentas de operação: ROPA, RIPD, direitos do titular e incidentes. 121 testes, 95% de cobertura.
+
+**[Peapod](https://github.com/andre28abr/Peapod)** ![Go](https://img.shields.io/badge/-Go-00ADD8?logo=go&logoColor=white) ![Swift](https://img.shields.io/badge/-Swift-F05138?logo=swift&logoColor=white) ![Docker](https://img.shields.io/badge/-Docker-2496ED?logo=docker&logoColor=white)<br>
+Sandboxes **isolados e descartáveis para agentes de IA**, dirigidos por MCP, CLI, dashboard web e app nativo de macOS: rede desligada por padrão, allowlist de domínios, trilha de auditoria. Distribuído por Homebrew.
+
+**[Uptend](https://github.com/andre28abr/Uptend)** ![Swift 6](https://img.shields.io/badge/-Swift%206-F05138?logo=swift&logoColor=white) ![macOS](https://img.shields.io/badge/-macOS-000000?logo=apple&logoColor=white)<br>
+App nativo de macOS para **configurar e manter o Mac** e **auditar servidores Linux**: coletor portátil, relatórios, correlação com CVEs, MITRE ATT&CK, lente LGPD e playbook de hardening com rollback. 428 testes, zero warnings.
+
+**[banana](https://github.com/andre28abr/banana)** ![Rust](https://img.shields.io/badge/-Rust-000000?logo=rust&logoColor=white) ![Tauri 2](https://img.shields.io/badge/-Tauri%202-24C8D8?logo=tauri&logoColor=white) ![Svelte 5](https://img.shields.io/badge/-Svelte%205-FF3E00?logo=svelte&logoColor=white)<br>
+Editor **local-first** de notas Markdown, código e PDF, com vault cifrado (Argon2id + AES-256-GCM). 393 testes.
 
 Todos os projetos, com o porquê de cada um, no perfil [github.com/andre28abr](https://github.com/andre28abr).
+
+---
+
+## Sumário
+
+1. [O que tem dentro](#-o-que-tem-dentro)
+2. [Por que não uma distro?](#por-que-não-uma-distro)
+3. [O app VigiaOS](#-o-app-vigiaos)
+4. [O que está incluído (13 ferramentas na seção Hub + Início + Atualizações)](#o-que-está-incluído-13-ferramentas-na-seção-hub--início--atualizações)
+5. [Instalação](#instalação)
+6. [Histórico](#histórico)
+7. [Documentação](#documentação)
+8. [Licença](#licença)
 
 ---
 
