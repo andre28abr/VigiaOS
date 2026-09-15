@@ -10,11 +10,12 @@
 > eventos das ferramentas). Tudo em português — **não é uma distro**, são
 > ferramentas sobre o Fedora vanilla.
 
+[![ci](https://github.com/andre28abr/VigiaOS/actions/workflows/ci.yml/badge.svg)](https://github.com/andre28abr/VigiaOS/actions/workflows/ci.yml)
 ![Status](https://img.shields.io/badge/status-v0.x%20ativo%20%C2%B7%20auditado-success)
 ![Python](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white)
 ![GTK4](https://img.shields.io/badge/GTK4-libadwaita-4A86CF?logo=gnome&logoColor=white)
 ![Rust](https://img.shields.io/badge/Rust-Activity%20Log%20core-dea584?logo=rust&logoColor=black)
-![Tests](https://img.shields.io/badge/tests-1377%20passing-success)
+![Tests](https://img.shields.io/badge/tests-1460%20python%20%2B%2028%20rust-success)
 ![License](https://img.shields.io/badge/license-Apache--2.0-orange)
 ![Fedora](https://img.shields.io/badge/Fedora-Workstation-51A2DA?logo=fedora&logoColor=white)
 ![LGPD](https://img.shields.io/badge/LGPD-by%20design-10b981)
@@ -44,7 +45,15 @@ Atualmente em **transição de carreira, com disponibilidade imediata**, conduzi
 
 **[SentinelBR](https://github.com/andre28abr/SentinelBR-platform)** — Plataforma open-source de **SIEM + LGPD** para PMEs brasileiras. Onde o VigiaOS cuida da *estação de trabalho*, o SentinelBR cuida da *infraestrutura*: agente Go (gRPC mTLS), detecção em tempo real (Sigma-style + YARA + OSV.dev), resposta automatizada (SOAR-lite) e compliance LGPD nativa, multi-tenant. Stack: Python 3.12 / FastAPI / Go 1.25 / React 19 / PostgreSQL / Loki.
 
-**SC Platform** *(privado, sob NDA — disponível para apresentação em entrevistas mediante solicitação)* — SaaS multi-tenant pra gestão de licitações públicas (PNCP, simulador da Lei 14.133, robô de lances, extração de PDF com IA local, CRM). 75k+ linhas, 420 testes.
+**[Plataforma LGPD](https://github.com/andre28abr/lgpd-platform)** — Plataforma web multi-tenant que **treina, avalia e opera** a conformidade com a LGPD: diagnóstico de maturidade, ROPA (Art. 37), RIPD (Art. 38), direitos do titular (Art. 18) e resposta a incidentes (Art. 48).
+
+**[Peapod](https://github.com/andre28abr/Peapod)** — Sandboxes **isolados e descartáveis para agentes de IA** (MCP, CLI, dashboard web e app nativo de macOS): rede desligada por padrão, allowlist de domínios e trilha de auditoria.
+
+**[Uptend](https://github.com/andre28abr/Uptend)** — App nativo de macOS para **configurar e manter o Mac** e **auditar servidores Linux**: coletor portátil, relatórios, CVEs, MITRE, lente LGPD e playbook de hardening com rollback (Swift 6 + SwiftUI).
+
+**[banana](https://github.com/andre28abr/banana)** — Editor **local-first** de notas Markdown, código e PDF (Tauri 2 + Rust + Svelte 5), com vault cifrado (Argon2id + AES-256-GCM).
+
+**SC Platform** *(privado, sob NDA — disponível para apresentação em entrevistas mediante solicitação)* — SaaS multi-tenant pra gestão de licitações públicas (PNCP, simulador da Lei 14.133, robô de lances, extração de PDF com IA local, CRM). 75k+ linhas, 547 testes.
 
 ---
 

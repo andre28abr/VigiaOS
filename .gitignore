@@ -28,8 +28,8 @@ build/
 # Packaging local builds (gerados pelo Makefile)
 packaging/rpmbuild/
 
-# Notas locais de contexto (so para consulta do Claude — nao publica)
+# Notas locais de contexto (nao publica). CLAUDE.md e' publico: descreve o escopo
+# do projeto e o README aponta para ele.
 CONTEXT.md
-CLAUDE.md
 NOTES.md
 *.local.md
