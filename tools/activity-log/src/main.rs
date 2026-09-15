@@ -138,12 +138,21 @@ fn main() -> Result<()> {
     // Live mode so faz sentido em TUI
     let live = if cli.follow && matches!(cli.output, Output::Tui) {
         let mut ls = live::LiveSources::new(
-            cli.sources.contains(&Source::Audit).then(|| cli.audit_path.clone()),
-            cli.sources.contains(&Source::Journald).then(|| cli.journal_path.clone()),
-            cli.sources.contains(&Source::Fail2ban).then(|| cli.fail2ban_path.clone()),
+            cli.sources
+                .contains(&Source::Audit)
+                .then(|| cli.audit_path.clone()),
+            cli.sources
+                .contains(&Source::Journald)
+                .then(|| cli.journal_path.clone()),
+            cli.sources
+                .contains(&Source::Fail2ban)
+                .then(|| cli.fail2ban_path.clone()),
         );
         ls.init_with_seen(&events);
-        Some((ls, std::time::Duration::from_secs(cli.refresh_interval.max(1))))
+        Some((
+            ls,
+            std::time::Duration::from_secs(cli.refresh_interval.max(1)),
+        ))
     } else {
         None
     };
@@ -159,7 +168,11 @@ fn main() -> Result<()> {
 }
 
 fn load_events(cli: &Cli) -> Result<Vec<Event>> {
-    let per_source_limit = if cli.limit == 0 { usize::MAX } else { cli.limit };
+    let per_source_limit = if cli.limit == 0 {
+        usize::MAX
+    } else {
+        cli.limit
+    };
     let mut all: Vec<Event> = Vec::new();
 
     if cli.sources.contains(&Source::Audit) {
@@ -181,15 +194,17 @@ fn load_events(cli: &Cli) -> Result<Vec<Event>> {
                 if file_exists_or_stdin(path) {
                     trim_last_n(load_journal_file(path)?, per_source_limit)
                 } else {
-                    eprintln!("warn: source 'journald' arquivo {} nao existe — pulando", path);
+                    eprintln!(
+                        "warn: source 'journald' arquivo {} nao existe — pulando",
+                        path
+                    );
                     Vec::new()
                 }
             }
-            None => journal::fetch_via_journalctl(per_source_limit)
-                .unwrap_or_else(|e| {
-                    eprintln!("warn: source 'journald' falhou ({e}) — pulando");
-                    Vec::new()
-                }),
+            None => journal::fetch_via_journalctl(per_source_limit).unwrap_or_else(|e| {
+                eprintln!("warn: source 'journald' falhou ({e}) — pulando");
+                Vec::new()
+            }),
         };
         all.extend(journal_entries.into_iter().map(Event::Journal));
     }
@@ -409,9 +424,7 @@ fn print_json_bundle(
 
     let bundle = Bundle {
         version: 1,
-        generated_at: chrono::Local::now()
-            .format("%Y-%m-%d %H:%M:%S")
-            .to_string(),
+        generated_at: chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string(),
         sources: sources_str,
         events_count: events_wire.len(),
         correlations_count: correlations_wire.len(),

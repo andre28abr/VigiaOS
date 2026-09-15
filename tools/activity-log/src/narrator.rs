@@ -30,9 +30,9 @@ fn narrate_audit(event: &AuditEvent) -> String {
             "{ts} — SELinux erro em operacao de `{}`",
             event.field("acct").unwrap_or("?")
         ),
-        "ANOM_PROMISCUOUS" => format!(
-            "{ts} — interface entrou em modo promiscuo (anomalia de captura)"
-        ),
+        "ANOM_PROMISCUOUS" => {
+            format!("{ts} — interface entrou em modo promiscuo (anomalia de captura)")
+        }
         "ANOM_ABEND" => format!("{ts} — processo terminou anormalmente (crash)"),
 
         // Autenticacao / sessao
@@ -79,9 +79,7 @@ fn narrate_avc(event: &AuditEvent, ts: &str) -> String {
 
     let action = extract_avc_action(event).unwrap_or_else(|| "<acao>".to_string());
 
-    format!(
-        "{ts} — SELinux {mode}: processo `{comm}` (pid {pid}) tentou {action} em `{name}`"
-    )
+    format!("{ts} — SELinux {mode}: processo `{comm}` (pid {pid}) tentou {action} em `{name}`")
 }
 
 fn extract_avc_action(event: &AuditEvent) -> Option<String> {
@@ -99,7 +97,11 @@ fn narrate_user_auth(event: &AuditEvent, ts: &str) -> String {
 fn narrate_user_login(event: &AuditEvent, ts: &str) -> String {
     let acct = event.field("acct").unwrap_or("?");
     let res = event.field("res").unwrap_or("?");
-    let outcome = if res == "success" { "logou" } else { "tentou logar (falha)" };
+    let outcome = if res == "success" {
+        "logou"
+    } else {
+        "tentou logar (falha)"
+    };
     format!("{ts} — usuario `{acct}` {outcome}")
 }
 
@@ -114,9 +116,7 @@ fn narrate_syscall(event: &AuditEvent, ts: &str) -> String {
     let syscall = event.field("syscall").unwrap_or("?");
     let success = event.field("success").unwrap_or("?");
     let exe = event.field("exe").unwrap_or("?");
-    format!(
-        "{ts} — syscall {syscall} por `{comm}` ({exe}) — sucesso={success}"
-    )
+    format!("{ts} — syscall {syscall} por `{comm}` ({exe}) — sucesso={success}")
 }
 
 fn narrate_user_cmd(event: &AuditEvent, ts: &str) -> String {
@@ -198,7 +198,10 @@ fn narrate_journal(e: &JournalEntry) -> String {
     if priority_tag.is_empty() {
         format!("{ts} — {source}: {}", trim_message(&e.message))
     } else {
-        format!("{ts} — {priority_tag} {source}: {}", trim_message(&e.message))
+        format!(
+            "{ts} — {priority_tag} {source}: {}",
+            trim_message(&e.message)
+        )
     }
 }
 
@@ -214,7 +217,9 @@ fn journal_source_label(e: &JournalEntry) -> String {
 }
 
 fn strip_unit_suffix(s: &str) -> String {
-    for suf in [".service", ".socket", ".target", ".timer", ".mount", ".scope"] {
+    for suf in [
+        ".service", ".socket", ".target", ".timer", ".mount", ".scope",
+    ] {
         if let Some(stripped) = s.strip_suffix(suf) {
             return stripped.to_string();
         }

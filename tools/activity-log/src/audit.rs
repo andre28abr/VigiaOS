@@ -36,8 +36,13 @@ impl AuditEvent {
     /// Heuristica: AVC > USER_* > SYSCALL > primeiro record.
     pub fn primary_type(&self) -> &str {
         const PRIORITY: &[&str] = &[
-            "AVC", "USER_AUTH", "USER_LOGIN", "USER_ACCT",
-            "ANOM_PROMISCUOUS", "ANOM_ABEND", "SYSCALL",
+            "AVC",
+            "USER_AUTH",
+            "USER_LOGIN",
+            "USER_ACCT",
+            "ANOM_PROMISCUOUS",
+            "ANOM_ABEND",
+            "SYSCALL",
         ];
         for t in PRIORITY {
             if self.records.iter().any(|r| r.record_type == *t) {
@@ -287,12 +292,15 @@ mod tests {
         // Inner key=values tambem expandidos
         assert_eq!(r.fields.get("acct").map(String::as_str), Some("andre"));
         assert_eq!(r.fields.get("res").map(String::as_str), Some("success"));
-        assert_eq!(r.fields.get("grantors").map(String::as_str), Some("pam_unix"));
+        assert_eq!(
+            r.fields.get("grantors").map(String::as_str),
+            Some("pam_unix")
+        );
     }
 
     #[test]
     fn groups_records_by_audit_id() {
-        let lines = vec![
+        let lines = [
             r#"type=SYSCALL msg=audit(1748000000.0:100): syscall=2 comm="cat""#,
             r#"type=PATH msg=audit(1748000000.0:100): item=0 name="/etc/passwd""#,
             r#"type=PROCTITLE msg=audit(1748000000.0:100): proctitle="cat /etc/passwd""#,

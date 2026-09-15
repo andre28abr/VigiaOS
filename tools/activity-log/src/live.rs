@@ -56,12 +56,20 @@ impl LiveSources {
                     }
                 }
                 Event::Journal(j) => {
-                    if self.last_journal_ts.map(|t| j.timestamp > t).unwrap_or(true) {
+                    if self
+                        .last_journal_ts
+                        .map(|t| j.timestamp > t)
+                        .unwrap_or(true)
+                    {
                         self.last_journal_ts = Some(j.timestamp);
                     }
                 }
                 Event::Fail2ban(f) => {
-                    if self.last_fail2ban_ts.map(|t| f.timestamp > t).unwrap_or(true) {
+                    if self
+                        .last_fail2ban_ts
+                        .map(|t| f.timestamp > t)
+                        .unwrap_or(true)
+                    {
                         self.last_fail2ban_ts = Some(f.timestamp);
                     }
                 }
@@ -140,9 +148,7 @@ fn read_fail2ban_file(path: &str) -> Result<Vec<fail2ban::Fail2banEntry>> {
 /// Roda `journalctl --since '@<epoch>' -o json --no-pager`. Se nao houver
 /// timestamp anterior (primeiro refresh), pega so os ultimos 100 para nao
 /// inundar.
-fn fetch_journalctl_since(
-    since: Option<DateTime<Utc>>,
-) -> Result<Vec<journal::JournalEntry>> {
+fn fetch_journalctl_since(since: Option<DateTime<Utc>>) -> Result<Vec<journal::JournalEntry>> {
     let mut cmd = Command::new("journalctl");
     cmd.args(["-o", "json", "--no-pager"]);
 
@@ -153,7 +159,10 @@ fn fetch_journalctl_since(
         cmd.arg("-n100");
     }
 
-    let output = cmd.stderr(Stdio::inherit()).output().context("journalctl spawn")?;
+    let output = cmd
+        .stderr(Stdio::inherit())
+        .output()
+        .context("journalctl spawn")?;
     if !output.status.success() {
         anyhow::bail!("journalctl falhou com status {}", output.status);
     }

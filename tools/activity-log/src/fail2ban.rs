@@ -55,7 +55,9 @@ pub enum Action {
     /// fail2ban encerrou jail
     JailStopped,
     /// Algum outro evento
-    Other { raw: String },
+    Other {
+        raw: String,
+    },
 }
 
 impl Action {
@@ -66,7 +68,9 @@ impl Action {
             "Found" => Action::Found,
             "Jail" if rest.contains("started") => Action::JailStarted,
             "Jail" if rest.contains("stopped") => Action::JailStopped,
-            other => Action::Other { raw: other.to_string() },
+            other => Action::Other {
+                raw: other.to_string(),
+            },
         }
     }
 }
@@ -98,9 +102,8 @@ pub fn parse_line(line: &str) -> Result<Fail2banEntry> {
 
     // Timestamp: "YYYY-MM-DD HH:MM:SS,SSS"
     let ts_str = format!("{date} {time}");
-    let naive =
-        NaiveDateTime::parse_from_str(&ts_str, "%Y-%m-%d %H:%M:%S,%3f")
-            .with_context(|| format!("invalid fail2ban timestamp: {ts_str}"))?;
+    let naive = NaiveDateTime::parse_from_str(&ts_str, "%Y-%m-%d %H:%M:%S,%3f")
+        .with_context(|| format!("invalid fail2ban timestamp: {ts_str}"))?;
     let timestamp = Utc.from_utc_datetime(&naive);
 
     // PID: token e' "[12345]:" — extrai os digitos
@@ -204,7 +207,8 @@ mod tests {
 
     #[test]
     fn parses_jail_started() {
-        let line = "2026-05-22 14:00:00,000 fail2ban.jail           [12345]: INFO    Jail 'sshd' started";
+        let line =
+            "2026-05-22 14:00:00,000 fail2ban.jail           [12345]: INFO    Jail 'sshd' started";
         let e = parse_line(line).unwrap();
         assert_eq!(e.action, Action::JailStarted);
     }
