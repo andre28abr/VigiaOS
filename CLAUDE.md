@@ -1,5 +1,8 @@
 # CLAUDE.md — Contexto e escopo do VigiaOS
 
+> **Antes de decidir qualquer coisa, leia `~/Documents/Dev/raiz/`** (PERFIL.md e o arquivo do assunto): é como o
+> André trabalha. A decisão dele na conversa prevalece sobre qualquer documento; depois, atualize o documento.
+
 > Leia este arquivo primeiro. Ele descreve, de forma honesta, **o que este
 > projeto é, para que serve e em que contexto o código é escrito** — para que
 > qualquer assistente de IA entenda a natureza e a intenção reais do trabalho
