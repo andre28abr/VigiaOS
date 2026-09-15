@@ -43,17 +43,13 @@ Desde 2025 conduz, como **product owner técnico**, projetos open-source de segu
 
 ### 📂 Outros projetos do autor
 
-**[SentinelBR](https://github.com/andre28abr/SentinelBR-platform)** — Plataforma open-source de **SIEM + LGPD** para PMEs brasileiras. Onde o VigiaOS cuida da *estação de trabalho*, o SentinelBR cuida da *infraestrutura*: agente Go (gRPC mTLS), detecção em tempo real (Sigma-style + YARA + OSV.dev), resposta automatizada (SOAR-lite) e compliance LGPD nativa, multi-tenant. Stack: Python 3.12 / FastAPI / Go 1.25 / React 19 / PostgreSQL / Loki.
+- **[SentinelBR](https://github.com/andre28abr/SentinelBR-platform)**: plataforma open-source de SIEM + LGPD para PMEs brasileiras: agente Go com gRPC e mTLS, detecção em tempo real, resposta automatizada e compliance LGPD nativa, multi-tenant.
+- **[Plataforma LGPD](https://github.com/andre28abr/lgpd-platform)**: plataforma web multi-tenant que treina, avalia e certifica os setores de uma empresa em LGPD e dá ao DPO as ferramentas de operação (ROPA, RIPD, direitos do titular, incidentes).
+- **[Peapod](https://github.com/andre28abr/Peapod)**: sandboxes isolados e descartáveis para agentes de IA (MCP, CLI, dashboard web e app nativo de macOS): rede desligada por padrão, allowlist de domínios e trilha de auditoria. Go e Swift.
+- **[Uptend](https://github.com/andre28abr/Uptend)**: app nativo de macOS para configurar e manter o Mac e auditar servidores Linux: coletor portátil, relatórios, correlação com CVEs, MITRE ATT&CK, lente LGPD e playbook de hardening com rollback. Swift 6.
+- **[banana](https://github.com/andre28abr/banana)**: editor local-first de notas Markdown, código e PDF, com vault cifrado (Argon2id + AES-256-GCM). Tauri 2, Rust e Svelte 5.
 
-**[Plataforma LGPD](https://github.com/andre28abr/lgpd-platform)** — Plataforma web multi-tenant que **treina, avalia e opera** a conformidade com a LGPD: diagnóstico de maturidade, ROPA (Art. 37), RIPD (Art. 38), direitos do titular (Art. 18) e resposta a incidentes (Art. 48).
-
-**[Peapod](https://github.com/andre28abr/Peapod)** — Sandboxes **isolados e descartáveis para agentes de IA** (MCP, CLI, dashboard web e app nativo de macOS): rede desligada por padrão, allowlist de domínios e trilha de auditoria.
-
-**[Uptend](https://github.com/andre28abr/Uptend)** — App nativo de macOS para **configurar e manter o Mac** e **auditar servidores Linux**: coletor portátil, relatórios, CVEs, MITRE, lente LGPD e playbook de hardening com rollback (Swift 6 + SwiftUI).
-
-**[banana](https://github.com/andre28abr/banana)** — Editor **local-first** de notas Markdown, código e PDF (Tauri 2 + Rust + Svelte 5), com vault cifrado (Argon2id + AES-256-GCM).
-
-**SC Platform** *(privado, disponível para apresentação mediante solicitação)* — SaaS multi-tenant pra gestão de licitações públicas (PNCP, simulador da Lei 14.133, robô de lances, extração de PDF com IA local, CRM). 75k+ linhas, 547 testes.
+Todos os projetos, com o porquê de cada um, no perfil [github.com/andre28abr](https://github.com/andre28abr).
 
 ---
 
