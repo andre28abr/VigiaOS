@@ -1,0 +1,50 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  python:
+    name: Python (pyflakes + pytest, ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Instalar ferramentas de teste
+        run: pip install pytest pyflakes
+      # Sem GTK/PyGObject no runner: os testes marcados `gtk` pulam sozinhos
+      # (conftest). Os backends puros — a maior parte da suíte — rodam inteiros.
+      - name: pyflakes (zero achados)
+        run: python -m pyflakes tools install tests
+      - name: pytest
+        run: python -m pytest tests -q
+
+  rust:
+    name: Rust (clippy + tests + fmt)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: tools/activity-log
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            tools/activity-log/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('tools/activity-log/Cargo.lock') }}
+      - run: cargo fmt --check
+      - run: cargo clippy --all-targets -- -D warnings
+      - run: cargo test
