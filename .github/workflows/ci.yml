@@ -19,7 +19,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Instalar ferramentas de teste
-        run: pip install pytest pyflakes
+        run: pip install pytest pyflakes jinja2 markdown  # jinja2 (relatórios) e markdown (manuais) são as únicas deps de terceiros fora do GTK
       # Sem GTK/PyGObject no runner: os testes marcados `gtk` pulam sozinhos
       # (conftest). Os backends puros — a maior parte da suíte — rodam inteiros.
       - name: pyflakes (zero achados)
