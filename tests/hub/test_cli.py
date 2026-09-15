@@ -11,7 +11,7 @@ from pathlib import Path
 
 import pytest
 
-from vigia_hub import backup, cli, settings, status
+from vigia_hub import backup, cli, status
 
 
 @pytest.fixture

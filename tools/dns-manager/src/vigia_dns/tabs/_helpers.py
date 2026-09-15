@@ -20,6 +20,9 @@ from vigia_common.helpers import (
     make_clamp as _make_clamp_base,
 )
 
+# Re-exportados de proposito: as abas importam daqui (`from ._helpers import ...`).
+__all__ = ["CONTENT_MAX_WIDTH", "CONTENT_TIGHTENING", "make_clamp", "show_error", "show_info"]
+
 # Customizado para esta tool (largura/aperto do clamp)
 CONTENT_MAX_WIDTH = 1100
 CONTENT_TIGHTENING = 900

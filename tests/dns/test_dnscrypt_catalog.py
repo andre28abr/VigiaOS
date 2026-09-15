@@ -8,7 +8,6 @@ Cobertura:
 
 from __future__ import annotations
 
-import pytest
 
 from vigia_dns.dnscrypt_catalog import (
     SERVERS,

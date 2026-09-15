@@ -8,14 +8,12 @@ NAO testa Gio.Notification (precisa GTK + display).
 
 from __future__ import annotations
 
-import time
 from unittest.mock import patch
 
 import pytest
 
 from vigia_dashboard.alerts import (
     METRICS,
-    AlertEvent,
     AlertManager,
     AlertRule,
     metric_label,

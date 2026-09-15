@@ -10,9 +10,8 @@ A v0.3 removeu (dnscrypt-proxy e' o unico backend). Restou:
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
-import pytest
 
 from vigia_dns import migration
 

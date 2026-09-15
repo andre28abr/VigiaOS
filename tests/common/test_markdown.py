@@ -7,7 +7,6 @@ descricoes do Hub, etc.
 
 from __future__ import annotations
 
-import pytest
 
 from vigia_common.markdown import md_to_pango
 

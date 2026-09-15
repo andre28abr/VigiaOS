@@ -10,7 +10,7 @@ Tests que importam GTK/PyGObject sao skipados em ambientes sem ele
 
 from __future__ import annotations
 
-import os
+import importlib.util
 import sys
 from pathlib import Path
 
@@ -55,12 +55,7 @@ for tool in TOOLS:
 
 
 # Detecta se PyGObject esta disponivel (gtk4)
-HAS_GI = False
-try:
-    import gi  # noqa: F401
-    HAS_GI = True
-except ImportError:
-    pass
+HAS_GI = importlib.util.find_spec("gi") is not None
 
 
 def pytest_collection_modifyitems(config, items):

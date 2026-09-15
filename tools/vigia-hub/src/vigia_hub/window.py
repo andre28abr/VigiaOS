@@ -65,7 +65,6 @@ from .theme import is_dark_mode as _theme_is_dark
 
 _log = get_logger("vigia_hub.window")
 from .settings import (
-    Settings,
     autostart_is_enabled,
     autostart_sync,
     load_settings,

@@ -6,7 +6,6 @@ constantemente. Cobre formatos reais do kernel Linux.
 
 from __future__ import annotations
 
-import sys
 from unittest.mock import mock_open, patch
 
 import pytest

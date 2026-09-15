@@ -12,7 +12,6 @@ puros (nao importam gi), entao rodam headless em qualquer plataforma.
 
 from __future__ import annotations
 
-import pytest
 
 from vigia_caps import backend, capabilities
 

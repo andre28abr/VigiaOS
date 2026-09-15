@@ -7,7 +7,6 @@ usuario.
 
 from __future__ import annotations
 
-import pytest
 
 from vigia_dashboard.backend import (
     format_bytes,

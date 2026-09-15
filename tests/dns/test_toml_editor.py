@@ -7,7 +7,6 @@ tests validam que essa logica nao bagunce o config.
 
 from __future__ import annotations
 
-import pytest
 
 from vigia_dns.dnscrypt_backend import _update_toml_key
 

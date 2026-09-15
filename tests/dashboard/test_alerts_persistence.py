@@ -6,10 +6,7 @@ Testa load_rules, save_rules, _default_rules — IO real em tmp_path.
 from __future__ import annotations
 
 import json
-import os
 import stat
-from pathlib import Path
-from unittest.mock import patch
 
 import pytest
 

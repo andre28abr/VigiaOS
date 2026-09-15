@@ -48,7 +48,7 @@ from .auth import check_auth, check_auth_async
 from .binpath import ensure_user_bins_on_path
 from .logging_setup import get_logger
 from .settings import load_settings
-from .theme import apply_base_css, apply_ui_theme, follow_system_theme
+from .theme import apply_base_css, apply_ui_theme
 from .tray import TrayManager
 from .window import VigiaHubWindow
 

@@ -22,6 +22,9 @@ from vigia_common.helpers import (
     make_file_picker_row as _make_file_picker_row_base,
 )
 
+# Re-exportados de proposito: as abas importam daqui (`from ._helpers import ...`).
+__all__ = ["CONTENT_MAX_WIDTH", "CONTENT_TIGHTENING", "copy_to_clipboard", "make_clamp", "make_file_picker_row", "show_error", "show_info"]
+
 # Customizado para esta tool (largura/aperto do clamp)
 CONTENT_MAX_WIDTH = 1100
 CONTENT_TIGHTENING = 900
