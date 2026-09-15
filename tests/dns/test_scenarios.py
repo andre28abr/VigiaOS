@@ -12,7 +12,6 @@ single-mode. Cobre:
 
 from __future__ import annotations
 
-import pytest
 
 
 class ResolversState:

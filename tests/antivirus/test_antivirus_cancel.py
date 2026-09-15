@@ -13,7 +13,6 @@ Nenhum subprocess real (pkexec/clamscan) e' disparado.
 from __future__ import annotations
 
 import threading
-import types
 
 import pytest
 

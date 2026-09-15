@@ -122,19 +122,16 @@ def webkit_available() -> bool:
     try:
         import gi
         gi.require_version("WebKit", "6.0")
-        from gi.repository import WebKit  # noqa: F401
-        return True
+        from gi.repository import WebKit
+        return WebKit is not None
     except (ValueError, ImportError):
         return False
 
 
 def markdown_lib_available() -> bool:
     """True se python-markdown esta instalado."""
-    try:
-        import markdown  # noqa: F401
-        return True
-    except ImportError:
-        return False
+    import importlib.util
+    return importlib.util.find_spec("markdown") is not None
 
 
 # ============================================================

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
 
 from vigia_red.modules.cracker import backend as b
 
