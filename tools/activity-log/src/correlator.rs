@@ -130,15 +130,15 @@ fn detect_oom_kill(events: &[Event]) -> Vec<Correlation> {
         let mut contrib = vec![i];
 
         // Olha para frente em ate `window` por ANOM_ABEND com mesmo comm
-        for j in (i + 1)..events.len() {
-            if events[j].timestamp() > oom_ts + window {
+        for (j, ev) in events.iter().enumerate().skip(i + 1) {
+            if ev.timestamp() > oom_ts + window {
                 break;
             }
-            if let Event::Audit(a) = &events[j] {
-                if a.primary_type() == "ANOM_ABEND" {
-                    if a.field("comm").map(|c| c == oom_proc).unwrap_or(false) {
-                        contrib.push(j);
-                    }
+            if let Event::Audit(a) = ev {
+                if a.primary_type() == "ANOM_ABEND"
+                    && a.field("comm").map(|c| c == oom_proc).unwrap_or(false)
+                {
+                    contrib.push(j);
                 }
             }
         }
@@ -223,10 +223,8 @@ fn detect_selinux_burst(events: &[Event]) -> Vec<Correlation> {
                 cluster_start += 1;
             }
             let size = end - cluster_start + 1;
-            if size >= min_count {
-                if best.map(|(s, e)| e - s + 1 < size).unwrap_or(true) {
-                    best = Some((cluster_start, end));
-                }
+            if size >= min_count && best.map(|(s, e)| e - s + 1 < size).unwrap_or(true) {
+                best = Some((cluster_start, end));
             }
         }
 
@@ -278,9 +276,7 @@ fn detect_suspicious_ssh_login(events: &[Event]) -> Vec<Correlation> {
                 break;
             }
             if let Event::Fail2ban(f) = &events[k] {
-                if matches!(f.action, F2bAction::Found)
-                    && f.ip.as_deref() == Some(ip.as_str())
-                {
+                if matches!(f.action, F2bAction::Found) && f.ip.as_deref() == Some(ip.as_str()) {
                     prior_failures.push(k);
                 }
             }
@@ -342,7 +338,10 @@ mod tests {
             "2025-05-23 11:33:42,300 fail2ban.filter [123]: INFO [sshd] Found 192.0.2.42",
             "2025-05-23 11:33:45,400 fail2ban.actions [123]: NOTICE [sshd] Ban 192.0.2.42",
         ];
-        lines.into_iter().map(|l| Event::Fail2ban(f2b_parse(l).unwrap())).collect()
+        lines
+            .into_iter()
+            .map(|l| Event::Fail2ban(f2b_parse(l).unwrap()))
+            .collect()
     }
 
     #[test]
@@ -376,7 +375,7 @@ mod tests {
                 ts, ts
             )
         };
-        let lines = vec![
+        let lines = [
             line_tpl(1748000000),
             line_tpl(1748000010),
             line_tpl(1748000020),

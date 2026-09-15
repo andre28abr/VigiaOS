@@ -153,6 +153,17 @@ fn fail2ban_severity(e: &Fail2banEntry) -> Severity {
     }
 }
 
+fn fail2ban_category(a: &Action) -> &'static str {
+    match a {
+        Action::Ban => "BAN",
+        Action::Unban => "UNBAN",
+        Action::Found => "FOUND",
+        Action::JailStarted => "JAIL_START",
+        Action::JailStopped => "JAIL_STOP",
+        Action::Other { .. } => "F2B_OTHER",
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -201,17 +212,5 @@ mod tests {
         let line = r#"type=SYSCALL msg=audit(1748000000.0:1): arch=x syscall=1 success=yes exit=0 comm="x""#;
         let e = make_audit_event(line);
         assert_eq!(e.severity(), Severity::Routine);
-    }
-}
-
-
-fn fail2ban_category(a: &Action) -> &'static str {
-    match a {
-        Action::Ban => "BAN",
-        Action::Unban => "UNBAN",
-        Action::Found => "FOUND",
-        Action::JailStarted => "JAIL_START",
-        Action::JailStopped => "JAIL_STOP",
-        Action::Other { .. } => "F2B_OTHER",
     }
 }

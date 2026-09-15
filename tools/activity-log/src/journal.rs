@@ -182,7 +182,11 @@ pub fn parse_log<R: BufRead>(reader: R) -> Result<Vec<JournalEntry>> {
 
 /// Roda `journalctl -o json --no-pager -n LIMIT` e parseia o output.
 pub fn fetch_via_journalctl(limit: usize) -> Result<Vec<JournalEntry>> {
-    if Command::new("journalctl").arg("--version").output().is_err() {
+    if Command::new("journalctl")
+        .arg("--version")
+        .output()
+        .is_err()
+    {
         bail!(
             "journalctl nao encontrado. Em sistemas sem systemd (ex: Mac), \
              use --journal-path FILE com um snapshot JSON do journal."
@@ -219,7 +223,10 @@ mod tests {
         assert_eq!(e.comm.as_deref(), Some("systemd"));
         assert_eq!(e.pid, Some(1));
         assert_eq!(e.hostname.as_deref(), Some("fedora"));
-        assert_eq!(e.extra.get("SYSLOG_IDENTIFIER").map(String::as_str), Some("systemd"));
+        assert_eq!(
+            e.extra.get("SYSLOG_IDENTIFIER").map(String::as_str),
+            Some("systemd")
+        );
     }
 
     #[test]

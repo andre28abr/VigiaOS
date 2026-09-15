@@ -195,9 +195,11 @@ impl App {
                     self.list_state.select(Some(self.visible.len() - 1));
                 } else if let Some(ts) = selected_ts {
                     // tenta achar o mesmo evento (mesmo timestamp) na nova lista
-                    if let Some(pos) = self.visible.iter().position(|&i| {
-                        self.events[i].timestamp() == ts
-                    }) {
+                    if let Some(pos) = self
+                        .visible
+                        .iter()
+                        .position(|&i| self.events[i].timestamp() == ts)
+                    {
                         self.list_state.select(Some(pos));
                     }
                 }
@@ -254,9 +256,7 @@ impl App {
             Some(cur) => {
                 let pos = FILTER_CYCLE.iter().position(|t| t == cur);
                 match pos {
-                    Some(i) if i + 1 < FILTER_CYCLE.len() => {
-                        Some(FILTER_CYCLE[i + 1].to_string())
-                    }
+                    Some(i) if i + 1 < FILTER_CYCLE.len() => Some(FILTER_CYCLE[i + 1].to_string()),
                     _ => None,
                 }
             }
@@ -355,15 +355,11 @@ fn main_loop(terminal: &mut Terminal<Backend>, mut app: App) -> Result<()> {
                     KeyCode::Up | KeyCode::Char('k') => app.move_selection(-1),
                     KeyCode::PageDown => app.move_selection(10),
                     KeyCode::PageUp => app.move_selection(-10),
-                    KeyCode::Home => {
-                        if !app.visible.is_empty() {
-                            app.list_state.select(Some(0));
-                        }
+                    KeyCode::Home if !app.visible.is_empty() => {
+                        app.list_state.select(Some(0));
                     }
-                    KeyCode::End => {
-                        if !app.visible.is_empty() {
-                            app.list_state.select(Some(app.visible.len() - 1));
-                        }
+                    KeyCode::End if !app.visible.is_empty() => {
+                        app.list_state.select(Some(app.visible.len() - 1));
                     }
                     _ => {}
                 },
@@ -404,9 +400,9 @@ fn draw(f: &mut ratatui::Frame, app: &mut App) {
     if corr_h > 0 {
         constraints.push(Constraint::Length(corr_h));
     }
-    constraints.push(Constraint::Min(8));      // event list
-    constraints.push(Constraint::Length(16));  // detail panel
-    constraints.push(Constraint::Length(1));   // status bar
+    constraints.push(Constraint::Min(8)); // event list
+    constraints.push(Constraint::Length(16)); // detail panel
+    constraints.push(Constraint::Length(1)); // status bar
 
     let chunks = Layout::default()
         .direction(Direction::Vertical)
@@ -422,15 +418,25 @@ fn draw(f: &mut ratatui::Frame, app: &mut App) {
     // ===== Header =====
     let counts = count_by_source(&app.events);
     let mut header_spans = vec![
-        Span::styled("VIGIA", Style::default().fg(COLOR_ACCENT).add_modifier(Modifier::BOLD)),
-        Span::styled("·OS", Style::default().fg(COLOR_FG).add_modifier(Modifier::BOLD)),
+        Span::styled(
+            "VIGIA",
+            Style::default()
+                .fg(COLOR_ACCENT)
+                .add_modifier(Modifier::BOLD),
+        ),
+        Span::styled(
+            "·OS",
+            Style::default().fg(COLOR_FG).add_modifier(Modifier::BOLD),
+        ),
         Span::styled(" Activity Log  ", Style::default().fg(COLOR_FG)),
     ];
     if app.live.is_some() {
         let dot = if app.live_blink { "●" } else { "○" };
         header_spans.push(Span::styled(
             format!("{} LIVE  ", dot),
-            Style::default().fg(COLOR_ERROR).add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(COLOR_ERROR)
+                .add_modifier(Modifier::BOLD),
         ));
     }
     header_spans.extend([
@@ -438,16 +444,25 @@ fn draw(f: &mut ratatui::Frame, app: &mut App) {
             format!("· {}/{} eventos  ", app.visible.len(), app.events.len()),
             Style::default().fg(COLOR_DIM),
         ),
-        Span::styled(format!("audit:{} ", counts.audit), Style::default().fg(COLOR_DIM)),
-        Span::styled(format!("journal:{} ", counts.journal), Style::default().fg(COLOR_DIM)),
-        Span::styled(format!("fail2ban:{}  ", counts.fail2ban), Style::default().fg(COLOR_DIM)),
+        Span::styled(
+            format!("audit:{} ", counts.audit),
+            Style::default().fg(COLOR_DIM),
+        ),
+        Span::styled(
+            format!("journal:{} ", counts.journal),
+            Style::default().fg(COLOR_DIM),
+        ),
+        Span::styled(
+            format!("fail2ban:{}  ", counts.fail2ban),
+            Style::default().fg(COLOR_DIM),
+        ),
         Span::styled(
             format!("· {} correlations", app.correlations.len()),
             Style::default().fg(COLOR_ACCENT),
         ),
     ]);
-    let header = Paragraph::new(Line::from(header_spans))
-        .block(Block::default().borders(Borders::BOTTOM));
+    let header =
+        Paragraph::new(Line::from(header_spans)).block(Block::default().borders(Borders::BOTTOM));
     f.render_widget(header, header_chunk);
 
     // ===== Correlations panel =====
@@ -523,10 +538,18 @@ fn draw(f: &mut ratatui::Frame, app: &mut App) {
     // ===== Status bar =====
     let status_line = match app.mode {
         Mode::Searching => Line::from(vec![
-            Span::styled("/", Style::default().fg(COLOR_ACCENT).add_modifier(Modifier::BOLD)),
+            Span::styled(
+                "/",
+                Style::default()
+                    .fg(COLOR_ACCENT)
+                    .add_modifier(Modifier::BOLD),
+            ),
             Span::styled(&app.search, Style::default().fg(COLOR_FG)),
             Span::styled("_", Style::default().fg(COLOR_ACCENT)),
-            Span::styled("   Enter=confirma  Esc=cancela", Style::default().fg(COLOR_DIM)),
+            Span::styled(
+                "   Enter=confirma  Esc=cancela",
+                Style::default().fg(COLOR_DIM),
+            ),
         ]),
         Mode::Normal => Line::from(vec![
             Span::styled(" ↑↓jk ", Style::default().fg(COLOR_ACCENT)),
@@ -564,7 +587,10 @@ fn render_correlation_row(c: &Correlation) -> ListItem<'_> {
     ListItem::new(Line::from(vec![
         Span::styled(ts, Style::default().fg(COLOR_DIM)),
         Span::raw(" "),
-        Span::styled(sev_tag, Style::default().fg(sev_color).add_modifier(Modifier::BOLD)),
+        Span::styled(
+            sev_tag,
+            Style::default().fg(sev_color).add_modifier(Modifier::BOLD),
+        ),
         Span::styled(&c.summary, Style::default().fg(COLOR_FG)),
         Span::styled(span_str, Style::default().fg(COLOR_DIM)),
     ]))
@@ -650,9 +676,8 @@ fn color_for_type(t: &str) -> Color {
         // Audit: sudo / privilege escalation (amber — destaca atividade administrativa)
         "USER_CMD" => COLOR_WARN,
         // Audit: autenticacao / sessao / credenciais (emerald — positivo, accent)
-        "USER_AUTH" | "USER_LOGIN" | "USER_ACCT" | "LOGIN"
-        | "USER_START" | "USER_END" | "USER_TTY" | "USER_ROLE_CHANGE"
-        | "CRED_ACQ" | "CRED_DISP" | "CRED_REFR" => COLOR_ACCENT,
+        "USER_AUTH" | "USER_LOGIN" | "USER_ACCT" | "LOGIN" | "USER_START" | "USER_END"
+        | "USER_TTY" | "USER_ROLE_CHANGE" | "CRED_ACQ" | "CRED_DISP" | "CRED_REFR" => COLOR_ACCENT,
         // Audit: servicos / kernel (default)
         "SERVICE_START" | "SERVICE_STOP" | "BPF" => COLOR_FG_DIM,
         // Journal: priorities syslog
@@ -685,7 +710,11 @@ struct SourceCounts {
 }
 
 fn count_by_source(events: &[Event]) -> SourceCounts {
-    let mut c = SourceCounts { audit: 0, journal: 0, fail2ban: 0 };
+    let mut c = SourceCounts {
+        audit: 0,
+        journal: 0,
+        fail2ban: 0,
+    };
     for e in events {
         match e {
             Event::Audit(_) => c.audit += 1,
