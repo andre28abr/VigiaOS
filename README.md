@@ -71,7 +71,8 @@ Todos os projetos, com o porquê de cada um, no perfil [github.com/andre28abr](h
 5. [Instalação](#instalação)
 6. [Histórico](#histórico)
 7. [Documentação](#documentação)
-8. [Licença](#licença)
+8. [Contribuições](#contribuições)
+9. [Licença](#licença)
 
 ---
 
@@ -278,6 +279,10 @@ hora; a suíte ficou mais simples e mais completa.
 
 - [DEVELOPMENT.md](DEVELOPMENT.md) — arquitetura, decisões, roadmap do ecossistema
 - [AUTHOR.md](AUTHOR.md) — sobre o autor (mini-currículo)
+
+## Contribuições
+
+Obrigado pelo interesse! Este é um projeto pessoal, mantido por uma pessoa só, e por isso não consigo revisar nem acompanhar contribuições de fora. Pedidos de alteração (pull requests) serão fechados sem análise, sem nenhuma desconsideração por quem enviou. Se quiser adaptar o projeto às suas necessidades, fique à vontade para fazer um fork, dentro dos termos da licença.
 
 ## Licença
 
